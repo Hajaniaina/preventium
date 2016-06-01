@@ -1,8 +1,19 @@
 package com.preventium.boxpreventium.ftp;
 
+import android.app.ProgressDialog;
 import android.util.Log;
 
+import com.preventium.boxpreventium.ftp.listeners.UploadListener;
+
 import org.apache.commons.net.ftp.*;
+import org.apache.commons.net.io.CopyStreamAdapter;
+import org.apache.commons.net.io.CopyStreamEvent;
+import org.apache.commons.net.io.CopyStreamListener;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 
@@ -14,7 +25,7 @@ public class FtpClientIO {
 
     private final static String TAG = "FtpClientIO";
     private FTPClient client;
-
+    private CopyStreamAdapter streamListener;
     public FtpClientIO() { }
 
     // Connect
@@ -176,4 +187,52 @@ public class FtpClientIO {
         }
         return ret;
     }
+
+    public boolean storeFile(String srcFilePath, String desFilePath, final UploadListener listener) {
+        boolean ret = false;
+        if( isConnected() ) {
+
+            try {
+                client.setFileType(FTP.BINARY_FILE_TYPE);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            BufferedInputStream buffIn = null;
+            final File file = new File(srcFilePath);
+            try {
+                buffIn = new BufferedInputStream(new FileInputStream(file), 8192);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            client.enterLocalPassiveMode();
+
+            streamListener = new CopyStreamAdapter() {
+                @Override
+                public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize) {
+
+                    int percent = (int) (totalBytesTransferred * 100 / file.length());
+                    if( listener != null ) {
+                        listener.onProgress(percent);
+                        listener.onByteTransferred(totalBytesTransferred, file.length());
+                    }
+
+                    if (totalBytesTransferred == file.length()) {
+                        if( listener != null ) listener.onFinish();
+                        removeCopyStreamListener(streamListener);
+                    }
+                }
+            };
+            client.setCopyStreamListener( streamListener );
+            try {
+                if( listener != null ) listener.onStart();
+                ret = client.storeFile( desFilePath, buffIn );
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return ret;
+    }
+
+
 }

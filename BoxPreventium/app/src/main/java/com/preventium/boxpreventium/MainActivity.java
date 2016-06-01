@@ -1,12 +1,13 @@
 package com.preventium.boxpreventium;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.os.Bundle;
 
 
 public class MainActivity extends Activity {
 
-   private FtpPreventium a;
+    private FtpPreventium a;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
