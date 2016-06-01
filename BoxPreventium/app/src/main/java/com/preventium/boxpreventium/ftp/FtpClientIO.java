@@ -1,21 +1,19 @@
 package com.preventium.boxpreventium.ftp;
 
-import android.app.ProgressDialog;
 import android.util.Log;
 
-import com.preventium.boxpreventium.ftp.listeners.UploadListener;
+import com.preventium.boxpreventium.ftp.listeners.FileTransfertListener;
 
 import org.apache.commons.net.ftp.*;
 import org.apache.commons.net.io.CopyStreamAdapter;
-import org.apache.commons.net.io.CopyStreamEvent;
 import org.apache.commons.net.io.CopyStreamListener;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
 
 /**
  * Created by Franck on 31/05/2016.
@@ -26,6 +24,7 @@ public class FtpClientIO {
     private final static String TAG = "FtpClientIO";
     private FTPClient client;
     private CopyStreamAdapter streamListener;
+    private CopyStreamListener streamListener0;
     public FtpClientIO() { }
 
     // Connect
@@ -188,10 +187,9 @@ public class FtpClientIO {
         return ret;
     }
 
-    public boolean storeFile(String srcFilePath, String desFilePath, final UploadListener listener) {
+    public boolean storeFile(String srcFilePath, String desFilePath, final FileTransfertListener listener) {
         boolean ret = false;
         if( isConnected() ) {
-
             try {
                 client.setFileType(FTP.BINARY_FILE_TYPE);
             } catch (IOException e) {
@@ -234,5 +232,67 @@ public class FtpClientIO {
         return ret;
     }
 
+    public boolean retreiveFile(String srcFilePath, String desFilePath, final FileTransfertListener listener ) {
+        boolean ret = false;
+        if( isConnected() ) {
+
+            try {
+                client.setFileType(FTP.BINARY_FILE_TYPE);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            FileOutputStream fileOutputStream = null;
+            final File file = new File(desFilePath);
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                fileOutputStream = new FileOutputStream(file);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            client.enterLocalPassiveMode();
+
+            FTPFile f = null;
+            try {
+                f = client.mlistFile(srcFilePath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            final long file_size = f.getSize();
+            streamListener = new CopyStreamAdapter() {
+                @Override
+                public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize) {
+
+                    int percent = (int) (totalBytesTransferred * 100 / file_size);
+                    if( listener != null ) {
+                        listener.onProgress(percent);
+                        listener.onByteTransferred(totalBytesTransferred, file_size);
+                    }
+
+
+                    if (totalBytesTransferred == file_size) {
+                        if( listener != null ) listener.onFinish();
+                        removeCopyStreamListener(streamListener);
+                    }
+                }
+            };
+            client.setCopyStreamListener( streamListener );
+
+            try {
+                if( listener != null ) listener.onStart();
+                ret = client.retrieveFile(srcFilePath,fileOutputStream);
+                fileOutputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return ret;
+    }
 
 }

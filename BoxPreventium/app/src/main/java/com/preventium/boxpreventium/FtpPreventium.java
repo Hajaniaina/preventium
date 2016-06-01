@@ -1,14 +1,10 @@
 package com.preventium.boxpreventium;
 
-import android.app.ProgressDialog;
-import android.content.Context;
 import android.util.Log;
 
 import com.preventium.boxpreventium.ftp.FtpClientIO;
 import com.preventium.boxpreventium.ftp.FtpConfig;
-import com.preventium.boxpreventium.ftp.listeners.UploadListener;
-
-import java.security.PrivilegedAction;
+import com.preventium.boxpreventium.ftp.listeners.FileTransfertListener;
 
 public class FtpPreventium extends Thread{
 
@@ -34,7 +30,7 @@ public class FtpPreventium extends Thread{
             clientIO.printWorkingDirectory();
             clientIO.printFilesList("");
 
-            boolean store = clientIO.storeFile("/storage/emulated/0/Download/WAV/tank/anti char.wav", "anti_char.wav", new UploadListener() {
+            boolean store = clientIO.storeFile("/storage/emulated/0/Download/WAV/tank/anti char.wav", "anti_char.wav", new FileTransfertListener() {
                 @Override
                 public void onStart() {
                     Log.d(TAG,"Upload start");
@@ -54,9 +50,33 @@ public class FtpPreventium extends Thread{
                 public void onFinish() {
                     Log.d(TAG,"Upload finish");
                 }
-
             });
             Log.d("TEST","store = " + store );
+
+
+            boolean retreive = clientIO.retreiveFile("anti_char.wav", "/storage/emulated/0/Download/WAV/tank/anti_char_1.wav", new FileTransfertListener() {
+                @Override
+                public void onStart() {
+                    Log.d(TAG,"Download start");
+                }
+
+                @Override
+                public void onProgress(int percent) {
+                    Log.d(TAG,"Downloading... " + percent + "%");
+                }
+
+                @Override
+                public void onByteTransferred(long totalBytesTransferred, long totalBytes) {
+                    Log.d(TAG,"Downloading... (" + totalBytesTransferred + " / " + totalBytes + ")" );
+                }
+
+                @Override
+                public void onFinish() {
+                    Log.d(TAG,"Downloading finish");
+                }
+            });
+            Log.d("TEST","retreive = " + retreive );
+
         }else{
             Log.d("TEST","FTP CONNECTING...FAIL!");
         }
