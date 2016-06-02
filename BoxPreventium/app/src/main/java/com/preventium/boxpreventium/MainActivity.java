@@ -1,13 +1,11 @@
 package com.preventium.boxpreventium;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.telephony.SmsManager;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-
 
 public class MainActivity extends Activity {
 
