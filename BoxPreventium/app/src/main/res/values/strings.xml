@@ -34,12 +34,31 @@
     <string name="bluetooth_low_energy_not_supported">The \"Bluetooth Low Energy\" is not supported by the device.</string>
     <string name="location_not_supported">The \"Location service\" is not supported by the device.</string>
 
-    <!-- ENABLED -->
+    <!-- FEATURES -->
+    <string name="ask_for_all_enable_button">Request all</string>
     <string name="ask_for_location_enable_button">Location</string>
     <string name="ask_for_bluetooth_enable_button">Bluetooth</string>
     <string name="state_enable_feedback">ENABLE</string>
     <string name="state_disable_feedback">DISABLE</string>
     <string name="state_unknown_feedback">UNKNOWN</string>
+    <string name="dialog_features_settings">Features</string>
+    <string name="dialog_features_message">This application needed \"Bluetooth adapter\" and \"Location service\" swith on to running correcty. Do you want to go to settings menu?</string>
+
+
+    <!-- COMMON UTILS -->
+    <string name="setting_dialog_positive_button">SETTINGS</string>
+    <string name="setting_dialog_negative_button">Cancel</string>
+
+    <string name="bluetooth_dialog_title">Bluetooth adapter</string>
+    <string name="bluetooth_dialog_message">Bluetooth adapter is not enabled. Do you want to go to settings menu?</string>
+    <string name="bluetooth_dialog_positive_button">SETTINGS</string>
+    <string name="bluetooth_dialog_negative_button">Cancel</string>
+
+    <string name="location_dialog_title">Location service</string>
+    <string name="location_dialog_message">Location service is not enabled. Do you want to go to settings menu?</string>
+    <string name="location_dialog_positive_button">SETTINGS</string>
+    <string name="location_dialog_negative_button">Cancel</string>
+
 
 
     <!--<string name="search_and_select_device">Search and select device</string>-->

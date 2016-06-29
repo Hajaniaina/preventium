@@ -1,8 +1,11 @@
 package com.preventium.boxpreventium;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
@@ -98,6 +101,30 @@ public class CommonUtils {
         return false;
     }
 
+    // === SETTINGS
+
+    public static void showSettingDialog(final Context ctx, int title, int message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+        builder.setTitle(title);
+        builder.setMessage(message);
+        builder.setIcon(android.R.drawable.ic_menu_help);
+        builder.setPositiveButton(R.string.setting_dialog_positive_button, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Intent intent = new Intent(Settings.ACTION_SETTINGS);
+                ctx.startActivity( intent );
+            }
+        });
+        builder.setNegativeButton(R.string.setting_dialog_negative_button, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.create().show();
+    }
+
+
     // === BLUETOOTH
 
     @RequiresPermission(Manifest.permission.BLUETOOTH)
@@ -115,6 +142,27 @@ public class CommonUtils {
         return ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
     }
 
+    public static void showBluetoothSettingDialog(final Context ctx) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+        builder.setTitle(R.string.bluetooth_dialog_title);
+        builder.setMessage(R.string.bluetooth_dialog_message);
+        builder.setIcon(android.R.drawable.ic_menu_help);
+        builder.setPositiveButton(R.string.bluetooth_dialog_positive_button, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                ctx.startActivity( intent );
+            }
+        });
+        builder.setNegativeButton(R.string.bluetooth_dialog_negative_button, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.create().show();
+    }
+
     // === LOCATION
 
     public static boolean haveLocationEnabled(Context ctx) {
@@ -125,6 +173,27 @@ public class CommonUtils {
 
     public static boolean haveLocationSupport(Context ctx){
         return ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
+    }
+
+    public static void showLocationSettingDialog(final Context ctx) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+        builder.setTitle(R.string.location_dialog_title);
+        builder.setMessage(R.string.location_dialog_message);
+        builder.setIcon(android.R.drawable.ic_menu_help);
+        builder.setPositiveButton(R.string.location_dialog_positive_button, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                ctx.startActivity( intent );
+            }
+        });
+        builder.setNegativeButton(R.string.location_dialog_negative_button, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.create().show();
     }
 
     // === PHONE
