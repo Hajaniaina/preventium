@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorPrimary">@color/md_blue_300</color>
+    <color name="colorPrimaryDark">@color/md_blue_500</color>
     <color name="colorAccent">#FF4081</color>
+
+    <color name="permission_granted">#2DF2A4</color>
+    <color name="permission_denied">#F22D24</color>
+    <color name="permission_unknown">#F2AD24</color>
+
+    <color name="state_enable">@color/permission_granted</color>
+    <color name="state_disable">@color/permission_denied</color>
+    <color name="state_unknow">@color/permission_unknown</color>
 </resources>

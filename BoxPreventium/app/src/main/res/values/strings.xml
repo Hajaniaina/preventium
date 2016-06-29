@@ -1,3 +1,52 @@
 <resources>
     <string name="app_name">BoxPreventium</string>
+    <string name="initialisation">Initialisation...</string>
+
+    <!-- PERMISSIONS -->
+
+    <string name="ask_for_all_permission_button">Request all</string>
+    <string name="ask_for_phone_permission_button">Phone</string>
+    <string name="ask_for_sms_permission_button">SMS</string>
+    <string name="ask_for_storage_permission_button">Storage</string>
+    <string name="ask_for_location_permission_button">Location</string>
+
+    <string name="phone_permission_denied_dialog_title">Phone permission request</string>
+    <string name="phone_permission_denied_dialog_feedback">Access to phone state will not be available until you accept the permission request.</string>
+    <string name="sms_permission_denied_dialog_title">SMS permission request</string>
+    <string name="sms_permission_denied_dialog_feedback">Sending SMS messages will not be available until you accept the permission request.</string>
+    <string name="storage_permission_denied_dialog_title">Storage permission request</string>
+    <string name="storage_permission_denied_dialog_feedback">Access to storage will not be available until you accept the permission request.</string>
+    <string name="location_permission_denied_dialog_title">Location permission request</string>
+    <string name="location_permission_denied_dialog_feedback">Access to precise location will not be available until you accept the permission request.</string>
+
+    <string name="permission_granted_feedback">GRANTED</string>
+    <string name="permission_denied_feedback">DENIED</string>
+    <string name="permission_permanently_denied_feedback">PERMANENTLY DENIED</string>
+    <string name="permission_unknown_feedback">UNKNOWN</string>
+
+    <string name="all_permissions_denied_feedback">All those permissions are needed for doing some magic.</string>
+    <string name="permission_rationale_title">We need this permission</string>
+    <string name="permission_rationale_message">This permission is needed for doing some fancy stuff so please, allow it!</string>
+    <string name="permission_rationale_settings_button_text">SETTINGS</string>
+
+    <!-- COMPATIBILITY -->
+    <string name="bluetooth_not_supported">The \"Bluetooth\" is not supported by the device.</string>
+    <string name="bluetooth_low_energy_not_supported">The \"Bluetooth Low Energy\" is not supported by the device.</string>
+    <string name="location_not_supported">The \"Location service\" is not supported by the device.</string>
+
+    <!-- ENABLED -->
+    <string name="ask_for_location_enable_button">Location</string>
+    <string name="ask_for_bluetooth_enable_button">Bluetooth</string>
+    <string name="state_enable_feedback">ENABLE</string>
+    <string name="state_disable_feedback">DISABLE</string>
+    <string name="state_unknown_feedback">UNKNOWN</string>
+
+
+    <!--<string name="search_and_select_device">Search and select device</string>-->
+    <!--<string name="start_scan">Start scan</string>-->
+    <!--<string name="stop_scan">Stop scan</string>-->
+    <!--<string name="unknown_device">Unknown device</string>-->
+    <!--<string name="bluetooth_disable">The \"Bluetooth\" is disable!</string>-->
+    <!--<string name="location_disable">The \"Location service\" is disable!</string>-->
+    <!--<string name="enable">ENABLE</string>-->
 </resources>

@@ -8,4 +8,36 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="PermissionButton">
+        <item name="android:background">@color/colorPrimaryDark</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">@dimen/button_text_size</item>
+        <item name="android:layout_marginTop">@dimen/permission_button_margin_vertical</item>
+        <item name="android:layout_marginBottom">@dimen/permission_button_margin_vertical</item>
+    </style>
+
+    <style name="PermissionUnknow">
+        <item name="android:background">@color/md_grey_50</item>
+        <item name="android:textColor">@color/md_grey_500</item>
+        <item name="android:textSize">@dimen/button_text_size</item>
+        <item name="android:layout_marginTop">@dimen/permission_button_margin_vertical</item>
+        <item name="android:layout_marginBottom">@dimen/permission_button_margin_vertical</item>
+    </style>
+
+    <style name="PermissionGranted">
+        <item name="android:background">@color/md_green_50</item>
+        <item name="android:textColor">@color/md_green_900</item>
+        <item name="android:textSize">@dimen/button_text_size</item>
+        <item name="android:layout_marginTop">@dimen/permission_button_margin_vertical</item>
+        <item name="android:layout_marginBottom">@dimen/permission_button_margin_vertical</item>
+    </style>
+
+    <style name="PermissionDenied">
+        <item name="android:background">@color/md_red_50</item>
+        <item name="android:textColor">@color/md_red_900</item>
+        <item name="android:textSize">@dimen/button_text_size</item>
+        <item name="android:layout_marginTop">@dimen/permission_button_margin_vertical</item>
+        <item name="android:layout_marginBottom">@dimen/permission_button_margin_vertical</item>
+    </style>
+
 </resources>
