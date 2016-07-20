@@ -44,7 +44,6 @@
     <string name="dialog_features_settings">Features</string>
     <string name="dialog_features_message">This application needed \"Bluetooth adapter\" and \"Location service\" swith on to running correcty. Do you want to go to settings menu?</string>
 
-
     <!-- COMMON UTILS -->
     <string name="setting_dialog_positive_button">SETTINGS</string>
     <string name="setting_dialog_negative_button">Cancel</string>
@@ -59,6 +58,23 @@
     <string name="location_dialog_positive_button">SETTINGS</string>
     <string name="location_dialog_negative_button">Cancel</string>
 
+    <!-- INITIALIZE -->
+    <string name="checking_permissions">Checking permissions</string>
+    <string name="checking_bluetooth_support">Checking bluetooth support</string>
+    <string name="checking_bluetooth_le_support">Checking bluetooth LE support</string>
+    <string name="checking_location_support">Checking location service support</string>
+    <string name="checking_bluetooth_enabled">Bluetooth adapter switch ON</string>
+    <string name="checking_location_enabled">Location service switch ON</string>
+    <string name="checking_internet_enabled">Checking internet connection</string>
+    <string name="checking_config_ready">Checking serveur configuration</string>
+
+    <!-- MODULE SCAN -->
+    <string name="start_scan">Start</string>
+    <string name="stop_scan">Stop</string>
+    <string name="quit_scan">Quit</string>
+    <string name="apply_scan">Apply</string>
+    <string name="bluetooth_selected_inf">You must select a box Preventium !</string>
+    <string name="bluetooth_selected_sup">You can not select more than two box Preventium</string>
 
 
     <!--<string name="search_and_select_device">Search and select device</string>-->

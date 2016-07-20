@@ -13,6 +13,7 @@ buildscript {
 }
 
 allprojects {
+    buildDir = "D:/tmp/android_studio/${rootProject.name}/${project.name}"
     repositories {
         jcenter()
     }

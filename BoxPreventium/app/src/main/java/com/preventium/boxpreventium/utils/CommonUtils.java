@@ -1,4 +1,4 @@
-package com.preventium.boxpreventium;
+package com.preventium.boxpreventium.utils;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -9,19 +9,64 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
+import android.media.MediaScannerConnection;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.Environment;
 import android.provider.Settings;
 import android.support.annotation.RequiresPermission;
+import android.support.v4.content.ContextCompat;
+
+import com.preventium.boxpreventium.R;
+
+import org.jetbrains.annotations.Contract;
+
+import java.io.File;
 
 /**
  * Created by Franck on 29/06/2016.
  */
 
 public class CommonUtils {
+
+    // === PERMISSIONS LIST
+
+    private static String[] listOfPermissions() {
+        return concatenateStringArrays(
+                listOfNormalPermissions(),
+                listOfDangerousPermissions() );
+    }
+
+    @Contract(pure = true)
+    private static String[] listOfNormalPermissions() {
+        String ret[] = {Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.INTERNET,
+                Manifest.permission.ACCESS_NETWORK_STATE};
+        return ret;
+    }
+
+    @Contract(pure = true)
+    private static String[] listOfDangerousPermissions() {
+        String ret[] = {Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.SEND_SMS,
+                Manifest.permission.READ_PHONE_STATE};
+        return ret;
+    }
+
+    public static boolean havePermissionsReady(Context ctx) {
+        for( String permission : listOfPermissions() ) {
+            if( !( PackageManager.PERMISSION_GRANTED
+                    == ContextCompat.checkSelfPermission( ctx, permission ) ) ) return false;
+        }
+        return true;
+    }
+
+    // === INTERNET
 
     public static boolean haveInternetConnected(Context ctx){
         ConnectivityManager cm = (ConnectivityManager)ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -70,9 +115,8 @@ public class CommonUtils {
     // === WIFI
 
     public static boolean haveWifiEnabled(Context ctx) {
-        WifiManager wm = (WifiManager)ctx.getSystemService(Context.WIFI_SERVICE);
-        if( wm != null ) return wm.isWifiEnabled();
-        return false;
+        WifiManager wm = (WifiManager) ctx.getSystemService(Context.WIFI_SERVICE);
+        return wm != null && wm.isWifiEnabled();
     }
 
     public static boolean haveWifiSupport(Context ctx){
@@ -134,6 +178,19 @@ public class CommonUtils {
         return false;
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH)
+    public static boolean setBluetoothEnabled( boolean enabled ) {
+        boolean ret = false;
+        BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
+        if( ba != null ) {
+            if (enabled)
+                ret = ba.enable();
+            else
+                ret = ba.disable();
+        }
+        return ret;
+    }
+
     public static boolean haveBluetoothSupport(Context ctx){
         return ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
     }
@@ -166,9 +223,8 @@ public class CommonUtils {
     // === LOCATION
 
     public static boolean haveLocationEnabled(Context ctx) {
-        LocationManager lm = (LocationManager)ctx.getSystemService(Context.LOCATION_SERVICE);
-        if( lm != null ) return lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        return false;
+        LocationManager lm = (LocationManager) ctx.getSystemService(Context.LOCATION_SERVICE);
+        return lm != null && lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
     }
 
     public static boolean haveLocationSupport(Context ctx){
@@ -239,5 +295,47 @@ public class CommonUtils {
         } catch (PackageManager.NameNotFoundException ex) {}
         return "";
     }
+
+    // Others
+
+    public static String dataToHex( byte[] data ){
+        String ret = "";
+        for (int i = 0; i < data.length; i++) {
+            if( !ret.isEmpty() ) ret += " ";
+            ret += "0x" + Integer.toString((data[i] & 0xff) + 0x100, 16).substring(1);
+        }
+        return ret;
+    }
+
+    public static String dataToString( byte[] data ){
+        String ret = "";
+        for (int i = 0; i < data.length; i++)
+            ret += (char)data[i];
+        return ret;
+    }
+
+    public static String dataToDecimal( byte[] data ){
+        String ret = "";
+        for (int i = 0; i < data.length; i++) {
+            if( !ret.isEmpty() ) ret += " ";
+            ret += Integer.toString((data[i] & 0xff) + 0x100, 10).substring(1);
+        }
+        return ret;
+    }
+
+    public static byte[] concatenateByteArrays(byte[] a, byte[] b) {
+        byte[] result = new byte[a.length + b.length];
+        System.arraycopy(a, 0, result, 0, a.length);
+        System.arraycopy(b, 0, result, a.length, b.length);
+        return result;
+    }
+
+    public static String[] concatenateStringArrays(String[] a, String[] b) {
+        String[] result = new String[a.length + b.length];
+        System.arraycopy(a, 0, result, 0, a.length);
+        System.arraycopy(b, 0, result, a.length, b.length);
+        return result;
+    }
+
 }
 

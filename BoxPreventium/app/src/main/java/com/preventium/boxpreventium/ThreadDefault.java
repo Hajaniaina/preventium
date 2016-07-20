@@ -59,7 +59,7 @@ public class ThreadDefault extends Thread{
         interrupt();
     }
 
-    private void runPause() {
+    public void runPause() {
         if( isThreadPausing.get() == true ) {
             if( notify != null ) notify.onThreadStatusChanged( ThreadStatus.PAUSE );
             while ( isThreadPausing.get() == true ) {

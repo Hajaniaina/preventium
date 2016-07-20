@@ -1,15 +1,12 @@
 package com.preventium.boxpreventium;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
+
+import com.preventium.boxpreventium.utils.CommonUtils;
 
 /**
  * Created by Franck on 29/06/2016.
