@@ -1,9 +1,9 @@
 package com.preventium.boxpreventium.module.trame;
 
-import com.preventium.boxpreventium.utils.CommonUtils;
+import com.preventium.boxpreventium.utils.BytesUtils;
 
 /**
- * Created by Franck on 20/07/2016.
+ * Created by Franck on 08/08/2016.
  */
 
 public class SensorShockAccelerometerInfo {
@@ -28,5 +28,5 @@ public class SensorShockAccelerometerInfo {
     public int value() { return A2; }
     public String toString() {
         return String.format("Sensor shock accelerometer { value: %d, data: %d }"
-                , A2, CommonUtils.dataToHex(data)); }
+                , A2, BytesUtils.dataToHex(data)); }
 }

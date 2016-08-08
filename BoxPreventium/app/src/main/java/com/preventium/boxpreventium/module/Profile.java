@@ -3,7 +3,7 @@ package com.preventium.boxpreventium.module;
 import java.util.UUID;
 
 /**
- * Created by Franck on 20/07/2016.
+ * Created by Franck on 08/08/2016.
  */
 
 public class Profile {

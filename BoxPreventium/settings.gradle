@@ -1,1 +1,1 @@
-include ':app', ':permissions', ':ftp', ':bluetooth'
+include ':app'

@@ -1,9 +1,9 @@
 package com.preventium.boxpreventium.module.trame;
 
-import com.preventium.boxpreventium.utils.CommonUtils;
+import com.preventium.boxpreventium.utils.BytesUtils;
 
 /**
- * Created by Franck on 20/07/2016.
+ * Created by Franck on 08/08/2016.
  */
 
 public class SensorSmoothAccelerometerInfo {
@@ -28,5 +28,5 @@ public class SensorSmoothAccelerometerInfo {
     public int value() { return A1; }
     public String toString() {
         return String.format("Sensor smooth accelerometer { value: %d, data: %d }"
-                , A1, CommonUtils.dataToHex(data)); }
+                , A1, BytesUtils.dataToHex(data)); }
 }

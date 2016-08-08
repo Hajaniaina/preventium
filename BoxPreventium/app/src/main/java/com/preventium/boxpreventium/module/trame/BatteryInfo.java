@@ -1,9 +1,9 @@
 package com.preventium.boxpreventium.module.trame;
 
-import com.preventium.boxpreventium.utils.CommonUtils;
+import com.preventium.boxpreventium.utils.BytesUtils;
 
 /**
- * Created by Franck on 20/07/2016.
+ * Created by Franck on 08/08/2016.
  */
 
 public class BatteryInfo {
@@ -33,6 +33,6 @@ public class BatteryInfo {
     public boolean full() { return F; }
     public String toString() {
         return String.format("Battery { battery level: %d%, engine running: %s, "
-                +"battery charging: %s, full battery: %s, data: %s }",
-                bat_level, S, C, F, CommonUtils.dataToHex(data) ); }
+                        +"battery charging: %s, full battery: %s, data: %s }",
+                bat_level, S, C, F, BytesUtils.dataToHex(data) ); }
 }

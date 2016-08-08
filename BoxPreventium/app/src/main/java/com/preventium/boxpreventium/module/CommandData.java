@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by Franck on 20/07/2016.
+ * Created by Franck on 08/08/2016.
  */
 
 public class CommandData {
@@ -25,7 +25,8 @@ public class CommandData {
         public int getValue() {
             return value;
         }
-        @NonNull public String toString() {
+        @NonNull
+        public String toString() {
             switch ( valueOf(value) ) {
                 case START_MEASURING    :
                     return "Start measuring (streaming) {'s',0x73}";

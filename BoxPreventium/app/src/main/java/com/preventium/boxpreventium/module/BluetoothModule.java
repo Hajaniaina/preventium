@@ -4,9 +4,9 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Context;
 import android.util.Log;
 
-import com.ikalogic.franck.bluetooth.BluetoothDev;
-import com.ikalogic.franck.bluetooth.device.ActionCallback;
-import com.ikalogic.franck.bluetooth.device.NotifyListener;
+import com.preventium.boxpreventium.bluetooth.BluetoothDev;
+import com.preventium.boxpreventium.bluetooth.device.ActionCallback;
+import com.preventium.boxpreventium.bluetooth.device.NotifyListener;
 import com.preventium.boxpreventium.module.trame.BatteryInfo;
 import com.preventium.boxpreventium.module.trame.SensorShockAccelerometerInfo;
 import com.preventium.boxpreventium.module.trame.SensorSmoothAccelerometerInfo;
@@ -14,7 +14,7 @@ import com.preventium.boxpreventium.module.trame.SensorSmoothAccelerometerInfo;
 import java.util.Arrays;
 
 /**
- * Created by Franck on 20/07/2016.
+ * Created by Franck on 08/08/2016.
  */
 
 public class BluetoothModule extends BluetoothDev {
@@ -100,3 +100,4 @@ public class BluetoothModule extends BluetoothDev {
         void onBatteryInfoNotify(BatteryInfo info);
     }
 }
+

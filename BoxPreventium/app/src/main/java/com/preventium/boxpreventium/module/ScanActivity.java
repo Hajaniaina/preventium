@@ -2,7 +2,6 @@ package com.preventium.boxpreventium.module;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -13,20 +12,20 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.ikalogic.franck.bluetooth.BluetoothListAdapter;
-import com.ikalogic.franck.bluetooth.BluetoothScanner;
-import com.ikalogic.franck.bluetooth.scanner.ScannerCallback;
-import com.ikalogic.franck.bluetooth.scanner.SnackbarOnBluetoothAdapter;
 import com.preventium.boxpreventium.R;
+import com.preventium.boxpreventium.bluetooth.BluetoothListAdapter;
+import com.preventium.boxpreventium.bluetooth.BluetoothScanner;
+import com.preventium.boxpreventium.bluetooth.scanner.ScannerCallback;
+import com.preventium.boxpreventium.bluetooth.scanner.SnackbarOnBluetoothAdapter;
 
 import java.util.ArrayList;
 
 /**
- * Created by Franck on 20/07/2016.
+ * Created by Franck on 08/08/2016.
  */
 
 public class ScanActivity extends Activity
-    implements View.OnClickListener, AdapterView.OnItemClickListener, ScannerCallback {
+        implements View.OnClickListener, AdapterView.OnItemClickListener, ScannerCallback {
 
     private static final String TAG = "ScanActivity";
 
@@ -40,7 +39,7 @@ public class ScanActivity extends Activity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.scan);
+        setContentView(R.layout.scan_activity);
 
         scanner = new BluetoothScanner(this,this);
         buttonStart = (Button)findViewById(R.id.btnStart);
@@ -150,13 +149,13 @@ public class ScanActivity extends Activity
     public void onScanResult(final BluetoothDevice device, final int rssi) {
         //Log.d(TAG,"Finding device: " + device.getName() + " rssi: " + rssi);
         //if( device.getName().startsWith("PREVENTIUM") ) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    bluetoothlistAdapter.addDevice( device, rssi );
-                    bluetoothlistAdapter.notifyDataSetChanged();
-                }
-            });
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                bluetoothlistAdapter.addDevice( device, rssi );
+                bluetoothlistAdapter.notifyDataSetChanged();
+            }
+        });
         //}
     }
 
@@ -182,3 +181,4 @@ public class ScanActivity extends Activity
     }
 
 }
+

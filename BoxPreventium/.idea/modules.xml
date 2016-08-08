@@ -4,9 +4,6 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/BoxPreventium.iml" filepath="$PROJECT_DIR$/BoxPreventium.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/bluetooth/bluetooth.iml" filepath="$PROJECT_DIR$/bluetooth/bluetooth.iml" />
-      <module fileurl="file://$PROJECT_DIR$/ftp/ftp.iml" filepath="$PROJECT_DIR$/ftp/ftp.iml" />
-      <module fileurl="file://$PROJECT_DIR$/permissions/permissions.iml" filepath="$PROJECT_DIR$/permissions/permissions.iml" />
     </modules>
   </component>
 </project>
