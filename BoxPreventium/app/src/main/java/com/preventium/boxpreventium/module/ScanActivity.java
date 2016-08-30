@@ -62,12 +62,12 @@ public class ScanActivity extends Activity
         listview.setOnItemClickListener( this );
 
         if( !BluetoothScanner.hasBluetooth() ) {
-            Toast.makeText(this, com.ikalogic.franck.bluetooth.R.string.bluetooth_not_supported, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.bluetooth_not_supported, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
         if( !BluetoothScanner.hasBluetoothLE(ScanActivity.this) ) {
-            Toast.makeText(this, com.ikalogic.franck.bluetooth.R.string.bluetooth_low_energy_not_supported, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.bluetooth_low_energy_not_supported, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -162,21 +162,21 @@ public class ScanActivity extends Activity
     @Override
     public void onBluetoothAdapterIsDisable() {
         ViewGroup rootView = (ViewGroup)findViewById(android.R.id.content);
-        SnackbarOnBluetoothAdapter snackbar = SnackbarOnBluetoothAdapter.Builder.with(rootView, com.ikalogic.franck.bluetooth.R.string.bluetooth_disable).withEnableBluetoothButton(com.ikalogic.franck.bluetooth.R.string.enable).build();
+        SnackbarOnBluetoothAdapter snackbar = SnackbarOnBluetoothAdapter.Builder.with(rootView, R.string.bluetooth_disable).withEnableBluetoothButton(R.string.enable).build();
         snackbar.showSnackbar();
     }
 
     @Override
     public void onBluetoothAdapterIsNull() {
         ViewGroup rootView = (ViewGroup)findViewById(android.R.id.content);
-        SnackbarOnBluetoothAdapter snackbar = SnackbarOnBluetoothAdapter.Builder.with(rootView, com.ikalogic.franck.bluetooth.R.string.bluetooth_not_supported).build();
+        SnackbarOnBluetoothAdapter snackbar = SnackbarOnBluetoothAdapter.Builder.with(rootView, R.string.bluetooth_not_supported).build();
         snackbar.showSnackbar();
     }
 
     @Override
     public void onLocationServiceIsDisable() {
         ViewGroup rootView = (ViewGroup)findViewById(android.R.id.content);
-        SnackbarOnBluetoothAdapter snackbar = SnackbarOnBluetoothAdapter.Builder.with(rootView, com.ikalogic.franck.bluetooth.R.string.location_disable).withEnableLocationButton(com.ikalogic.franck.bluetooth.R.string.enable).build();
+        SnackbarOnBluetoothAdapter snackbar = SnackbarOnBluetoothAdapter.Builder.with(rootView, R.string.location_disable).withEnableLocationButton(R.string.enable).build();
         snackbar.showSnackbar();
     }
 

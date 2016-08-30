@@ -100,7 +100,7 @@ public class BluetoothListAdapter extends BaseAdapter {
         ViewHolder viewHolder;
         // General ListView optimization code.
         if (view == null) {
-            view = mInflater.inflate(R.layout.bluetooth_item, null);
+            view = mInflater.inflate(R.layout.scan_activity_item_model, null);
             viewHolder = new ViewHolder();
             viewHolder.deviceName = (TextView) view.findViewById(R.id.name);
             viewHolder.deviceAddress = (TextView) view.findViewById(R.id.address);

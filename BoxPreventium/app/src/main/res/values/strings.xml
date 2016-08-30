@@ -12,7 +12,11 @@
     <string name="location_disable">The \"Location service\" is disable!</string>
     <string name="enable">ENABLE</string>
 
-    <string name="quit_scan">Quitter</string>
-    <string name="apply_scan">Appliquer</string>
+    <!-- MODULE SCAN -->
+    <string name="quit_scan">Quit</string>
+    <string name="apply_scan">Apply</string>
+    <string name="bluetooth_selected_inf">You must select a box Preventium !</string>
+    <string name="bluetooth_selected_sup">You can not select more than two box Preventium</string>
+    <string name="next">Next</string>
 
 </resources>

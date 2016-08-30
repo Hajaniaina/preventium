@@ -93,18 +93,18 @@ public class ScanActivity extends Activity implements ScannerCallback {
     @Override
     public void onBluetoothAdapterIsDisable() {
         ViewGroup rootView = (ViewGroup)findViewById(android.R.id.content);
-        SnackbarOnBluetoothAdapter.Builder.with(rootView, com.ikalogic.franck.bluetooth.R.string.bluetooth_disable).withEnableBluetoothButton(com.ikalogic.franck.bluetooth.R.string.enable).build().showSnackbar();
+        SnackbarOnBluetoothAdapter.Builder.with(rootView, R.string.bluetooth_disable).withEnableBluetoothButton(R.string.enable).build().showSnackbar();
     }
 
     @Override
     public void onBluetoothAdapterIsNull() {
         ViewGroup rootView = (ViewGroup)findViewById(android.R.id.content);
-        SnackbarOnBluetoothAdapter.Builder.with(rootView, com.ikalogic.franck.bluetooth.R.string.bluetooth_not_supported).build().showSnackbar();
+        SnackbarOnBluetoothAdapter.Builder.with(rootView, R.string.bluetooth_not_supported).build().showSnackbar();
     }
 
     @Override
     public void onLocationServiceIsDisable() {
         ViewGroup rootView = (ViewGroup)findViewById(android.R.id.content);
-        SnackbarOnBluetoothAdapter.Builder.with(rootView, com.ikalogic.franck.bluetooth.R.string.location_disable).withEnableLocationButton(com.ikalogic.franck.bluetooth.R.string.enable).build().showSnackbar();
+        SnackbarOnBluetoothAdapter.Builder.with(rootView, R.string.location_disable).withEnableLocationButton(R.string.enable).build().showSnackbar();
     }
 }
