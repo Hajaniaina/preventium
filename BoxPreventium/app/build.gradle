@@ -22,4 +22,6 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:24.0.0'
+    compile 'com.android.support:design:24.0.0' // Snackbar, ...
+    compile 'commons-net:commons-net:3.5'       // FTP
 }
