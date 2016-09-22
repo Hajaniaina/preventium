@@ -85,7 +85,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         progress.show();
 
         scoreView = new ScoreViewManager(this);
+        scoreView.hide(true);
+
         speedView = new SpeedViewManager(this);
+        speedView.hide(true);
+
         markerManager = new MarkerManager();
 
         drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
