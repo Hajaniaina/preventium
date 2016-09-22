@@ -1,17 +1,259 @@
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<fragment
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:map="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/activity_main"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
+    xmlns:plainpie="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/map"
+    android:name="com.google.android.gms.maps.SupportMapFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.preventium.boxpreventium.MainActivity">
+    map:cameraTilt="90"
+    map:mapType="normal"
+    map:uiCompass="false">
 
-    <TextView
+    <!-- NOTE WIDGETS -->
+
+    <LinearLayout
+        android:id="@+id/note_layout"
+        android:orientation="vertical"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|left"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp">
+
+        <ImageView
+            android:id="@+id/corner_note_view"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:elevation="4dp"
+            android:src="@drawable/ic_corner_note"
+            android:backgroundTint="#ffffff"
+            android:background="@android:drawable/dialog_holo_light_frame"/>
+
+        <ImageView
+            android:id="@+id/brake_note_view"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:elevation="4dp"
+            android:src="@drawable/ic_brake_note"
+            android:backgroundTint="#ffffff"
+            android:background="@android:drawable/dialog_holo_light_frame"/>
+
+        <ImageView
+            android:id="@+id/acc_note_view"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:elevation="4dp"
+            android:src="@drawable/ic_acc_note"
+            android:backgroundTint="#ffffff"
+            android:background="@android:drawable/dialog_holo_light_frame"/>
+
+        <ImageView
+            android:id="@+id/avg_note_view"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:elevation="4dp"
+            android:src="@drawable/ic_avg_note"
+            android:backgroundTint="#ffffff"
+            android:background="@android:drawable/dialog_holo_light_frame"/>
+
+        <TextView
+            android:id="@+id/driving_time_text"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:height="80dp"
+            android:gravity="center"
+            android:elevation="4dp"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:backgroundTint="@color/colorAppGreen"
+            android:textColor="#ffffff"
+            android:textSize="28dp"
+            android:textStyle="bold"
+            android:text="0:00" />
+
+    </LinearLayout>
+
+    <!-- SPEED INFO/LIMIT WIDGETS -->
+
+    <LinearLayout
+        android:id="@+id/speed_info_layout"
+        android:orientation="vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!" />
-</RelativeLayout>
+        android:layout_gravity="top|left"
+        android:layout_marginTop="22dp"
+        android:layout_marginLeft="110dp">
+
+        <az.plainpie.PieView
+            android:id="@+id/pie_view1"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            plainpie:inner_pie_padding="10"
+            plainpie:percentage="100"
+            plainpie:percentage_size="50"
+            plainpie:inner_text_visibility="true" />
+
+        <az.plainpie.PieView
+            android:id="@+id/pie_view2"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:layout_marginTop="30dp"
+            plainpie:inner_pie_padding="10"
+            plainpie:percentage="100"
+            plainpie:percentage_size="50"
+            plainpie:inner_text_visibility="true" />
+
+        <az.plainpie.PieView
+            android:id="@+id/pie_view3"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:layout_marginTop="30dp"
+            plainpie:inner_pie_padding="10"
+            plainpie:percentage="100"
+            plainpie:percentage_size="50"
+            plainpie:inner_text_visibility="true" />
+
+    </LinearLayout>
+
+    <!-- BUTTONS -->
+
+    <LinearLayout
+        android:id="@+id/buttons_layout"
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp">
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/button_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:src="@drawable/ic_info_outline"
+            fab:fab_colorNormal="@color/colorAppBlue"
+            fab:fab_colorPressed="#4fc3f7"
+            fab:fab_shadowColor="#444"/>
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/button_call"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:src="@drawable/ic_action_phone"
+            fab:fab_colorNormal="@color/colorAppGreen"
+            fab:fab_colorPressed="#b2ff59"
+            fab:fab_shadowColor="#444"/>
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/button_formation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:src="@drawable/ic_social_school"
+            fab:fab_colorNormal="@color/colorAppYellow"
+            fab:fab_colorPressed="#fff176"
+            fab:fab_shadowColor="#444"/>
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/button_settings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:src="@drawable/ic_action_settings"
+            fab:fab_colorNormal="@color/colorAppOrange"
+            fab:fab_colorPressed="#ffb74d"
+            fab:fab_shadowColor="#444"/>
+
+    </LinearLayout>
+
+    <!-- MENUS -->
+
+    <com.github.clans.fab.FloatingActionMenu
+        android:id="@+id/opt_menu"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:paddingBottom="105dp"
+        android:paddingRight="10dp"
+        fab:menu_labels_ellipsize="end"
+        fab:menu_labels_singleLine="true"
+        fab:menu_animationDelayPerItem="0"
+        fab:menu_labels_position="left"
+        fab:menu_openDirection="up"
+        fab:menu_icon="@drawable/fab_add"
+        fab:menu_colorNormal="@color/colorAppViolet"
+        fab:menu_colorPressed="#e040fb"
+        fab:menu_shadowColor="#444">
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/menu_button1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_menu"
+            fab:fab_colorNormal="@color/colorAppViolet"
+            fab:fab_colorPressed="#e040fb"
+            fab:fab_shadowColor="#444"
+            fab:fab_label="" />
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/menu_button2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_layers"
+            fab:fab_colorNormal="@color/colorAppViolet"
+            fab:fab_colorPressed="#e040fb"
+            fab:fab_shadowColor="#444"
+            fab:fab_label="" />
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/menu_button3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_menu"
+            fab:fab_colorNormal="@color/colorAppViolet"
+            fab:fab_colorPressed="#e040fb"
+            fab:fab_shadowColor="#444"
+            fab:fab_label="" />
+
+    </com.github.clans.fab.FloatingActionMenu>
+
+    <LinearLayout
+        android:id="@+id/box_layout"
+        android:orientation="vertical"
+        android:layout_width="68dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="20dp"
+        android:layout_marginRight="9dp">
+
+        <TextView
+            android:id="@+id/box_num_connected"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:height="68dp"
+            android:gravity="center"
+            android:elevation="4dp"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:backgroundTint="@color/colorAppRed"
+            android:textColor="#ffffff"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:text="0" />
+
+    </LinearLayout>
+
+</fragment>
+
+

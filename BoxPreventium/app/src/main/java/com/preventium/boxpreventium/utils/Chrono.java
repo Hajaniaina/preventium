@@ -6,7 +6,7 @@ package com.preventium.boxpreventium.utils;
 
 public final class Chrono{
 
-    private long begin          = 0;
+    private long begin          =0;
     private long end            =0;
     private long beginPause     =0;
     private long endPause       =0;

@@ -13,9 +13,10 @@ buildscript {
 }
 
 allprojects {
-    buildDir = "D:/tmp/android_studio/${rootProject.name}/${project.name}"
+    buildDir = "E:/tmp/android_studio/${rootProject.name}/${project.name}"
     repositories {
         jcenter()
+        maven { url "https://jitpack.io" }
     }
 }
 

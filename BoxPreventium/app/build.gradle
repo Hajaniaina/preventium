@@ -2,14 +2,13 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "24.0.1"
+    buildToolsVersion "24.0.2"
     defaultConfig {
         applicationId "com.preventium.boxpreventium"
         minSdkVersion 22
         targetSdkVersion 24
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -21,7 +20,14 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:24.0.0'
-    compile 'com.android.support:design:24.0.0' // Snackbar, ...
+    compile 'com.android.support:appcompat-v7:24.2.1'
+    compile 'com.android.support:design:24.2.1'
     compile 'commons-net:commons-net:3.5'       // FTP
+    compile 'com.google.android.gms:play-services:9.6.0'
+    compile 'com.android.support:support-v4:24.2.1'
+    compile 'com.github.clans:fab:1.6.4'
+    compile 'com.guardanis:applock:1.0.7'
+    compile 'com.pavelsikun:materialdesignicons:1.0'
+    compile 'com.github.zurche:plain-pie:v0.1.1'
+    compile 'com.github.PhilJay:MPAndroidChart:v3.0.0-beta1'
 }
