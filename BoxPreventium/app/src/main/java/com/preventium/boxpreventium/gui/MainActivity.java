@@ -34,6 +34,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.guardanis.applock.CreateLockDialogBuilder;
 import com.guardanis.applock.UnlockDialogBuilder;
 import com.guardanis.applock.locking.ActionLockingHelper;
+import com.preventium.boxpreventium.manager.Manager;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -74,6 +75,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         // setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
+        Manager m = new Manager(this,null);
+        m.start();
 
         progress = new ProgressDialog(this);
         progress.setMessage(getString(R.string.loading_string));

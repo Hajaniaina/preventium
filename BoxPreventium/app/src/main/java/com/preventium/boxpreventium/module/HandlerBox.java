@@ -28,7 +28,7 @@ public class HandlerBox extends ThreadDefault
         void onScanState(boolean scanning);
         //void onDeviceState( String device_mac, boolean connected );
         void onNumberOfBox(int nb);
-        void onForceChanged(FORCE_t type, LEVEL_t level, double mG);
+        void onForceChanged(double mG);
     }
 
     private Context context = null;
@@ -43,8 +43,6 @@ public class HandlerBox extends ThreadDefault
     private boolean calibrate_1 = false;
     private boolean calibrate_2 = false;
 
-    FORCE_t last_force_t = FORCE_t.UNKNOW, curr_force_t = FORCE_t.UNKNOW;
-    LEVEL_t last_level_t = LEVEL_t.LEVEL_UNKNOW,  curr_level_t = LEVEL_t.LEVEL_UNKNOW;
     double last_force_mG = 0.0, curr_force_mG = 0.0;
 
     public HandlerBox(Context ctx, NotifyListener listener) {
@@ -104,14 +102,12 @@ public class HandlerBox extends ThreadDefault
         chrono.start();
         discoverBox.scan();
 
-        last_force_t = curr_force_t = FORCE_t.UNKNOW;
-        last_level_t = curr_level_t = LEVEL_t.LEVEL_UNKNOW;
         last_force_mG = curr_force_mG = 0.0;
 
         int nb = mBoxList.size();
         if( listener != null ) {
             listener.onNumberOfBox( nb );
-            listener.onForceChanged( last_force_t, last_level_t, last_force_mG );
+            listener.onForceChanged( last_force_mG );
         }
 
         while( isRunning() ) {
@@ -122,10 +118,6 @@ public class HandlerBox extends ThreadDefault
             if( scanning ) { // If scanning is in progress.
                 chrono.start(); // Restart chrono who indicate the elapsed time since the last scan
             }
-
-            curr_force_t = FORCE_t.UNKNOW;
-            curr_level_t = LEVEL_t.LEVEL_UNKNOW;
-            curr_force_mG = 0.0;
 
             for( int i = mBoxList.size()-1; i >= 0; i-- ) {
 
@@ -142,21 +134,16 @@ public class HandlerBox extends ThreadDefault
 
                         if(  interval(0.0,smooth.value()) >= interval(0.0,curr_force_mG) ) {
                             curr_force_mG = smooth.value();
-                            curr_force_t = ( curr_force_mG < 0.0 ) ? FORCE_t.TURN_LEFT : FORCE_t.TURN_RIGHT;
-                            curr_level_t = LEVEL_t.LEVEL_UNKNOW;
                         }
                     }
                 }
             }
 
-            if( last_force_t != curr_force_t
-                    || last_level_t != curr_level_t || last_force_mG != curr_force_mG ) {
-                last_force_t = curr_force_t;
-                last_level_t = curr_level_t;
+            if( last_force_mG != curr_force_mG ) {
                 last_force_mG = curr_force_mG;
                 if( listener != null )
-                    listener.onForceChanged( curr_force_t, curr_level_t, curr_force_mG );
-                if( DEBUG ) Log.d(TAG,"Force changed: " + last_force_t + ", " + last_level_t + ", " + last_force_mG + " mG.");
+                    listener.onForceChanged( curr_force_mG );
+                if( DEBUG ) Log.d(TAG,"Force changed: " + last_force_mG + " mG.");
 
             }
 

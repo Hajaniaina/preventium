@@ -94,9 +94,53 @@ public class ReaderEPCFile {
         return ret;
     }
 
+    public ForceSeuil getForceSeuil(double XmG, double YmG) {
+        ForceSeuil ret = null;
+        if( interval(0.0,XmG) >= interval(0.0,YmG) ) {
+            if( XmG >= 0.0 ) {
+                for( int s = 0; s < 5; s++ ) {
+                    if( XmG >= seuil[s].mG_low && XmG <= seuil[s].mG_high ) {
+                        ret = seuil[s];
+                        break;
+                    }
+                }
+            } else {
+                for( int s = 5; s < 10; s++ ) {
+                    if( -XmG >= seuil[s].mG_low && -XmG <= seuil[s].mG_high ) {
+                        ret = seuil[s];
+                        break;
+                    }
+                }
+            }
+        } else {
+            if( YmG >= 0.0 ) {
+                for( int s = 10; s < 15; s++ ) {
+                    if( YmG >= seuil[s].mG_low && YmG <= seuil[s].mG_high ) {
+                        ret = seuil[s];
+                        break;
+                    }
+                }
+            } else {
+                for( int s = 15; s < 20; s++ ) {
+                    if( -YmG >= seuil[s].mG_low && -YmG <= seuil[s].mG_high ) {
+                        ret = seuil[s];
+                        break;
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
     public void print(){
         for (ForceSeuil aSeuil : seuil) Log.d(TAG, aSeuil.toString());
         Log.d(TAG, "lat/long enable: " + lat_long );
+    }
+
+    private double interval(double d1, double d2){
+        double ret = d1 - d2;
+        if( ret < 0.0 ) ret = -ret;
+        return ret;
     }
 
 }

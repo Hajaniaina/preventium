@@ -11,15 +11,15 @@ import java.util.Locale;
  * Created by Franck on 23/09/2016.
  */
 
-class ForceSeuil {
+public class ForceSeuil {
 
-    int index = -1;
-    short IDAlert = -1; // IDAlert.
-    short TPS = 0; // Temps de déclenchemnt en secondes.
-    double mG_low = 0.0; // Seuil bas en mG.
-    double mG_high = 0.0; // Seuil haut en mG.
-    LEVEL_t level = LEVEL_t.LEVEL_UNKNOW;
-    FORCE_t type = FORCE_t.UNKNOW;
+    public int index = -1;
+    public short IDAlert = -1; // IDAlert.
+    public short TPS = 0; // Temps de déclenchemnt en secondes.
+    public double mG_low = 0.0; // Seuil bas en mG.
+    public double mG_high = 0.0; // Seuil haut en mG.
+    public LEVEL_t level = LEVEL_t.LEVEL_UNKNOW;
+    public FORCE_t type = FORCE_t.UNKNOW;
 
     ForceSeuil(){};
     public ForceSeuil(int index, short IDAlert, short secs, double mG_min, double mG_max) {

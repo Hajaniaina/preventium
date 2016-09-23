@@ -115,9 +115,8 @@ public class FilesDownloader extends ThreadDefault {
                 break;
         }
 
-        if( listener != null ) listener.onModeChanged( mode_t );
         mode_t = MODE_t.NONE;
-
+        if( listener != null ) listener.onModeChanged( mode_t );
     }
 
     private void run_cfg() {
