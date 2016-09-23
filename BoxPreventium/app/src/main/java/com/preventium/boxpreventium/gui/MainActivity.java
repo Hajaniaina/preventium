@@ -35,11 +35,11 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.guardanis.applock.CreateLockDialogBuilder;
 import com.guardanis.applock.UnlockDialogBuilder;
 import com.guardanis.applock.locking.ActionLockingHelper;
-import com.preventium.boxpreventium.manager.Manager;
+import com.preventium.boxpreventium.manager.AppManager;
 
 import java.util.ArrayList;
 
-public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
 
     private static final String TAG = "MainActivity";
 
@@ -48,6 +48,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private ScoreViewManager scoreView;
     private SpeedViewManager speedView;
     private ModeManager modeManager;
+    private AppManager appManager;
 
     private ProgressDialog progress;
     private TextView drivingTimeView;
@@ -74,8 +75,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Manager m = new Manager(this,null);
-        m.start();
+        appManager = new AppManager(this,this);
 
         progress = new ProgressDialog(this);
         progress.setMessage(getString(R.string.loading_string));
@@ -417,6 +417,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onRawPositionUpdate (Location location) {
 
+                appManager.setLocation( location );
+
                 lastPos = currPos;
                 currPos = new LatLng(location.getLatitude(), location.getLongitude());
 
@@ -635,5 +637,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             }
         });
+    }
+
+    @Override
+    public void onNumberOfBoxChanged(int nb) {
+
+    }
+
+    @Override
+    public void onChronoRideChanged(String txt) {
+
     }
 }

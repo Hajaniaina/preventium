@@ -21,19 +21,19 @@ import java.util.Locale;
  * Created by Franck on 23/09/2016.
  */
 
-public class Manager extends ThreadDefault
+public class AppManager extends ThreadDefault
     implements FilesDownloader.FilesDowloaderListener, HandlerBox.NotifyListener{
 
-    private final static String TAG = "Manager";
+    private final static String TAG = "AppManager";
     private final static boolean DEBUG = true;
 
-    public interface ManagerListener {
+    public interface AppManagerListener {
         void onNumberOfBoxChanged( int nb );
         void onChronoRideChanged( String txt );
     }
 
     private Context ctx = null;
-    private ManagerListener listener = null;
+    private AppManagerListener listener = null;
     private FilesDownloader downloader = null;
     private ReaderEPCFile readerEPCFile = new ReaderEPCFile();
     private HandlerBox modules = null;
@@ -50,7 +50,7 @@ public class Manager extends ThreadDefault
 
     private AlertForce alertForce = null;
 
-    public Manager(Context ctx, ManagerListener listener) {
+    public AppManager(Context ctx, AppManagerListener listener) {
         super(null);
         this.ctx = ctx;
         this.listener = listener;
@@ -77,7 +77,7 @@ public class Manager extends ThreadDefault
     public void myRun() throws InterruptedException {
         super.myRun();
 
-        if( DEBUG ) Log.d(TAG,"Manager thread begin.");
+        if( DEBUG ) Log.d(TAG,"AppManager thread begin.");
 
         lastLocation = null;
         chronoRideTxt = "";
@@ -107,7 +107,7 @@ public class Manager extends ThreadDefault
         }
 
         modules.setActive( false );
-        if( DEBUG ) Log.d(TAG,"Manager thread end.");
+        if( DEBUG ) Log.d(TAG,"AppManager thread end.");
 
     }
 
