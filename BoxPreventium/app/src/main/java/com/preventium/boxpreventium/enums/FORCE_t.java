@@ -1,4 +1,4 @@
-package com.preventium.boxpreventium.module.enums;
+package com.preventium.boxpreventium.enums;
 
 import android.support.annotation.NonNull;
 

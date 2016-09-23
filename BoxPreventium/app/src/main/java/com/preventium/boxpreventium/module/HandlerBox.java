@@ -6,8 +6,8 @@ import android.util.Log;
 
 import com.preventium.boxpreventium.module.device.BluetoothBox;
 import com.preventium.boxpreventium.module.enums.CONNEXION_STATE_t;
-import com.preventium.boxpreventium.module.enums.FORCE_t;
-import com.preventium.boxpreventium.module.enums.LEVEL_t;
+import com.preventium.boxpreventium.enums.FORCE_t;
+import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.module.trames.SensorSmoothAccelerometerInfo;
 import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ThreadDefault;

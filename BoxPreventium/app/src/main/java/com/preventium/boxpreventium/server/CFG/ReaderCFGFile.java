@@ -1,4 +1,4 @@
-package com.preventium.boxpreventium.server;
+package com.preventium.boxpreventium.server.CFG;
 
 import android.content.Context;
 import com.preventium.boxpreventium.utils.BytesUtils;
