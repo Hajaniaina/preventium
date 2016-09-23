@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -41,20 +42,21 @@
             android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".gui.SettingsActivity"
             android:label="@string/title_activity_settings"
             android:screenOrientation="landscape"/>
+
         <activity
             android:name=".gui.InfoActivity"
             android:label="@string/title_activity_info"
             android:theme="@style/AppTheme"
             android:screenOrientation="landscape"/>
-    </application>
 
+    </application>
 
 </manifest>

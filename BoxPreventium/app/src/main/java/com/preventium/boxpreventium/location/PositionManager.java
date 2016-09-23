@@ -5,8 +5,6 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
@@ -15,30 +13,38 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.model.LatLng;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PositionManager implements LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static final String TAG = "PositionManager";
+    private static final float uiUpdateDistanceMeters = 100f;
+    private static final float MS_TO_KMH = 3.6f;
 
     private Context context;
     private LocationRequest locationRequest;
     private GoogleApiClient googleApiClient;
-    private PositionListener posListener;
-    private LatLng currPos, lastPos;
-    private long updateInterval = 5000;
-    private long updateDistance = 0;
+    private Location refLocation, currLocation, lastLocation;
+    private long updateIntervalMs = 100;
     private boolean updateEnabled = false;
+    private boolean firstEntry = true;
+    private ArrayList<Location> locList;
+    private List<PositionListener> registeredListeners;
 
     public interface PositionListener {
 
-        public void onPositionChanged (Location location);
+        public void onPositionUpdate (Location location);
+        public void onRawPositionUpdate (Location location);
     }
 
     public PositionManager (Activity activity) {
 
         context = activity.getApplicationContext();
-        posListener = null;
+        registeredListeners = new ArrayList<PositionListener>();
+
+        locList = new ArrayList<Location>();
 
         googleApiClient = new GoogleApiClient.Builder(context).addConnectionCallbacks(this).addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
         googleApiClient.connect();
@@ -46,21 +52,20 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
     public void setOnPositionChangedListener (PositionListener listener) {
 
-        this.posListener = listener;
+        registeredListeners.add(listener);
     }
 
     @Override
     public void onConnectionSuspended (int i) {}
 
     @Override
-    public void onConnectionFailed (@NonNull ConnectionResult connectionResult) {}
+    public void onConnectionFailed (ConnectionResult connectionResult) {}
 
     @Override
-    public void onConnected (@Nullable Bundle bundle) {
+    public void onConnected (Bundle bundle) {
 
         locationRequest = new LocationRequest();
-        locationRequest.setInterval(updateInterval);
-        locationRequest.setSmallestDisplacement(updateDistance);
+        locationRequest.setInterval(updateIntervalMs);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         checkPermission();
@@ -70,15 +75,66 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     @Override
     public void onLocationChanged (Location location) {
 
-        lastPos = currPos;
-        currPos = new LatLng(location.getLatitude(), location.getLongitude());
+        if (firstEntry) {
 
-        if (posListener != null) {
-
-            posListener.onPositionChanged(location);
+            refLocation = location;
+            firstEntry = false;
         }
 
-        Log.d(TAG, "Location changed");
+        lastLocation = currLocation;
+        currLocation = location;
+
+        for (PositionListener listener : registeredListeners) {
+
+            listener.onRawPositionUpdate(location);
+
+            if (currLocation.distanceTo(refLocation) > uiUpdateDistanceMeters) {
+
+                refLocation = currLocation;
+                listener.onPositionUpdate(location);
+            }
+        }
+
+        locList.add(location);
+    }
+
+    public boolean isMoving() {
+
+        int ptsNum = 10;
+        double avgSpeed = 0;
+        boolean moving = false;
+
+        if (locList.size() >= ptsNum) {
+
+            List<Location> tailList = locList.subList((locList.size() - ptsNum), locList.size());
+
+            for (Location loc : tailList) {
+
+                if (loc.hasSpeed()) {
+
+                    avgSpeed += (loc.getSpeed() * MS_TO_KMH);
+                }
+                else {
+
+                    ptsNum--;
+                }
+            }
+
+            avgSpeed = (avgSpeed / (float) ptsNum);
+
+            if (avgSpeed > 5f) {
+
+                moving = true;
+            }
+        }
+
+        return moving;
+    }
+
+    public int getLastSpeed() {
+
+        float speed = (currLocation.getSpeed() * MS_TO_KMH);
+        return (int) speed;
     }
 
     public void changeUpdateInterval (long ms) {
@@ -91,25 +147,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
         }
 
         locationRequest.setInterval(ms);
-        updateInterval = ms;
-
-        if (enabled) {
-
-            enableUpdates(true);
-        }
-    }
-
-    public void changeUpdateDistance (long meters) {
-
-        boolean enabled = updateEnabled;
-
-        if (enabled) {
-
-            enableUpdates(false);
-        }
-
-        locationRequest.setSmallestDisplacement(updateDistance);
-        updateDistance = meters;
+        updateIntervalMs = ms;
 
         if (enabled) {
 
@@ -132,27 +170,24 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
     public void enableUpdates (boolean enable) {
 
-        updateEnabled = true;
-
         if (enable) {
 
             if (!updateEnabled) {
 
-                if (googleApiClient != null) {
+                locList.clear();
 
-                    checkPermission();
-                    LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
-                }
+                checkPermission();
+                LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
+
             } else {
 
                 if (updateEnabled) {
 
-                    if (googleApiClient != null) {
-
-                        LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
-                    }
+                    LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
                 }
             }
         }
+
+        updateEnabled = enable;
     }
 }

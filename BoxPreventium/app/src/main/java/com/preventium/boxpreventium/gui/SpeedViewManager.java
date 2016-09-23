@@ -51,7 +51,7 @@ public class SpeedViewManager {
 
     public void hide (boolean hide) {
 
-        for (int i = 0; i < 2; i++) {     // speedViewArr.length
+        for (int i = 0; i < speedViewArr.length; i++) {
 
             if (hide) {
 

@@ -10,6 +10,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
@@ -35,16 +36,17 @@ import com.guardanis.applock.CreateLockDialogBuilder;
 import com.guardanis.applock.UnlockDialogBuilder;
 import com.guardanis.applock.locking.ActionLockingHelper;
 
+import java.util.ArrayList;
+
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private static final String TAG = "MainActivity";
-    private static final int MODE_STATIONARY = 0;
-    private static final int MODE_MOVING = 1;
 
-    private PositionManager positionManager;
+    private PositionManager posManager;
     private MarkerManager markerManager;
     private ScoreViewManager scoreView;
     private SpeedViewManager speedView;
+    private ModeManager modeManager;
 
     private ProgressDialog progress;
     private TextView drivingTimeView;
@@ -61,11 +63,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mGoogleMap;
     private SupportMapFragment mapFrag;
     private LatLng currPos, lastPos;
-
+    private ArrayList<Polyline> roadLinesArr;
     private int mapType = GoogleMap.MAP_TYPE_NORMAL;
-    private int lastMode = MODE_STATIONARY;
-    private int currMode = MODE_STATIONARY;
-    private boolean modeChanged = false;
     private boolean startMarkerAdded = false;
 
     @Override
@@ -73,7 +72,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        // setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         progress = new ProgressDialog(this);
         progress.setMessage(getString(R.string.loading_string));
@@ -84,12 +82,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         progress.setProgressPercentFormat(null);
         progress.show();
 
+        roadLinesArr = new ArrayList<Polyline>();
+
         scoreView = new ScoreViewManager(this);
-        scoreView.hide(true);
-
         speedView = new SpeedViewManager(this);
-        speedView.hide(true);
-
         markerManager = new MarkerManager();
 
         drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
@@ -125,7 +121,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mGoogleMap.getUiSettings().setMyLocationButtonEnabled(false);
         mGoogleMap.getUiSettings().setAllGesturesEnabled(true);
 
-        positionManager = new PositionManager(this);
+        posManager = new PositionManager(this);
+        modeManager = new ModeManager(posManager);
 
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) !=
@@ -135,12 +132,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         mGoogleMap.setMyLocationEnabled(true);
-
         markerManager.setMap(mGoogleMap);
 
         setMapListeners();
         setButtonListeners();
         setPositionListeners();
+        setModeListeners();
     }
 
     private void drawLine (LatLng startPoint, LatLng endPoint) {
@@ -152,7 +149,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         opt.width(3);
         opt.add(startPoint, endPoint);
 
-        Polyline polyline = mGoogleMap.addPolyline(opt);
+        roadLinesArr.add(mGoogleMap.addPolyline(opt));
     }
 
     private void disableActionButtons(boolean disable) {
@@ -185,48 +182,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             else {
 
                 actionBtnArray[i].show(true);
-            }
-        }
-    }
-
-    private void setMode (int mode) {
-
-        if (currMode != mode) {
-
-            lastMode = currMode;
-            currMode = mode;
-            modeChanged = true;
-        }
-
-        if (modeChanged) {
-
-            if (mode == MODE_STATIONARY) {
-
-                // Zoom in
-                CameraPosition cameraPosition = new CameraPosition.Builder().target(currPos).zoom(15).bearing(0).tilt(0).build();
-                mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-
-                // Unlock all maps gestures
-                mGoogleMap.getUiSettings().setAllGesturesEnabled(true);
-
-                disableActionButtons(false);
-                // scoreView.disable(true);
-                // speedView.disable(true);
-            }
-            else if (mode == MODE_MOVING) {
-
-                if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) !=
-                        PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) !=
-                        PackageManager.PERMISSION_GRANTED) {
-                    return;
-                }
-
-                // Disable all maps gestures
-                mGoogleMap.getUiSettings().setAllGesturesEnabled(false);
-
-                disableActionButtons(true);
-                // scoreView.disable(false);
-                // speedView.disable(false);
             }
         }
     }
@@ -453,10 +408,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void setPositionListeners() {
 
-        positionManager.setOnPositionChangedListener(new PositionManager.PositionListener() {
+        posManager.setOnPositionChangedListener(new PositionManager.PositionListener() {
 
             @Override
-            public void onPositionChanged (Location location) {
+            public void onRawPositionUpdate (Location location) {
 
                 lastPos = currPos;
                 currPos = new LatLng(location.getLatitude(), location.getLongitude());
@@ -466,27 +421,68 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     startMarkerAdded = true;
                     markerManager.addMarker(getString(R.string.start_marker_string), currPos, CustomMarker.MARKER_START);
 
-                    // Zoom on created marker
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(currPos).zoom(15).bearing(0).tilt(0).build();
                     mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
                     progress.hide();
                 }
+            }
 
-                if (currMode == MODE_MOVING) {
+            @Override
+            public void onPositionUpdate (Location location) {
 
-                    double speed = location.getSpeed() * 3.6;
-                    speedView.setSpeed(SpeedViewManager.SPEED_MAX, ((int)speed));
+                int currMode = modeManager.getMode();
 
+                if (currMode == ModeManager.MOVING) {
+
+                    speedView.setSpeed(SpeedViewManager.SPEED_MAX, posManager.getLastSpeed());
                     drawLine(lastPos, currPos);
 
-                    // Move map camera
                     mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(currPos));
-
-                    // Construct a CameraPosition focusing on current position and animate the camera to that position
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(currPos).zoom(18).bearing(0).tilt(30).build();
                     mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 }
+            }
+        });
+    }
+
+    private void setModeListeners() {
+
+        modeManager.setModeChangeListener(new ModeManager.ModeChangeListener() {
+
+            @Override
+            public void onModeChanged (int mode) {}
+
+            @Override
+            public void onStopMode() {
+
+                Log.d(TAG, "On Stop");
+
+                CameraPosition cameraPosition = new CameraPosition.Builder().target(currPos).zoom(15).bearing(0).tilt(0).build();
+                mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+                mGoogleMap.getUiSettings().setAllGesturesEnabled(true);
+
+                disableActionButtons(false);
+                // scoreView.disable(true);
+                // speedView.disable(true);
+            }
+
+            @Override
+            public void onPauseMode() {
+
+                Log.d(TAG, "On Pause");
+            }
+
+            @Override
+            public void onMovingMode() {
+
+                Log.d(TAG, "On Move");
+
+                mGoogleMap.getUiSettings().setAllGesturesEnabled(false);
+                disableActionButtons(true);
+                // scoreView.disable(false);
+                // speedView.disable(false);
             }
         });
     }
@@ -546,7 +542,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         public void onUnlockSuccessful() {
 
                             // Snackbar.make(view, "Unlock Successful", Snackbar.LENGTH_LONG).setAction("Action", null).show();
-
                             Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
                             startActivity(intent);
                         }
@@ -594,15 +589,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View v) {
 
-                if (currMode == MODE_STATIONARY) {
+                int currMode = modeManager.getMode();
+
+                if (currMode == ModeManager.STOP) {
 
                     menuButton1.setImageResource(R.drawable.ic_action_stop);
-                    setMode(MODE_MOVING);
+                    modeManager.setMode(ModeManager.MOVING);
                 }
-                else if (currMode == MODE_MOVING) {
+                else if (currMode == ModeManager.MOVING) {
 
                     menuButton1.setImageResource(R.drawable.ic_action_play);
-                    setMode(MODE_STATIONARY);
+                    modeManager.setMode(ModeManager.STOP);
                 }
 
                 optMenu.close(true);
