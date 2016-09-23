@@ -86,7 +86,7 @@ public class AppManager extends ThreadDefault
         chronoRide.start();
 
         run_get_cfg();
-        run_get_epc();
+        //run_get_epc();
 
         while ( isRunning() ) {
 

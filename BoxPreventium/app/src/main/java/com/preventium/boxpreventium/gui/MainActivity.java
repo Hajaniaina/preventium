@@ -36,6 +36,7 @@ import com.guardanis.applock.CreateLockDialogBuilder;
 import com.guardanis.applock.UnlockDialogBuilder;
 import com.guardanis.applock.locking.ActionLockingHelper;
 import com.preventium.boxpreventium.manager.AppManager;
+import com.preventium.boxpreventium.utils.ComonUtils;
 
 import java.util.ArrayList;
 
@@ -601,6 +602,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     menuButton1.setImageResource(R.drawable.ic_action_stop);
                     modeManager.setMode(ModeManager.MOVING);
+
+                    //appManager.start();
                 }
                 else if (currMode == ModeManager.MOVING) {
 
@@ -640,12 +643,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onNumberOfBoxChanged(int nb) {
-
+    public void onNumberOfBoxChanged (final int nb) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                boxNumView.setText(String.valueOf(nb));
+            }
+        });
     }
 
     @Override
-    public void onChronoRideChanged(String txt) {
-
+    public void onChronoRideChanged (final String txt) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                drivingTimeView.setText(txt);
+            }
+        });
     }
 }
