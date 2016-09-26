@@ -82,15 +82,17 @@ public class AppManager extends ThreadDefault
         lastLocation = null;
         chronoRideTxt = "";
 
-        modules.setActive( true );
+
         chronoRide.start();
 
         run_get_cfg();
         //run_get_epc();
 
+        modules.setActive( true );
+
         while ( isRunning() ) {
 
-            sleep(100);
+            sleep(1000);
             updateRideTime();
 
             switch ( mode ){

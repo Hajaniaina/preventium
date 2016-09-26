@@ -21,7 +21,7 @@ import java.util.ArrayList;
 public class HandlerBox extends ThreadDefault
     implements DiscoverBox.DiscoverBoxNotify{
 
-    private final static boolean DEBUG = false;
+    private final static boolean DEBUG = true;
     private final static String TAG = "HandlerBox";
 
     public interface NotifyListener {
@@ -123,7 +123,7 @@ public class HandlerBox extends ThreadDefault
 
                 if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
 
-                    if( DEBUG ) Log.d(TAG,"LOST " + mBoxList.get(i).getName() + " " + mMacList.get(i) );
+                    if( DEBUG ) Log.d(TAG,"LOST " + mMacList.get(i) );
                     mBoxList.remove(i);
                     mMacList.remove(i);
 
@@ -131,7 +131,6 @@ public class HandlerBox extends ThreadDefault
 
                     SensorSmoothAccelerometerInfo smooth = mBoxList.get(i).getSmooth();
                     if( smooth != null ) {
-
                         if(  interval(0.0,smooth.value()) >= interval(0.0,curr_force_mG) ) {
                             curr_force_mG = smooth.value();
                         }
@@ -144,7 +143,6 @@ public class HandlerBox extends ThreadDefault
                 if( listener != null )
                     listener.onForceChanged( curr_force_mG );
                 if( DEBUG ) Log.d(TAG,"Force changed: " + last_force_mG + " mG.");
-
             }
 
             // Calibration 'g' on constant speed
@@ -196,7 +194,7 @@ public class HandlerBox extends ThreadDefault
     private void add( BluetoothDevice device ) {
         if( mBoxList.size() < 3 ) {
             BluetoothBox box = new BluetoothBox(context);
-            if( DEBUG ) Log.d(TAG,"FIND " + box.getName() + " " + device.getAddress() );
+            if( DEBUG ) Log.d(TAG,"FIND " + device.getAddress() );
             mBoxList.add(box);
             mMacList.add(device.getAddress());
             box.connect(device);

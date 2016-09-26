@@ -17,8 +17,8 @@ import com.preventium.boxpreventium.utils.superclass.bluetooth.device.NotifyList
  * Created by Franck on 14/09/2016.
  */
 
-public class BluetoothBox extends ThreadDefault
-    implements ActionCallback, BluetoothBoxIO.TramesNotifyListener, NotifyListener {
+public class BluetoothBox
+        implements ActionCallback, BluetoothBoxIO.TramesNotifyListener, NotifyListener {
 
     private final static String TAG = "BluetoothBox";
     private final static boolean DEBUG = false;
@@ -31,7 +31,6 @@ public class BluetoothBox extends ThreadDefault
     private BluetoothBoxIO io = null;
 
     public BluetoothBox(Context context) {
-        super(null);
         io = new BluetoothBoxIO(context);
         io.setDisconnectedListener( this );
     }
