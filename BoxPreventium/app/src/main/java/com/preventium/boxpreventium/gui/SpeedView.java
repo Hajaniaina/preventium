@@ -12,9 +12,9 @@ import com.preventium.boxpreventium.R;
 
 import az.plainpie.PieView;
 
-public class SpeedViewManager {
+public class SpeedView {
 
-    private static final String TAG = "SpeedViewManager";
+    private static final String TAG = "SpeedView";
 
     public static final int SPEED_CORNERS  = 0;
     public static final int SPEED_STRAIGHT = 1;
@@ -25,7 +25,7 @@ public class SpeedViewManager {
     private int[] lastSpeed;
     private int disableColor;
 
-    SpeedViewManager (Activity activity) {
+    SpeedView(Activity activity) {
 
         Context context = activity.getApplicationContext();
 

@@ -5,19 +5,29 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.R;
@@ -36,7 +46,6 @@ import com.guardanis.applock.CreateLockDialogBuilder;
 import com.guardanis.applock.UnlockDialogBuilder;
 import com.guardanis.applock.locking.ActionLockingHelper;
 import com.preventium.boxpreventium.manager.AppManager;
-import com.preventium.boxpreventium.utils.ComonUtils;
 
 import java.util.ArrayList;
 
@@ -46,8 +55,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private PositionManager posManager;
     private MarkerManager markerManager;
-    private ScoreViewManager scoreView;
-    private SpeedViewManager speedView;
+    private ScoreView scoreView;
+    private SpeedView speedView;
+    private AccForceView accForceView;
     private ModeManager modeManager;
     private AppManager appManager;
 
@@ -66,7 +76,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mGoogleMap;
     private SupportMapFragment mapFrag;
     private LatLng currPos, lastPos;
-    private ArrayList<Polyline> roadLinesArr;
+    private ArrayList<Polyline> roadLinesList;
     private int mapType = GoogleMap.MAP_TYPE_NORMAL;
     private boolean startMarkerAdded = false;
 
@@ -87,11 +97,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         progress.setProgressPercentFormat(null);
         progress.show();
 
-        roadLinesArr = new ArrayList<Polyline>();
+        roadLinesList = new ArrayList<Polyline>();
 
-        scoreView = new ScoreViewManager(this);
-        speedView = new SpeedViewManager(this);
         markerManager = new MarkerManager();
+        scoreView = new ScoreView(this);
+        speedView = new SpeedView(this);
+        accForceView = new AccForceView(this);
 
         drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
         boxNumView = (TextView) findViewById(R.id.box_num_connected);
@@ -145,6 +156,69 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         setModeListeners();
     }
 
+    @Override
+    public void onNumberOfBoxChanged (final int nb) {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                int color = 0;
+
+                if (nb > 0) {
+
+                    if (nb > 1) {
+
+                        color = ContextCompat.getColor(MainActivity.this, R.color.colorAppGreen);
+                    }
+                    else {
+
+                        color = ContextCompat.getColor(MainActivity.this, R.color.colorAppBlue);
+                    }
+                }
+                else {
+
+                    color = ContextCompat.getColor(MainActivity.this, R.color.colorAppRed);
+                }
+
+                Drawable background = boxNumView.getBackground();
+                background.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
+
+                boxNumView.setBackground(background);
+                boxNumView.setText(String.valueOf(nb));
+            }
+        });
+    }
+
+    @Override
+    public void onChronoRideChanged (final String txt) {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                int color = 0;
+
+                if (txt.equalsIgnoreCase("0:00")) {
+
+                    color = ContextCompat.getColor(MainActivity.this, R.color.colorAppGrey);
+                }
+                else {
+
+                    color = ContextCompat.getColor(MainActivity.this, R.color.colorAppGreen);
+                }
+
+                Drawable background = boxNumView.getBackground();
+                background.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
+
+                drivingTimeView.setBackground(background);
+                drivingTimeView.setText(txt);
+            }
+        });
+    }
+
     private void drawLine (LatLng startPoint, LatLng endPoint) {
 
         PolylineOptions opt = new PolylineOptions();
@@ -154,7 +228,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         opt.width(3);
         opt.add(startPoint, endPoint);
 
-        roadLinesArr.add(mGoogleMap.addPolyline(opt));
+        roadLinesList.add(mGoogleMap.addPolyline(opt));
     }
 
     private void disableActionButtons(boolean disable) {
@@ -191,6 +265,54 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    protected void showCallDialog() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setCancelable(false);
+
+        Drawable drawable = ContextCompat.getDrawable(MainActivity.this, R.drawable.ic_phone_classic);
+        int color = ContextCompat.getColor(MainActivity.this, R.color.colorAccent);
+        drawable.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
+        builder.setIcon(drawable);
+        builder.setTitle("  Call a predefined number");
+
+        CharSequence[] callLsit = new CharSequence[5];
+        callLsit[0] = "Test 1";
+        callLsit[1] = "Test 2";
+        callLsit[2] = "Test 3";
+        callLsit[3] = "Test 4";
+        callLsit[4] = "Test 5";
+
+        builder.setSingleChoiceItems(callLsit, 0, new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick (DialogInterface dialog, int which) {
+
+                Toast.makeText(MainActivity.this, "Select: " + String.valueOf(which), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setPositiveButton("Call", new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick (DialogInterface dialog, int id) {
+
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick (DialogInterface dialog, int id) {
+
+            }
+         });
+
+        AlertDialog alertDlg = builder.create();
+        alertDlg.show();
+    }
+
     protected void showMarkerEditDialog (final CustomMarker customMarker, final boolean creation) {
 
         if (customMarker == null) {
@@ -199,12 +321,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-        // Get the layout inflater
         LayoutInflater inflater = this.getLayoutInflater();
 
-        // Inflate and set the layout for the dialog
-        // Pass null as the parent view because its going in the dialog layout
         builder.setView(inflater.inflate(R.layout.marker_edit_dialog, null));
         builder.setPositiveButton("OK", null);
         builder.setNegativeButton(getString(R.string.cancel_string), null);
@@ -418,7 +536,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onRawPositionUpdate (Location location) {
 
-                appManager.setLocation( location );
+                int currMode = modeManager.getMode();
 
                 lastPos = currPos;
                 currPos = new LatLng(location.getLatitude(), location.getLongitude());
@@ -433,6 +551,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     progress.hide();
                 }
+
+                if (currMode == ModeManager.MOVING) {
+
+                    speedView.setSpeed(SpeedView.SPEED_MAX, posManager.getLastSpeed());
+
+                    mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(currPos));
+                    CameraPosition cameraPosition = new CameraPosition.Builder().target(currPos).zoom(18).bearing(0).tilt(30).build();
+                    mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                }
+
+                appManager.setLocation(location);
             }
 
             @Override
@@ -442,12 +571,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (currMode == ModeManager.MOVING) {
 
-                    speedView.setSpeed(SpeedViewManager.SPEED_MAX, posManager.getLastSpeed());
                     drawLine(lastPos, currPos);
-
-                    mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(currPos));
-                    CameraPosition cameraPosition = new CameraPosition.Builder().target(currPos).zoom(18).bearing(0).tilt(30).build();
-                    mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 }
             }
         });
@@ -463,7 +587,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onStopMode() {
 
-                Log.d(TAG, "On Stop");
+                Log.d(TAG, "Mode Stop");
 
                 CameraPosition cameraPosition = new CameraPosition.Builder().target(currPos).zoom(15).bearing(0).tilt(0).build();
                 mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
@@ -478,16 +602,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onPauseMode() {
 
-                Log.d(TAG, "On Pause");
+                Log.d(TAG, "Mode Pause");
             }
 
             @Override
             public void onMovingMode() {
 
-                Log.d(TAG, "On Move");
+                Log.d(TAG, "Mode Move");
 
                 mGoogleMap.getUiSettings().setAllGesturesEnabled(false);
                 disableActionButtons(true);
+
                 // scoreView.disable(false);
                 // speedView.disable(false);
             }
@@ -518,6 +643,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View v) {
 
+                showCallDialog();
             }
         });
 
@@ -638,26 +764,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View view) {
 
-            }
-        });
-    }
-
-    @Override
-    public void onNumberOfBoxChanged (final int nb) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                boxNumView.setText(String.valueOf(nb));
-            }
-        });
-    }
-
-    @Override
-    public void onChronoRideChanged (final String txt) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                drivingTimeView.setText(txt);
             }
         });
     }

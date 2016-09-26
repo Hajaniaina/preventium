@@ -10,9 +10,9 @@ import android.widget.ImageView;
 
 import com.preventium.boxpreventium.R;
 
-public class ScoreViewManager extends Object {
+public class ScoreView extends Object {
 
-    private static final String TAG = "ScoreViewManager";
+    private static final String TAG = "ScoreView";
 
     public static final int CORNER = 0;
     public static final int BRAKE  = 1;
@@ -24,7 +24,7 @@ public class ScoreViewManager extends Object {
     private int[] scoreArr;
     private int disableColor;
 
-    ScoreViewManager (Activity activity) {
+    ScoreView (Activity activity) {
 
         Context context = activity.getApplicationContext();
 
@@ -36,6 +36,7 @@ public class ScoreViewManager extends Object {
         colorScoreArr[2] = ContextCompat.getColor(context, R.color.colorAppYellow);
         colorScoreArr[3] = ContextCompat.getColor(context, R.color.colorAppBlue);
         colorScoreArr[4] = ContextCompat.getColor(context, R.color.colorAppGreen);
+
         disableColor = ContextCompat.getColor(context, R.color.colorAppGrey);
 
         scoreViewArr = new ImageView[4];
@@ -45,10 +46,10 @@ public class ScoreViewManager extends Object {
         scoreViewArr[2] = (ImageView) activity.findViewById(R.id.acc_note_view);
         scoreViewArr[3] = (ImageView) activity.findViewById(R.id.avg_note_view);
 
-        setScore(ScoreViewManager.CORNER, 4);
-        setScore(ScoreViewManager.BRAKE, 4);
-        setScore(ScoreViewManager.ACC, 4);
-        setScore(ScoreViewManager.AVG, 4);
+        setScore(ScoreView.CORNER, 4);
+        setScore(ScoreView.BRAKE, 4);
+        setScore(ScoreView.ACC, 4);
+        setScore(ScoreView.AVG, 4);
     }
 
     public void hide (boolean hide) {
