@@ -89,7 +89,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         setContentView(R.layout.activity_main);
 
         appManager = new AppManager(this,this);
-        appManager.start();
+        
 
         progress = new ProgressDialog(this);
         progress.setMessage(getString(R.string.loading_string));
@@ -220,6 +220,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 drivingTimeView.setText(txt);
             }
         });
+    }
+
+    @Override
+    public void onForceChanged(FORCE_t type, LEVEL_t level) {
+
     }
 
     private void drawLine (LatLng startPoint, LatLng endPoint) {
@@ -770,37 +775,4 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
     }
-<<<<<<< HEAD
-
-    @Override
-    public void onNumberOfBoxChanged (final int nb) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                boxNumView.setText(String.valueOf(nb));
-            }
-        });
-    }
-
-    @Override
-    public void onChronoRideChanged (final String txt) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                drivingTimeView.setText(txt);
-            }
-        });
-    }
-
-    @Override
-    public void onForceChanged(final FORCE_t type, final LEVEL_t level) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Log.d("UI", type + "  " + level );
-            }
-        });
-    }
-=======
->>>>>>> origin/master
 }
