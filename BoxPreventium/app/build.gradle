@@ -27,7 +27,6 @@ dependencies {
     compile 'com.android.support:support-v4:24.2.1'
     compile 'com.github.clans:fab:1.6.4'
     compile 'com.guardanis:applock:1.0.7'
-    compile 'com.pavelsikun:materialdesignicons:1.0'
     compile 'com.github.zurche:plain-pie:v0.1.1'
     compile 'com.github.PhilJay:MPAndroidChart:v3.0.0-beta1'
 }

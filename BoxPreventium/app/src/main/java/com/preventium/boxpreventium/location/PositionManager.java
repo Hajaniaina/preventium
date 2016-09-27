@@ -20,7 +20,7 @@ import java.util.List;
 public class PositionManager implements LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static final String TAG = "PositionManager";
-    private static final float uiUpdateDistanceMeters = 100f;
+    private static final float uiUpdateDistanceMeters = 50f;
     private static final float MS_TO_KMH = 3.6f;
 
     private Context context;
@@ -86,13 +86,23 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
         for (PositionListener listener : registeredListeners) {
 
-            listener.onRawPositionUpdate(location);
+            float distance = refLocation.distanceTo(currLocation);
 
-            if (currLocation.distanceTo(refLocation) > uiUpdateDistanceMeters) {
+            if (distance >= uiUpdateDistanceMeters) {
 
                 refLocation = currLocation;
+
+                Log.d(TAG, "Position Update");
                 listener.onPositionUpdate(location);
             }
+
+            Log.d(TAG, "Raw Position Update");
+            listener.onRawPositionUpdate(location);
+        }
+
+        if (locList.size() >= 100) {
+
+            locList.remove(0);
         }
 
         if (locList.size() >= 100) {

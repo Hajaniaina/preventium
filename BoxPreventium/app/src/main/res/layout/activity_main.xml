@@ -72,7 +72,7 @@
             android:gravity="center"
             android:elevation="4dp"
             android:background="@android:drawable/dialog_holo_light_frame"
-            android:backgroundTint="@color/colorAppGreen"
+            android:backgroundTint="@color/colorAppGrey"
             android:textColor="#ffffff"
             android:textSize="28dp"
             android:textStyle="bold"
@@ -176,7 +176,7 @@
 
     </LinearLayout>
 
-    <!-- MENUS -->
+    <!-- ACTION MENU -->
 
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/opt_menu"
@@ -228,6 +228,8 @@
 
     </com.github.clans.fab.FloatingActionMenu>
 
+    <!-- BOX NUM WIDGET -->
+
     <LinearLayout
         android:id="@+id/box_layout"
         android:orientation="vertical"
@@ -251,6 +253,30 @@
             android:textSize="24sp"
             android:textStyle="bold"
             android:text="0" />
+
+    </LinearLayout>
+
+    <!-- ACC FORCES WIDGET -->
+
+    <LinearLayout
+        android:id="@+id/force_layout"
+        android:orientation="vertical"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="140dp"
+        android:layout_marginRight="100dp">
+
+        <ImageView
+            android:id="@+id/acc_force_view"
+            android:layout_width="fill_parent"
+            android:layout_height="120dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:elevation="4dp"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:backgroundTint="@color/colorAppGreen"
+            />
 
     </LinearLayout>
 
