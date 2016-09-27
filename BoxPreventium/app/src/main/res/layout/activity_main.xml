@@ -139,7 +139,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
-            android:src="@drawable/ic_info_outline"
+            android:src="@drawable/ic_info"
             fab:fab_colorNormal="@color/colorAppBlue"
             fab:fab_colorPressed="#4fc3f7"
             fab:fab_shadowColor="#444"/>
@@ -149,7 +149,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="15dp"
-            android:src="@drawable/ic_action_phone"
+            android:src="@drawable/ic_phone"
             fab:fab_colorNormal="@color/colorAppGreen"
             fab:fab_colorPressed="#b2ff59"
             fab:fab_shadowColor="#444"/>
@@ -159,7 +159,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="15dp"
-            android:src="@drawable/ic_social_school"
+            android:src="@drawable/ic_formation"
             fab:fab_colorNormal="@color/colorAppYellow"
             fab:fab_colorPressed="#fff176"
             fab:fab_shadowColor="#444"/>
@@ -169,7 +169,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="15dp"
-            android:src="@drawable/ic_action_settings"
+            android:src="@drawable/ic_settings"
             fab:fab_colorNormal="@color/colorAppOrange"
             fab:fab_colorPressed="#ffb74d"
             fab:fab_shadowColor="#444"/>
@@ -200,31 +200,31 @@
             android:id="@+id/menu_button1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_menu"
+            android:src="@drawable/ic_play"
             fab:fab_colorNormal="@color/colorAppViolet"
             fab:fab_colorPressed="#e040fb"
             fab:fab_shadowColor="#444"
-            fab:fab_label="" />
+            fab:fab_label="Disable tracking" />
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/menu_button2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_layers"
+            android:src="@drawable/ic_map"
             fab:fab_colorNormal="@color/colorAppViolet"
             fab:fab_colorPressed="#e040fb"
             fab:fab_shadowColor="#444"
-            fab:fab_label="" />
+            fab:fab_label="Map type" />
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/menu_button3"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_menu"
+            android:src="@drawable/ic_qrcode"
             fab:fab_colorNormal="@color/colorAppViolet"
             fab:fab_colorPressed="#e040fb"
             fab:fab_shadowColor="#444"
-            fab:fab_label="" />
+            fab:fab_label="Scan QR code" />
 
     </com.github.clans.fab.FloatingActionMenu>
 
@@ -275,7 +275,7 @@
             android:gravity="center"
             android:elevation="4dp"
             android:background="@android:drawable/dialog_holo_light_frame"
-            android:backgroundTint="@color/colorAppGreen"
+            android:backgroundTint="@color/colorAppGrey"
             />
 
     </LinearLayout>

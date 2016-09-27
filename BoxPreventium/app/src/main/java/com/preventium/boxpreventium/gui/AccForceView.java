@@ -9,32 +9,23 @@ import android.view.View;
 import android.widget.ImageView;
 
 import com.preventium.boxpreventium.R;
+import com.preventium.boxpreventium.enums.FORCE_t;
+import com.preventium.boxpreventium.enums.LEVEL_t;
 
 public class AccForceView extends Object {
 
     private static final String TAG = "AccForceView";
 
-    public static final int ACC_UP    = 0;
-    public static final int ACC_DOWN  = 1;
-    public static final int ACC_LEFT  = 2;
-    public static final int ACC_RIGHT = 3;
-
     private Context context;
     private ImageView accForceView;
-    private int[] accIcons;
     private int disableColor;
-    int lastIcon, lastColor;
+    private FORCE_t lastForce = FORCE_t.UNKNOW;
+    private LEVEL_t lastLevel = LEVEL_t.LEVEL_UNKNOW;
+    private boolean visible = false;
 
     public AccForceView (Activity activity) {
 
         context = activity.getApplicationContext();
-
-        accIcons = new int[4];
-        accIcons[0] = context.getResources().getIdentifier("ic_arrow_up" , "drawable", context.getPackageName());
-        accIcons[1] = context.getResources().getIdentifier("ic_arrow_down" , "drawable", context.getPackageName());
-        accIcons[2] = context.getResources().getIdentifier("ic_arrow_left" , "drawable", context.getPackageName());
-        accIcons[3] = context.getResources().getIdentifier("ic_arrow_right" , "drawable", context.getPackageName());
-
         accForceView = (ImageView) activity.findViewById(R.id.acc_force_view);
         disableColor = ContextCompat.getColor(context, R.color.colorAppGrey);
 
@@ -65,24 +56,72 @@ public class AccForceView extends Object {
         }
         else {
 
-            drawable.setColorFilter(lastColor, PorterDuff.Mode.SRC_ATOP);
-            accForceView.setImageResource(lastIcon);
             accForceView.setEnabled(true);
+            setAcc(lastForce, lastLevel);
         }
 
         accForceView.setBackground(drawable);
     }
 
-    public void setAcc (int id, int value) {
+    public void setAcc (FORCE_t force, LEVEL_t level) {
 
-        if (id > ACC_RIGHT) {
+        lastForce = force;
+        lastLevel = level;
 
-            id = ACC_RIGHT;
+        switch (force) {
+
+            case UNKNOW:
+                accForceView.setImageDrawable(null);
+                break;
+
+            case TURN_LEFT:
+                accForceView.setImageResource(R.drawable.ic_arrow_left);
+                break;
+
+            case TURN_RIGHT:
+                accForceView.setImageResource(R.drawable.ic_arrow_right);
+                break;
+
+            case ACCELERATION:
+                accForceView.setImageResource(R.drawable.ic_arrow_up);
+                break;
+
+            case BRAKING:
+                accForceView.setImageResource(R.drawable.ic_arrow_down);
+                break;
         }
 
-        accForceView.setImageResource(accIcons[id]);
+        int color = 0;
 
-        lastIcon = accIcons[id];
-        lastColor = ContextCompat.getColor(context, R.color.colorAppGreen);
+        switch (level) {
+
+            case LEVEL_UNKNOW:
+                color = ContextCompat.getColor(context, R.color.colorAppGrey);
+                break;
+
+            case LEVEL_1:
+                color = ContextCompat.getColor(context, R.color.colorAppGreen);
+                break;
+
+            case LEVEL_2:
+                color = ContextCompat.getColor(context, R.color.colorAppBlue);
+                break;
+
+            case LEVEL_3:
+                color = ContextCompat.getColor(context, R.color.colorAppYellow);
+                break;
+
+            case LEVEL_4:
+                color = ContextCompat.getColor(context, R.color.colorAppOrange);
+                break;
+
+            case LEVEL_5:
+                color = ContextCompat.getColor(context, R.color.colorAppRed);
+                break;
+        }
+
+        Drawable drawable = accForceView.getBackground();
+        drawable.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
+        accForceView.setBackground(drawable);
     }
 }

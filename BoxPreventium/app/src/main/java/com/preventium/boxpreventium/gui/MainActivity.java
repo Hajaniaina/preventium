@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.support.design.widget.Snackbar;
@@ -19,15 +18,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.ListAdapter;
-import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.R;
@@ -42,9 +36,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.guardanis.applock.CreateLockDialogBuilder;
-import com.guardanis.applock.UnlockDialogBuilder;
-import com.guardanis.applock.locking.ActionLockingHelper;
 import com.preventium.boxpreventium.manager.AppManager;
 
 import java.util.ArrayList;
@@ -79,6 +70,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private ArrayList<Polyline> roadLinesList;
     private int mapType = GoogleMap.MAP_TYPE_NORMAL;
     private boolean startMarkerAdded = false;
+    private Intent pinLockIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +78,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
         appManager = new AppManager(this,this);
 
         progress = new ProgressDialog(this);
@@ -267,33 +260,47 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     protected void showCallDialog() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
+        alertBuilder.setMessage(getString(R.string.make_call_confirma_string));
+        alertBuilder.setCancelable(false);
+        alertBuilder.setNegativeButton(getString(R.string.cancel_string), null);
+        alertBuilder.setPositiveButton(getString(R.string.call_string), new DialogInterface.OnClickListener() {
 
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        });
+
+        alertBuilder.create().show();
+
+        /*
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setCancelable(false);
 
-        Drawable drawable = ContextCompat.getDrawable(MainActivity.this, R.drawable.ic_phone_classic);
-        int color = ContextCompat.getColor(MainActivity.this, R.color.colorAccent);
+        Drawable drawable = ContextCompat.getDrawable(MainActivity.this, R.drawable.ic_phone_black_24p);
+        int color = ContextCompat.getColor(MainActivity.this, R.color.material_teal500);
         drawable.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
-        builder.setIcon(drawable);
-        builder.setTitle("  Call a predefined number");
 
-        CharSequence[] callLsit = new CharSequence[5];
-        callLsit[0] = "Test 1";
-        callLsit[1] = "Test 2";
-        callLsit[2] = "Test 3";
-        callLsit[3] = "Test 4";
-        callLsit[4] = "Test 5";
+        builder.setIcon(drawable);
+        builder.setTitle("  " + getString(R.string.make_call_string));
+
+        final CharSequence[] callLsit = new CharSequence[5];
+
+        for (int i = 0; i < callLsit.length; i++) {
+
+            callLsit[i] = getString(R.string.number_string) + " " + String.valueOf(i + 1);
+        }
 
         builder.setSingleChoiceItems(callLsit, 0, new DialogInterface.OnClickListener() {
 
             @Override
             public void onClick (DialogInterface dialog, int which) {
 
-                Toast.makeText(MainActivity.this, "Select: " + String.valueOf(which), Toast.LENGTH_SHORT).show();
             }
         });
 
-        builder.setPositiveButton("Call", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton(getString(R.string.call_string), new DialogInterface.OnClickListener() {
 
             @Override
             public void onClick (DialogInterface dialog, int id) {
@@ -301,16 +308,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick (DialogInterface dialog, int id) {
-
-            }
-         });
+        builder.setNegativeButton(getString(R.string.cancel_string), null);
 
         AlertDialog alertDlg = builder.create();
         alertDlg.show();
+        */
     }
 
     protected void showMarkerEditDialog (final CustomMarker customMarker, final boolean creation) {
@@ -591,12 +593,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 CameraPosition cameraPosition = new CameraPosition.Builder().target(currPos).zoom(15).bearing(0).tilt(0).build();
                 mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-
                 mGoogleMap.getUiSettings().setAllGesturesEnabled(true);
 
-                disableActionButtons(false);
+                // disableActionButtons(false);
                 // scoreView.disable(true);
                 // speedView.disable(true);
+                accForceView.hide(true);
             }
 
             @Override
@@ -611,10 +613,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.d(TAG, "Mode Move");
 
                 mGoogleMap.getUiSettings().setAllGesturesEnabled(false);
-                disableActionButtons(true);
 
+                // disableActionButtons(true);
                 // scoreView.disable(false);
                 // speedView.disable(false);
+                accForceView.hide(false);
             }
         });
     }
@@ -653,6 +656,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (final View view) {
 
+                startActivity(pinLockIntent);
             }
         });
 
@@ -662,33 +666,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (final View view) {
 
-                if (ActionLockingHelper.hasSavedPIN(MainActivity.this)) {
-
-                    ActionLockingHelper.unlockIfRequired(MainActivity.this, new UnlockDialogBuilder.UnlockEventListener(){
-
-                        // Dialog was closed without entry
-                        public void onCanceled() {}
-
-                        // Not called with default Dialog, instead is handled internally
-                        public void onUnlockFailed (String reason) {}
-
-                        public void onUnlockSuccessful() {
-
-                            // Snackbar.make(view, "Unlock Successful", Snackbar.LENGTH_LONG).setAction("Action", null).show();
-                            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-                            startActivity(intent);
-                        }
-                    });
-                }
-                else {
-
-                    new CreateLockDialogBuilder(MainActivity.this, new CreateLockDialogBuilder.LockCreationListener() {
-
-                        public void onLockCanceled() {}
-                        public void onLockSuccessful() {}
-
-                    }).show();
-                }
+                // startActivity(pinLockIntent);
+                startActivity(new Intent(MainActivity.this, SettingsActivity.class));
             }
         });
 
@@ -726,14 +705,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (currMode == ModeManager.STOP) {
 
-                    menuButton1.setImageResource(R.drawable.ic_action_stop);
+                    menuButton1.setImageResource(R.drawable.ic_stop);
                     modeManager.setMode(ModeManager.MOVING);
-
-                    //appManager.start();
                 }
                 else if (currMode == ModeManager.MOVING) {
 
-                    menuButton1.setImageResource(R.drawable.ic_action_play);
+                    menuButton1.setImageResource(R.drawable.ic_play);
                     modeManager.setMode(ModeManager.STOP);
                 }
 

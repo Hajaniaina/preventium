@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/white">
+
+    <ImageView
+        android:id="@+id/profile_image"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="36dp"
+        android:elevation="4dp"
+        android:src="@drawable/ic_lock">
+    </ImageView>
+
+    <com.andrognito.pinlockview.IndicatorDots
+        android:id="@+id/indicator_dots"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/profile_image"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="42dp"
+        app:dotEmptyBackground="@color/colorAppRed"
+        app:dotFilledBackground="@color/colorAppBlue"
+        app:dotSpacing="22dp"
+        app:dotDiameter="10dp">
+    </com.andrognito.pinlockview.IndicatorDots>
+
+    <com.andrognito.pinlockview.PinLockView
+        android:id="@+id/pin_lock_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/indicator_dots"
+        android:paddingLeft="18dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="36dp"
+        app:keypadButtonSize="44dp"
+        app:keypadTextSize="20dp"
+        app:keypadVerticalSpacing="10dp"
+        app:keypadHorizontalSpacing="18dp"
+        app:keypadShowDeleteButton="true"
+        app:keypadTextColor="@color/mine_shaft"
+        app:pinLength="4">
+    </com.andrognito.pinlockview.PinLockView>
+
+</RelativeLayout>

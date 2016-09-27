@@ -117,11 +117,11 @@ public class CustomMarker extends Object {
                 break;
 
             case MARKER_INFO:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_info);
+                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
                 break;
 
             case MARKER_DANGER:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_alert_error);
+                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);
                 break;
 
             default:
