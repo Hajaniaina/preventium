@@ -21,7 +21,6 @@ public class AccForceView extends Object {
     private int disableColor;
     private FORCE_t lastForce = FORCE_t.UNKNOW;
     private LEVEL_t lastLevel = LEVEL_t.LEVEL_UNKNOW;
-    private boolean visible = false;
 
     public AccForceView (Activity activity) {
 

@@ -216,9 +216,20 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onForceChanged(FORCE_t type, LEVEL_t level) {
+    public void onForceChanged (FORCE_t type, LEVEL_t level) {
 
-        accForceView.setAcc(type, level);
+        if (modeManager.getMode() == ModeManager.MOVING) {
+
+            if (type != FORCE_t.UNKNOW) {
+
+                accForceView.hide(false);
+                accForceView.setAcc(type, level);
+            }
+            else {
+
+                accForceView.hide(true);
+            }
+        }
     }
 
     private void drawLine (LatLng startPoint, LatLng endPoint) {
@@ -626,7 +637,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 // disableActionButtons(true);
                 // scoreView.disable(false);
                 // speedView.disable(false);
-                accForceView.hide(false);
             }
         });
     }
