@@ -23,8 +23,8 @@ public class SensorShockAccelerometerInfo {
             if( data[0] == (byte)0xA2 ) {
                 info.aa = data[1];
                 info.bb = data[2];
-                info.A2 = ( (info.aa << 16) & 0xFF00 ) | ( info.bb & 0x00FF );
-                info.mG = info.A2 * 8000.0 / 32000;
+                info.A2 = (info.aa << 8)  | info.bb;
+                info.mG = (double)info.A2 * 8000.0 / 32000.0;
             }
         }
         return info;
@@ -32,6 +32,6 @@ public class SensorShockAccelerometerInfo {
     public int value_raw() { return A2; }
     public double value() { return mG; }
     public String toString() {
-        return String.format(Locale.getDefault(),"Sensor shock accelerometer { value: %d, data: %s }"
-                , A2, BytesUtils.dataToHex(data)); }
+        return String.format(Locale.getDefault(),"Sensor shock accelerometer { value: %s mG, data: %s }"
+                , mG, BytesUtils.dataToHex(data)); }
 }

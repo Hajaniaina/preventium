@@ -216,20 +216,27 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onForceChanged (FORCE_t type, LEVEL_t level) {
+    public void onForceChanged (final FORCE_t type, final LEVEL_t level) {
 
-        if (modeManager.getMode() == ModeManager.MOVING) {
+        runOnUiThread(new Runnable() {
 
-            if (type != FORCE_t.UNKNOW) {
+            @Override
+            public void run() {
 
-                accForceView.hide(false);
-                accForceView.setAcc(type, level);
+                if (modeManager.getMode() == ModeManager.MOVING) {
+
+                    if (type != FORCE_t.UNKNOW) {
+
+                        accForceView.hide(false);
+                        accForceView.setAcc(type, level);
+                    }
+                    else {
+
+                        accForceView.hide(true);
+                    }
+                }
             }
-            else {
-
-                accForceView.hide(true);
-            }
-        }
+        });
     }
 
     private void drawLine (LatLng startPoint, LatLng endPoint) {

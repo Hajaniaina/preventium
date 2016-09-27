@@ -161,7 +161,7 @@ public class AppManager extends ThreadDefault
 
     @Override
     public void onForceChanged(double mG) {
-        if( DEBUG ) Log.d(TAG,"mG = " + mG );
+        //if( DEBUG ) Log.d(TAG,"mG = " + mG );
         this.YmG = mG;
     }
 
