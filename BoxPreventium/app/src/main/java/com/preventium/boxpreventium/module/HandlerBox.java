@@ -137,7 +137,7 @@ public class HandlerBox extends ThreadDefault
                     }
                 }
             }
-
+            //Log.d(TAG,"Force changed: " + last_force_mG + " mG -> " + curr_force_mG + " mG." );
             if( last_force_mG != curr_force_mG ) {
                 last_force_mG = curr_force_mG;
                 if( listener != null )

@@ -56,29 +56,29 @@ public class ReaderEPCFile {
                         seuil[s].mG_high = (double) ( (data[i++] & 0xFF) | ((data[i++] << 8) & 0xFF00) );
                         switch ( s ) {
                             case 0: case 5: case 10: case 15:
-                                seuil[s].level = LEVEL_t.LEVEL_1;
+                                seuil[s].level = LEVEL_t.LEVEL_1; break;
                             case 1: case 6: case 11: case 16:
-                                seuil[s].level = LEVEL_t.LEVEL_2;
+                                seuil[s].level = LEVEL_t.LEVEL_2; break;
                             case 2: case 7: case 12: case 17:
-                                seuil[s].level = LEVEL_t.LEVEL_3;
+                                seuil[s].level = LEVEL_t.LEVEL_3; break;
                             case 3: case 8: case 13: case 18:
-                                seuil[s].level = LEVEL_t.LEVEL_4;
+                                seuil[s].level = LEVEL_t.LEVEL_4; break;
                             case 4: case 9: case 14: case 19:
-                                seuil[s].level = LEVEL_t.LEVEL_5;
+                                seuil[s].level = LEVEL_t.LEVEL_5; break;
                             default:
-                                seuil[s].level = LEVEL_t.LEVEL_UNKNOW;
+                                seuil[s].level = LEVEL_t.LEVEL_UNKNOW; break;
                         }
                         switch ( s ) {
                             case 0: case 1: case 2: case 3: case 4:
-                                seuil[s].type = FORCE_t.ACCELERATION;
+                                seuil[s].type = FORCE_t.ACCELERATION; break;
                             case 5: case 6: case 7: case 8: case 9:
-                                seuil[s].type = FORCE_t.BRAKING;
+                                seuil[s].type = FORCE_t.BRAKING; break;
                             case 10: case 11: case 12: case 13: case 14:
-                                seuil[s].type = FORCE_t.TURN_RIGHT;
+                                seuil[s].type = FORCE_t.TURN_RIGHT; break;
                             case 15: case 16: case 17: case 18: case 19:
-                                seuil[s].type = FORCE_t.TURN_LEFT;
+                                seuil[s].type = FORCE_t.TURN_LEFT; break;
                             default:
-                                seuil[s].level = LEVEL_t.LEVEL_UNKNOW;
+                                seuil[s].type = FORCE_t.UNKNOW; break;
                         }
 
                     }

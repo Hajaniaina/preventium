@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
+import com.preventium.boxpreventium.enums.MOVING_t;
 import com.preventium.boxpreventium.location.AlertForce;
 import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.server.CFG.DataCFG;
@@ -30,6 +31,7 @@ public class AppManager extends ThreadDefault
     public interface AppManagerListener {
         void onNumberOfBoxChanged( int nb );
         void onChronoRideChanged( String txt );
+        void onForceChanged( FORCE_t type, LEVEL_t level );
     }
 
     private Context ctx = null;
@@ -42,6 +44,11 @@ public class AppManager extends ThreadDefault
 
     private double XmG = 0.0;
     private double YmG = 0.0;
+    private Chrono seuil_chrono = new Chrono();
+    ForceSeuil seuil_ui = null;
+    ForceSeuil seuil_prev_read = null;
+    ForceSeuil seuil_curr_read = null;
+
     private Location location = null;
     private Location lastLocation = null;
 
@@ -57,6 +64,26 @@ public class AppManager extends ThreadDefault
         this.downloader = new FilesDownloader(ctx,this);
         this.modules = new HandlerBox(ctx,this);
     }
+
+    public boolean startMoving(){
+        boolean ret = false;
+        if( !isRunning()  ) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    AppManager.this.run();
+                }
+            }).start();
+            ret = true;
+        }
+        return ret;
+    }
+
+    public void pauseMoving(){ setPause(); }
+
+    public void resumeMoving(){setResume();}
+
+    public void stopMoving(){setStop();}
 
     public void setLocation( Location location ) {
         // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le g :
@@ -81,12 +108,10 @@ public class AppManager extends ThreadDefault
 
         lastLocation = null;
         chronoRideTxt = "";
-
-
         chronoRide.start();
 
         run_get_cfg();
-        //run_get_epc();
+        run_get_epc();
 
         modules.setActive( true );
 
@@ -156,8 +181,11 @@ public class AppManager extends ThreadDefault
         boolean read = readerEPCFile.read( ctx, 1 );
         while( isRunning() && !read ) {
             downloader.downloadEPC();
-            sleep(1000);
+            sleep(5000);
+            read = readerEPCFile.read( ctx, 1 );
         }
+
+        if( read ) readerEPCFile.print();
         Log.d(TAG, "Download EPC... STOP" );
     }
 
@@ -171,12 +199,98 @@ public class AppManager extends ThreadDefault
     }
 
     private void updateAlertForce(){
-        
-        if( YmG != 0.0 && XmG != 0.0 ) {
-            Log.d(TAG, "XmG = " + XmG + " / YmG = " + YmG);
-            ForceSeuil seuil = readerEPCFile.getForceSeuil(XmG, YmG);
-            if (seuil != null) Log.d(TAG, seuil.toString());
+
+//        ForceSeuil seuil_ui = null;
+//        ForceSeuil seuil_prev_read = null;
+//        ForceSeuil seuil_curr_read = null;
+
+        // Read the runtime value force
+        seuil_curr_read = null;
+        if( YmG != 0.0 || XmG != 0.0 )
+            seuil_curr_read = readerEPCFile.getForceSeuil(XmG, YmG);
+        if( seuil_curr_read != null ) {
+
+            // Compare the runtime value force with the prevent value force
+            if( !seuil_curr_read.equals(seuil_prev_read) ) {
+                seuil_prev_read = seuil_curr_read;
+                seuil_chrono.start();
+            }
+
+            if( seuil_prev_read != null ) {
+                if( seuil_chrono.getSeconds() >= seuil_prev_read.TPS ) {
+
+                    seuil_chrono.start();
+
+                    Log.d(TAG,"ALERT...." + seuil_prev_read.toString() );
+
+                    // Update UI
+                    if( listener != null ) {
+                        if( seuil_ui == null || !seuil_ui.equals(seuil_prev_read) ) {
+                            listener.onForceChanged( seuil_prev_read.type, seuil_prev_read.level );
+                            seuil_ui = seuil_prev_read;
+                        }
+                    }
+                }
+            }
+        } else {
+            if( seuil_ui != null ) {
+                // Update UI
+                if( listener != null )
+                    listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
+                seuil_ui = null;
+            }
         }
+
+//        // Read the runtime value force
+//        ForceSeuil seuil = null;
+//        if( YmG != 0.0 || XmG != 0.0 )
+//            seuil = readerEPCFile.getForceSeuil(XmG, YmG);
+//
+//        // Check if exist alert
+//        if( seuil != null ) {
+//
+//            if( !seuil.equals(seuil_curr) ) {
+//                seuil_curr = seuil;
+//                seuil_chrono.start();
+//            }
+//
+//            if( seuil_curr != null && seuil_chrono.getSeconds() >= seuil_curr.TPS ) {
+//
+//                Log.d(TAG,"ALERT ........................" + seuil_curr.toString() );
+//                if( listener != null ){
+//
+//                }
+//                    && seuil_last == null
+//                        || seuil_last.equals(seuil_curr) ) {
+//                    Log.d(TAG,"ALERT UPDATE UI.................." + seuil_curr.toString() );
+//                    seuil_last = seuil_curr;
+//                    listener.onForceChanged( );
+//                }
+//
+//                seuil_chrono.start();
+//                seuil_curr = null;
+//            }
+//
+//        } else {
+//            seuil_curr = null;
+//            if( seuil_last == null
+//                    || seuil_last.equals(seuil_curr) ) {
+//                Log.d(TAG,"ALERT UPDATE UI.................." + seuil_curr.toString() );
+//                seuil_last = seuil_curr;
+//            }
+//        }
+//
+//
+//
+//
+//        if( YmG != 0.0 || XmG != 0.0 ) {
+//            Log.d(TAG, "XmG = " + XmG + " / YmG = " + YmG);
+//            ForceSeuil seuil = readerEPCFile.getForceSeuil(XmG, YmG);
+//            if (seuil != null)
+//                Log.d(TAG, seuil.toString());
+//            else
+//                Log.w(TAG,"FORCE NULL !!!!!!!");
+//        }
     }
 
 

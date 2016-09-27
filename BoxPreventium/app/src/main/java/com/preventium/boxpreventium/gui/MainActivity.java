@@ -23,6 +23,8 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.preventium.boxpreventium.enums.FORCE_t;
+import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.R;
 import com.github.clans.fab.FloatingActionButton;
@@ -80,6 +82,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
         appManager = new AppManager(this,this);
+        
 
         progress = new ProgressDialog(this);
         progress.setMessage(getString(R.string.loading_string));
@@ -210,6 +213,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 drivingTimeView.setText(txt);
             }
         });
+    }
+
+    @Override
+    public void onForceChanged(FORCE_t type, LEVEL_t level) {
+
+        accForceView.setAcc(type, level);
     }
 
     private void drawLine (LatLng startPoint, LatLng endPoint) {

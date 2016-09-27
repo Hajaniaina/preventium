@@ -105,6 +105,11 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
             locList.remove(0);
         }
 
+        if (locList.size() >= 100) {
+
+            locList.remove(0);
+        }
+
         locList.add(location);
     }
 

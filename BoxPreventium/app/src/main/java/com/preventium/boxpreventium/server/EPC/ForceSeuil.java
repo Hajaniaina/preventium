@@ -31,6 +31,20 @@ public class ForceSeuil {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if( this == obj ) return true;
+        if( obj == null ) return false;
+        if( getClass() != obj.getClass() ) return false;
+        ForceSeuil other = (ForceSeuil)obj;
+        return ( IDAlert == other.IDAlert
+                && TPS == other.TPS
+                && mG_low == other.mG_low
+                && mG_high == other.mG_high
+                && level == other.level
+                && type == other.type );
+    }
+
+    @Override
     public String toString() {
         String name = "";
         if( index >= 0 && index < 5 ) name = String.format(Locale.getDefault(),"+X%d",index+1);
