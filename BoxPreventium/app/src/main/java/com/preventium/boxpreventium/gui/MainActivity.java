@@ -19,6 +19,8 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.preventium.boxpreventium.enums.FORCE_t;
+import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.R;
 import com.github.clans.fab.FloatingActionButton;
@@ -77,6 +79,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         setContentView(R.layout.activity_main);
 
         appManager = new AppManager(this,this);
+        appManager.start();
 
         progress = new ProgressDialog(this);
         progress.setMessage(getString(R.string.loading_string));
@@ -603,7 +606,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     menuButton1.setImageResource(R.drawable.ic_action_stop);
                     modeManager.setMode(ModeManager.MOVING);
 
-                    //appManager.start();
+                    appManager.start();
                 }
                 else if (currMode == ModeManager.MOVING) {
 
@@ -658,6 +661,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
                 drivingTimeView.setText(txt);
+            }
+        });
+    }
+
+    @Override
+    public void onForceChanged(final FORCE_t type, final LEVEL_t level) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Log.d("UI", type + "  " + level );
             }
         });
     }

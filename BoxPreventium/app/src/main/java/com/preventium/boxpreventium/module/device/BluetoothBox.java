@@ -21,7 +21,7 @@ public class BluetoothBox
         implements ActionCallback, BluetoothBoxIO.TramesNotifyListener, NotifyListener {
 
     private final static String TAG = "BluetoothBox";
-    private final static boolean DEBUG = false;
+    private final static boolean DEBUG = true;
     private BatteryInfo last_battery_info = null;
     private SensorSmoothAccelerometerInfo last_smooth_info = null;
     private SensorShockAccelerometerInfo last_shock_info = null;

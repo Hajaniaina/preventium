@@ -27,7 +27,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     private LocationRequest locationRequest;
     private GoogleApiClient googleApiClient;
     private Location refLocation, currLocation, lastLocation;
-    private long updateIntervalMs = 100;
+    private long updateIntervalMs = 1000;
     private boolean updateEnabled = false;
     private boolean firstEntry = true;
     private ArrayList<Location> locList;
@@ -93,6 +93,11 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
                 refLocation = currLocation;
                 listener.onPositionUpdate(location);
             }
+        }
+
+        if (locList.size() >= 100) {
+
+            locList.remove(0);
         }
 
         locList.add(location);
