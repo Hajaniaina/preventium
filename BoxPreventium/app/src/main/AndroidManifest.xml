@@ -23,7 +23,8 @@
         android:screenOrientation="portrait"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:largeHeap="true">
+        android:largeHeap="true"
+        android:keepScreenOn="true">
 
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
