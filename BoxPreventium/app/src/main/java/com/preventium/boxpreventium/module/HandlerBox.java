@@ -119,6 +119,7 @@ public class HandlerBox extends ThreadDefault
                 chrono.start(); // Restart chrono who indicate the elapsed time since the last scan
             }
 
+            curr_force_mG = 0.0;
             for( int i = mBoxList.size()-1; i >= 0; i-- ) {
 
                 if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
