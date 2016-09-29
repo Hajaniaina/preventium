@@ -735,11 +735,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     menuButton1.setImageResource(R.drawable.ic_stop);
                     modeManager.setMode(ModeManager.MOVING);
+                    appManager.startMoving();
                 }
                 else if (currMode == ModeManager.MOVING) {
 
                     menuButton1.setImageResource(R.drawable.ic_play);
                     modeManager.setMode(ModeManager.STOP);
+                    appManager.stopMoving();
                 }
 
                 optMenu.close(true);
@@ -777,7 +779,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onClick(View v) {
-
+                appManager.on_constant_speed();
             }
         });
 
@@ -785,7 +787,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onClick(View v) {
-
+                appManager.on_acceleration();
             }
         });
     }

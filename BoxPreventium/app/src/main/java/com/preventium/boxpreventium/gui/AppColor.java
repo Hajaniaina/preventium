@@ -43,19 +43,19 @@ public class AppColor extends Object {
             case LEVEL_UNKNOW: color = appColors[GREY];
                 break;
 
-            case LEVEL_1: color = appColors[RED];
+            case LEVEL_1: color = appColors[GREEN];
                 break;
 
-            case LEVEL_2: color = appColors[ORANGE];
+            case LEVEL_2: color = appColors[BLUE];
                 break;
 
             case LEVEL_3: color = appColors[YELLOW];
                 break;
 
-            case LEVEL_4: color = appColors[BLUE];
+            case LEVEL_4: color = appColors[ORANGE];
                 break;
 
-            case LEVEL_5: color = appColors[GREEN];
+            case LEVEL_5: color = appColors[RED];
                 break;
         }
 
