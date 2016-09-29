@@ -1,6 +1,5 @@
-package com.preventium.boxpreventium.location;
+package com.preventium.boxpreventium.manager;
 
-import android.content.Loader;
 import android.location.Location;
 
 import com.preventium.boxpreventium.enums.FORCE_t;

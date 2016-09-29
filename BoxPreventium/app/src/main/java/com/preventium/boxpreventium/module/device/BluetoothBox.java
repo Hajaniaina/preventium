@@ -45,6 +45,17 @@ public class BluetoothBox
         io.connect( address, this );
     }
 
+    public void close(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                io.command(CmdBox.newInstance(CMD_t.PAUSE_MEASURING));
+                io.disconnect();
+            }
+        }).start();
+
+    }
+
     public void calibrate_if_constant_speed(){
         new Thread(new Runnable() {
             @Override

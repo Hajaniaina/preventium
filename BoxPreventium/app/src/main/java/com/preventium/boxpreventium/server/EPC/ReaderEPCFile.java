@@ -1,10 +1,12 @@
 package com.preventium.boxpreventium.server.EPC;
 
 import android.content.Context;
+import android.location.Location;
 import android.util.Log;
 
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
+import com.preventium.boxpreventium.manager.AlertForce;
 import com.preventium.boxpreventium.utils.ComonUtils;
 
 import java.io.FileInputStream;
@@ -95,37 +97,44 @@ public class ReaderEPCFile {
     }
 
     public ForceSeuil getForceSeuil(double XmG, double YmG) {
+        return  ( ComonUtils.interval(0.0,XmG) >= ComonUtils.interval(0.0,YmG) )
+                ? getForceSeuilForX( XmG ) : getForceSeuilForY( YmG );
+    }
+
+    public ForceSeuil getForceSeuilForX(double XmG) {
         ForceSeuil ret = null;
-        if( interval(0.0,XmG) >= interval(0.0,YmG) ) {
-            if( XmG >= 0.0 ) {
-                for( int s = 0; s < 5; s++ ) {
-                    if( XmG >= seuil[s].mG_low && XmG <= seuil[s].mG_high ) {
-                        ret = seuil[s];
-                        break;
-                    }
-                }
-            } else {
-                for( int s = 5; s < 10; s++ ) {
-                    if( -XmG >= seuil[s].mG_low && -XmG <= seuil[s].mG_high ) {
-                        ret = seuil[s];
-                        break;
-                    }
+        if( XmG >= 0.0 ) {
+            for( int s = 0; s < 5; s++ ) {
+                if( XmG >= seuil[s].mG_low && XmG <= seuil[s].mG_high ) {
+                    ret = seuil[s];
+                    break;
                 }
             }
         } else {
-            if( YmG >= 0.0 ) {
-                for( int s = 10; s < 15; s++ ) {
-                    if( YmG >= seuil[s].mG_low && YmG <= seuil[s].mG_high ) {
-                        ret = seuil[s];
-                        break;
-                    }
+            for( int s = 5; s < 10; s++ ) {
+                if( -XmG >= seuil[s].mG_low && -XmG <= seuil[s].mG_high ) {
+                    ret = seuil[s];
+                    break;
                 }
-            } else {
-                for( int s = 15; s < 20; s++ ) {
-                    if( -YmG >= seuil[s].mG_low && -YmG <= seuil[s].mG_high ) {
-                        ret = seuil[s];
-                        break;
-                    }
+            }
+        }
+        return ret;
+    }
+
+    public ForceSeuil getForceSeuilForY(double YmG) {
+        ForceSeuil ret = null;
+        if( YmG >= 0.0 ) {
+            for( int s = 10; s < 15; s++ ) {
+                if( YmG >= seuil[s].mG_low && YmG <= seuil[s].mG_high ) {
+                    ret = seuil[s];
+                    break;
+                }
+            }
+        } else {
+            for( int s = 15; s < 20; s++ ) {
+                if( -YmG >= seuil[s].mG_low && -YmG <= seuil[s].mG_high ) {
+                    ret = seuil[s];
+                    break;
                 }
             }
         }
@@ -135,12 +144,6 @@ public class ReaderEPCFile {
     public void print(){
         for (ForceSeuil aSeuil : seuil) Log.d(TAG, aSeuil.toString());
         Log.d(TAG, "lat/long enable: " + lat_long );
-    }
-
-    private double interval(double d1, double d2){
-        double ret = d1 - d2;
-        if( ret < 0.0 ) ret = -ret;
-        return ret;
     }
 
 }

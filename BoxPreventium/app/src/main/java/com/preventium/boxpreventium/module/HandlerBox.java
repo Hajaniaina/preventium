@@ -26,7 +26,7 @@ public class HandlerBox extends ThreadDefault
 
     public interface NotifyListener {
         void onScanState(boolean scanning);
-        //void onDeviceState( String device_mac, boolean connected );
+        void onDeviceState( String device_mac, boolean connected );
         void onNumberOfBox(int nb);
         void onForceChanged(double mG);
     }
@@ -82,9 +82,9 @@ public class HandlerBox extends ThreadDefault
         }).start();
     }
 
-    public void in_constant_speed(){ calibrate_1 = true; }
+    public void on_constant_speed(){ calibrate_1 = true; }
 
-    private void in_acceleration(){ calibrate_2 = true; }
+    public void on_acceleration(){ calibrate_2 = true; }
 
     @Override
     public void onScanChanged(boolean scanning, ArrayList<BluetoothDevice> devices) {
@@ -123,7 +123,7 @@ public class HandlerBox extends ThreadDefault
             for( int i = mBoxList.size()-1; i >= 0; i-- ) {
 
                 if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
-
+                    if( listener != null ) listener.onDeviceState( mMacList.get(i), false );
                     if( DEBUG ) Log.d(TAG,"LOST " + mMacList.get(i) );
                     mBoxList.remove(i);
                     mMacList.remove(i);
@@ -190,11 +190,23 @@ public class HandlerBox extends ThreadDefault
         }
 
         discoverBox.stop();
+
+        for( int i = mBoxList.size()-1; i >= 0; i-- ) {
+            if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
+                if( listener != null ) listener.onDeviceState( mMacList.get(i), false );
+                if( DEBUG ) Log.d(TAG,"LOST " + mMacList.get(i) );
+                mBoxList.remove(i);
+                mMacList.remove(i);
+            } else {
+                mBoxList.get(i).close();
+            }
+        }
     }
 
     private void add( BluetoothDevice device ) {
         if( mBoxList.size() < 3 ) {
             BluetoothBox box = new BluetoothBox(context);
+            if( listener != null ) listener.onDeviceState( device.getAddress(), true );
             if( DEBUG ) Log.d(TAG,"FIND " + device.getAddress() );
             mBoxList.add(box);
             mMacList.add(device.getAddress());

@@ -24,6 +24,7 @@ public class ComonUtils {
 
     private final static String TAG = "ComonUtils";
 
+
     public static boolean haveInternetConnected(Context ctx){
         ConnectivityManager cm = (ConnectivityManager)ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (cm != null) {
@@ -221,4 +222,11 @@ public class ComonUtils {
         return "";
     }
 
+    // === Other
+
+    public static double interval(double d1, double d2){
+        double ret = d1 - d2;
+        if( ret < 0.0 ) ret = -ret;
+        return ret;
+    }
 }
