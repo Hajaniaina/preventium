@@ -12,10 +12,10 @@
     map:mapType="normal"
     map:uiCompass="false">
 
-    <!-- NOTE WIDGETS -->
+    <!-- SCORE WIDGETS -->
 
     <LinearLayout
-        android:id="@+id/note_layout"
+        android:id="@+id/score_layout"
         android:orientation="vertical"
         android:layout_width="80dp"
         android:layout_height="wrap_content"
@@ -31,7 +31,8 @@
             android:elevation="4dp"
             android:src="@drawable/ic_corner_note"
             android:backgroundTint="#ffffff"
-            android:background="@android:drawable/dialog_holo_light_frame"/>
+            android:background="@android:drawable/dialog_holo_light_frame">
+        </ImageView>
 
         <ImageView
             android:id="@+id/brake_note_view"
@@ -41,7 +42,8 @@
             android:elevation="4dp"
             android:src="@drawable/ic_brake_note"
             android:backgroundTint="#ffffff"
-            android:background="@android:drawable/dialog_holo_light_frame"/>
+            android:background="@android:drawable/dialog_holo_light_frame">
+        </ImageView>
 
         <ImageView
             android:id="@+id/acc_note_view"
@@ -51,7 +53,8 @@
             android:elevation="4dp"
             android:src="@drawable/ic_acc_note"
             android:backgroundTint="#ffffff"
-            android:background="@android:drawable/dialog_holo_light_frame"/>
+            android:background="@android:drawable/dialog_holo_light_frame">
+        </ImageView>
 
         <ImageView
             android:id="@+id/avg_note_view"
@@ -61,7 +64,8 @@
             android:elevation="4dp"
             android:src="@drawable/ic_avg_note"
             android:backgroundTint="#ffffff"
-            android:background="@android:drawable/dialog_holo_light_frame"/>
+            android:background="@android:drawable/dialog_holo_light_frame">
+        </ImageView>
 
         <TextView
             android:id="@+id/driving_time_text"
@@ -73,10 +77,15 @@
             android:elevation="4dp"
             android:background="@android:drawable/dialog_holo_light_frame"
             android:backgroundTint="@color/colorAppGrey"
+            android:shadowColor="#757575"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="2"
             android:textColor="#ffffff"
-            android:textSize="28dp"
+            android:textSize="28sp"
             android:textStyle="bold"
-            android:text="0:00" />
+            android:text="0:00">
+        </TextView>
 
     </LinearLayout>
 
@@ -98,7 +107,8 @@
             plainpie:inner_pie_padding="10"
             plainpie:percentage="100"
             plainpie:percentage_size="50"
-            plainpie:inner_text_visibility="true" />
+            plainpie:inner_text_visibility="true">
+        </az.plainpie.PieView>
 
         <az.plainpie.PieView
             android:id="@+id/pie_view2"
@@ -108,7 +118,8 @@
             plainpie:inner_pie_padding="10"
             plainpie:percentage="100"
             plainpie:percentage_size="50"
-            plainpie:inner_text_visibility="true" />
+            plainpie:inner_text_visibility="true">
+        </az.plainpie.PieView>
 
         <az.plainpie.PieView
             android:id="@+id/pie_view3"
@@ -118,7 +129,84 @@
             plainpie:inner_pie_padding="10"
             plainpie:percentage="100"
             plainpie:percentage_size="50"
-            plainpie:inner_text_visibility="true" />
+            plainpie:inner_text_visibility="true">
+        </az.plainpie.PieView>
+
+    </LinearLayout>
+
+    <!-- ACC FORCES & DRIVING SCORE WIDGETS -->
+
+    <LinearLayout
+        android:id="@+id/force_layout"
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="12dp"
+        android:layout_marginRight="100dp">
+
+        <TextView
+            android:id="@+id/driving_score_view"
+            android:layout_width="112dp"
+            android:layout_height="112dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="8dp"
+            android:gravity="center"
+            android:background="@drawable/text_border_green"
+            android:elevation="4dp"
+            android:textColor="@color/colorAppGreen"
+            android:textSize="48sp"
+            android:text="20"
+            android:textStyle="bold"
+            android:shadowColor="@color/material_grey600"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:shadowRadius="2">
+        </TextView>
+
+        <ImageView
+            android:id="@+id/acc_force_view"
+            android:layout_width="128dp"
+            android:layout_height="128dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:elevation="4dp"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:backgroundTint="@color/colorAppGrey">
+        </ImageView>
+
+    </LinearLayout>
+
+    <!-- BOX NUM WIDGET -->
+
+    <LinearLayout
+        android:id="@+id/box_layout"
+        android:orientation="vertical"
+        android:layout_width="68dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="20dp"
+        android:layout_marginRight="9dp">
+
+        <TextView
+            android:id="@+id/box_num_connected"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:height="68dp"
+            android:gravity="center"
+            android:elevation="4dp"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:backgroundTint="@color/colorAppRed"
+            android:textColor="#fafafa"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:shadowColor="#757575"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:text="0">
+        </TextView>
 
     </LinearLayout>
 
@@ -142,7 +230,8 @@
             android:src="@drawable/ic_info"
             fab:fab_colorNormal="@color/colorAppBlue"
             fab:fab_colorPressed="#4fc3f7"
-            fab:fab_shadowColor="#444"/>
+            fab:fab_shadowColor="#444">
+        </com.github.clans.fab.FloatingActionButton>
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/button_call"
@@ -150,9 +239,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="15dp"
             android:src="@drawable/ic_phone"
-            fab:fab_colorNormal="@color/colorAppGreen"
-            fab:fab_colorPressed="#b2ff59"
-            fab:fab_shadowColor="#444"/>
+            fab:fab_colorNormal="@color/colorAppBlue"
+            fab:fab_colorPressed="#4fc3f7"
+            fab:fab_shadowColor="#444">
+        </com.github.clans.fab.FloatingActionButton>
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/button_formation"
@@ -160,9 +250,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="15dp"
             android:src="@drawable/ic_formation"
-            fab:fab_colorNormal="@color/colorAppYellow"
-            fab:fab_colorPressed="#fff176"
-            fab:fab_shadowColor="#444"/>
+            fab:fab_colorNormal="@color/colorAppBlue"
+            fab:fab_colorPressed="#4fc3f7"
+            fab:fab_shadowColor="#444">
+        </com.github.clans.fab.FloatingActionButton>
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/button_settings"
@@ -170,9 +261,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="15dp"
             android:src="@drawable/ic_settings"
-            fab:fab_colorNormal="@color/colorAppOrange"
-            fab:fab_colorPressed="#ffb74d"
-            fab:fab_shadowColor="#444"/>
+            fab:fab_colorNormal="@color/colorAppBlue"
+            fab:fab_colorPressed="#4fc3f7"
+            fab:fab_shadowColor="#444">
+        </com.github.clans.fab.FloatingActionButton>
 
     </LinearLayout>
 
@@ -197,14 +289,26 @@
         fab:menu_shadowColor="#444">
 
         <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/menu_button1"
+            android:id="@+id/menu_button5"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_play"
-            fab:fab_colorNormal="@color/colorAppViolet"
-            fab:fab_colorPressed="#e040fb"
+            android:src="@drawable/ic_menu"
+            fab:fab_colorNormal="@color/colorAppRed"
+            fab:fab_colorPressed="#ff5252"
             fab:fab_shadowColor="#444"
-            fab:fab_label="Disable tracking" />
+            fab:fab_label="Accelerating">
+        </com.github.clans.fab.FloatingActionButton>
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/menu_button4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_menu"
+            fab:fab_colorNormal="@color/colorAppRed"
+            fab:fab_colorPressed="#ff5252"
+            fab:fab_shadowColor="#444"
+            fab:fab_label="Constant speed">
+        </com.github.clans.fab.FloatingActionButton>
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/menu_button2"
@@ -214,7 +318,8 @@
             fab:fab_colorNormal="@color/colorAppViolet"
             fab:fab_colorPressed="#e040fb"
             fab:fab_shadowColor="#444"
-            fab:fab_label="Map type" />
+            fab:fab_label="Map type">
+        </com.github.clans.fab.FloatingActionButton>
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/menu_button3"
@@ -224,62 +329,23 @@
             fab:fab_colorNormal="@color/colorAppViolet"
             fab:fab_colorPressed="#e040fb"
             fab:fab_shadowColor="#444"
-            fab:fab_label="Scan QR code" />
+            fab:fab_label="Scan QR code">
+        </com.github.clans.fab.FloatingActionButton>
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/menu_button1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_play"
+            fab:fab_colorNormal="@color/colorAppViolet"
+            fab:fab_colorPressed="#e040fb"
+            fab:fab_shadowColor="#444"
+            fab:fab_label="Disable tracking">
+        </com.github.clans.fab.FloatingActionButton>
 
     </com.github.clans.fab.FloatingActionMenu>
 
-    <!-- BOX NUM WIDGET -->
-
-    <LinearLayout
-        android:id="@+id/box_layout"
-        android:orientation="vertical"
-        android:layout_width="68dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginBottom="20dp"
-        android:layout_marginRight="9dp">
-
-        <TextView
-            android:id="@+id/box_num_connected"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:height="68dp"
-            android:gravity="center"
-            android:elevation="4dp"
-            android:background="@android:drawable/dialog_holo_light_frame"
-            android:backgroundTint="@color/colorAppRed"
-            android:textColor="#ffffff"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:text="0" />
-
-    </LinearLayout>
-
-    <!-- ACC FORCES WIDGET -->
-
-    <LinearLayout
-        android:id="@+id/force_layout"
-        android:orientation="vertical"
-        android:layout_width="120dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:layout_marginTop="140dp"
-        android:layout_marginRight="100dp">
-
-        <ImageView
-            android:id="@+id/acc_force_view"
-            android:layout_width="fill_parent"
-            android:layout_height="120dp"
-            android:layout_marginTop="10dp"
-            android:gravity="center"
-            android:elevation="4dp"
-            android:background="@android:drawable/dialog_holo_light_frame"
-            android:backgroundTint="@color/colorAppGrey"
-            />
-
-    </LinearLayout>
-
 </fragment>
+
 
 

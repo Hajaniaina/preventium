@@ -8,7 +8,6 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -54,7 +53,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private ModeManager modeManager;
     private AppManager appManager;
 
-    private ProgressDialog progress;
     private TextView drivingTimeView;
     private TextView boxNumView;
     private FloatingActionMenu optMenu;
@@ -65,7 +63,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton menuButton1;
     private FloatingActionButton menuButton2;
     private FloatingActionButton menuButton3;
+    private FloatingActionButton menuButton4;
+    private FloatingActionButton menuButton5;
 
+    private ProgressDialog progress;
     private GoogleMap mGoogleMap;
     private SupportMapFragment mapFrag;
     private LatLng currPos, lastPos;
@@ -82,7 +83,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
         appManager = new AppManager(this,this);
-        
 
         progress = new ProgressDialog(this);
         progress.setMessage(getString(R.string.loading_string));
@@ -228,7 +228,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     if (type != FORCE_t.UNKNOW) {
 
                         accForceView.hide(false);
-                        accForceView.setAcc(type, level);
+                        accForceView.setValue(type, level);
                     }
                     else {
 
@@ -560,7 +560,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void setPositionListeners() {
 
-        posManager.setOnPositionChangedListener(new PositionManager.PositionListener() {
+        posManager.setPositionChangedListener(new PositionManager.PositionListener() {
 
             @Override
             public void onRawPositionUpdate (Location location) {
@@ -718,10 +718,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         menuButton1 = (FloatingActionButton) findViewById(R.id.menu_button1);
+        menuButton1.setImageResource(R.drawable.ic_action_play);
         menuButton2 = (FloatingActionButton) findViewById(R.id.menu_button2);
         menuButton3 = (FloatingActionButton) findViewById(R.id.menu_button3);
+        menuButton4 = (FloatingActionButton) findViewById(R.id.menu_button4);
+        menuButton5 = (FloatingActionButton) findViewById(R.id.menu_button5);
 
-        menuButton1.setImageResource(R.drawable.ic_action_play);
         menuButton1.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -766,6 +768,23 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onClick (View view) {
+
+                optMenu.close(true);
+            }
+        });
+
+        menuButton4.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+
+        menuButton5.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
 
             }
         });

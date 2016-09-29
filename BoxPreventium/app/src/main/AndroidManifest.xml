@@ -26,14 +26,6 @@
         android:largeHeap="true"
         android:keepScreenOn="true">
 
-        <!--
-             The API key for Google Maps-based APIs is defined as a string resource.
-             (See the file "res/values/google_maps_api.xml").
-             Note that the API key is linked to the encryption key used to sign the APK.
-             You need a different API key for each encryption key, including the release key that is used to
-             sign the APK for publishing.
-             You can define the keys for the debug and release targets in src/debug/ and src/release/.
-        -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
@@ -41,6 +33,7 @@
         <activity
             android:name=".gui.MainActivity"
             android:label="@string/title_activity_maps"
+            android:keepScreenOn="true"
             android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -51,6 +44,7 @@
         <activity
             android:name=".gui.SettingsActivity"
             android:label="@string/title_activity_settings"
+            android:keepScreenOn="true"
             android:screenOrientation="landscape"
             android:parentActivityName="com.preventium.boxpreventium.gui.MainActivity"
             android:theme="@style/Theme.AppCompat.Light">
@@ -59,6 +53,7 @@
         <activity
             android:name=".gui.PinLockActivity"
             android:label="Pin code"
+            android:keepScreenOn="true"
             android:screenOrientation="landscape"
             android:theme="@style/AppThemeDialog">
         </activity>
@@ -66,6 +61,7 @@
         <activity
             android:name=".gui.InfoActivity"
             android:label="@string/title_activity_info"
+            android:keepScreenOn="true"
             android:screenOrientation="landscape"
             android:theme="@style/AppTheme">
         </activity>

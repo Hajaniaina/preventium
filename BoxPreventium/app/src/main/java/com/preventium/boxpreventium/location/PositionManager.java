@@ -20,18 +20,28 @@ import java.util.List;
 public class PositionManager implements LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static final String TAG = "PositionManager";
-    private static final float uiUpdateDistanceMeters = 50f;
+
+    private static final int ACC_NONE = 0;
+    private static final int ACC_POS  = 1;
+    private static final int ACC_NEG  = 2;
+
     private static final float MS_TO_KMH = 3.6f;
+    private static final float MOVING_MIN_SPEED_KMH = 5.0f;
+    private static final float UI_UPDATE_DISTANCE_METERS = 50f;
 
     private Context context;
     private LocationRequest locationRequest;
     private GoogleApiClient googleApiClient;
-    private Location refLocation, currLocation, lastLocation;
+    private Location refLocation, currLocation;
     private long updateIntervalMs = 1000;
     private boolean updateEnabled = false;
     private boolean firstEntry = true;
-    private ArrayList<Location> locList;
-    private List<PositionListener> registeredListeners;
+    private boolean moving = false;
+    private ArrayList<Location> lastLocList;
+
+    private List<PositionListener> posListeners;
+    private List<MovingStateListener> movListeners;
+    private List<AccStateListener> accListeners;
 
     public interface PositionListener {
 
@@ -39,27 +49,43 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
         public void onRawPositionUpdate (Location location);
     }
 
+    public interface MovingStateListener {
+
+        public void onStartMoving();
+        public void onStopMoving();
+    }
+
+    public interface AccStateListener {
+
+        public void onAccelerating();
+        public void onDeAccelerating();
+    }
+
     public PositionManager (Activity activity) {
 
         context = activity.getApplicationContext();
-        registeredListeners = new ArrayList<PositionListener>();
 
-        locList = new ArrayList<Location>();
+        posListeners = new ArrayList<PositionListener>();
+        movListeners = new ArrayList<MovingStateListener>();
+        accListeners = new ArrayList<AccStateListener>();
+
+        lastLocList = new ArrayList<Location>();
 
         googleApiClient = new GoogleApiClient.Builder(context).addConnectionCallbacks(this).addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
         googleApiClient.connect();
     }
 
-    public void setOnPositionChangedListener (PositionListener listener) {
+    @Override
+    public void onConnectionSuspended (int i) {
 
-        registeredListeners.add(listener);
+        Log.d(TAG, "Google API connection suspended");
     }
 
     @Override
-    public void onConnectionSuspended (int i) {}
+    public void onConnectionFailed (ConnectionResult connectionResult) {
 
-    @Override
-    public void onConnectionFailed (ConnectionResult connectionResult) {}
+        Log.d(TAG, "Google API connection failed");
+    }
 
     @Override
     public void onConnected (Bundle bundle) {
@@ -81,69 +107,102 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
             firstEntry = false;
         }
 
-        lastLocation = currLocation;
         currLocation = location;
 
-        for (PositionListener listener : registeredListeners) {
+        for (PositionListener posListener : posListeners) {
 
-            float distance = refLocation.distanceTo(currLocation);
-
-            if (distance >= uiUpdateDistanceMeters) {
+            if (refLocation.distanceTo(currLocation) >= UI_UPDATE_DISTANCE_METERS) {
 
                 refLocation = currLocation;
 
-                Log.d(TAG, "Position Update");
-                listener.onPositionUpdate(location);
+                Log.d("_POS", "Position Update");
+                posListener.onPositionUpdate(location);
             }
 
-            Log.d(TAG, "Raw Position Update");
-            listener.onRawPositionUpdate(location);
+            Log.d("_POS", "Raw Position Update");
+            posListener.onRawPositionUpdate(location);
         }
 
-        if (locList.size() >= 100) {
+        boolean movingState = checkMovingState(5);
 
-            locList.remove(0);
+        if (movingState) {
+
+            if (!moving) {
+
+                moving = true;
+
+                for (MovingStateListener movListener : movListeners) {
+
+                    movListener.onStartMoving();
+                }
+            }
+        }
+        else {
+
+            if (moving) {
+
+                moving = false;
+
+                for (MovingStateListener movListener : movListeners) {
+
+                    movListener.onStopMoving();
+                }
+            }
         }
 
-        if (locList.size() >= 100) {
+        int accState = checkAccState(3);
 
-            locList.remove(0);
+        if (accState == ACC_POS) {
+
+            for (AccStateListener accListener : accListeners) {
+
+                accListener.onAccelerating();
+            }
+        }
+        else if (accState == ACC_NEG) {
+
+            for (AccStateListener accListener : accListeners) {
+
+                accListener.onDeAccelerating();
+            }
         }
 
-        locList.add(location);
+        boolean constSpeed = checkConstSpeed(5);
+
+        if (lastLocList.size() >= 5) {
+
+            lastLocList.remove(0);
+        }
+
+        lastLocList.add(location);
     }
 
     public boolean isMoving() {
 
-        int ptsNum = 10;
-        double avgSpeed = 0;
-        boolean moving = false;
+        return moving;
+    }
 
-        if (locList.size() >= ptsNum) {
+    public void enableUpdates (boolean enable) {
 
-            List<Location> tailList = locList.subList((locList.size() - ptsNum), locList.size());
+        if (enable) {
 
-            for (Location loc : tailList) {
+            if (!updateEnabled) {
 
-                if (loc.hasSpeed()) {
+                lastLocList.clear();
 
-                    avgSpeed += (loc.getSpeed() * MS_TO_KMH);
+                checkPermission();
+                LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
+
+            } else {
+
+                if (updateEnabled) {
+
+                    LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
                 }
-                else {
-
-                    ptsNum--;
-                }
-            }
-
-            avgSpeed = (avgSpeed / (float) ptsNum);
-
-            if (avgSpeed > 5f) {
-
-                moving = true;
             }
         }
 
-        return moving;
+        updateEnabled = enable;
     }
 
     public int getLastSpeed() {
@@ -176,33 +235,197 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
                 PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
 
-            Log.d("POS", "ACCESS_FINE_LOCATION permission disabled");
+            Log.d(TAG, "ACCESS_FINE_LOCATION permission disabled");
             return false;
         }
 
         return true;
     }
 
-    public void enableUpdates (boolean enable) {
+    public void setPositionChangedListener(PositionListener listener) {
 
-        if (enable) {
+        posListeners.add(listener);
+    }
 
-            if (!updateEnabled) {
+    public void setMovingListener (MovingStateListener listener) {
 
-                locList.clear();
+        movListeners.add(listener);
+    }
 
-                checkPermission();
-                LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
+    public void setAccListener (AccStateListener listener) {
 
-            } else {
+        accListeners.add(listener);
+    }
 
-                if (updateEnabled) {
+    private boolean checkMovingState (int points) {
 
-                    LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
+        boolean movingState = false;
+        int realPoints = points;
+
+        if (lastLocList.size() >= points) {
+
+            double avgSpeed = 0.0;
+
+            for (Location loc : lastLocList) {
+
+                if (loc.hasSpeed()) {
+
+                    avgSpeed += (loc.getSpeed() * MS_TO_KMH);
                 }
+                else {
+
+                    realPoints--;
+                }
+            }
+
+            if (realPoints >= points) {
+
+                avgSpeed = (avgSpeed / (double) realPoints);
+            }
+            else {
+
+                avgSpeed = 0.0;
+            }
+
+            if (avgSpeed >= MOVING_MIN_SPEED_KMH) {
+
+                Log.d("_MOV", "Start Moving. Speed: " + String.valueOf(avgSpeed) + " km/h");
+                movingState = true;
+            }
+            else {
+
+                Log.d("_MOV", "Stop Moving. Speed: " + String.valueOf(avgSpeed) + " km/h");
             }
         }
 
-        updateEnabled = enable;
+        return movingState;
+    }
+
+    private int checkAccState (int points) {
+
+        float errMargin = 2.0f;
+
+        if (lastLocList.size() > points) {
+            List<Location> tailList = lastLocList.subList((lastLocList.size() - points), lastLocList.size());
+            float[] speedList = new float[points];
+
+            for (int i = 0; i < tailList.size(); i++) {
+
+                if (tailList.get(i).hasSpeed()) {
+
+                    speedList[i] = tailList.get(i).getSpeed();
+                }
+                else {
+
+                    speedList[i] = 0.0f;
+                }
+            }
+
+            boolean accFwd = true;
+
+            for (int i = 1; i < speedList.length; i++) {
+                if (speedList[i - 1] < (speedList[i] + errMargin)) {
+
+                    accFwd = false;
+                }
+            }
+
+            if (accFwd) {
+
+                Log.d("_ACC", "Pos Acc");
+                return ACC_POS;
+            }
+
+            boolean accRwd = true;
+
+            for (int i = 1; i < speedList.length; i++) {
+                if (speedList[i - 1] + errMargin >= speedList[i] ) {
+
+                    accRwd = false;
+                }
+            }
+
+            if (accRwd) {
+
+                Log.d("_ACC", "Neg Acc");
+                return ACC_NEG;
+            }
+        }
+
+        Log.d("_ACC", "No Acc");
+        return ACC_NONE;
+    }
+
+    private boolean checkConstSpeed (int points) {
+
+        boolean stable = false;
+        double errMargin = 2.0;
+
+        if (lastLocList.size() > points) {
+
+            double[] speedList = new double[points];
+
+            for (int i = 0; i < speedList.length; i++) {
+
+                if (lastLocList.get(i).hasSpeed()) {
+
+                    speedList[i] = 0.0;
+                }
+                else {
+
+                    speedList[i] = lastLocList.get(i).getSpeed();
+                }
+            }
+
+            double variance = getVariance(speedList, points);
+
+            Log.d("_SPD", "Speed Variance: " + String.valueOf(variance));
+
+            if (variance <= errMargin) {
+
+                Log.d("_SPD", "Const Speed");
+                stable = true;
+            }
+        }
+
+        return stable;
+    }
+
+    private double getVariance (double values[], int size) {
+
+        if (size < 1) {
+
+            return 0.0;
+        }
+
+        double sum = 0.0;
+
+        for (int i = 0; i < size; ++i) {
+
+            sum += values[i];
+        }
+
+        double mean = sum / size;
+        double sqDiffsum = 0.0;
+
+        for (int i = 0; i < size; ++i) {
+
+            double diff = values[i] - mean;
+            sqDiffsum += diff * diff;
+        }
+
+        double variance = sqDiffsum / size;
+        return variance;
+    }
+
+    private double getStdDeviation (double values[], int size) {
+
+        if (size < 1) {
+
+            return 0.0;
+        }
+
+        double variance = getVariance(values, size);
+        return Math.sqrt(variance);
     }
 }
