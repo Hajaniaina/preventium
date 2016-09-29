@@ -176,10 +176,10 @@ public class ComonUtils {
     }
 
     public static String getIMEInumber(Context ctx) {
-        //Get the instance of TelephonyManager
-        TelephonyManager tm = (TelephonyManager)ctx.getSystemService(Context.TELEPHONY_SERVICE);
-        return tm.getDeviceId();
-        //return Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.ANDROID_ID).toUpperCase();
+        return "352136063069450";
+//        //Get the instance of TelephonyManager
+//        TelephonyManager tm = (TelephonyManager)ctx.getSystemService(Context.TELEPHONY_SERVICE);
+//        return tm.getDeviceId();
     }
 
 
