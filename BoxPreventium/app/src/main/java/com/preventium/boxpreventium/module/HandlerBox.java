@@ -112,7 +112,7 @@ public class HandlerBox extends ThreadDefault
 
         while( isRunning() ) {
 
-            sleep(500);
+            sleep(1000);
 
             // WHEN SCANNING
             if( scanning ) { // If scanning is in progress.

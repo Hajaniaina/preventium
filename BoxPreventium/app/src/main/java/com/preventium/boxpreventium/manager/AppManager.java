@@ -130,7 +130,7 @@ public class AppManager extends ThreadDefault
 
         while ( isRunning() ) {
 
-            sleep(1000);
+            sleep(500);
             updateRideTime();
 
             switch ( mode ){
