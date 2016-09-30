@@ -614,9 +614,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (currMode == ModeManager.MOVING) {
 
-                    speedView.setSpeed(SpeedView.SPEED_MAX, posManager.getInstantSpeed());
                     speedView.setSpeed(SpeedView.SPEED_CORNERS, posManager.getInstantSpeed());
-                    speedView.setSpeed(SpeedView.SPEED_STRAIGHT, posManager.getInstantSpeed());
 
                     mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(18).bearing(0).tilt(30).build();

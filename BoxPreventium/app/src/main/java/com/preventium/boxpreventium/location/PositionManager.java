@@ -28,7 +28,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
     private static final float MS_TO_KMH = 3.6f;
     private static final float MOVING_MIN_SPEED_KMH = 5.0f;
-    private static final float UPDATE_DISTANCE_METERS = 10.0f;
+    private static final float UPDATE_DISTANCE_METERS = 20.0f;
 
     private Context context;
     private LocationRequest locationRequest;
@@ -114,10 +114,10 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
             if (refLocation.distanceTo(currLocation) >= UPDATE_DISTANCE_METERS) {
 
-                refLocation = currLocation;
-
                 Log.d(TAG, "Position Update");
+
                 posListener.onPositionUpdate(refLocation, location);
+                refLocation = currLocation;
             }
 
             // Log.d(TAG, "Raw Position Update");
