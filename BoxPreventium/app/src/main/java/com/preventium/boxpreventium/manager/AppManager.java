@@ -357,7 +357,7 @@ public class AppManager extends ThreadDefault
                 if (ecaLine_read != null) {
                     if (!ecaLine_read.equals(ecaLine_save)) {
                         if (DataCFG.get_SEND_ALL_GPS_POINTS(ctx)) {
-                            addLog( ecaLine_read.toString() );
+                            //addLog( ecaLine_read.toString() );
                             database.addECA( ecaLine_read );
                             ecaLine_save = ecaLine_read;
                         }
@@ -377,13 +377,6 @@ public class AppManager extends ThreadDefault
     private void addLog( String txt ){
         if( !log.isEmpty() ) log += System.getProperty("line.separator");
         log += txt;
-
-        int nb_line = log.length() - log.replace(System.getProperty("line.separator"),"").length();
-        if( nb_line > 5 ){
-            int idx = log.indexOf(System.getProperty("line.separator"));
-            log = log.substring(idx);
-        }
-
         if( listener != null ) listener.onDebugLog( log );
     }
 
