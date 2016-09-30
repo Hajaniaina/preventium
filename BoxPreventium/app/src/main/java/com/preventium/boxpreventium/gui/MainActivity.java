@@ -13,6 +13,7 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -55,6 +56,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private TextView drivingTimeView;
     private TextView boxNumView;
+    private TextView debugView;
+
     private FloatingActionMenu optMenu;
     private FloatingActionButton infoButton;
     private FloatingActionButton callButton;
@@ -100,8 +103,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         speedView = new SpeedView(this);
         accForceView = new AccForceView(this);
 
-        drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
         boxNumView = (TextView) findViewById(R.id.box_num_connected);
+        drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
+
+        debugView = (TextView) findViewById(R.id.debug_view);
+        debugView.setMovementMethod(new ScrollingMovementMethod());
+        debugView.setVisibility(View.GONE);
 
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFrag.getMapAsync(this);
@@ -206,7 +213,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     color = ContextCompat.getColor(MainActivity.this, R.color.colorAppGreen);
                 }
 
-                Drawable background = boxNumView.getBackground();
+                Drawable background = drivingTimeView.getBackground();
                 background.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
 
                 drivingTimeView.setBackground(background);
@@ -583,7 +590,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (currMode == ModeManager.MOVING) {
 
-                    speedView.setSpeed(SpeedView.SPEED_MAX, posManager.getLastSpeed());
+                    speedView.setSpeed(SpeedView.SPEED_MAX, posManager.getInstantSpeed());
+                    speedView.setSpeed(SpeedView.SPEED_CORNERS, posManager.getInstantSpeed());
+                    speedView.setSpeed(SpeedView.SPEED_STRAIGHT, posManager.getInstantSpeed());
 
                     mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(currPos));
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(currPos).zoom(18).bearing(0).tilt(30).build();
@@ -596,9 +605,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onPositionUpdate (Location location) {
 
-                int currMode = modeManager.getMode();
-
-                if (currMode == ModeManager.MOVING) {
+                if (modeManager.getMode() == ModeManager.MOVING) {
 
                     drawLine(lastPos, currPos);
                 }
@@ -638,7 +645,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onMovingMode() {
 
                 Log.d(TAG, "Mode Move");
-
                 mGoogleMap.getUiSettings().setAllGesturesEnabled(false);
 
                 // disableActionButtons(true);
@@ -699,7 +705,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         // MENU BUTTON
         optMenu = (FloatingActionMenu) findViewById(R.id.opt_menu);
-        optMenu.setClosedOnTouchOutside(true);
+        optMenu.setClosedOnTouchOutside(false);
 
         optMenu.setOnMenuToggleListener(new FloatingActionMenu.OnMenuToggleListener() {
 
@@ -718,11 +724,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         menuButton1 = (FloatingActionButton) findViewById(R.id.menu_button1);
-        menuButton1.setImageResource(R.drawable.ic_action_play);
         menuButton2 = (FloatingActionButton) findViewById(R.id.menu_button2);
         menuButton3 = (FloatingActionButton) findViewById(R.id.menu_button3);
         menuButton4 = (FloatingActionButton) findViewById(R.id.menu_button4);
         menuButton5 = (FloatingActionButton) findViewById(R.id.menu_button5);
+
+        menuButton1.setImageResource(R.drawable.ic_action_play);
 
         menuButton1.setOnClickListener(new View.OnClickListener() {
 

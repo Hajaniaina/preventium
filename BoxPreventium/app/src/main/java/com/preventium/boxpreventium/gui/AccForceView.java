@@ -12,11 +12,10 @@ import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 
-public class AccForceView extends Object {
+public class AccForceView {
 
     private static final String TAG = "AccForceView";
 
-    private Context context;
     private ImageView accForceView;
     private AppColor appColor;
     private FORCE_t lastForce = FORCE_t.UNKNOW;
@@ -24,7 +23,6 @@ public class AccForceView extends Object {
 
     public AccForceView (Activity activity) {
 
-        context = activity.getApplicationContext();
         accForceView = (ImageView) activity.findViewById(R.id.acc_force_view);
         appColor = new AppColor(activity);
 
@@ -35,7 +33,7 @@ public class AccForceView extends Object {
 
         if (hide) {
 
-            accForceView.setVisibility(View.GONE);
+            accForceView.setVisibility(View.INVISIBLE);
         }
         else {
 

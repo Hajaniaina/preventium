@@ -152,11 +152,11 @@
             android:layout_marginTop="10dp"
             android:layout_marginLeft="8dp"
             android:gravity="center"
-            android:background="@drawable/text_border_green"
+            android:background="@drawable/text_border_red"
             android:elevation="4dp"
-            android:textColor="@color/colorAppGreen"
+            android:textColor="@color/colorAppRed"
             android:textSize="48sp"
-            android:text="20"
+            android:text="0"
             android:textStyle="bold"
             android:shadowColor="@color/material_grey600"
             android:shadowDx="2"
@@ -229,7 +229,8 @@
             android:layout_marginTop="5dp"
             android:src="@drawable/ic_info"
             fab:fab_colorNormal="@color/colorAppBlue"
-            fab:fab_colorPressed="#4fc3f7"
+            fab:fab_colorPressed="@color/colorAppRed"
+            fab:fab_colorRipple="#ff5252"
             fab:fab_shadowColor="#444">
         </com.github.clans.fab.FloatingActionButton>
 
@@ -240,7 +241,8 @@
             android:layout_marginTop="15dp"
             android:src="@drawable/ic_phone"
             fab:fab_colorNormal="@color/colorAppBlue"
-            fab:fab_colorPressed="#4fc3f7"
+            fab:fab_colorPressed="@color/colorAppRed"
+            fab:fab_colorRipple="#ff5252"
             fab:fab_shadowColor="#444">
         </com.github.clans.fab.FloatingActionButton>
 
@@ -251,7 +253,8 @@
             android:layout_marginTop="15dp"
             android:src="@drawable/ic_formation"
             fab:fab_colorNormal="@color/colorAppBlue"
-            fab:fab_colorPressed="#4fc3f7"
+            fab:fab_colorPressed="@color/colorAppRed"
+            fab:fab_colorRipple="#ff5252"
             fab:fab_shadowColor="#444">
         </com.github.clans.fab.FloatingActionButton>
 
@@ -262,7 +265,8 @@
             android:layout_marginTop="15dp"
             android:src="@drawable/ic_settings"
             fab:fab_colorNormal="@color/colorAppBlue"
-            fab:fab_colorPressed="#4fc3f7"
+            fab:fab_colorPressed="@color/colorAppRed"
+            fab:fab_colorRipple="#ff5252"
             fab:fab_shadowColor="#444">
         </com.github.clans.fab.FloatingActionButton>
 
@@ -285,7 +289,8 @@
         fab:menu_openDirection="up"
         fab:menu_icon="@drawable/fab_add"
         fab:menu_colorNormal="@color/colorAppViolet"
-        fab:menu_colorPressed="#e040fb"
+        fab:menu_colorPressed="@color/colorAppRed"
+        fab:menu_colorRipple="#ff5252"
         fab:menu_shadowColor="#444">
 
         <com.github.clans.fab.FloatingActionButton
@@ -294,7 +299,8 @@
             android:layout_height="wrap_content"
             android:src="@drawable/ic_menu"
             fab:fab_colorNormal="@color/colorAppRed"
-            fab:fab_colorPressed="#ff5252"
+            fab:fab_colorPressed="@color/colorAppViolet"
+            fab:fab_colorRipple="#e040fb"
             fab:fab_shadowColor="#444"
             fab:fab_label="Accelerating">
         </com.github.clans.fab.FloatingActionButton>
@@ -305,7 +311,8 @@
             android:layout_height="wrap_content"
             android:src="@drawable/ic_menu"
             fab:fab_colorNormal="@color/colorAppRed"
-            fab:fab_colorPressed="#ff5252"
+            fab:fab_colorPressed="@color/colorAppViolet"
+            fab:fab_colorRipple="#e040fb"
             fab:fab_shadowColor="#444"
             fab:fab_label="Constant speed">
         </com.github.clans.fab.FloatingActionButton>
@@ -316,7 +323,8 @@
             android:layout_height="wrap_content"
             android:src="@drawable/ic_map"
             fab:fab_colorNormal="@color/colorAppViolet"
-            fab:fab_colorPressed="#e040fb"
+            fab:fab_colorPressed="@color/colorAppRed"
+            fab:fab_colorRipple="#ff5252"
             fab:fab_shadowColor="#444"
             fab:fab_label="Map type">
         </com.github.clans.fab.FloatingActionButton>
@@ -327,7 +335,8 @@
             android:layout_height="wrap_content"
             android:src="@drawable/ic_qrcode"
             fab:fab_colorNormal="@color/colorAppViolet"
-            fab:fab_colorPressed="#e040fb"
+            fab:fab_colorPressed="@color/colorAppRed"
+            fab:fab_colorRipple="#ff5252"
             fab:fab_shadowColor="#444"
             fab:fab_label="Scan QR code">
         </com.github.clans.fab.FloatingActionButton>
@@ -338,14 +347,45 @@
             android:layout_height="wrap_content"
             android:src="@drawable/ic_play"
             fab:fab_colorNormal="@color/colorAppViolet"
-            fab:fab_colorPressed="#e040fb"
+            fab:fab_colorPressed="@color/colorAppRed"
+            fab:fab_colorRipple="#ff5252"
             fab:fab_shadowColor="#444"
             fab:fab_label="Disable tracking">
         </com.github.clans.fab.FloatingActionButton>
 
     </com.github.clans.fab.FloatingActionMenu>
 
+    <LinearLayout
+        android:id="@+id/debug_layout"
+        android:orientation="vertical"
+        android:layout_width="500dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:layout_marginLeft="50dp"
+        android:layout_marginBottom="50dp">
+
+        <TextView
+            android:id="@+id/debug_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="10dp"
+            android:text=""
+            android:maxLines="8"
+            android:scrollbars="vertical"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:backgroundTint="#9e9e9e"
+            android:textColor="#fafafa"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:shadowColor="#424242"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="2"/>
+
+    </LinearLayout>
+
 </fragment>
-
-
-

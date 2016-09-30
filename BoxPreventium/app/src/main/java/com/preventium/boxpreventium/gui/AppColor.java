@@ -7,7 +7,7 @@ import android.support.v4.content.ContextCompat;
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 
-public class AppColor extends Object {
+public class AppColor {
 
     public static final int RED    = 0;
     public static final int ORANGE = 1;

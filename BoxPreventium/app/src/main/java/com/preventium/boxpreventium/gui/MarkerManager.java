@@ -7,7 +7,7 @@ import com.google.android.gms.maps.model.Marker;
 
 import java.util.ArrayList;
 
-public class MarkerManager extends Object {
+public class MarkerManager {
 
     private static final String TAG = "MarkerManager";
     private ArrayList<CustomMarker> markersList = null;

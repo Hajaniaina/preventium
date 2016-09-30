@@ -9,7 +9,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import java.util.Random;
 
-public class CustomMarker extends Object {
+public class CustomMarker {
 
     private static final String TAG = "CustomMarker";
 

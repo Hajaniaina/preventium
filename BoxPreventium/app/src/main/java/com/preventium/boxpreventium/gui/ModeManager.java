@@ -43,20 +43,22 @@ public class ModeManager {
             });
             */
 
+            /*
             posManager.setMovingListener(new PositionManager.MovingStateListener() {
 
                 @Override
                 public void onStartMoving() {
 
-                    // setMode(MOVING);
+                    setMode(MOVING);
                 }
 
                 @Override
                 public void onStopMoving() {
 
-                    // setMode(STOP);
+                    setMode(STOP);
                 }
             });
+            */
         }
     }
 

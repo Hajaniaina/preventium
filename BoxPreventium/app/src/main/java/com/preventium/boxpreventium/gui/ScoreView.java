@@ -11,7 +11,7 @@ import com.preventium.boxpreventium.enums.LEVEL_t;
 
 import java.util.ArrayList;
 
-public class ScoreView extends Object {
+public class ScoreView {
 
     private static final String TAG = "ScoreView";
 
