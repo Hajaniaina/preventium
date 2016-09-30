@@ -127,9 +127,7 @@ public class HandlerBox extends ThreadDefault
                     if( DEBUG ) Log.d(TAG,"LOST " + mMacList.get(i) );
                     mBoxList.remove(i);
                     mMacList.remove(i);
-
                 } else {
-
                     SensorSmoothAccelerometerInfo smooth = mBoxList.get(i).getSmooth();
                     if( smooth != null ) {
                         if(  interval(0.0,smooth.value()) >= interval(0.0,curr_force_mG) ) {

@@ -135,6 +135,7 @@ public class AppManager extends ThreadDefault
 
         chronoRideTxt = "";
         chronoRide.start();
+        setLog("");
 
         addLog( "Download cfg..." );
         run_get_cfg();
@@ -167,11 +168,6 @@ public class AppManager extends ThreadDefault
 
         ArrayList<ECALine> alert = database.alertList();
         addLog( "Alert list size: " + alert.size() );
-        int ii = ( alert.size() > 5 ) ? alert.size()-5: 0;
-        if( ii > 0 ) addLog( "..." );
-        for( int i = ii ; i < alert.size(); i++ ) {
-            addLog( alert.toString() );
-        }
         addLog( "Box event data size: " + database.boxEventsData().length );
 
         if( DEBUG ) Log.d(TAG,"AppManager thread end.");
@@ -250,47 +246,51 @@ public class AppManager extends ThreadDefault
     private void updateMovingStatus(){
 
         mov_t = MOVING_t.UNKNOW;
+        XmG = 0f;
 
         if( locations.size() > 5 ) {
+
             List<Location> list = this.locations.subList(0, 5);
-            if (list.size() >= 5) {
-                boolean acceleration = true;
-                boolean freinage = true;
-                float speed_min = 0f;
-                float speed_max = 0f;
-                for (int i = 0; i < list.size(); i++) {// i is more recent than (i+1)
+            boolean acceleration = true;
+            boolean freinage = true;
+            float speed_min = 0f;
+            float speed_max = 0f;
+            for (int i = 0; i < list.size(); i++) {// i is more recent than (i+1)
 
-                    // Calculate minimum and maximum value
-                    if (list.get(i).getSpeed() < speed_min) speed_min = list.get(i).getSpeed();
-                    if (list.get(i).getSpeed() > speed_max) speed_max = list.get(i).getSpeed();
+                // Calculate minimum and maximum value
+                if (list.get(i).getSpeed() < speed_min) speed_min = list.get(i).getSpeed();
+                if (list.get(i).getSpeed() > speed_max) speed_max = list.get(i).getSpeed();
 
-                    // Checking acceleration and braking
-                    if (i < list.size() - 1) {
-                        if (list.get(i).getSpeed() > list.get(i + 1).getSpeed()) {
-                            acceleration = false;
-                        }
-                        if (list.get(i).getSpeed() < list.get(i + 1).getSpeed()) {
-                            freinage = false;
-                        }
+                // Checking acceleration and braking
+                if (i < list.size() - 1) {
+                    if (list.get(i).getSpeed() > list.get(i + 1).getSpeed()) {
+                        acceleration = false;
                     }
-
+                    if (list.get(i).getSpeed() < list.get(i + 1).getSpeed()) {
+                        freinage = false;
+                    }
                 }
-                if (speed_max == 0f) mov_t = MOVING_t.STP;
-                else if ((speed_max - speed_min) * MS_TO_KMH < 2f) mov_t = MOVING_t.CST;
-                else if (acceleration) mov_t = MOVING_t.ACC;
-                else if (freinage) mov_t = MOVING_t.BRK;
 
-                // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le g :
-                // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
-                // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
-
-                double mG =
-                        ((locations.get(0).getSpeed() - locations.get(1).getSpeed())
-                                / (9.81 * ((locations.get(0).getTime() - locations.get(1).getTime()) * 0.001)))
-                                * 1000.0;
-                this.XmG = mG;
-                Log.d("XmG", "XmG = " + XmG);
             }
+            if (speed_max == 0f) mov_t = MOVING_t.STP;
+            else if ((speed_max - speed_min) * MS_TO_KMH < 2f) mov_t = MOVING_t.CST;
+            else if (acceleration) mov_t = MOVING_t.ACC;
+            else if (freinage) mov_t = MOVING_t.BRK;
+
+            // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le g :
+            // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+            // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+            double mG = ((locations.get(0).getSpeed() - locations.get(1).getSpeed())
+                            / (9.81 * ((locations.get(0).getTime() - locations.get(1).getTime()) * 0.001)))
+                            * 1000.0;
+            this.XmG = mG;
+            Log.d("XmG", "XmG = " + XmG);
+
+            mG = ((locations.get(0).getSpeed() - locations.get(4).getSpeed())
+                    / (9.81 * ((locations.get(0).getTime() - locations.get(4).getTime()) * 0.001)))
+                    * 1000.0;
+            Log.d("XmG text", "XmG = " + mG);
+
 
         }
         if (mov_t != mov_t_last) {
