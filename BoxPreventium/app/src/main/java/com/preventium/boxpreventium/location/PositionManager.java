@@ -28,15 +28,14 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
     private static final float MS_TO_KMH = 3.6f;
     private static final float MOVING_MIN_SPEED_KMH = 5.0f;
-    private static final float UPDATE_DISTANCE_METERS = 50.0f;
+    private static final float UPDATE_DISTANCE_METERS = 0.0f;
 
     private Context context;
     private LocationRequest locationRequest;
     private GoogleApiClient googleApiClient;
-    private Location refLocation, currLocation;
+    private Location refLocation = null, currLocation;
     private long updateIntervalMs = 1000;
     private boolean updateEnabled = false;
-    private boolean firstEntry = true;
     private boolean moving = false;
     private ArrayList<Location> lastLocList;
 
@@ -102,10 +101,9 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     @Override
     public void onLocationChanged (Location location) {
 
-        if (firstEntry) {
+        if (refLocation == null) {
 
             refLocation = location;
-            firstEntry = false;
         }
 
         currLocation = location;
@@ -115,13 +113,12 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
             if (refLocation.distanceTo(currLocation) >= UPDATE_DISTANCE_METERS) {
 
                 Log.d(TAG, "Position Update");
-
-                posListener.onPositionUpdate(refLocation, location);
+                posListener.onPositionUpdate(refLocation, currLocation);
                 refLocation = currLocation;
             }
 
-            // Log.d(TAG, "Raw Position Update");
-            posListener.onRawPositionUpdate(location);
+            Log.d(TAG, "Raw Position Update");
+            posListener.onRawPositionUpdate(currLocation);
         }
 
         boolean movingState = checkMovingState(5);

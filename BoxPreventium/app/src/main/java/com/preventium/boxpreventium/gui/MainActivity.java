@@ -627,13 +627,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onPositionUpdate (Location prevLoc, Location currLoc) {
 
-                LatLng prevPos = new LatLng(prevLoc.getLatitude(), prevLoc.getLongitude());
-                LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());
-
-                drawLine(prevPos, currPos);
-
                 if (modeManager.getMode() == ModeManager.MOVING) {
 
+                    LatLng prevPos = new LatLng(prevLoc.getLatitude(), prevLoc.getLongitude());
+                    LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());
+
+                    drawLine(prevPos, currPos);
                 }
             }
         });
