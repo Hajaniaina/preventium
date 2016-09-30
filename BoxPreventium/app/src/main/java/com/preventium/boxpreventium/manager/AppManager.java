@@ -251,7 +251,7 @@ public class AppManager extends ThreadDefault
 
         if( locations.size() > 5 ) {
 
-            List<Location> list = this.locations.subList(0, 5);
+            List<Location> list = this.locations;
             boolean acceleration = true;
             boolean freinage = true;
             float speed_min = 0f;

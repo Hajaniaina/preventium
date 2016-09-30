@@ -630,7 +630,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 LatLng prevPos = new LatLng(prevLoc.getLatitude(), prevLoc.getLongitude());
                 LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());
 
-                markerManager.addMarker("point", currPos, CustomMarker.MARKER_RANDOM);
                 drawLine(prevPos, currPos);
 
                 if (modeManager.getMode() == ModeManager.MOVING) {
