@@ -52,10 +52,13 @@ public class AppManager extends ThreadDefault
 
     private double XmG = 0.0;
     private double YmG = 0.0;
-    private Chrono seuil_chrono = new Chrono();
+    private Chrono seuil_chrono_x = new Chrono();
+    private Chrono seuil_chrono_y = new Chrono();
     ForceSeuil seuil_ui = null;
-    ForceSeuil seuil_prev_read = null;
-    ForceSeuil seuil_curr_read = null;
+    ForceSeuil seuil_prev_read_x = null;
+    ForceSeuil seuil_prev_read_y = null;
+    ForceSeuil seuil_curr_read_x = null;
+    ForceSeuil seuil_curr_read_y = null;
 
     ECALine ecaLine_read = null;
     ECALine ecaLine_save = null;
@@ -101,19 +104,6 @@ public class AppManager extends ThreadDefault
     public void stopMoving(){setStop();}
 
     public void setLocation( Location location ) {
-        // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le g :
-        // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
-        // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
-//        if( location != null && lastLocation != null ) {
-//            double mG =
-//                    ( ( location.getSpeed() - lastLocation.getSpeed() )
-//                            / ( 9.81 * ( (location.getTime()-lastLocation.getSpeed())*0.001) ) )
-//                    * 1000.0;
-//            this.XmG = mG;
-//        }
-//        this.lastLocation = this.location;
-//        this.location = location;
-
         if( location != null ) {
             this.locations.add( 0, location );
             while ( this.locations.size() > 10 ) this.locations.remove( this.locations.size() - 1 );
@@ -251,7 +241,7 @@ public class AppManager extends ThreadDefault
 
         if( locations.size() > 5 ) {
 
-            List<Location> list = this.locations.subList(0, 5);
+            List<Location> list = this.locations;
             boolean acceleration = true;
             boolean freinage = true;
             float speed_min = 0f;
@@ -271,13 +261,14 @@ public class AppManager extends ThreadDefault
                         freinage = false;
                     }
                 }
-
             }
+
             if (speed_max == 0f) mov_t = MOVING_t.STP;
-            else if ((speed_max - speed_min) * MS_TO_KMH < 2f) mov_t = MOVING_t.CST;
+            else if ((speed_max - speed_min) * MS_TO_KMH < 3f) mov_t = MOVING_t.CST;
             else if (acceleration) mov_t = MOVING_t.ACC;
             else if (freinage) mov_t = MOVING_t.BRK;
 
+            // CALCULATE FORCE X
             // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le g :
             // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
             // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
@@ -285,13 +276,6 @@ public class AppManager extends ThreadDefault
                             / (9.81 * ((locations.get(0).getTime() - locations.get(1).getTime()) * 0.001)))
                             * 1000.0;
             this.XmG = mG;
-            Log.d("XmG", "XmG = " + XmG);
-
-            mG = ((locations.get(0).getSpeed() - locations.get(4).getSpeed())
-                    / (9.81 * ((locations.get(0).getTime() - locations.get(4).getTime()) * 0.001)))
-                    * 1000.0;
-            Log.d("XmG text", "XmG = " + mG);
-
 
         }
         if (mov_t != mov_t_last) {
@@ -302,14 +286,17 @@ public class AppManager extends ThreadDefault
                     break;
                 case STP:
                     addLog("we can calibrate on constant speed");
+                    modules.on_constant_speed();
                     break;
                 case ACC:
                     addLog("we can calibrate on acceleration");
+                    modules.on_acceleration();
                     break;
                 case BRK:
                     break;
                 case CST:
                     addLog("we can calibrate on constant speed");
+                    modules.on_constant_speed();
                     break;
             }
         }
@@ -318,55 +305,146 @@ public class AppManager extends ThreadDefault
 
     private void updateAlertForce(){
 
-        ecaLine_read = null;
-        // Read the runtime value force
-        seuil_curr_read = null;
-        if( YmG != 0.0 || XmG != 0.0 )
-            seuil_curr_read = readerEPCFile.getForceSeuil(XmG, YmG);
-        if( seuil_curr_read != null ) {
-            // Compare the runtime value force with the prevent value force
-            if( !seuil_curr_read.equals(seuil_prev_read) ) {
-                seuil_chrono.start();
-            }
-            if( seuil_chrono.getSeconds() >= seuil_curr_read.TPS ) {
-                seuil_chrono.start();
-                Log.d(TAG,"ALERT...." + seuil_curr_read.toString() );
-                ecaLine_read = ECALine.newInstance( seuil_curr_read.IDAlert, locations.get(0), null );
-                // Update UI
-                if( seuil_ui == null || !seuil_ui.equals(seuil_curr_read) ) {
-                    if( listener != null ) listener.onForceChanged( seuil_curr_read.type, seuil_curr_read.level );
-                    seuil_ui = seuil_curr_read;
+
+        if( !locations.isEmpty() ) {
+
+            boolean alertX = false;
+            boolean alertY = false;
+
+            ecaLine_read = null;
+            // Read the runtime value force
+            seuil_curr_read_x = readerEPCFile.getForceSeuilForX(XmG);
+            seuil_curr_read_y = readerEPCFile.getForceSeuilForY(YmG);
+
+            // Compare the runtime X value force with the prevent X value force
+            if (seuil_curr_read_x != null) {
+                if (!seuil_curr_read_x.equals(seuil_prev_read_x)) {
+                    seuil_chrono_x.start();
                 }
-
+                if (seuil_chrono_x.getSeconds() >= seuil_curr_read_x.TPS) {
+                    seuil_chrono_x.start();
+                    Log.d(TAG, "ALERT...." + seuil_curr_read_x.toString());
+                    addLog( "ALERT...." + seuil_curr_read_y.toString() );
+                    ecaLine_read = ECALine.newInstance(seuil_curr_read_x.IDAlert, locations.get(0), null);
+                    database.addECA(ecaLine_read);
+                    alertX = true;
+                }
             }
-        } else {
-            if( seuil_ui != null && seuil_chrono.getSeconds() > 3 ) {
-                Log.d(TAG,"ALERT.... ALL IS OK");
-                if( listener != null )
-                    listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
-                seuil_ui = null;
-            }
-        }
 
-        if( locations.get(0) != null ) {
-            if (ecaLine_read != null) {
-                addLog( ecaLine_read.toString() );
-                database.addECA( ecaLine_read );
-            } else {
-                ecaLine_read = ECALine.newInstance(locations.get(0), null);
-                if (ecaLine_read != null) {
-                    if (!ecaLine_read.equals(ecaLine_save)) {
-                        if (DataCFG.get_SEND_ALL_GPS_POINTS(ctx)) {
-                            //addLog( ecaLine_read.toString() );
-                            database.addECA( ecaLine_read );
-                            ecaLine_save = ecaLine_read;
-                        }
+            // Compare the runtime Y value force with the prevent Y value force
+            if (seuil_curr_read_y != null) {
+                if (!seuil_curr_read_y.equals(seuil_prev_read_y)) {
+                    seuil_chrono_y.start();
+                }
+                if (seuil_chrono_y.getSeconds() >= seuil_curr_read_y.TPS) {
+                    seuil_chrono_y.start();
+                    Log.d(TAG, "ALERT...." + seuil_curr_read_y.toString());
+                    addLog( "ALERT...." + seuil_curr_read_y.toString() );
+                    ecaLine_read = ECALine.newInstance(seuil_curr_read_y.IDAlert, locations.get(0), null);
+                    database.addECA(ecaLine_read);
+                    alertY = true;
+                }
+            }
+
+            // Update UI
+            if (alertX && alertY && seuil_curr_read_x != null && seuil_curr_read_y != null) {
+                if (seuil_curr_read_x.level.getValue() > seuil_curr_read_y.level.getValue()) {
+                    if (seuil_ui == null || !seuil_ui.equals(seuil_curr_read_x)) {
+                        if (listener != null)
+                            listener.onForceChanged(seuil_curr_read_x.type, seuil_curr_read_x.level);
+                        seuil_ui = seuil_curr_read_x;
+                    }
+                } else {
+                    if (seuil_ui == null || !seuil_ui.equals(seuil_curr_read_y)) {
+                        if (listener != null)
+                            listener.onForceChanged(seuil_curr_read_y.type, seuil_curr_read_y.level);
+                        seuil_ui = seuil_curr_read_y;
                     }
                 }
+            } else if (alertX && seuil_curr_read_x != null) {
+                if (seuil_ui == null || !seuil_ui.equals(seuil_curr_read_x)) {
+                    if (listener != null)
+                        listener.onForceChanged(seuil_curr_read_x.type, seuil_curr_read_x.level);
+                    seuil_ui = seuil_curr_read_x;
+                }
+            } else if (alertY && seuil_curr_read_y != null) {
+                if (seuil_ui == null || !seuil_ui.equals(seuil_curr_read_y)) {
+                    if (listener != null)
+                        listener.onForceChanged(seuil_curr_read_y.type, seuil_curr_read_y.level);
+                    seuil_ui = seuil_curr_read_y;
+                }
+            } else {
+                if (seuil_ui != null && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3) {
+                    Log.d(TAG, "ALERT.... ALL IS OK");
+                    if (listener != null)
+                        listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW);
+                    seuil_ui = null;
+                }
+            }
+
+            if (ecaLine_read == null && DataCFG.get_SEND_ALL_GPS_POINTS(ctx)) {
+                ecaLine_read = ECALine.newInstance(locations.get(0), null);
+                if (ecaLine_read != null && !ecaLine_read.equals(ecaLine_save)) {
+                    //addLog( ecaLine_read.toString() );
+                    database.addECA(ecaLine_read);
+                    ecaLine_save = ecaLine_read;
+                }
+
             }
         }
 
-        seuil_prev_read = seuil_curr_read;
+        seuil_prev_read_x = seuil_curr_read_x;
+        seuil_prev_read_y = seuil_curr_read_y;
+
+//        ecaLine_read = null;
+//        // Read the runtime value force
+//        seuil_curr_read = null;
+//        if( YmG != 0.0 || XmG != 0.0 )
+//            seuil_curr_read = readerEPCFile.getForceSeuil(XmG, YmG);
+//        if( seuil_curr_read != null ) {
+//            // Compare the runtime value force with the prevent value force
+//            if( !seuil_curr_read.equals(seuil_prev_read) ) {
+//                seuil_chrono.start();
+//            }
+//            if( seuil_chrono.getSeconds() >= seuil_curr_read.TPS ) {
+//                seuil_chrono.start();
+//                Log.d(TAG,"ALERT...." + seuil_curr_read.toString() );
+//                ecaLine_read = ECALine.newInstance( seuil_curr_read.IDAlert, locations.get(0), null );
+//                // Update UI
+//                if( seuil_ui == null || !seuil_ui.equals(seuil_curr_read) ) {
+//                    if( listener != null ) listener.onForceChanged( seuil_curr_read.type, seuil_curr_read.level );
+//                    seuil_ui = seuil_curr_read;
+//                }
+//
+//            }
+//        } else {
+//            if( seuil_ui != null && seuil_chrono.getSeconds() > 3 ) {
+//                Log.d(TAG,"ALERT.... ALL IS OK");
+//                if( listener != null )
+//                    listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
+//                seuil_ui = null;
+//            }
+//        }
+//
+//        if( locations.get(0) != null ) {
+//            if (ecaLine_read != null) {
+//                addLog( ecaLine_read.toString() );
+//                database.addECA( ecaLine_read );
+//            } else {
+//                ecaLine_read = ECALine.newInstance(locations.get(0), null);
+//                if (ecaLine_read != null) {
+//                    if (!ecaLine_read.equals(ecaLine_save)) {
+//                        if (DataCFG.get_SEND_ALL_GPS_POINTS(ctx)) {
+//                            //addLog( ecaLine_read.toString() );
+//                            database.addECA( ecaLine_read );
+//                            ecaLine_save = ecaLine_read;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        seuil_prev_read = seuil_curr_read;
 
     }
 
