@@ -72,14 +72,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private ProgressDialog progress;
     private GoogleMap mGoogleMap;
     private SupportMapFragment mapFrag;
-    private LatLng currPos, lastPos;
     private ArrayList<Polyline> roadLinesList;
     private int mapType = GoogleMap.MAP_TYPE_NORMAL;
     private boolean startMarkerAdded = false;
     private Intent pinLockIntent;
+    LatLng lastPos;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate (Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -94,7 +94,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         progress.setCancelable(false);
         progress.setProgressNumberFormat(null);
         progress.setProgressPercentFormat(null);
-        progress.show();
+
+        if (!isFinishing()) {
+
+            progress.show();
+        }
 
         roadLinesList = new ArrayList<Polyline>();
 
@@ -107,7 +111,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
 
         debugView = (TextView) findViewById(R.id.debug_view);
-        debugView.setMovementMethod(new ScrollingMovementMethod());
         debugView.setVisibility(View.GONE);
 
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -248,10 +251,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onDebugLog(final String txt) {
+
         runOnUiThread(new Runnable() {
+
             @Override
             public void run() {
-                debugView.setText( txt );
+
+                if (txt.isEmpty()) {
+
+                    debugView.setVisibility(View.GONE);
+                }
+                else {
+
+                    debugView.setVisibility(View.VISIBLE);
+                }
+
+                debugView.setText(txt);
             }
         });
     }
@@ -584,15 +599,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 int currMode = modeManager.getMode();
 
-                lastPos = currPos;
-                currPos = new LatLng(location.getLatitude(), location.getLongitude());
+                lastPos = new LatLng(location.getLatitude(), location.getLongitude());
 
                 if (!startMarkerAdded) {
 
                     startMarkerAdded = true;
-                    markerManager.addMarker(getString(R.string.start_marker_string), currPos, CustomMarker.MARKER_START);
+                    markerManager.addMarker(getString(R.string.start_marker_string), lastPos, CustomMarker.MARKER_START);
 
-                    CameraPosition cameraPosition = new CameraPosition.Builder().target(currPos).zoom(15).bearing(0).tilt(0).build();
+                    CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(15).bearing(0).tilt(0).build();
                     mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
                     progress.hide();
@@ -604,8 +618,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     speedView.setSpeed(SpeedView.SPEED_CORNERS, posManager.getInstantSpeed());
                     speedView.setSpeed(SpeedView.SPEED_STRAIGHT, posManager.getInstantSpeed());
 
-                    mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(currPos));
-                    CameraPosition cameraPosition = new CameraPosition.Builder().target(currPos).zoom(18).bearing(0).tilt(30).build();
+                    mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
+                    CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(18).bearing(0).tilt(30).build();
                     mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 }
 
@@ -613,11 +627,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
 
             @Override
-            public void onPositionUpdate (Location location) {
+            public void onPositionUpdate (Location prevLoc, Location currLoc) {
+
+                LatLng prevPos = new LatLng(prevLoc.getLatitude(), prevLoc.getLongitude());
+                LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());
+
+                markerManager.addMarker("point", currPos, CustomMarker.MARKER_RANDOM);
+                drawLine(prevPos, currPos);
 
                 if (modeManager.getMode() == ModeManager.MOVING) {
 
-                    drawLine(lastPos, currPos);
                 }
             }
         });
@@ -635,7 +654,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 Log.d(TAG, "Mode Stop");
 
-                CameraPosition cameraPosition = new CameraPosition.Builder().target(currPos).zoom(15).bearing(0).tilt(0).build();
+                CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(15).bearing(0).tilt(0).build();
                 mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 mGoogleMap.getUiSettings().setAllGesturesEnabled(true);
 
@@ -761,7 +780,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     appManager.stopMoving();
                 }
 
-                optMenu.close(true);
+                // optMenu.close(true);
             }
         });
 
@@ -788,7 +807,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View view) {
 
-                optMenu.close(true);
+                // optMenu.close(true);
             }
         });
 

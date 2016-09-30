@@ -251,63 +251,64 @@ public class AppManager extends ThreadDefault
 
         mov_t = MOVING_t.UNKNOW;
 
-        List<Location> list = this.locations.subList(0,5);
-        if( list.size() >= 5 ) {
-            boolean acceleration = true;
-            boolean freinage = true;
-            float speed_min = 0f;
-            float speed_max = 0f;
-            for( int i = 0; i < list.size(); i++ ) {// i is more recent than (i+1)
+        if( locations.size() > 5 ) {
+            List<Location> list = this.locations.subList(0, 5);
+            if (list.size() >= 5) {
+                boolean acceleration = true;
+                boolean freinage = true;
+                float speed_min = 0f;
+                float speed_max = 0f;
+                for (int i = 0; i < list.size(); i++) {// i is more recent than (i+1)
 
-                // Calculate minimum and maximum value
-                if( list.get(i).getSpeed() < speed_min ) speed_min = list.get(i).getSpeed();
-                if( list.get(i).getSpeed() > speed_max ) speed_max = list.get(i).getSpeed();
+                    // Calculate minimum and maximum value
+                    if (list.get(i).getSpeed() < speed_min) speed_min = list.get(i).getSpeed();
+                    if (list.get(i).getSpeed() > speed_max) speed_max = list.get(i).getSpeed();
 
-                // Checking acceleration and braking
-                if( i < list.size() - 1 ) {
-                    if (list.get(i).getSpeed() > list.get(i + 1).getSpeed()) {
-                        acceleration = false;
+                    // Checking acceleration and braking
+                    if (i < list.size() - 1) {
+                        if (list.get(i).getSpeed() > list.get(i + 1).getSpeed()) {
+                            acceleration = false;
+                        }
+                        if (list.get(i).getSpeed() < list.get(i + 1).getSpeed()) {
+                            freinage = false;
+                        }
                     }
-                    if (list.get(i).getSpeed() < list.get(i + 1).getSpeed()) {
-                        freinage = false;
-                    }
+
                 }
+                if (speed_max == 0f) mov_t = MOVING_t.STP;
+                else if ((speed_max - speed_min) * MS_TO_KMH < 2f) mov_t = MOVING_t.CST;
+                else if (acceleration) mov_t = MOVING_t.ACC;
+                else if (freinage) mov_t = MOVING_t.BRK;
 
-            }
-            if( speed_max == 0f ) mov_t = MOVING_t.STP;
-            else if( (speed_max - speed_min)*MS_TO_KMH < 2f ) mov_t = MOVING_t.CST;
-            else if( acceleration ) mov_t = MOVING_t.ACC;
-            else if( freinage ) mov_t = MOVING_t.BRK;
-
-            // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le g :
-            // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
-            // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+                // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le g :
+                // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+                // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
 
                 double mG =
-                        ( ( locations.get(0).getSpeed() - locations.get(1).getSpeed() )
-                                / ( 9.81 * ( (locations.get(0).getTime()-locations.get(1).getTime())*0.001) ) )
+                        ((locations.get(0).getSpeed() - locations.get(1).getSpeed())
+                                / (9.81 * ((locations.get(0).getTime() - locations.get(1).getTime()) * 0.001)))
                                 * 1000.0;
                 this.XmG = mG;
-                Log.d("XmG", "XmG = " + XmG );
-
+                Log.d("XmG", "XmG = " + XmG);
+            }
 
         }
-        if( mov_t != mov_t_last ){
+        if (mov_t != mov_t_last) {
             mov_t_last = mov_t;
-            addLog( "Moving status changed: " + mov_t.toString() );
-            switch ( mov_t_last ){
+            addLog("Moving status changed: " + mov_t.toString());
+            switch (mov_t_last) {
                 case UNKNOW:
                     break;
                 case STP:
-                    addLog( "we can calibrate on constant speed" );
+                    addLog("we can calibrate on constant speed");
                     break;
                 case ACC:
-                    addLog( "we can calibrate on acceleration" );
+                    addLog("we can calibrate on acceleration");
                     break;
                 case BRK:
                     break;
                 case CST:
-                    addLog( "we can calibrate on constant speed" );
+                    addLog("we can calibrate on constant speed");
                     break;
             }
         }
@@ -382,7 +383,7 @@ public class AppManager extends ThreadDefault
             log = log.substring(idx);
         }
 
-        if( listener != null ) listener.onDebugLog( txt );
+        if( listener != null ) listener.onDebugLog( log );
     }
 
 }

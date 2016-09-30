@@ -46,7 +46,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
     public interface PositionListener {
 
-        public void onPositionUpdate (Location location);
+        public void onPositionUpdate (Location prevLoc, Location currLoc);
         public void onRawPositionUpdate (Location location);
     }
 
@@ -117,10 +117,10 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
                 refLocation = currLocation;
 
                 Log.d(TAG, "Position Update");
-                posListener.onPositionUpdate(location);
+                posListener.onPositionUpdate(refLocation, location);
             }
 
-            Log.d(TAG, "Raw Position Update");
+            // Log.d(TAG, "Raw Position Update");
             posListener.onRawPositionUpdate(location);
         }
 

@@ -359,11 +359,35 @@
         android:id="@+id/debug_layout"
         android:orientation="vertical"
         android:layout_width="500dp"
-        android:layout_height="wrap_content"
+        android:layout_height="300dp"
         android:layout_gravity="bottom|center"
         android:layout_marginLeft="50dp"
         android:layout_marginBottom="50dp">
 
+        <ScrollView android:id="@+id/textAreaScroller"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:scrollbars="vertical|horizontal"
+            android:layout_weight="1">
+
+            <TextView
+                android:id="@+id/debug_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:paddingLeft="20dp"
+                android:paddingRight="10dp"
+                android:textColor="#757575"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:shadowColor="#424242"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2" />
+        </ScrollView>
+
+        <!--
         <TextView
             android:id="@+id/debug_view"
             android:layout_width="wrap_content"
@@ -373,7 +397,6 @@
             android:paddingBottom="10dp"
             android:paddingLeft="20dp"
             android:paddingRight="10dp"
-            android:text=""
             android:maxLines="8"
             android:scrollbars="vertical"
             android:background="@android:drawable/dialog_holo_light_frame"
@@ -385,6 +408,7 @@
             android:shadowDx="1"
             android:shadowDy="1"
             android:shadowRadius="2"/>
+        -->
 
     </LinearLayout>
 
