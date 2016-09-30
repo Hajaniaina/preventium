@@ -192,6 +192,7 @@ public class AppManager extends ThreadDefault
     @Override
     public void onDeviceState(String device_mac, boolean connected) {
 
+        addLog( device_mac + " is connected: " + connected );
         database.addCEP( locations.get(0), device_mac, connected );
     }
 
