@@ -246,6 +246,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
+    @Override
+    public void onDebugLog(final String txt) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                debugView.setText( txt );
+            }
+        });
+    }
+
     private void drawLine (LatLng startPoint, LatLng endPoint) {
 
         PolylineOptions opt = new PolylineOptions();
