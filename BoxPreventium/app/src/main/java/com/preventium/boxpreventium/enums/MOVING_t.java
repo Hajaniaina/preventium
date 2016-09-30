@@ -10,10 +10,11 @@ import java.util.Map;
  */
 
 public enum MOVING_t {
-
-    NO_RIDE(0),
-    RIDE_IN_MOVING(1),
-    RIDE_IN_PAUSE(2);
+    UNKNOW(-1),
+    STP(0),
+    ACC(1),
+    BRK(2),
+    CST(3);
 
     private int value;
     private static Map<Integer, MOVING_t> map = new HashMap<>();
@@ -27,12 +28,14 @@ public enum MOVING_t {
     @NonNull
     public String toString() {
         switch ( valueOf(value) ) {
-            case NO_RIDE    :
-                return "MOVING_t[NO_RIDE]";
-            case RIDE_IN_MOVING    :
-                return "MOVING_t[RIDE_IN_MOVING]";
-            case RIDE_IN_PAUSE  :
-                return "MOVING_t[RIDE_IN_PAUSE]";
+            case STP    :
+                return "MOVING_t[Stopped]";
+            case ACC    :
+                return "MOVING_t[Acceleration]";
+            case BRK  :
+                return "MOVING_t[Freinage]";
+            case CST  :
+                return "MOVING_t[Constant speed]";
             default                 :
                 return "MOVING_t[???]";
         }

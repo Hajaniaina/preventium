@@ -7,6 +7,7 @@ import android.util.Log;
 import com.preventium.boxpreventium.database.DBHelper;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
+import com.preventium.boxpreventium.enums.MOVING_t;
 import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.ECA.ECALine;
@@ -17,6 +18,8 @@ import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.ThreadDefault;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -28,11 +31,14 @@ public class AppManager extends ThreadDefault
 
     private final static String TAG = "AppManager";
     private final static boolean DEBUG = true;
+    private static final float MS_TO_KMH = 3.6f;
+    private String log = "";
 
     public interface AppManagerListener {
         void onNumberOfBoxChanged( int nb );
         void onChronoRideChanged( String txt );
         void onForceChanged( FORCE_t type, LEVEL_t level );
+        void onDebugLog(String txt);
     }
 
     private Context ctx = null;
@@ -54,8 +60,11 @@ public class AppManager extends ThreadDefault
     ECALine ecaLine_read = null;
     ECALine ecaLine_save = null;
 
-    private Location location = null;
-    private Location lastLocation = null;
+    private MOVING_t mov_t = MOVING_t.STP;
+    private MOVING_t mov_t_last = MOVING_t.UNKNOW;
+
+
+    private List<Location> locations = new ArrayList<Location>();
 
     private Chrono chronoRide = new Chrono();
     private String chronoRideTxt = "";
@@ -95,15 +104,20 @@ public class AppManager extends ThreadDefault
         // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le g :
         // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
         // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
-        if( location != null && lastLocation != null ) {
-            double mG =
-                    ( ( location.getSpeed() - lastLocation.getSpeed() )
-                            / ( 9.81 * ( (location.getTime()-lastLocation.getSpeed())*0.001) ) )
-                    * 1000.0;
-            this.XmG = mG;
+//        if( location != null && lastLocation != null ) {
+//            double mG =
+//                    ( ( location.getSpeed() - lastLocation.getSpeed() )
+//                            / ( 9.81 * ( (location.getTime()-lastLocation.getSpeed())*0.001) ) )
+//                    * 1000.0;
+//            this.XmG = mG;
+//        }
+//        this.lastLocation = this.location;
+//        this.location = location;
+
+        if( location != null ) {
+            this.locations.add( 0, location );
+            while ( this.locations.size() > 10 ) this.locations.remove( this.locations.size() - 1 );
         }
-        this.lastLocation = this.location;
-        this.location = location;
     }
 
     public void on_constant_speed(){ modules.on_constant_speed(); }
@@ -119,13 +133,14 @@ public class AppManager extends ThreadDefault
 
         database.clearAll();
 
-        lastLocation = null;
         chronoRideTxt = "";
         chronoRide.start();
 
+        addLog( "Download cfg..." );
         run_get_cfg();
+        addLog( "Download epc..." );
         run_get_epc();
-
+        addLog( "Activate HandlerBox..." );
         modules.setActive( true );
 
         while ( isRunning() ) {
@@ -135,6 +150,7 @@ public class AppManager extends ThreadDefault
 
             switch ( mode ){
                 case NONE:
+                    updateMovingStatus();
                     updateAlertForce();
                     break;
                 case CFG:
@@ -146,9 +162,18 @@ public class AppManager extends ThreadDefault
             }
         }
 
+        addLog( "Desactivate HandlerBox..." );
         modules.setActive( false );
-Log.d("AAA","database.alertList().size() = " + database.alertList().size() );
-Log.d("AAA","database.boxEventsData().length = " + database.boxEventsData().length );
+
+        ArrayList<ECALine> alert = database.alertList();
+        addLog( "Alert list size: " + alert.size() );
+        int ii = ( alert.size() > 5 ) ? alert.size()-5: 0;
+        if( ii > 0 ) addLog( "..." );
+        for( int i = ii ; i < alert.size(); i++ ) {
+            addLog( alert.toString() );
+        }
+        addLog( "Box event data size: " + database.boxEventsData().length );
+
         if( DEBUG ) Log.d(TAG,"AppManager thread end.");
 
     }
@@ -170,7 +195,8 @@ Log.d("AAA","database.boxEventsData().length = " + database.boxEventsData().leng
 
     @Override
     public void onDeviceState(String device_mac, boolean connected) {
-        database.addCEP( location, device_mac, connected );
+
+        database.addCEP( locations.get(0), device_mac, connected );
     }
 
     @Override
@@ -221,6 +247,73 @@ Log.d("AAA","database.boxEventsData().length = " + database.boxEventsData().leng
         }
     }
 
+    private void updateMovingStatus(){
+
+        mov_t = MOVING_t.UNKNOW;
+
+        List<Location> list = this.locations.subList(0,5);
+        if( list.size() >= 5 ) {
+            boolean acceleration = true;
+            boolean freinage = true;
+            float speed_min = 0f;
+            float speed_max = 0f;
+            for( int i = 0; i < list.size(); i++ ) {// i is more recent than (i+1)
+
+                // Calculate minimum and maximum value
+                if( list.get(i).getSpeed() < speed_min ) speed_min = list.get(i).getSpeed();
+                if( list.get(i).getSpeed() > speed_max ) speed_max = list.get(i).getSpeed();
+
+                // Checking acceleration and braking
+                if( i < list.size() - 1 ) {
+                    if (list.get(i).getSpeed() > list.get(i + 1).getSpeed()) {
+                        acceleration = false;
+                    }
+                    if (list.get(i).getSpeed() < list.get(i + 1).getSpeed()) {
+                        freinage = false;
+                    }
+                }
+
+            }
+            if( speed_max == 0f ) mov_t = MOVING_t.STP;
+            else if( (speed_max - speed_min)*MS_TO_KMH < 2f ) mov_t = MOVING_t.CST;
+            else if( acceleration ) mov_t = MOVING_t.ACC;
+            else if( freinage ) mov_t = MOVING_t.BRK;
+
+            // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le g :
+            // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+            // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+
+                double mG =
+                        ( ( locations.get(0).getSpeed() - locations.get(1).getSpeed() )
+                                / ( 9.81 * ( (locations.get(0).getTime()-locations.get(1).getTime())*0.001) ) )
+                                * 1000.0;
+                this.XmG = mG;
+                Log.d("XmG", "XmG = " + XmG );
+
+
+        }
+        if( mov_t != mov_t_last ){
+            mov_t_last = mov_t;
+            addLog( "Moving status changed: " + mov_t.toString() );
+            switch ( mov_t_last ){
+                case UNKNOW:
+                    break;
+                case STP:
+                    addLog( "we can calibrate on constant speed" );
+                    break;
+                case ACC:
+                    addLog( "we can calibrate on acceleration" );
+                    break;
+                case BRK:
+                    break;
+                case CST:
+                    addLog( "we can calibrate on constant speed" );
+                    break;
+            }
+        }
+
+    }
+
     private void updateAlertForce(){
 
         ecaLine_read = null;
@@ -236,7 +329,7 @@ Log.d("AAA","database.boxEventsData().length = " + database.boxEventsData().leng
             if( seuil_chrono.getSeconds() >= seuil_curr_read.TPS ) {
                 seuil_chrono.start();
                 Log.d(TAG,"ALERT...." + seuil_curr_read.toString() );
-                ecaLine_read = ECALine.newInstance( seuil_curr_read.IDAlert, location, null );
+                ecaLine_read = ECALine.newInstance( seuil_curr_read.IDAlert, locations.get(0), null );
                 // Update UI
                 if( seuil_ui == null || !seuil_ui.equals(seuil_curr_read) ) {
                     if( listener != null ) listener.onForceChanged( seuil_curr_read.type, seuil_curr_read.level );
@@ -253,16 +346,16 @@ Log.d("AAA","database.boxEventsData().length = " + database.boxEventsData().leng
             }
         }
 
-        if( location != null ) {
+        if( locations.get(0) != null ) {
             if (ecaLine_read != null) {
-                Log.d(TAG, "ADD " + ecaLine_read.toString());
+                addLog( ecaLine_read.toString() );
                 database.addECA( ecaLine_read );
             } else {
-                ecaLine_read = ECALine.newInstance(location, null);
+                ecaLine_read = ECALine.newInstance(locations.get(0), null);
                 if (ecaLine_read != null) {
                     if (!ecaLine_read.equals(ecaLine_save)) {
                         if (DataCFG.get_SEND_ALL_GPS_POINTS(ctx)) {
-                            Log.d(TAG, "ADD " + ecaLine_read.toString());
+                            addLog( ecaLine_read.toString() );
                             database.addECA( ecaLine_read );
                             ecaLine_save = ecaLine_read;
                         }
@@ -273,6 +366,23 @@ Log.d("AAA","database.boxEventsData().length = " + database.boxEventsData().leng
 
         seuil_prev_read = seuil_curr_read;
 
+    }
+
+    private void setLog( String txt ){
+        log = txt;
+    }
+
+    private void addLog( String txt ){
+        if( !log.isEmpty() ) log += System.getProperty("line.separator");
+        log += txt;
+
+        int nb_line = log.length() - log.replace(System.getProperty("line.separator"),"").length();
+        if( nb_line > 5 ){
+            int idx = log.indexOf(System.getProperty("line.separator"));
+            log = log.substring(idx);
+        }
+
+        if( listener != null ) listener.onDebugLog( txt );
     }
 
 }
