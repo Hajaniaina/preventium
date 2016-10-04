@@ -47,9 +47,6 @@ public class SpeedView {
 
             setSpeed(i, 0);
         }
-
-        speedViewArr[1].setVisibility(View.GONE);
-        speedViewArr[2].setVisibility(View.GONE);
     }
 
     public void hide (boolean hide) {

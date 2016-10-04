@@ -49,6 +49,7 @@ public class CustomMarker {
     private Marker marker = null;
     private int type = MARKER_INFO;
     private boolean editable = true;
+    private LatLng pos;
 
     CustomMarker (GoogleMap map) {
 
@@ -77,6 +78,7 @@ public class CustomMarker {
         }
 
         marker = map.addMarker(opt);
+        pos = opt.getPosition();
     }
 
     public void addToMap (String title, LatLng pos, int type) {
@@ -84,7 +86,9 @@ public class CustomMarker {
         opt.position(pos);
         opt.title(title);
         opt.flat(false);
+
         this.type = type;
+        this.pos = pos;
 
         addToMap();
     }
@@ -143,6 +147,11 @@ public class CustomMarker {
                 marker.setIcon(bitmap);
             }
         }
+    }
+
+    public int getType() {
+
+        return type;
     }
 
     public void setPos (LatLng pos) {
