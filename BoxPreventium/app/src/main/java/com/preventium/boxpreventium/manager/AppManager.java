@@ -408,7 +408,6 @@ public class AppManager extends ThreadDefault
                             if( ftp.ftpDownload(srcFileName, desFileName) ) {
                                 epc_file_ready = reader_epc.read(desFileName);
                                 if( epc_file_ready ) {
-
                                     if( reader_epc.applyToApp( ctx, i ) ) {
                                         // envoi acknowledge
                                         try {
@@ -418,11 +417,12 @@ public class AppManager extends ThreadDefault
                                         } catch (IOException e) {
                                             e.printStackTrace();
                                         }
+                                    } else {
+                                        error = true;
                                     }
                                 } else {
                                     error = true;
                                 }
-
                             }
                         } else {
                             error  = true;
