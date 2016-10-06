@@ -1,6 +1,8 @@
 package com.preventium.boxpreventium.gui;
 
-import com.preventium.boxpreventium.gui.CustomMarker;
+import android.app.Activity;
+
+import com.preventium.boxpreventium.R;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -10,23 +12,16 @@ import java.util.ArrayList;
 public class MarkerManager {
 
     private static final String TAG = "MarkerManager";
+
     private ArrayList<CustomMarker> markersList = null;
     private GoogleMap map = null;
+    private Activity activity;
 
-    MarkerManager() {
+    MarkerManager (Activity activity) {
 
+        this.activity = activity;
         markersList = new ArrayList<CustomMarker>();
         markersList.clear();
-    }
-
-    MarkerManager (GoogleMap map) {
-
-        if (this.map == null) {
-
-            this.map = map;
-            markersList = new ArrayList<CustomMarker>();
-            markersList.clear();
-        }
     }
 
     public String toString() {
@@ -56,7 +51,7 @@ public class MarkerManager {
         }
     }
 
-    public CustomMarker getCustomMarker (Marker marker) {
+    public CustomMarker getMarker (Marker marker) {
 
         CustomMarker foundedMarker = null;
 
@@ -64,7 +59,14 @@ public class MarkerManager {
 
             for (CustomMarker customMarker : markersList) {
 
+                /*
                 if (customMarker.getMarker().equals(marker)) {
+
+                    foundedMarker = customMarker;
+                }
+                */
+
+                if (marker.getPosition().equals(customMarker.getPos())) {
 
                     foundedMarker = customMarker;
                 }
@@ -74,28 +76,23 @@ public class MarkerManager {
         return foundedMarker;
     }
 
-    public CustomMarker addMarker (String title, LatLng pos, int type) {
+    public Marker addMarker (String title, LatLng pos, int type) {
 
-        CustomMarker customMarker = new CustomMarker(map);
+        CustomMarker customMarker = new CustomMarker();
 
         customMarker.setPos(pos);
         customMarker.setTitle(title);
         customMarker.setType(type);
-        customMarker.addToMap();
 
-        markersList.add(customMarker);
-        return customMarker;
-    }
+        if (customMarker.editable()) {
 
-    public CustomMarker addMarker (CustomMarker marker) {
-
-        if (marker != null) {
-
-            markersList.add(marker);
-            return marker;
+            customMarker.setSnippet(activity.getString(R.string.marker_snippet_string));
         }
 
-        return null;
+        Marker marker = customMarker.addToMap(map);
+        markersList.add(customMarker);
+
+        return marker;
     }
 
     public boolean remove (CustomMarker marker) {
@@ -107,23 +104,9 @@ public class MarkerManager {
                 if (customMarker.equals(marker)) {
 
                     markersList.remove(customMarker);
-                    marker.getMarker().remove();
-
                     return true;
                 }
             }
-        }
-
-        return false;
-    }
-
-    public boolean remove (Marker marker) {
-
-        CustomMarker customMarker = getCustomMarker(marker);
-
-        if (remove(customMarker))
-        {
-            return true;
         }
 
         return false;

@@ -3,47 +3,88 @@ package com.preventium.boxpreventium.gui;
 import android.app.Activity;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.LEVEL_t;
+import com.preventium.boxpreventium.enums.SCORE_t;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
-public class ScoreView {
+public class ScoreView implements Parcelable {
 
     private static final String TAG = "ScoreView";
 
-    public static final int CORNER = 0;
-    public static final int BRAKE  = 1;
-    public static final int ACC    = 2;
-    public static final int AVG    = 3;
-
-    private ArrayList<ImageView> scoreViewList;
-    private ArrayList<Drawable> lastBackgroundList;
     private AppColor appColor;
+    private boolean visible = true;
+    private HashMap<SCORE_t, TextView> viewMap;
+    private HashMap<SCORE_t, LEVEL_t> levelMap;
 
     ScoreView (Activity activity) {
 
         appColor = new AppColor(activity);
-        scoreViewList = new ArrayList<>();
-        lastBackgroundList = new ArrayList<>();
 
-        scoreViewList.add(((ImageView) activity.findViewById(R.id.corner_note_view)));
-        scoreViewList.add(((ImageView) activity.findViewById(R.id.brake_note_view)));
-        scoreViewList.add(((ImageView) activity.findViewById(R.id.acc_note_view)));
-        scoreViewList.add(((ImageView) activity.findViewById(R.id.avg_note_view)));
+        viewMap = new HashMap<>();
+        levelMap = new HashMap<>();
 
-        setScore(ScoreView.CORNER, LEVEL_t.LEVEL_UNKNOW);
-        setScore(ScoreView.BRAKE, LEVEL_t.LEVEL_UNKNOW);
-        setScore(ScoreView.ACC, LEVEL_t.LEVEL_UNKNOW);
-        setScore(ScoreView.AVG, LEVEL_t.LEVEL_UNKNOW);
+        viewMap.put(SCORE_t.CORNERING, ((TextView) activity.findViewById(R.id.corner_note_view)));
+        viewMap.put(SCORE_t.BRAKING,((TextView) activity.findViewById(R.id.brake_note_view)));
+        viewMap.put(SCORE_t.ACCELERATING,((TextView) activity.findViewById(R.id.acc_note_view)));
+        viewMap.put(SCORE_t.AVERAGE,((TextView) activity.findViewById(R.id.avg_note_view)));
+
+        levelMap.put(SCORE_t.CORNERING, null);
+        levelMap.put(SCORE_t.BRAKING, null);
+        levelMap.put(SCORE_t.ACCELERATING, null);
+        levelMap.put(SCORE_t.AVERAGE, null);
+
+        setScore(SCORE_t.CORNERING, LEVEL_t.LEVEL_UNKNOW);
+        setScore(SCORE_t.BRAKING, LEVEL_t.LEVEL_UNKNOW);
+        setScore(SCORE_t.ACCELERATING, LEVEL_t.LEVEL_UNKNOW);
+        setScore(SCORE_t.AVERAGE, LEVEL_t.LEVEL_UNKNOW);
+    }
+
+    protected ScoreView (Parcel in) {
+
+        visible = in.readByte() != 0;
+        levelMap = (HashMap<SCORE_t, LEVEL_t>) in.readSerializable();
+    }
+
+    public void restore (Activity activity) {
+
+        appColor = new AppColor(activity);
+        viewMap = new HashMap<SCORE_t, TextView>();
+        levelMap = new HashMap<SCORE_t, LEVEL_t>();
+
+        viewMap.put(SCORE_t.CORNERING, ((TextView) activity.findViewById(R.id.corner_note_view)));
+        viewMap.put(SCORE_t.BRAKING,((TextView) activity.findViewById(R.id.brake_note_view)));
+        viewMap.put(SCORE_t.ACCELERATING,((TextView) activity.findViewById(R.id.acc_note_view)));
+        viewMap.put(SCORE_t.AVERAGE,((TextView) activity.findViewById(R.id.avg_note_view)));
+
+        setScore(SCORE_t.CORNERING, levelMap.get(SCORE_t.CORNERING));
+        setScore(SCORE_t.BRAKING, levelMap.get(SCORE_t.BRAKING));
+        setScore(SCORE_t.ACCELERATING, levelMap.get(SCORE_t.ACCELERATING));
+        setScore(SCORE_t.AVERAGE, levelMap.get(SCORE_t.AVERAGE));
+
+        if (visible) {
+
+            hide(false);
+        }
+        else {
+
+            hide(true);
+        }
     }
 
     public void hide (boolean hide) {
 
-        for (ImageView view : scoreViewList) {
+        for (TextView view : viewMap.values()) {
 
             if (hide) {
 
@@ -54,38 +95,54 @@ public class ScoreView {
                 view.setVisibility(View.VISIBLE);
             }
         }
+
+        visible = !hide;
     }
 
-    public void disable (boolean disable) {
+    public void setScore (SCORE_t scoreId, LEVEL_t level) {
 
-        for (int i = 0; i < scoreViewList.size(); i++) {
+        switch (scoreId) {
 
-            if (disable) {
+            case CORNERING:
+            case BRAKING:
+            case ACCELERATING:
+            case AVERAGE:
+                Drawable drawable = viewMap.get(scoreId).getBackground();
+                drawable.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
+                viewMap.get(scoreId).setBackground(drawable);
+                break;
 
-                Drawable drawable = scoreViewList.get(i).getBackground();
-                lastBackgroundList.set(i, drawable);
-                drawable.setColorFilter(appColor.getColor(AppColor.GREY), PorterDuff.Mode.SRC_ATOP);
-
-                scoreViewList.get(i).setBackground(drawable);
-                scoreViewList.get(i).setEnabled(false);
-            }
-            else {
-
-                scoreViewList.get(i).setEnabled(true);
-                scoreViewList.get(i).setBackground(lastBackgroundList.get(i));
-            }
-        }
-    }
-
-    public void setScore (int id, LEVEL_t level) {
-
-        if (id > AVG || id < 0) {
-
-            id = AVG;
+            default: break;
         }
 
-        Drawable drawable = scoreViewList.get(id).getBackground();
-        drawable.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
-        scoreViewList.get(id).setBackground(drawable);
+        levelMap.put(scoreId, level);
     }
+
+    @Override
+    public int describeContents() {
+
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel (Parcel dest, int flags) {
+
+        dest.writeByte(this.visible ? (byte) 1 : (byte) 0);
+        dest.writeSerializable(this.levelMap);
+    }
+
+    public static final Parcelable.Creator<ScoreView> CREATOR = new Parcelable.Creator<ScoreView>() {
+
+        @Override
+        public ScoreView createFromParcel (Parcel source) {
+
+            return new ScoreView(source);
+        }
+
+        @Override
+        public ScoreView[] newArray (int size) {
+
+            return new ScoreView[size];
+        }
+    };
 }
