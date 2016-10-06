@@ -1,5 +1,6 @@
 package com.preventium.boxpreventium.gui;
 
+import android.location.Location;
 import com.preventium.boxpreventium.location.PositionManager;
 
 public class ModeManager {
@@ -28,11 +29,10 @@ public class ModeManager {
 
             posManager = manager;
 
-            /*
             posManager.setPositionChangedListener(new PositionManager.PositionListener() {
 
                 @Override
-                public void onPositionUpdate (Location location) {
+                public void onPositionUpdate(Location prevLoc, Location currLoc) {
 
                 }
 
@@ -41,9 +41,7 @@ public class ModeManager {
 
                 }
             });
-            */
 
-            /*
             posManager.setMovingListener(new PositionManager.MovingStateListener() {
 
                 @Override
@@ -58,7 +56,6 @@ public class ModeManager {
                     setMode(STOP);
                 }
             });
-            */
         }
     }
 

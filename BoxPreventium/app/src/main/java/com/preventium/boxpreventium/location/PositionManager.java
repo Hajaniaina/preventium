@@ -113,7 +113,6 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
             if (refLocation.distanceTo(currLocation) >= UPDATE_DISTANCE_METERS) {
 
                 Log.d(TAG, "Position Update");
-
                 posListener.onPositionUpdate(refLocation, currLocation);
                 refLocation = currLocation;
             }
@@ -122,6 +121,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
             posListener.onRawPositionUpdate(currLocation);
         }
 
+        /*
         boolean movingState = checkMovingState(5);
 
         if (movingState) {
@@ -174,6 +174,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
         }
 
         lastLocList.add(location);
+        */
     }
 
     public boolean isMoving() {

@@ -27,7 +27,6 @@
 
     <string name="delete_string">Delete</string>
     <string name="cancel_string">Cancel</string>
-    <string name="loading_string">Loading</string>
     <string name="marker_tittle_invalid_string">Invalid name</string>
     <string name="new_marker_string">Marker name</string>
     <string name="marker_edit_string">Edit marker</string>
@@ -41,6 +40,14 @@
     <string name="make_call_string">Call a predefined number</string>
     <string name="make_call_confirma_string">Make a voice call?</string>
     <string name="pin_error_string">Wrong PIN</string>
+
+    <!-- Progress -->
+    <string name="progress_loading_string">Loading...</string>
+    <string name="progress_map_string">Connecting to Google Maps</string>
+    <string name="progress_location_string">Waiting for GPS data</string>
+    <string name="progress_cfg_string">Downloading CFG data</string>
+    <string name="progress_epc_string">Downloading EPC data</string>
+    <string name="progress_ready_string">Ready</string>
 
     <string-array name="marker_types">
         <item>INFO</item>

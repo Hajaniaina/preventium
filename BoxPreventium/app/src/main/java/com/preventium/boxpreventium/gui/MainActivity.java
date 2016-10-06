@@ -52,7 +52,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private ScoreView scoreView;
     private SpeedView speedView;
     private AccForceView accForceView;
-    private ModeManager modeManager;
     private AppManager appManager;
 
     private TextView debugView;
@@ -73,10 +72,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap googleMap;
     private ProgressDialog progress;
     private SupportMapFragment mapFrag;
-    // private ArrayList<Polyline> roadLinesList;
     private int mapType = GoogleMap.MAP_TYPE_NORMAL;
     private boolean startMarkerAdded = false;
+    private boolean mapReady = false;
     private Intent pinLockIntent;
+    private AppColor appColor;
+    STATUS_t globalStatus;
     int maxSpeed = 0;
     LatLng lastPos;
 
@@ -86,11 +87,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mapReady = false;
         appManager = new AppManager(this, this);
         pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
+        appColor = new AppColor(this);
 
         progress = new ProgressDialog(this);
-        progress.setMessage(getString(R.string.loading_string));
+        progress.setMessage(getString(R.string.progress_map_string));
         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progress.setIndeterminate(true);
         progress.setCancelable(false);
@@ -102,7 +105,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             progress.show();
         }
 
-        // roadLinesList = new ArrayList<Polyline>();
         markerManager = new MarkerManager(this);
         speedView = new SpeedView(this);
         scoreView = new ScoreView(this);
@@ -182,9 +184,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         this.googleMap.getUiSettings().setMyLocationButtonEnabled(false);
         this.googleMap.getUiSettings().setAllGesturesEnabled(true);
+        mapReady = true;
+
+        if (progress != null && progress.isShowing()) {
+
+            progress.setMessage(getString(R.string.progress_location_string));
+        }
 
         posManager = new PositionManager(this);
-        modeManager = new ModeManager(posManager);
 
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) !=
@@ -199,7 +206,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         setMapListeners();
         setButtonListeners();
         setPositionListeners();
-        setModeListeners();
     }
 
     @Override
@@ -210,28 +216,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                int color = 0;
-
                 if (nb > 0) {
 
                     if (nb > 1) {
 
-                        color = ContextCompat.getColor(MainActivity.this, R.color.colorAppGreen);
+                        changeViewColorFilter(boxNumView, AppColor.GREEN);
                     }
                     else {
 
-                        color = ContextCompat.getColor(MainActivity.this, R.color.colorAppBlue);
+                        changeViewColorFilter(boxNumView, AppColor.BLUE);
                     }
                 }
                 else {
 
-                    color = ContextCompat.getColor(MainActivity.this, R.color.colorAppRed);
+                    changeViewColorFilter(boxNumView, AppColor.RED);
                 }
 
-                Drawable background = boxNumView.getBackground();
-                background.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
-
-                boxNumView.setBackground(background);
                 boxNumView.setText(String.valueOf(nb));
             }
         });
@@ -245,21 +245,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                int color = 0;
-
                 if (txt.equalsIgnoreCase("0:00")) {
 
-                    color = ContextCompat.getColor(MainActivity.this, R.color.colorAppGrey);
+                    changeViewColorFilter(drivingTimeView, AppColor.GREY);
                 }
                 else {
 
-                    color = ContextCompat.getColor(MainActivity.this, R.color.colorAppGreen);
+                    changeViewColorFilter(drivingTimeView, AppColor.GREEN);
                 }
 
-                Drawable background = drivingTimeView.getBackground();
-                background.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
-
-                drivingTimeView.setBackground(background);
                 drivingTimeView.setText(txt);
             }
         });
@@ -273,16 +267,93 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                if (modeManager.getMode() == ModeManager.MOVING) {
+                if (globalStatus == STATUS_t.CAR_MOVING) {
 
                     if (type != FORCE_t.UNKNOW) {
 
                         accForceView.hide(false);
                         accForceView.setValue(type, level);
-                    } else {
+                    }
+                    else {
 
                         accForceView.hide(true);
                     }
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onStatusChanged (final STATUS_t status) {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                globalStatus = status;
+
+                switch (status) {
+
+                    case GETTING_CFG:
+
+                        if (progress != null) {
+
+                            progress.show();
+                            progress.setMessage(getString(R.string.progress_cfg_string));
+                        }
+
+                        break;
+
+                    case GETTING_EPC:
+
+                        if (progress != null) {
+
+                            progress.show();
+                            progress.setMessage(getString(R.string.progress_epc_string));
+                        }
+
+                        break;
+
+                    case CAR_STOPPED:
+
+                        if (progress != null) {
+
+                            progress.setMessage(getString(R.string.progress_ready_string));
+                            progress.hide();
+                        }
+
+                        break;
+
+                    case CAR_MOVING:
+
+                        if (mapReady) {
+
+                            googleMap.getUiSettings().setAllGesturesEnabled(false);
+                        }
+
+                        disableActionButtons(true);
+                        speedView.hide(false);
+                        // scoreView.hide(false);
+
+                        break;
+
+                    case CAR_PAUSING:
+
+                        if (mapReady) {
+
+                            CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(15).bearing(0).tilt(0).build();
+                            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                            googleMap.getUiSettings().setAllGesturesEnabled(true);
+                        }
+
+                        changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
+                        disableActionButtons(false);
+                        speedView.hide(true);
+                        accForceView.hide(true);
+                        // scoreView.disable(true);
+
+                        break;
                 }
             }
         });
@@ -311,9 +382,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
+    private void changeViewColorFilter (View view, int color) {
 
-    @Override
-    public void onStatusChanged(STATUS_t status) {
+        Drawable background = view.getBackground();
+        background.setColorFilter(appColor.getColor(color), PorterDuff.Mode.SRC_ATOP);
+        view.setBackground(background);
     }
 
     private void makeCall (String number) {
@@ -674,7 +747,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onRawPositionUpdate (Location location) {
 
-                int currMode = modeManager.getMode();
                 lastPos = new LatLng(location.getLatitude(), location.getLongitude());
 
                 if (!startMarkerAdded) {
@@ -685,13 +757,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(15).bearing(0).tilt(0).build();
                     googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
-                    if (progress != null) {
+                    if (progress != null && progress.isShowing()) {
 
-                        progress.hide();
+                        progress.setMessage(getString(R.string.progress_loading_string));
                     }
                 }
 
-                if (currMode == ModeManager.MOVING) {
+                if (globalStatus == STATUS_t.CAR_MOVING) {
 
                     int currSpeed = posManager.getInstantSpeed();
 
@@ -714,54 +786,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onPositionUpdate (Location prevLoc, Location currLoc) {
 
-                if (modeManager.getMode() == ModeManager.MOVING) {
+                if (globalStatus == STATUS_t.CAR_MOVING) {
 
                     LatLng prevPos = new LatLng(prevLoc.getLatitude(), prevLoc.getLongitude());
                     LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());
 
                     drawLine(prevPos, currPos);
                 }
-            }
-        });
-    }
-
-    private void setModeListeners() {
-
-        modeManager.setModeChangeListener(new ModeManager.ModeChangeListener() {
-
-            @Override
-            public void onModeChanged (int mode) {}
-
-            @Override
-            public void onStopMode() {
-
-                Log.d(TAG, "Mode Stop");
-
-                CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(15).bearing(0).tilt(0).build();
-                googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                googleMap.getUiSettings().setAllGesturesEnabled(true);
-
-                // disableActionButtons(false);
-                // scoreView.disable(true);
-                // speedView.disable(true);
-                accForceView.hide(true);
-            }
-
-            @Override
-            public void onPauseMode() {
-
-                Log.d(TAG, "Mode Pause");
-            }
-
-            @Override
-            public void onMovingMode() {
-
-                Log.d(TAG, "Mode Move");
-                googleMap.getUiSettings().setAllGesturesEnabled(false);
-
-                // disableActionButtons(true);
-                // scoreView.disable(false);
-                // speedView.disable(false);
             }
         });
     }
@@ -848,17 +879,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View v) {
 
-                int currMode = modeManager.getMode();
-
-                if (currMode == ModeManager.STOP) {
+                if (globalStatus == STATUS_t.CAR_PAUSING) {
 
                     menuButton1.setImageResource(R.drawable.ic_stop);
-                    modeManager.setMode(ModeManager.MOVING);
                 }
-                else if (currMode == ModeManager.MOVING) {
+                else if (globalStatus == STATUS_t.CAR_MOVING) {
 
                     menuButton1.setImageResource(R.drawable.ic_play);
-                    modeManager.setMode(ModeManager.STOP);
                 }
 
                 optMenu.close(true);
