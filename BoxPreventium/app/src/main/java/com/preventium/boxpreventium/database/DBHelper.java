@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -35,6 +36,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String TABLE_ECA = "eca";
     public static final String COLUMN_ECA_ID = "id";
     public static final String COLUMN_ECA_PARCOUR = "parcour";
+    public static final String COLUMN_ECA_SENDING = "sending";
     public static final String COLUMN_ECA_TIME = "time";
     public static final String COLUMN_ECA_ALERTID = "alertid";
     public static final String COLUMN_ECA_PADDIND = "padding";
@@ -62,6 +64,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 "CREATE TABLE " + TABLE_ECA + " (" +
                         COLUMN_ECA_ID + " INTEGER PRIMARY KEY, " +
                         COLUMN_ECA_PARCOUR + " INTEGER, " +
+                        COLUMN_ECA_SENDING + " INTEGER, " +
                         COLUMN_ECA_TIME + " INTEGER, " +
                         COLUMN_ECA_ALERTID + " INTEGER, " +
                         COLUMN_ECA_PADDIND + " INTEGER, " +
@@ -101,12 +104,27 @@ public class DBHelper extends SQLiteOpenHelper {
 
     // ECA
 
+    public List<Long> get_parcours_id(){
+        List<Long> ret = new ArrayList<Long>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor =  db.rawQuery( "SELECT DISTINCT " + COLUMN_ECA_PARCOUR + " from " + TABLE_ECA + "where " + COLUMN_ECA_SENDING + " = 0;", null );
+        if( cursor != null && cursor.moveToFirst() ) {
+            while ( !cursor.isAfterLast() ){
+                ret.add( cursor.getLong(0) );
+                cursor.moveToNext();
+            }
+        }
+
+        return ret;
+    }
+
     public boolean addECA( long parcour_id, ECALine line ){
 
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COLUMN_ECA_TIME, line.location.getTime() );
         contentValues.put(COLUMN_ECA_PARCOUR, parcour_id );
+        contentValues.put(COLUMN_ECA_SENDING, 0);
         contentValues.put(COLUMN_ECA_ALERTID, line.alertID );
         contentValues.put(COLUMN_ECA_PADDIND, line.padding );
         contentValues.put(COLUMN_ECA_LONG_POS, line.location.getLongitude() );

@@ -219,11 +219,8 @@ public class AppManager extends ThreadDefault
                         addLog("STOP PARCOURS");
                         clear_force_ui();
 
+                        sending_eca();
 
-//        ArrayList<ECALine> alert = database.alertList();
-//        addLog( "Alert list size: " + alert.size() );
-//        addLog( "Box event data size: " + database.boxEventsData().length );
-//
                     }
                     // SET RESUME
                     else if( mov_t_last != MOVING_t.STP
@@ -350,10 +347,10 @@ public class AppManager extends ThreadDefault
                 if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
                     change_directory = ftp.makeDirectory(config.getWorkDirectory());
 
-                Log.d("AAAA","AAAAAAAAAAAA " + config.getWorkDirectory() );
                 boolean error = false;
                 if (!change_directory) {
                     error = true;
+                    Log.w(TAG, "Error while trying to change working directory!");
                 } else {
                     boolean exist_server_epc = false;
                     FTPFile[] files = ftp.ftpPrintFiles();
@@ -412,8 +409,10 @@ public class AppManager extends ThreadDefault
                     epc_file_ready = !DataEPC.getAppEpcExist(ctx).isEmpty();
                 }
 
+                ftp.ftpDisconnect();
+
             }else{
-                Log.d("AAA","AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + (config != null) );
+                Log.w(TAG, "Error while trying to connecting!");
             }
         }
         addLog( "EPC is ready: " + epc_file_ready );
@@ -423,7 +422,27 @@ public class AppManager extends ThreadDefault
     private boolean sending_eca(){
         boolean ret = false;
         addLog( "Trying to sending eca_file..." );
+        FTPConfig config = DataCFG.getFptConfig(ctx);
+        FTPClientIO ftp = new FTPClientIO();
+        File folder = new File(ctx.getFilesDir(), "");
+        if( config != null && ftp.ftpConnect(config, 5000) ) {
 
+            boolean change_directory = true;
+            if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                change_directory = ftp.makeDirectory(config.getWorkDirectory());
+            boolean error = false;
+            if (!change_directory) {
+                error = true;
+                Log.w(TAG, "Error while trying to change working directory!");
+            } else {
+//        ArrayList<ECALine> alert = database.alertList();
+//        addLog( "Alert list size: " + alert.size() );
+//        addLog( "Box event data size: " + database.boxEventsData().length );
+                addLog("ECA parcours count: " + database.get_parcours_id().size() );
+            }
+
+            ftp.ftpDisconnect();
+        }
         addLog( "ECA sending: " + ret );
         return ret;
     }
