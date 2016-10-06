@@ -112,9 +112,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         speedView = new SpeedView(this);
         scoreView = new ScoreView(this);
         accForceView = new AccForceView(this);
-
         accForceView.hide(true);
-        scoreView.hide(true);
 
         boxNumView = (TextView) findViewById(R.id.box_num_connected);
         drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
@@ -337,10 +335,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "MOVE");
 
-                        if (mapReady) {
+                        //if (mapReady) {
 
                             // googleMap.getUiSettings().setAllGesturesEnabled(false);
-                        }
+                        //}
 
                         // disableActionButtons(true);
                         // speedView.hide(false);
@@ -352,12 +350,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "PAUSE");
 
-                        if (mapReady) {
+                        //if (mapReady) {
 
                             // CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(15).bearing(0).tilt(0).build();
                             // googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                             // googleMap.getUiSettings().setAllGesturesEnabled(true);
-                        }
+                        //}
 
                         // changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
                         // disableActionButtons(false);
@@ -759,6 +757,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onRawPositionUpdate (Location location) {
 
+                appManager.setLocation(location);
                 lastPos = new LatLng(location.getLatitude(), location.getLongitude());
 
                 if (!startMarkerAdded) {
@@ -775,7 +774,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 }
 
-                if (globalStatus == STATUS_t.CAR_MOVING) {
+                // if (globalStatus == STATUS_t.CAR_MOVING) {
 
                     int currSpeed = posManager.getInstantSpeed();
 
@@ -790,9 +789,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(18).bearing(0).tilt(30).build();
                     googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                }
-
-                appManager.setLocation(location);
+                //}
             }
 
             @Override
