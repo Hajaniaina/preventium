@@ -39,7 +39,7 @@ public enum SCORE_t {
             case AVERAGE:
                 return "SCORE_t[AVERAGE]";
             default                 :
-                return "FORCE_t[???]";
+                return "SCORE_t[???]";
         }
     }
 }
