@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -25,11 +24,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
-import com.preventium.boxpreventium.enums.SCORE_t;
+import com.preventium.boxpreventium.enums.SPEED_t;
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.R;
 import com.github.clans.fab.FloatingActionButton;
@@ -41,11 +39,8 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.preventium.boxpreventium.manager.AppManager;
-
-import java.util.ArrayList;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
 
@@ -59,9 +54,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private ModeManager modeManager;
     private AppManager appManager;
 
-    private TextView drivingTimeView;
-    private TextView boxNumView;
     private TextView debugView;
+    private TextView boxNumView;
+    private TextView drivingTimeView;
 
     private FloatingActionMenu optMenu;
     private FloatingActionButton infoButton;
@@ -74,10 +69,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton menuButton4;
     private FloatingActionButton menuButton5;
 
-    private ProgressDialog progress;
     private GoogleMap googleMap;
+    private ProgressDialog progress;
     private SupportMapFragment mapFrag;
-    private ArrayList<Polyline> roadLinesList;
+    // private ArrayList<Polyline> roadLinesList;
     private int mapType = GoogleMap.MAP_TYPE_NORMAL;
     private boolean startMarkerAdded = false;
     private Intent pinLockIntent;
@@ -106,10 +101,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             progress.show();
         }
 
-        roadLinesList = new ArrayList<Polyline>();
-        markerManager = new MarkerManager();
+        // roadLinesList = new ArrayList<Polyline>();
+        markerManager = new MarkerManager(this);
         speedView = new SpeedView(this);
-
         scoreView = new ScoreView(this);
         accForceView = new AccForceView(this);
         accForceView.hide(true);
@@ -222,11 +216,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     if (nb > 1) {
 
                         color = ContextCompat.getColor(MainActivity.this, R.color.colorAppGreen);
-                    } else {
+                    }
+                    else {
 
                         color = ContextCompat.getColor(MainActivity.this, R.color.colorAppBlue);
                     }
-                } else {
+                }
+                else {
 
                     color = ContextCompat.getColor(MainActivity.this, R.color.colorAppRed);
                 }
@@ -253,7 +249,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 if (txt.equalsIgnoreCase("0:00")) {
 
                     color = ContextCompat.getColor(MainActivity.this, R.color.colorAppGrey);
-                } else {
+                }
+                else {
 
                     color = ContextCompat.getColor(MainActivity.this, R.color.colorAppGreen);
                 }
@@ -313,11 +310,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    private void makeCall() {
+    private void makeCall (String number) {
 
-        String phoneNumber = "0623141536";
-
-        Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + phoneNumber.trim()));
+        Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + number.trim()));
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
 
@@ -332,12 +327,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         PolylineOptions opt = new PolylineOptions();
 
-        opt.color(Color.rgb(0, 160, 255));
-        opt.geodesic(true);
         opt.width(3);
+        opt.geodesic(true);
+        opt.color(Color.rgb(0, 160, 255));
         opt.add(startPoint, endPoint);
 
-        roadLinesList.add(googleMap.addPolyline(opt));
+        // roadLinesList.add(googleMap.addPolyline(opt));
+        googleMap.addPolyline(opt);
     }
 
     private void disableActionButtons (boolean disable) {
@@ -385,7 +381,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (DialogInterface dialogInterface, int i) {
 
-                makeCall();
+                makeCall("0623141536");
             }
         });
 
@@ -432,7 +428,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         */
     }
 
-    protected void showMarkerEditDialog (final CustomMarker customMarker, final boolean creation) {
+    protected void showMarkerEditDialog (final Marker marker, final boolean creation) {
+
+        final CustomMarker customMarker = markerManager.getMarker(marker);
 
         if (customMarker == null) {
 
@@ -490,6 +488,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             public void onClick(DialogInterface dialogInterface, int i) {
 
                                 markerManager.remove(customMarker);
+                                marker.remove();
                                 alertDlg.dismiss();
                             }
                         });
@@ -560,8 +559,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                 customMarker.setTitle(currTitle);
 
                                 // Refresh marker's title
-                                customMarker.getMarker().hideInfoWindow();
-                                customMarker.getMarker().showInfoWindow();
+                                marker.hideInfoWindow();
+                                marker.showInfoWindow();
 
                                 alertDlg.dismiss();
                             }
@@ -581,6 +580,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (creation) {
 
                             markerManager.remove(customMarker);
+                            marker.remove();
                         }
 
                         alertDlg.dismiss();
@@ -609,8 +609,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onMapLongClick (LatLng latLng) {
 
-                CustomMarker customMarker = markerManager.addMarker("", latLng, CustomMarker.MARKER_INFO);
-                showMarkerEditDialog(customMarker, true);
+                Marker marker = markerManager.addMarker("", latLng, CustomMarker.MARKER_INFO);
+                showMarkerEditDialog(marker, true);
             }
         });
 
@@ -631,11 +631,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onInfoWindowClick (Marker marker) {
 
-                CustomMarker customMarker = markerManager.getCustomMarker(marker);
+                CustomMarker customMarker = markerManager.getMarker(marker);
 
                 if (customMarker.editable()) {
 
-                    showMarkerEditDialog(customMarker, false);
+                    showMarkerEditDialog(marker, false);
                 }
             }
         });
@@ -693,8 +693,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         maxSpeed = currSpeed;
                     }
 
-                    speedView.setSpeed(SpeedView.SPEED_CORNERS, currSpeed);
-                    speedView.setSpeed(SpeedView.SPEED_STRAIGHT, maxSpeed);
+                    speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_1, currSpeed);
+                    speedView.setSpeed(SPEED_t.IN_STRAIGHT_LINE, LEVEL_t.LEVEL_4, maxSpeed);
 
                     googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(18).bearing(0).tilt(30).build();

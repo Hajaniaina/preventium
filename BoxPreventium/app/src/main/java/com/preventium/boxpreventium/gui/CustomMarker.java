@@ -44,17 +44,15 @@ public class CustomMarker {
     public static final int MARKER_INFO   = 13;
     public static final int MARKER_DANGER = 14;
 
-    private GoogleMap map = null;
     private MarkerOptions opt = null;
     private Marker marker = null;
     private int type = MARKER_INFO;
     private boolean editable = true;
     private LatLng pos;
 
-    CustomMarker (GoogleMap map) {
+    CustomMarker() {
 
         opt = new MarkerOptions();
-        this.map = map;
     }
 
     public String toString() {
@@ -68,29 +66,13 @@ public class CustomMarker {
         return "null";
     }
 
-    public void addToMap() {
+    public Marker addToMap (GoogleMap map) {
 
         setType(type);
-
-        if (editable) {
-
-            opt.snippet("Tap here to edit this marker");
-        }
-
         marker = map.addMarker(opt);
         pos = opt.getPosition();
-    }
 
-    public void addToMap (String title, LatLng pos, int type) {
-
-        opt.position(pos);
-        opt.title(title);
-        opt.flat(false);
-
-        this.type = type;
-        this.pos = pos;
-
-        addToMap();
+        return marker;
     }
 
     public void setType (int type) {
@@ -172,6 +154,11 @@ public class CustomMarker {
         }
     }
 
+    public LatLng getPos() {
+
+        return pos;
+    }
+
     public void setSnippet (String snippet) {
 
         if (!editable) {
@@ -249,10 +236,5 @@ public class CustomMarker {
     public Marker getMarker() {
 
         return marker;
-    }
-
-    public MarkerOptions getOpt() {
-
-        return opt;
     }
 }
