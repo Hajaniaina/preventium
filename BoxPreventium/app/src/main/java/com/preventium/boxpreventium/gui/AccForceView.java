@@ -17,8 +17,8 @@ public class AccForceView implements Parcelable {
 
     private static final String TAG = "AccForceView";
 
+    private AppColor appColor;
     private ImageView accForceView = null;
-    private AppColor appColor = null;
     private FORCE_t lastForce = FORCE_t.UNKNOW;
     private LEVEL_t lastLevel = LEVEL_t.LEVEL_UNKNOW;
 

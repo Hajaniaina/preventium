@@ -4,7 +4,7 @@
     xmlns:map="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:fab="http://schemas.android.com/apk/res-auto"
-    xmlns:plainpie="http://schemas.android.com/apk/res-auto"
+    xmlns:CircleProgressView="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -21,9 +21,9 @@
 
     <!-- MAIN CONTENT -->
     <LinearLayout android:id="@+id/main_layout"
-                  android:layout_width="match_parent"
-                  android:layout_height="match_parent"
-                  android:orientation="horizontal">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
 
         <!-- SCORE WIDGETS -->
         <LinearLayout android:id="@+id/score_layout"
@@ -128,38 +128,81 @@
 
         <!-- SPEED INFO/LIMIT WIDGETS -->
         <LinearLayout android:id="@+id/speed_info_layout"
-                      android:orientation="vertical"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:layout_gravity="top|start"
-                      android:layout_marginTop="22dp"
-                      android:layout_marginStart="24dp">
+                        android:orientation="vertical"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|start"
+                        android:layout_marginTop="22dp"
+                        android:layout_marginStart="24dp">
 
-            <az.plainpie.PieView android:id="@+id/pie_view1"
-                                 android:layout_width="140dp"
-                                 android:layout_height="140dp"
-                                 plainpie:inner_pie_padding="10"
-                                 plainpie:percentage="100"
-                                 plainpie:percentage_size="50"
-                                 plainpie:inner_text_visibility="true"/>
+            <at.grabner.circleprogress.CircleProgressView
+                android:id="@+id/speed1_view"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_marginTop="10dp"
+                CircleProgressView:cpv_barWidth="10dp"
+                CircleProgressView:cpv_innerContourSize="1dp"
+                CircleProgressView:cpv_outerContourSize="1dp"
+                CircleProgressView:cpv_barColor="@color/colorAppGrey"
+                CircleProgressView:cpv_rimColor="#00000000"
+                CircleProgressView:cpv_fillColor="#a0ffffff"
+                CircleProgressView:cpv_outerContourColor="@color/material_grey400"
+                CircleProgressView:cpv_innerContourColor="@color/material_grey400"
+                CircleProgressView:cpv_rimWidth="10dp"
+                CircleProgressView:cpv_seekMode="false"
+                CircleProgressView:cpv_showUnit="false"
+                CircleProgressView:cpv_spinColor="@color/colorAppGrey"
+                CircleProgressView:cpv_autoTextSize="false"
+                CircleProgressView:cpv_textColor="@color/material_grey800"
+                CircleProgressView:cpv_textScale="1"
+                CircleProgressView:cpv_maxValue="100"
+                CircleProgressView:cpv_value="0" />
 
-            <az.plainpie.PieView android:id="@+id/pie_view2"
-                                 android:layout_width="140dp"
-                                 android:layout_height="140dp"
-                                 android:layout_marginTop="30dp"
-                                 plainpie:inner_pie_padding="10"
-                                 plainpie:percentage="100"
-                                 plainpie:percentage_size="50"
-                plainpie:inner_text_visibility="true"/>
+            <at.grabner.circleprogress.CircleProgressView
+                android:id="@+id/speed2_view"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_marginTop="20dp"
+                CircleProgressView:cpv_barWidth="10dp"
+                CircleProgressView:cpv_innerContourSize="1dp"
+                CircleProgressView:cpv_outerContourSize="1dp"
+                CircleProgressView:cpv_barColor="@color/colorAppGrey"
+                CircleProgressView:cpv_rimColor="#00000000"
+                CircleProgressView:cpv_fillColor="#a0ffffff"
+                CircleProgressView:cpv_outerContourColor="@color/material_grey400"
+                CircleProgressView:cpv_innerContourColor="@color/material_grey400"
+                CircleProgressView:cpv_rimWidth="10dp"
+                CircleProgressView:cpv_seekMode="false"
+                CircleProgressView:cpv_showUnit="false"
+                CircleProgressView:cpv_spinColor="@color/colorAppGrey"
+                CircleProgressView:cpv_autoTextSize="false"
+                CircleProgressView:cpv_textColor="@color/material_grey800"
+                CircleProgressView:cpv_textScale="1"
+                CircleProgressView:cpv_maxValue="100"
+                CircleProgressView:cpv_value="0" />
 
-            <az.plainpie.PieView android:id="@+id/pie_view3"
-                                 android:layout_width="140dp"
-                                 android:layout_height="140dp"
-                                 android:layout_marginTop="30dp"
-                                 plainpie:inner_pie_padding="10"
-                                 plainpie:percentage="100"
-                                 plainpie:percentage_size="50"
-                                 plainpie:inner_text_visibility="true"/>
+            <at.grabner.circleprogress.CircleProgressView
+                android:id="@+id/speed3_view"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_marginTop="20dp"
+                CircleProgressView:cpv_barWidth="10dp"
+                CircleProgressView:cpv_innerContourSize="1dp"
+                CircleProgressView:cpv_outerContourSize="1dp"
+                CircleProgressView:cpv_barColor="@color/colorAppGrey"
+                CircleProgressView:cpv_rimColor="#00000000"
+                CircleProgressView:cpv_fillColor="#a0ffffff"
+                CircleProgressView:cpv_outerContourColor="@color/material_grey400"
+                CircleProgressView:cpv_innerContourColor="@color/material_grey400"
+                CircleProgressView:cpv_rimWidth="10dp"
+                CircleProgressView:cpv_seekMode="false"
+                CircleProgressView:cpv_showUnit="false"
+                CircleProgressView:cpv_spinColor="@color/colorAppGrey"
+                CircleProgressView:cpv_autoTextSize="false"
+                CircleProgressView:cpv_textColor="@color/material_grey800"
+                CircleProgressView:cpv_textScale="1"
+                CircleProgressView:cpv_maxValue="100"
+                CircleProgressView:cpv_value="0" />
 
         </LinearLayout>
 
@@ -193,6 +236,7 @@
                     android:shadowDx="2"
                     android:shadowDy="2"
                     android:shadowRadius="2"/>
+
                 <ImageView android:id="@+id/acc_force_view"
                     android:layout_width="128dp"
                     android:layout_height="128dp"
@@ -206,14 +250,14 @@
 
             <!-- BUTTONS -->
             <LinearLayout android:id="@+id/buttons_layout"
-                          android:orientation="vertical"
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:layout_gravity="top|end"
-                          android:layout_marginTop="10dp"
-                          android:layout_marginBottom="10dp"
-                          android:layout_marginEnd="10dp"
-                          android:layout_marginStart="690dp">
+                    android:orientation="vertical"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:layout_marginStart="690dp">
 
                 <com.github.clans.fab.FloatingActionButton android:id="@+id/button_info"
                     android:layout_width="wrap_content"
@@ -224,6 +268,7 @@
                     fab:fab_colorPressed="@color/colorAppRed"
                     fab:fab_colorRipple="#ff5252"
                     fab:fab_shadowColor="#444"/>
+
                 <com.github.clans.fab.FloatingActionButton android:id="@+id/button_call"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -233,6 +278,7 @@
                     fab:fab_colorPressed="@color/colorAppRed"
                     fab:fab_colorRipple="#ff5252"
                     fab:fab_shadowColor="#444"/>
+
                 <com.github.clans.fab.FloatingActionButton android:id="@+id/button_formation"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -242,6 +288,7 @@
                     fab:fab_colorPressed="@color/colorAppRed"
                     fab:fab_colorRipple="#ff5252"
                     fab:fab_shadowColor="#444"/>
+
                 <com.github.clans.fab.FloatingActionButton android:id="@+id/button_settings"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -282,6 +329,7 @@
                     fab:fab_colorRipple="#ffee58"
                     fab:fab_shadowColor="#444"
                     fab:fab_label="Accelerating"/>
+
                 <com.github.clans.fab.FloatingActionButton android:id="@+id/menu_button4"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -290,6 +338,7 @@
                     fab:fab_colorRipple="#ffee58"
                     fab:fab_shadowColor="#444"
                     fab:fab_label="Constant speed"/>
+
                 <com.github.clans.fab.FloatingActionButton android:id="@+id/menu_button2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -299,6 +348,7 @@
                     fab:fab_colorRipple="#ffee58"
                     fab:fab_shadowColor="#444"
                     fab:fab_label="Map type"/>
+
                 <com.github.clans.fab.FloatingActionButton android:id="@+id/menu_button3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -308,6 +358,7 @@
                     fab:fab_colorRipple="#ffee58"
                     fab:fab_shadowColor="#444"
                     fab:fab_label="Scan QR code"/>
+
                 <com.github.clans.fab.FloatingActionButton android:id="@+id/menu_button1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

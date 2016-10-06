@@ -30,8 +30,9 @@ public class ScoreView implements Parcelable {
     ScoreView (Activity activity) {
 
         appColor = new AppColor(activity);
-        viewMap = new HashMap<SCORE_t, TextView>();
-        levelMap = new HashMap<SCORE_t, LEVEL_t>();
+
+        viewMap = new HashMap<>();
+        levelMap = new HashMap<>();
 
         viewMap.put(SCORE_t.CORNERING, ((TextView) activity.findViewById(R.id.corner_note_view)));
         viewMap.put(SCORE_t.BRAKING,((TextView) activity.findViewById(R.id.brake_note_view)));
@@ -111,8 +112,7 @@ public class ScoreView implements Parcelable {
                 viewMap.get(scoreId).setBackground(drawable);
                 break;
 
-            default:
-                break;
+            default: break;
         }
 
         levelMap.put(scoreId, level);
