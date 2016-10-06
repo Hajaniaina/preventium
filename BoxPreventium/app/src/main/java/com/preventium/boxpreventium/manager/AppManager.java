@@ -346,6 +346,7 @@ public class AppManager extends ThreadDefault
                             if( ftp.ftpDownload(srcFileName, desFileName) ) {
                                 cfg_file_ready = reader_cfg.read(desFileName);
                                 if( cfg_file_ready ) {
+                                    reader_cfg.applyToApp(ctx);
                                     // envoi acknowledge
                                     try {
                                         File temp = File.createTempFile("temp-file-name", ".tmp");
@@ -437,6 +438,8 @@ public class AppManager extends ThreadDefault
                     epc_file_ready = !DataEPC.getAppEpcExist(ctx).isEmpty();
                 }
 
+            }else{
+                Log.d("AAA","AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + (config != null) );
             }
         }
         addLog( "EPC is ready: " + epc_file_ready );
