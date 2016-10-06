@@ -218,6 +218,12 @@ public class AppManager extends ThreadDefault
                         if( listener != null ) listener.onStatusChanged( status );
                         addLog("STOP PARCOURS");
                         clear_force_ui();
+
+
+//        ArrayList<ECALine> alert = database.alertList();
+//        addLog( "Alert list size: " + alert.size() );
+//        addLog( "Box event data size: " + database.boxEventsData().length );
+//
                     }
                     // SET RESUME
                     else if( mov_t_last != MOVING_t.STP
@@ -239,48 +245,6 @@ public class AppManager extends ThreadDefault
         modules.setActive( false );
 
         addLog( "AppManager end.");
-//        if( DEBUG ) Log.d(TAG,"AppManager thread begin.");
-//
-//        database.clearAll();
-//
-//        chronoRideTxt = "";
-//        chronoRide.start();
-//        setLog("");
-//
-//        addLog( "Download cfg..." );
-//        run_get_cfg();
-//        addLog( "Download epc..." );
-//        run_get_epc();
-//        addLog( "Activate HandlerBox..." );
-//        modules.setActive( true );
-//
-//        while ( isRunning() ) {
-//
-//            sleep(500);
-//            updateRideTime();
-//
-//            switch ( mode ) {
-//                case NONE:
-//                    calculateMovements();
-//                    updateAlertForce();
-//                    break;
-//                case CFG:
-//                    Log.d(TAG,"Download CFG...");
-//                    break;
-//                case EPC:
-//                    Log.d(TAG,"Download EPC...");
-//                    break;
-//            }
-//        }
-//
-//        addLog( "Desactivate HandlerBox..." );
-//        modules.setActive( false );
-//
-//        ArrayList<ECALine> alert = database.alertList();
-//        addLog( "Alert list size: " + alert.size() );
-//        addLog( "Box event data size: " + database.boxEventsData().length );
-//
-//        if( DEBUG ) Log.d(TAG,"AppManager thread end.");
 
     }
 
@@ -382,58 +346,68 @@ public class AppManager extends ThreadDefault
             File folder = new File(ctx.getFilesDir(), "");
             if( config != null && ftp.ftpConnect(config, 5000) ) {
 
+                boolean change_directory = true;
+                if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                    change_directory = ftp.makeDirectory(config.getWorkDirectory());
+
+                Log.d("AAAA","AAAAAAAAAAAA " + config.getWorkDirectory() );
                 boolean error = false;
-                boolean exist_server_epc = false;
-                FTPFile[] files = ftp.ftpPrintFiles();
-                String srcFileName = "";
-                String desFileName = "";
-                int i = 1;
-                while (i <= 5 && isRunning()) {
+                if (!change_directory) {
+                    error = true;
+                } else {
+                    boolean exist_server_epc = false;
+                    FTPFile[] files = ftp.ftpPrintFiles();
+                    String srcFileName = "";
+                    String desFileName = "";
+                    int i = 1;
+                    while (i <= 5 && isRunning()) {
 
-                    srcFileName = reader_epc.getEPCFileName(ctx,i,false);
+                        srcFileName = reader_epc.getEPCFileName(ctx, i, false);
 
-                    exist_server_epc = false;
-                    for ( FTPFile f : files ) {
-                        if( f.isFile() && f.getName().equals(srcFileName) ){
-                            exist_server_epc = true;
-                            break;
+                        exist_server_epc = false;
+                        for (FTPFile f : files) {
+                            if (f.isFile() && f.getName().equals(srcFileName)) {
+                                exist_server_epc = true;
+                                break;
+                            }
                         }
-                    }
 
-                    if( exist_server_epc ) {
-                        // Create folder if not exist
-                        if (!folder.exists())
-                            if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
-                        if( folder.exists() ) {
-                            desFileName = reader_epc.getEPCFilePath(ctx,i);
-                            if( ftp.ftpDownload(srcFileName, desFileName) ) {
-                                epc_file_ready = reader_epc.read(desFileName);
-                                if( epc_file_ready ) {
-                                    if( reader_epc.applyToApp( ctx, i ) ) {
-                                        // envoi acknowledge
-                                        try {
-                                            File temp = File.createTempFile("temp-file-name", ".tmp");
-                                            String ackFileName = reader_epc.getEPCFileName(ctx, i, true);
-                                            ftp.ftpUpload(temp.getPath(), ackFileName);
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
+                        if (exist_server_epc) {
+                            // Create folder if not exist
+                            if (!folder.exists())
+                                if (!folder.mkdirs())
+                                    Log.w(TAG, "Error while trying to create new folder!");
+                            if (folder.exists()) {
+                                desFileName = reader_epc.getEPCFilePath(ctx, i);
+                                if (ftp.ftpDownload(srcFileName, desFileName)) {
+                                    epc_file_ready = reader_epc.read(desFileName);
+                                    if (epc_file_ready) {
+                                        if (reader_epc.applyToApp(ctx, i)) {
+                                            // envoi acknowledge
+                                            try {
+                                                File temp = File.createTempFile("temp-file-name", ".tmp");
+                                                String ackFileName = reader_epc.getEPCFileName(ctx, i, true);
+                                                ftp.ftpUpload(temp.getPath(), ackFileName);
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                            }
+                                        } else {
+                                            error = true;
                                         }
                                     } else {
                                         error = true;
                                     }
-                                } else {
-                                    error = true;
                                 }
+                            } else {
+                                error = true;
                             }
-                        } else {
-                            error  = true;
                         }
-                    }
 
-                    i++;
+                        i++;
+                    }
                 }
                 epc_file_ready = !error;
-                if( epc_file_ready ) {
+                if (epc_file_ready) {
                     // Counting epc files...
                     epc_file_ready = !DataEPC.getAppEpcExist(ctx).isEmpty();
                 }
@@ -444,6 +418,14 @@ public class AppManager extends ThreadDefault
         }
         addLog( "EPC is ready: " + epc_file_ready );
         return epc_file_ready;
+    }
+
+    private boolean sending_eca(){
+        boolean ret = false;
+        addLog( "Trying to sending eca_file..." );
+
+        addLog( "ECA sending: " + ret );
+        return ret;
     }
 
     private void updateRideTime() {

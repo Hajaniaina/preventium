@@ -51,13 +51,20 @@ public class FTPConfig {
     public void setUsername(String username) { this.username = username; }
     public void setPassword(String password) { this.password = password; }
     public void setPort(int portnum) { this.portnum = portnum; }
-    public void setWorkDirectory(String workDirectory) { this.workDirectory = workDirectory; }
+    public void setWorkDirectory(String workDirectory) {
+        if( workDirectory.equals("/") )
+            this.workDirectory = "";
+        else
+            this.workDirectory = workDirectory;
+    }
 
     // Getters
     public String getFtpServer() { return hostname; }
     public String getUsername() { return username; }
     public String getPassword() { return password; }
     public Integer getPort() { return portnum; }
-    public String getWorkDirectory() { return workDirectory; }
+    public String getWorkDirectory() {
+        return workDirectory;
+    }
 
 }
