@@ -16,12 +16,14 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
+import android.text.Layout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -57,6 +59,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private TextView debugView;
     private TextView boxNumView;
     private TextView drivingTimeView;
+    private ScrollView debugScroll;
 
     private FloatingActionMenu optMenu;
     private FloatingActionButton infoButton;
@@ -96,7 +99,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         progress.setMessage(getString(R.string.progress_map_string));
         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progress.setIndeterminate(true);
-        progress.setCancelable(false);
+        progress.setCancelable(true);
         progress.setProgressNumberFormat(null);
         progress.setProgressPercentFormat(null);
 
@@ -109,13 +112,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         speedView = new SpeedView(this);
         scoreView = new ScoreView(this);
         accForceView = new AccForceView(this);
+
         accForceView.hide(true);
+        scoreView.hide(true);
 
         boxNumView = (TextView) findViewById(R.id.box_num_connected);
         drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
 
         debugView = (TextView) findViewById(R.id.debug_view);
         debugView.setVisibility(View.GONE);
+        debugScroll = (ScrollView) findViewById(R.id.debugScroller);
 
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
 
@@ -317,6 +323,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     case CAR_STOPPED:
 
+                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "STOP");
+
                         if (progress != null) {
 
                             progress.setMessage(getString(R.string.progress_ready_string));
@@ -327,30 +335,34 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     case CAR_MOVING:
 
+                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "MOVE");
+
                         if (mapReady) {
 
-                            googleMap.getUiSettings().setAllGesturesEnabled(false);
+                            // googleMap.getUiSettings().setAllGesturesEnabled(false);
                         }
 
-                        disableActionButtons(true);
-                        speedView.hide(false);
+                        // disableActionButtons(true);
+                        // speedView.hide(false);
                         // scoreView.hide(false);
 
                         break;
 
                     case CAR_PAUSING:
 
+                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "PAUSE");
+
                         if (mapReady) {
 
-                            CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(15).bearing(0).tilt(0).build();
-                            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                            googleMap.getUiSettings().setAllGesturesEnabled(true);
+                            // CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(15).bearing(0).tilt(0).build();
+                            // googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                            // googleMap.getUiSettings().setAllGesturesEnabled(true);
                         }
 
-                        changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
-                        disableActionButtons(false);
-                        speedView.hide(true);
-                        accForceView.hide(true);
+                        // changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
+                        // disableActionButtons(false);
+                        // speedView.hide(true);
+                        // accForceView.hide(true);
                         // scoreView.disable(true);
 
                         break;
@@ -773,7 +785,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     }
 
                     speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_1, currSpeed);
-                    speedView.setSpeed(SPEED_t.IN_STRAIGHT_LINE, LEVEL_t.LEVEL_4, maxSpeed);
+                    // speedView.setSpeed(SPEED_t.IN_STRAIGHT_LINE, LEVEL_t.LEVEL_4, maxSpeed);
 
                     googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(18).bearing(0).tilt(30).build();

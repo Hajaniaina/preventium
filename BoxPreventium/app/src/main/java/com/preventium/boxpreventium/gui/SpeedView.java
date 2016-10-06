@@ -106,6 +106,22 @@ public class SpeedView implements Parcelable {
         visible = !hide;
     }
 
+    public void setText (SPEED_t speedId, String msg) {
+
+        switch (speedId) {
+
+            case IN_CORNERS:
+            case IN_STRAIGHT_LINE:
+            case MAX_LIMIT:
+
+                viewMap.get(speedId).setText(msg);
+
+                break;
+
+            default: break;
+        }
+    }
+
     public void setSpeed (SPEED_t speedId, LEVEL_t level, Integer speed) {
 
         if (speed < 0) {
