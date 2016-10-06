@@ -10,9 +10,13 @@ import android.location.Location;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.github.mikephil.charting.utils.Utils;
 import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.utils.BytesUtils;
+import com.preventium.boxpreventium.utils.ComonUtils;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -36,7 +40,6 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String TABLE_ECA = "eca";
     public static final String COLUMN_ECA_ID = "id";
     public static final String COLUMN_ECA_PARCOUR = "parcour";
-    public static final String COLUMN_ECA_SENDING = "sending";
     public static final String COLUMN_ECA_TIME = "time";
     public static final String COLUMN_ECA_ALERTID = "alertid";
     public static final String COLUMN_ECA_PADDIND = "padding";
@@ -55,8 +58,13 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CEP_LAT_POS = "lat_pos";
     public static final String COLUMN_CEP_STATUS = "status";
 
+    private static final String TAG = "DBHelper";
+    private Context ctx = null;
 
-    public DBHelper(Context context) { super(context, DATABASE_NAME, null, 3); }
+    public DBHelper(Context context) {
+        super(context, DATABASE_NAME, null, 4);
+        ctx = context;
+    }
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
@@ -64,7 +72,6 @@ public class DBHelper extends SQLiteOpenHelper {
                 "CREATE TABLE " + TABLE_ECA + " (" +
                         COLUMN_ECA_ID + " INTEGER PRIMARY KEY, " +
                         COLUMN_ECA_PARCOUR + " INTEGER, " +
-                        COLUMN_ECA_SENDING + " INTEGER, " +
                         COLUMN_ECA_TIME + " INTEGER, " +
                         COLUMN_ECA_ALERTID + " INTEGER, " +
                         COLUMN_ECA_PADDIND + " INTEGER, " +
@@ -102,19 +109,25 @@ public class DBHelper extends SQLiteOpenHelper {
         db.delete(TABLE_CEP,null,null);
     }
 
+    public void clear(){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_ECA,null,null);
+        db.delete(TABLE_CEP,null,null);
+    }
+
+
     // ECA
 
     public List<Long> get_parcours_id(){
         List<Long> ret = new ArrayList<Long>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor =  db.rawQuery( "SELECT DISTINCT " + COLUMN_ECA_PARCOUR + " from " + TABLE_ECA + "where " + COLUMN_ECA_SENDING + " = 0;", null );
+        Cursor cursor =  db.rawQuery( "SELECT DISTINCT " + COLUMN_ECA_PARCOUR + " from " + TABLE_ECA + " ;", null );
         if( cursor != null && cursor.moveToFirst() ) {
             while ( !cursor.isAfterLast() ){
                 ret.add( cursor.getLong(0) );
                 cursor.moveToNext();
             }
         }
-
         return ret;
     }
 
@@ -124,7 +137,6 @@ public class DBHelper extends SQLiteOpenHelper {
         ContentValues contentValues = new ContentValues();
         contentValues.put(COLUMN_ECA_TIME, line.location.getTime() );
         contentValues.put(COLUMN_ECA_PARCOUR, parcour_id );
-        contentValues.put(COLUMN_ECA_SENDING, 0);
         contentValues.put(COLUMN_ECA_ALERTID, line.alertID );
         contentValues.put(COLUMN_ECA_PADDIND, line.padding );
         contentValues.put(COLUMN_ECA_LONG_POS, line.location.getLongitude() );
@@ -179,6 +191,53 @@ public class DBHelper extends SQLiteOpenHelper {
             }
         }
         return ret;
+    }
+
+    public void generate_eca_file(){
+        Log.d(TAG, "generate_eca_file()");
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor =  db.rawQuery( "SELECT * from " + TABLE_ECA + ";", null );
+        if( cursor != null && cursor.moveToFirst() ) {
+            long parcour_id = 0;
+            ECALine line = null;
+            while ( !cursor.isAfterLast() ) {
+                // READ CURRENT LINE
+                parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_ID));
+                line = new ECALine();
+                line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
+                line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
+                line.padding = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PADDIND));
+                line.long_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LONG_POS_ORIENTATION));
+                line.lat_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LAT_POS_ORIENTATION));
+                line.distance = cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_DISTANCE));
+                line.location = new Location("");
+                line.location.setTime(cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_TIME)));
+                line.location.setLongitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LONG_POS)));
+                line.location.setLatitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LAT_POS)));
+                line.location.setSpeed(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_SPEED)));
+
+                File folder = new File(ctx.getFilesDir() + "ECA", "");
+                // Create folder if not exist
+                if (!folder.exists())
+                    if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
+                if( folder.exists() ) {
+
+                    String filename = String.format(Locale.getDefault(),"%s_%s_%04d",
+                            ComonUtils.getIMEInumber(ctx), parcour_id, 0 );
+                    String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), filename);
+                    File file = new File(desFileName);
+                    if( file.exists() ){
+                        Log.d(TAG,"FILE EXIST" + desFileName);
+                    } else {
+                        Log.d(TAG,"FILE NOT EXIST" + desFileName);
+                    }
+
+
+                }
+                Log.d(TAG, line.toString());
+                cursor.moveToNext();
+            }
+        }
     }
 
     // BOX CONNECTION/DISCONNECTION

@@ -149,7 +149,7 @@ public class AppManager extends ThreadDefault
         if( listener != null )listener.onStatusChanged( status );
 
         if( isRunning() ) {
-            database.clearAll();
+//            database.clearAll();
             engine_t = ENGINE_t.UNKNOW;
             chronoRideTxt = "0:00";
             chronoRide = new Chrono();
@@ -169,8 +169,8 @@ public class AppManager extends ThreadDefault
 
                     clear_force_ui();
 
-                    boolean ready_to_started = (modules.getNumberOfBoxConnected() > 0
-                            && mov_t_last != MOVING_t.STP /*&& engine_t == ENGINE_t.ON*/);
+                    boolean ready_to_started = ( /*modules.getNumberOfBoxConnected() > 0
+                            &&*/ mov_t_last != MOVING_t.STP /*&& engine_t == ENGINE_t.ON*/);
                     if (!ready_to_started) {
                         mov_t_chrono.stop();
                     } else {
@@ -180,7 +180,7 @@ public class AppManager extends ThreadDefault
                             // ....
                             readerEPCFile.loadFromApp(ctx,1);
 
-                            database.clearAll();
+//                            database.clearAll();
 
                             addLog("START PARCOURS");
                             status = STATUS_t.CAR_MOVING;
@@ -218,8 +218,7 @@ public class AppManager extends ThreadDefault
                         if( listener != null ) listener.onStatusChanged( status );
                         addLog("STOP PARCOURS");
                         clear_force_ui();
-
-                        sending_eca();
+                        database.generate_eca_file();
 
                     }
                     // SET RESUME
@@ -420,6 +419,7 @@ public class AppManager extends ThreadDefault
     }
 
     private boolean sending_eca(){
+
         boolean ret = false;
         addLog( "Trying to sending eca_file..." );
         FTPConfig config = DataCFG.getFptConfig(ctx);
