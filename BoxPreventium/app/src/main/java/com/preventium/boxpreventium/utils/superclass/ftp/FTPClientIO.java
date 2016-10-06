@@ -60,32 +60,6 @@ public class FTPClientIO {
         return ret;
     }
 
-    public boolean AAconnectTo( String host, String username, String password, int port, int timeout ) {
-        boolean ret = false;
-        try {
-            mFTPClient = new FTPClient();
-            mFTPClient.setConnectTimeout(timeout);
-            mFTPClient.connect( host, port );
-            int reply = mFTPClient.getReplyCode();
-            if( !FTPReply.isPositiveCompletion(reply) ) {
-                mFTPClient.disconnect();
-                Log.d(TAG,"Connexion refusée.");
-            } else {
-                if( mFTPClient.login( username, password ) ){
-                    ret = true;
-                } else {
-                    Log.d(TAG,"Login refusée.");
-                    mFTPClient.disconnect();
-                }
-            }
-            System.out.println("status :: " + mFTPClient.getStatus());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return ret;
-    }
-
     public boolean ftpDisconnect() {
         try {
             mFTPClient.logout();

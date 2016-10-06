@@ -9,6 +9,7 @@ import com.preventium.boxpreventium.module.enums.CONNEXION_STATE_t;
 import com.preventium.boxpreventium.module.trames.BatteryInfo;
 import com.preventium.boxpreventium.module.trames.SensorShockAccelerometerInfo;
 import com.preventium.boxpreventium.module.trames.SensorSmoothAccelerometerInfo;
+import com.preventium.boxpreventium.utils.BytesUtils;
 import com.preventium.boxpreventium.utils.ThreadDefault;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.device.ActionCallback;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.device.NotifyListener;
@@ -25,6 +26,7 @@ public class BluetoothBox
     private BatteryInfo last_battery_info = null;
     private SensorSmoothAccelerometerInfo last_smooth_info = null;
     private SensorShockAccelerometerInfo last_shock_info = null;
+    private Integer last_rssi = null;
 
     private CONNEXION_STATE_t state = CONNEXION_STATE_t.DISCONNECTED;
 
@@ -76,6 +78,22 @@ public class BluetoothBox
 
     public CONNEXION_STATE_t getConnectionState(){ return state; }
 
+    public String getMacAddr(){
+        String ret = "";
+        if( io != null ) {
+            BluetoothDevice dev = io.getDevice();
+            if( dev != null ) ret = dev.getAddress();
+        }
+        return ret;
+    }
+
+    public Integer getRSSI(){
+        if( last_rssi == null ) {
+            readRSSI();
+        }
+        return last_rssi;
+    }
+
     public BatteryInfo getBat(){ return last_battery_info; };
 
     public SensorSmoothAccelerometerInfo getSmooth(){ return last_smooth_info; };
@@ -93,6 +111,7 @@ public class BluetoothBox
                 io.command(CmdBox.newInstance(CMD_t.START_MEASURING));
             }
         }).start();
+        readRSSI();
     }
 
     @Override
@@ -118,6 +137,23 @@ public class BluetoothBox
     public void onSmoothInfoReceived(SensorSmoothAccelerometerInfo info) {
         if( DEBUG && info != null ) Log.d(TAG,info.toString());
         last_smooth_info = info;
+    }
+
+    public void readRSSI(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                io.readRssi(new ActionCallback() {
+                    @Override
+                    public void onSuccess(Object data) {
+                        BluetoothBox.this.last_rssi = (Integer)data;
+                    }
+
+                    @Override
+                    public void onFail(int errorCode, String msg) {}
+                });
+            }
+        }).start();
     }
 
     // DISCONNECTED

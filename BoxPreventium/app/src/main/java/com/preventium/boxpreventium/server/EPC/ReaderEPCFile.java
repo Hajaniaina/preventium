@@ -9,9 +9,12 @@ import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.manager.AlertForce;
 import com.preventium.boxpreventium.utils.ComonUtils;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -26,12 +29,13 @@ public class ReaderEPCFile {
 
     public ReaderEPCFile(){}
 
-    public String getEPCFileName(Context ctx, int i ) {
+    public String getEPCFileName(Context ctx, int i, boolean acknowledge ) {
+        if( acknowledge )return String.format(Locale.getDefault(), ComonUtils.getIMEInumber(ctx) + "_%d_ok.EPC", i);
         return String.format(Locale.getDefault(), ComonUtils.getIMEInumber(ctx) + "_%d.EPC", i);
     }
 
     public String getEPCFilePath(Context ctx, int i ) {
-        String fileName = getEPCFileName(ctx,i);
+        String fileName = getEPCFileName(ctx,i,false);
         return String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), fileName);
     }
 
@@ -144,6 +148,31 @@ public class ReaderEPCFile {
     public void print(){
         for (ForceSeuil aSeuil : seuil) Log.d(TAG, aSeuil.toString());
         Log.d(TAG, "lat/long enable: " + lat_long );
+    }
+
+
+    public boolean loadFromApp( Context ctx, int epc ) {
+        boolean ret = false;
+        if( DataEPC.preferenceFileExist(ctx,epc) ){
+            for( int i = 0; i < seuil.length; i++ ) {
+                seuil[i] = DataEPC.getEPCLine(ctx,epc,i);
+            }
+            lat_long = DataEPC.getLatLong(ctx,epc);
+            ret = true;
+        }
+        return ret;
+    }
+
+    public boolean applyToApp( Context ctx, int epc ){
+        boolean ret = false;
+        if( epc >= 1 && epc <= 5 ) {
+            for (int i = 0; i < seuil.length; i++) {
+                DataEPC.setEPCLine(ctx, epc, i, seuil[i]);
+            }
+            DataEPC.setLatLong(ctx, epc, lat_long);
+            ret = true;
+        }
+        return ret;
     }
 
 }

@@ -25,6 +25,7 @@ import android.widget.TextView;
 
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
+import com.preventium.boxpreventium.enums.STATUS_t;
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.R;
 import com.github.clans.fab.FloatingActionButton;
@@ -269,6 +270,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 debugView.setText(txt);
             }
         });
+    }
+
+    @Override
+    public void onStatusChanged(STATUS_t status) {
+
     }
 
     private void drawLine (LatLng startPoint, LatLng endPoint) {
@@ -630,7 +636,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 LatLng prevPos = new LatLng(prevLoc.getLatitude(), prevLoc.getLongitude());
                 LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());
 
-                markerManager.addMarker("point", currPos, CustomMarker.MARKER_RANDOM);
+                //markerManager.addMarker("point", currPos, CustomMarker.MARKER_RANDOM);
                 drawLine(prevPos, currPos);
 
                 if (modeManager.getMode() == ModeManager.MOVING) {
@@ -769,13 +775,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     menuButton1.setImageResource(R.drawable.ic_stop);
                     modeManager.setMode(ModeManager.MOVING);
-                    appManager.startMoving();
                 }
                 else if (currMode == ModeManager.MOVING) {
 
                     menuButton1.setImageResource(R.drawable.ic_play);
                     modeManager.setMode(ModeManager.STOP);
-                    appManager.stopMoving();
                 }
 
                 // optMenu.close(true);

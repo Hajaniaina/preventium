@@ -14,7 +14,8 @@ public enum MOVING_t {
     STP(0),
     ACC(1),
     BRK(2),
-    CST(3);
+    CST(3),
+    NCS(4);
 
     private int value;
     private static Map<Integer, MOVING_t> map = new HashMap<>();
@@ -36,6 +37,8 @@ public enum MOVING_t {
                 return "MOVING_t[Freinage]";
             case CST  :
                 return "MOVING_t[Constant speed]";
+            case NCS  :
+                return "MOVING_t[Non constant speed]";
             default                 :
                 return "MOVING_t[???]";
         }

@@ -74,7 +74,8 @@ public class ReaderCFGFile {
         return ret;
     }
 
-    public void loadFromApp( Context ctx ) {
+    public boolean loadFromApp( Context ctx ) {
+        boolean ret = false;
         clear();
         FTPConfig config = DataCFG.getFptConfig(ctx);
         if( config != null ) {
@@ -90,7 +91,9 @@ public class ReaderCFGFile {
             SMS_CALL_5 = DataCFG.get_SMS_CALL(ctx,1);
             reception_trajet_en_temps_reel = DataCFG.get_SEND_IN_REAL_TIME(ctx);
             envoi_de_tous_les_points_gps = DataCFG.get_SEND_ALL_GPS_POINTS(ctx);
+            ret = true;
         }
+        return ret;
     }
 
     public void applyToApp( Context ctx ) {

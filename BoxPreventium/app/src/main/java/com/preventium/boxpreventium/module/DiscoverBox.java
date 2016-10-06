@@ -82,7 +82,7 @@ public class DiscoverBox implements ScannerCallback {
             }
 
         }
-        if( notify != null ) notify.onScanChanged( scanning, mBluetoothDevices );
+        if( notify != null ) notify.onScanChanged( scanning, mBluetoothDevices);
     }
 
     @Override

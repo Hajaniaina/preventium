@@ -183,7 +183,7 @@ public class FilesDownloader extends ThreadDefault {
 
                     ReaderEPCFile reader_epc = new ReaderEPCFile();
                     for (int i = 1; i <= 5; i++) {
-                        String srcFileName = reader_epc.getEPCFileName(ctx,i);
+                        String srcFileName = reader_epc.getEPCFileName(ctx,i,false);
                         String desFileName = reader_epc.getEPCFilePath(ctx,i);
                         boolean success = ftp.ftpDownload(srcFileName, desFileName);
                         if (DEBUG) Log.d(TAG, "Retrieving " + srcFileName + "...");
