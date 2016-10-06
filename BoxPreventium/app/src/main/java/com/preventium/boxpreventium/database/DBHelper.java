@@ -34,6 +34,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public static final String TABLE_ECA = "eca";
     public static final String COLUMN_ECA_ID = "id";
+    public static final String COLUMN_ECA_PARCOUR = "parcour";
     public static final String COLUMN_ECA_TIME = "time";
     public static final String COLUMN_ECA_ALERTID = "alertid";
     public static final String COLUMN_ECA_PADDIND = "padding";
@@ -53,13 +54,14 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CEP_STATUS = "status";
 
 
-    public DBHelper(Context context) { super(context, DATABASE_NAME, null, 2); }
+    public DBHelper(Context context) { super(context, DATABASE_NAME, null, 3); }
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         String TABLE_CREATE =
                 "CREATE TABLE " + TABLE_ECA + " (" +
                         COLUMN_ECA_ID + " INTEGER PRIMARY KEY, " +
+                        COLUMN_ECA_PARCOUR + " INTEGER, " +
                         COLUMN_ECA_TIME + " INTEGER, " +
                         COLUMN_ECA_ALERTID + " INTEGER, " +
                         COLUMN_ECA_PADDIND + " INTEGER, " +
@@ -99,11 +101,12 @@ public class DBHelper extends SQLiteOpenHelper {
 
     // ECA
 
-    public boolean addECA( ECALine line ){
+    public boolean addECA( long parcour_id, ECALine line ){
 
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COLUMN_ECA_TIME, line.location.getTime() );
+        contentValues.put(COLUMN_ECA_PARCOUR, parcour_id );
         contentValues.put(COLUMN_ECA_ALERTID, line.alertID );
         contentValues.put(COLUMN_ECA_PADDIND, line.padding );
         contentValues.put(COLUMN_ECA_LONG_POS, line.location.getLongitude() );

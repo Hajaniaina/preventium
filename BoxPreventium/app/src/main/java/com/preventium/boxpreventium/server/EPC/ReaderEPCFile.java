@@ -1,20 +1,15 @@
 package com.preventium.boxpreventium.server.EPC;
 
 import android.content.Context;
-import android.location.Location;
 import android.util.Log;
 
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
-import com.preventium.boxpreventium.manager.AlertForce;
 import com.preventium.boxpreventium.utils.ComonUtils;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 
 /**
