@@ -230,7 +230,7 @@ public class AppManager extends ThreadDefault
                         addLog("RESUME PARCOURS");
                         clear_force_ui();
                     } else if( status == STATUS_t.CAR_MOVING ){
-                        addLog("IN PARCOURS");
+                        //addLog("IN PARCOURS");
                         prepare_eca();
                     }
 
