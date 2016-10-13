@@ -182,8 +182,8 @@ public class AppManager extends ThreadDefault
 
                     clear_force_ui();
 
-                    boolean ready_to_started = ( /*modules.getNumberOfBoxConnected() > 0
-                            &&*/ mov_t_last != MOVING_t.STP /*&& engine_t == ENGINE_t.ON*/);
+                    boolean ready_to_started = ( modules.getNumberOfBoxConnected() > 0
+                            && mov_t_last != MOVING_t.STP /*&& engine_t == ENGINE_t.ON*/);
                     if (!ready_to_started) {
                         mov_t_chrono.stop();
                     } else {
