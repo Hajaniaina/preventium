@@ -81,7 +81,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private Intent pinLockIntent;
     private AppColor appColor;
     STATUS_t globalStatus;
-    int maxSpeed = 0;
     LatLng lastPos;
 
     @Override
@@ -335,12 +334,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "MOVE");
 
-                        //if (mapReady) {
+                        if (mapReady) {
 
-                            // googleMap.getUiSettings().setAllGesturesEnabled(false);
-                        //}
+                            googleMap.getUiSettings().setAllGesturesEnabled(false);
+                        }
 
-                        // disableActionButtons(true);
+                        disableActionButtons(true);
                         // speedView.hide(false);
                         // scoreView.hide(false);
 
@@ -350,18 +349,18 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "PAUSE");
 
-                        //if (mapReady) {
+                        if (mapReady) {
 
-                            // CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(15).bearing(0).tilt(0).build();
-                            // googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                            // googleMap.getUiSettings().setAllGesturesEnabled(true);
-                        //}
+                            CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(15).bearing(0).tilt(0).build();
+                            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                            googleMap.getUiSettings().setAllGesturesEnabled(true);
+                        }
 
-                        // changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
-                        // disableActionButtons(false);
+                        changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
+                        disableActionButtons(false);
                         // speedView.hide(true);
-                        // accForceView.hide(true);
-                        // scoreView.disable(true);
+                        accForceView.hide(true);
+                        // scoreView.hide(true);
 
                         break;
                 }
@@ -774,22 +773,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 }
 
-                // if (globalStatus == STATUS_t.CAR_MOVING) {
+                if (globalStatus == STATUS_t.CAR_MOVING) {
 
                     int currSpeed = posManager.getInstantSpeed();
-
-                    if (currSpeed > maxSpeed) {
-
-                        maxSpeed = currSpeed;
-                    }
-
                     speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_1, currSpeed);
-                    // speedView.setSpeed(SPEED_t.IN_STRAIGHT_LINE, LEVEL_t.LEVEL_4, maxSpeed);
 
                     googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(18).bearing(0).tilt(30).build();
                     googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                //}
+                }
+                else {
+
+                    speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_UNKNOW, 0);
+                }
             }
 
             @Override
