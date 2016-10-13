@@ -98,7 +98,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         progress.setMessage(getString(R.string.progress_map_string));
         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progress.setIndeterminate(true);
-        progress.setCancelable(true);
+        progress.setCancelable(false);
         progress.setProgressNumberFormat(null);
         progress.setProgressPercentFormat(null);
 
