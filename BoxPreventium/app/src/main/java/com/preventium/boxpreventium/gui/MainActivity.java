@@ -248,15 +248,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                if (txt.equalsIgnoreCase("0:00")) {
-
-                    changeViewColorFilter(drivingTimeView, AppColor.GREY);
-                }
-                else {
-
-                    changeViewColorFilter(drivingTimeView, AppColor.GREEN);
-                }
-
+                changeViewColorFilter(drivingTimeView, AppColor.GREEN);
                 drivingTimeView.setText(txt);
             }
         });
@@ -342,6 +334,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         disableActionButtons(true);
                         // speedView.hide(false);
                         // scoreView.hide(false);
+                        changeViewColorFilter(drivingTimeView, AppColor.GREEN);
 
                         break;
 
