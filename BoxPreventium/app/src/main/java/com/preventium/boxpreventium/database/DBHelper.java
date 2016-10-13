@@ -17,10 +17,15 @@ import com.preventium.boxpreventium.utils.ComonUtils;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -39,7 +44,8 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public static final String TABLE_ECA = "eca";
     public static final String COLUMN_ECA_ID = "id";
-    public static final String COLUMN_ECA_PARCOUR = "parcour";
+    public static final String COLUMN_ECA_PARCOUR_ID = "parcour_id";
+    public static final String COLUMN_ECA_FILE_ID = "file_id";
     public static final String COLUMN_ECA_TIME = "time";
     public static final String COLUMN_ECA_ALERTID = "alertid";
     public static final String COLUMN_ECA_PADDIND = "padding";
@@ -62,7 +68,7 @@ public class DBHelper extends SQLiteOpenHelper {
     private Context ctx = null;
 
     public DBHelper(Context context) {
-        super(context, DATABASE_NAME, null, 4);
+        super(context, DATABASE_NAME, null, 1);
         ctx = context;
     }
 
@@ -71,7 +77,8 @@ public class DBHelper extends SQLiteOpenHelper {
         String TABLE_CREATE =
                 "CREATE TABLE " + TABLE_ECA + " (" +
                         COLUMN_ECA_ID + " INTEGER PRIMARY KEY, " +
-                        COLUMN_ECA_PARCOUR + " INTEGER, " +
+                        COLUMN_ECA_PARCOUR_ID + " INTEGER, " +
+                        COLUMN_ECA_FILE_ID + " INTEGER, " +
                         COLUMN_ECA_TIME + " INTEGER, " +
                         COLUMN_ECA_ALERTID + " INTEGER, " +
                         COLUMN_ECA_PADDIND + " INTEGER, " +
@@ -118,25 +125,13 @@ public class DBHelper extends SQLiteOpenHelper {
 
     // ECA
 
-    public List<Long> get_parcours_id(){
-        List<Long> ret = new ArrayList<Long>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor =  db.rawQuery( "SELECT DISTINCT " + COLUMN_ECA_PARCOUR + " from " + TABLE_ECA + " ;", null );
-        if( cursor != null && cursor.moveToFirst() ) {
-            while ( !cursor.isAfterLast() ){
-                ret.add( cursor.getLong(0) );
-                cursor.moveToNext();
-            }
-        }
-        return ret;
-    }
-
     public boolean addECA( long parcour_id, ECALine line ){
 
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COLUMN_ECA_TIME, line.location.getTime() );
-        contentValues.put(COLUMN_ECA_PARCOUR, parcour_id );
+        contentValues.put(COLUMN_ECA_PARCOUR_ID, parcour_id );
+        contentValues.put(COLUMN_ECA_FILE_ID, -1);
         contentValues.put(COLUMN_ECA_ALERTID, line.alertID );
         contentValues.put(COLUMN_ECA_PADDIND, line.padding );
         contentValues.put(COLUMN_ECA_LONG_POS, line.location.getLongitude() );
@@ -149,10 +144,25 @@ public class DBHelper extends SQLiteOpenHelper {
         return true;
     }
 
+    public List<Long> get_parcours_id(){
+        List<Long> ret = new ArrayList<Long>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor =  db.rawQuery( "SELECT DISTINCT " + COLUMN_ECA_PARCOUR_ID + " from " + TABLE_ECA + " ;", null );
+        if( cursor != null && cursor.moveToFirst() ) {
+            while ( !cursor.isAfterLast() ){
+                ret.add( cursor.getLong(0) );
+                cursor.moveToNext();
+            }
+        }
+        return ret;
+    }
+
+
 //    public int numberOfRows(){
 //        SQLiteDatabase db = this.getReadableDatabase();
 //        return (int) queryNumEntries(db, TABLE_ECA);
 //    }
+
 
     public double distanceTraveled(){
         double ret = 0.0;
@@ -193,7 +203,8 @@ public class DBHelper extends SQLiteOpenHelper {
         return ret;
     }
 
-    public void generate_eca_file(){
+    public void generate_eca_file_1(){
+
         Log.d(TAG, "generate_eca_file()");
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor =  db.rawQuery( "SELECT * from " + TABLE_ECA + ";", null );
@@ -202,7 +213,7 @@ public class DBHelper extends SQLiteOpenHelper {
             ECALine line = null;
             while ( !cursor.isAfterLast() ) {
                 // READ CURRENT LINE
-                parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_ID));
+                parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID) );
                 line = new ECALine();
                 line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
                 line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
@@ -222,20 +233,206 @@ public class DBHelper extends SQLiteOpenHelper {
                     if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
                 if( folder.exists() ) {
 
-                    String filename = String.format(Locale.getDefault(),"%s_%s_%04d",
-                            ComonUtils.getIMEInumber(ctx), parcour_id, 0 );
-                    String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), filename);
-                    File file = new File(desFileName);
-                    if( file.exists() ){
-                        Log.d(TAG,"FILE EXIST" + desFileName);
-                    } else {
-                        Log.d(TAG,"FILE NOT EXIST" + desFileName);
+                    int cnt = 0;
+                    boolean ready = false;
+                    String filename = "";
+                    String desFileName = "";
+                    File file = null;
+                    while( !ready ) {
+                        filename = String.format(Locale.getDefault(),"%s_%s_%04d.ECA",
+                                ComonUtils.getIMEInumber(ctx), parcour_id, cnt );
+                        desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), filename);
+                        file = new File(desFileName);
+                        if (!file.exists()) {
+                            ready = true;
+                            try {
+                                if (file.createNewFile())
+                                    Log.d(TAG, "FILE CREATE:" + desFileName);
+                                else
+                                    Log.w(TAG, "FILE NOT CREATE:" + desFileName);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            double bytes = file.length();
+                            double kilobytes = (bytes / 1024);
+                            double megabytes = (kilobytes / 1024);
+                            //double gigabytes = (megabytes / 1024);
+                            //double terabytes = (gigabytes / 1024);
+                            //double petabytes = (terabytes / 1024);
+                            //double exabytes = (petabytes / 1024);
+                            //double zettabytes = (exabytes / 1024);
+                            //double yottabytes = (zettabytes / 1024);
+                            if (megabytes < 0.5) {
+                                ready = true;
+                            } else {
+                                cnt++;
+                            }
+                        }
+                    }
+
+                    if( file.exists() ) {
+                        try {
+                            PrintWriter printWriter = null;
+                            printWriter = new PrintWriter(new FileOutputStream(file.getAbsolutePath(), true));
+                            printWriter.write(System.getProperty("line.separator"));
+                            printWriter.write(Arrays.toString(line.toData()));
+                            printWriter.close();
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
                     }
 
 
+
+
                 }
-                Log.d(TAG, line.toString());
+                //Log.d(TAG, line.toString());
                 cursor.moveToNext();
+            }
+        }
+    }
+
+    public boolean generate_eca_file_if_needed(){
+        Log.d(TAG, "generate_eca_file()");
+
+        boolean ret = false;
+
+        File folder = new File(ctx.getFilesDir() + "ECA", "");
+        // Create folder if not exist
+        if (!folder.exists())
+            if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
+        if( folder.exists() ) {
+
+            SQLiteDatabase db = this.getReadableDatabase();
+            Cursor cursor = db.rawQuery("SELECT * from " + TABLE_ECA + " where " + COLUMN_ECA_FILE_ID + " = -1;", null);
+            while (!cursor.isAfterLast()) {
+                long parcour_id = 0;
+                ECALine line = null;
+                while (!cursor.isAfterLast()) {
+                    // READ CURRENT LINE
+                    parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID));
+                    line = new ECALine();
+                    line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
+                    line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
+                    line.padding = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PADDIND));
+                    line.long_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LONG_POS_ORIENTATION));
+                    line.lat_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LAT_POS_ORIENTATION));
+                    line.distance = cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_DISTANCE));
+                    line.location = new Location("");
+                    line.location.setTime(cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_TIME)));
+                    line.location.setLongitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LONG_POS)));
+                    line.location.setLatitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LAT_POS)));
+                    line.location.setSpeed(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_SPEED)));
+                    Log.d("AAA", "Parcour + " + parcour_id + " -> " + line.toString());
+                }
+
+            }
+        }
+        return ret;
+
+
+
+
+
+
+//
+//        SQLiteDatabase db = this.getReadableDatabase();
+//        Cursor cursor =  db.rawQuery( "SELECT * from " + TABLE_ECA + ";", null );
+//        if( cursor != null && cursor.moveToFirst() ) {
+//            long parcour_id = 0;
+//            ECALine line = null;
+//            while ( !cursor.isAfterLast() ) {
+//                // READ CURRENT LINE
+//                parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR) );
+//                line = new ECALine();
+//                line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
+//                line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
+//                line.padding = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PADDIND));
+//                line.long_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LONG_POS_ORIENTATION));
+//                line.lat_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LAT_POS_ORIENTATION));
+//                line.distance = cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_DISTANCE));
+//                line.location = new Location("");
+//                line.location.setTime(cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_TIME)));
+//                line.location.setLongitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LONG_POS)));
+//                line.location.setLatitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LAT_POS)));
+//                line.location.setSpeed(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_SPEED)));
+//
+//                File folder = new File(ctx.getFilesDir() + "ECA", "");
+//                // Create folder if not exist
+//                if (!folder.exists())
+//                    if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
+//                if( folder.exists() ) {
+//
+//                    int cnt = 0;
+//                    boolean ready = false;
+//                    String filename = "";
+//                    String desFileName = "";
+//                    File file = null;
+//                    while( !ready ) {
+//                        filename = String.format(Locale.getDefault(),"%s_%s_%04d.ECA",
+//                                ComonUtils.getIMEInumber(ctx), parcour_id, cnt );
+//                        desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), filename);
+//                        file = new File(desFileName);
+//                        if (!file.exists()) {
+//                            ready = true;
+//                            try {
+//                                if (file.createNewFile())
+//                                    Log.d(TAG, "FILE CREATE:" + desFileName);
+//                                else
+//                                    Log.w(TAG, "FILE NOT CREATE:" + desFileName);
+//                            } catch (IOException e) {
+//                                e.printStackTrace();
+//                            }
+//                        } else {
+//                            double bytes = file.length();
+//                            double kilobytes = (bytes / 1024);
+//                            double megabytes = (kilobytes / 1024);
+//                            //double gigabytes = (megabytes / 1024);
+//                            //double terabytes = (gigabytes / 1024);
+//                            //double petabytes = (terabytes / 1024);
+//                            //double exabytes = (petabytes / 1024);
+//                            //double zettabytes = (exabytes / 1024);
+//                            //double yottabytes = (zettabytes / 1024);
+//                            if (megabytes < 0.5) {
+//                                ready = true;
+//                            } else {
+//                                cnt++;
+//                            }
+//                        }
+//                    }
+//
+//                    if( file.exists() ) {
+//                        try {
+//                            PrintWriter printWriter = null;
+//                            printWriter = new PrintWriter(new FileOutputStream(file.getAbsolutePath(), true));
+//                            printWriter.write(System.getProperty("line.separator"));
+//                            printWriter.write(Arrays.toString(line.toData()));
+//                            printWriter.close();
+//                        } catch (FileNotFoundException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//
+//
+//
+//
+//                }
+//                //Log.d(TAG, line.toString());
+//                cursor.moveToNext();
+//            }
+//        }
+
+    }
+
+    public void get_eca_files_list(){
+        File folder = new File( String.format(Locale.getDefault(), "%s", ctx.getFilesDir()) );
+        File[] listOfFiles = folder.listFiles();
+        for (int i = 0; i < listOfFiles.length; i++) {
+            if (listOfFiles[i].isFile()) {
+                Log.d(TAG, "File " + listOfFiles[i].getName());
+            } else if (listOfFiles[i].isDirectory()) {
+                Log.d(TAG, "Directory " + listOfFiles[i].getName());
             }
         }
     }

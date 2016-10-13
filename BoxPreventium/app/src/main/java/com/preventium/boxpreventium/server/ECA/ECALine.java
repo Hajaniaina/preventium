@@ -3,59 +3,23 @@ package com.preventium.boxpreventium.server.ECA;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.preventium.boxpreventium.server.EPC.ForceSeuil;
+import com.preventium.boxpreventium.utils.BytesUtils;
+
+import java.nio.ByteBuffer;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * Created by Franck on 28/09/2016.
  */
 
 public class ECALine {
-//
-//    public int id = -1;
-//    public int alertID = -1;
-//    public long time = 0;
-//    public int padding = 0;
-//    public float long_pos = 0f;
-//    public float lat_pos = 0f;
-//    public int long_pos_orientation = 0;
-//    public int lat_pos_orientation = 0;
-//    public float speed = 0f;
-//    public float distance = 0f;
-//
-//    public ECALine(){};
-//
-//    public static ECALine newInstance( @NonNull Location location ) {
-//        ECALine ret = new ECALine();
-//        ret.alertID = 254;
-//        ret.time = location.getTime();
-//        ret.long_pos = (float)location.getLongitude();
-//        ret.lat_pos = (float)location.getLatitude();
-//        ret.speed = location.getSpeed();
-//        ret.distance = 0f;
-//        return  ret;
-//    }
-//
-//    public static ECALine newInstance( int alertID, @NonNull Location location ) {
-//        ECALine ret = new ECALine();
-//        ret.alertID = alertID;
-//        ret.time = location.getTime();
-//        ret.long_pos = (float)location.getLongitude();
-//        ret.lat_pos = (float)location.getLatitude();
-//        ret.speed = location.getSpeed();
-//        ret.distance = 0f;
-//        return  ret;
-//    }
-//
-//    @Override
-//    public String toString() {
-//        return String.format( "ECALine{ time: %s; alertID: %d; padding: %d; " +
-//                "long_pos: %s; lat_pos: %s; long_pos_orientation: %d; lat_pos_orientation: %d; " +
-//                "speed: %s; distance: %s }",
-//                time, alertID, padding, long_pos, lat_pos,
-//                long_pos_orientation, lat_pos_orientation, speed, distance );
-//    }
 
+    private static final float MS_TO_KMH = 3.6f;
 
     public int id = -1;
     public int alertID = -1;
@@ -81,6 +45,47 @@ public class ECALine {
         return ret;
     }
 
+    public byte[] toData(){
+        byte[] line = new byte[20];
+        byte[] b;
+        int i = 0;
+
+        // _TIMESTAMP timestamp; //6 bytes unsigned char, identique au TIMESTAMP fichiers ECE
+        Calendar aGMTCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        aGMTCalendar.setTimeInMillis( location.getTime() );
+        line[i++] = (byte)aGMTCalendar.get(Calendar.DAY_OF_MONTH);
+        line[i++] = (byte)(aGMTCalendar.get(Calendar.MONTH)+1);
+        line[i++] = (byte)(aGMTCalendar.get(Calendar.YEAR)&0xFF);
+        line[i++] = (byte)aGMTCalendar.get(Calendar.HOUR);
+        line[i++] = (byte)aGMTCalendar.get(Calendar.MINUTE);
+        line[i++] = (byte)aGMTCalendar.get(Calendar.SECOND);
+        // unsigned char alertID; //1 byte
+        line[i++] = (byte)alertID;
+        // unsigned char padding; //1 byte
+        line[i++] = (byte)0x00;
+        // float long_pos; //4 bytes
+        b = ByteBuffer.allocate(4).putFloat((float)location.getLongitude()).array();
+        line[i++] = b[0];
+        line[i++] = b[1];
+        line[i++] = b[2];
+        line[i++] = b[3];
+        // float lat_pos; //4 bytes
+        b = ByteBuffer.allocate(4).putFloat((float)location.getLatitude()).array();
+        line[i++] = b[0];
+        line[i++] = b[1];
+        line[i++] = b[2];
+        line[i++] = b[3];
+        // unsigned char long_pos_orientation; //1 byte
+        line[i++] = (byte)0x00;
+        // unsigned char lat_pos_orientation; //1 byte
+        line[i++] = (byte)0x00;
+        // speed
+        int speed = (int)location.getSpeed()*(int)MS_TO_KMH;
+        line[i++] = (byte)( (speed & 0xFF00) >> 8 );
+        line[i] = (byte)(speed & 0xFF);
+
+        return line;
+    }
     @Override
     public boolean equals(Object obj) {
         if( this == obj ) return true;

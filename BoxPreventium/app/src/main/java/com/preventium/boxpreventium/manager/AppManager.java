@@ -43,6 +43,12 @@ public class AppManager extends ThreadDefault
     private final static String TAG = "AppManager";
     private final static boolean DEBUG = true;
     private static final float MS_TO_KMH = 3.6f;
+    private static final int SECS_TO_SET_PARCOURS_START = 10;
+    private static final int SECS_TO_SET_PARCOURS_PAUSE = 10;
+    private static final int SECS_TO_SET_PARCOURS_RESUME = 10;
+    private static final int SECS_TO_SET_PARCOURS_STOPPED = 60;
+
+
     private String log = "";
     private ENGINE_t engine_t = ENGINE_t.UNKNOW;
 
@@ -145,6 +151,11 @@ public class AppManager extends ThreadDefault
             epc = getting_epc();
         }
 
+//Log.d("AAAAA","A = " + database.get_parcours_id().size() );
+////database.generate_eca_file();
+//database.get_eca_files_list();
+//database.generate_eca_file_if_needed();
+
         status = STATUS_t.CAR_STOPPED;
         if( listener != null )listener.onStatusChanged( status );
 
@@ -175,7 +186,7 @@ public class AppManager extends ThreadDefault
                         mov_t_chrono.stop();
                     } else {
                         if (!mov_t_chrono.isStarted()) mov_t_chrono.start();
-                        if (mov_t_chrono.getSeconds() > 10) {
+                        if (mov_t_chrono.getSeconds() > SECS_TO_SET_PARCOURS_START) {
 
                             // ....
                             readerEPCFile.loadFromApp(ctx,1);
@@ -203,7 +214,7 @@ public class AppManager extends ThreadDefault
 
                     // SET PAUSING
                     if( mov_t_last == MOVING_t.STP
-                            && mov_t_last_chrono.getSeconds() > 10
+                            && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE
                             && status == STATUS_t.CAR_MOVING ) {
                         status = STATUS_t.CAR_PAUSING;
                         if( listener != null ) listener.onStatusChanged( status );
@@ -212,18 +223,18 @@ public class AppManager extends ThreadDefault
                     }
                     // SET STOPPED
                     else if( mov_t_last == MOVING_t.STP
-                            && mov_t_last_chrono.getSeconds() > 20
+                            && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED
                             && status == STATUS_t.CAR_PAUSING ) {
                         status = STATUS_t.CAR_STOPPED;
                         if( listener != null ) listener.onStatusChanged( status );
                         addLog("STOP PARCOURS");
                         clear_force_ui();
-                        database.generate_eca_file();
+//database.generate_eca_file();
 
                     }
                     // SET RESUME
                     else if( mov_t_last != MOVING_t.STP
-                            && mov_t_last_chrono.getSeconds() > 10
+                            && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_RESUME
                             && status == STATUS_t.CAR_PAUSING ) {
                         status = STATUS_t.CAR_MOVING;
                         if( listener != null ) listener.onStatusChanged( status );
@@ -312,10 +323,12 @@ public class AppManager extends ThreadDefault
                                         File temp = File.createTempFile("temp-file-name", ".tmp");
                                         String ackFileName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
                                         ftp.ftpUpload(temp.getPath(), ackFileName);
+                                        temp.delete();
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                     }
                                 }
+                                new File(desFileName).delete();
                             }
                         }
                     } else {
@@ -384,6 +397,7 @@ public class AppManager extends ThreadDefault
                                                 File temp = File.createTempFile("temp-file-name", ".tmp");
                                                 String ackFileName = reader_epc.getEPCFileName(ctx, i, true);
                                                 ftp.ftpUpload(temp.getPath(), ackFileName);
+                                                temp.delete();
                                             } catch (IOException e) {
                                                 e.printStackTrace();
                                             }
@@ -393,6 +407,7 @@ public class AppManager extends ThreadDefault
                                     } else {
                                         error = true;
                                     }
+                                    new File(desFileName).delete();
                                 }
                             } else {
                                 error = true;
@@ -481,7 +496,7 @@ public class AppManager extends ThreadDefault
                     }
                 }
             }
-            if (speed_max * MS_TO_KMH <= 1f) mov_t = MOVING_t.STP;
+            if (speed_max * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
             else if ((speed_max - speed_min) * MS_TO_KMH < 3f) mov_t = MOVING_t.CST;
             else if (acceleration) mov_t = MOVING_t.ACC;
             else if (freinage) mov_t = MOVING_t.BRK;
