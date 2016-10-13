@@ -156,6 +156,8 @@ public class AppManager extends ThreadDefault
 //database.get_eca_files_list();
 //database.generate_eca_file_if_needed();
 
+        status = STATUS_t.CAR_PAUSING;  // For update UI correctly
+        if( listener != null )listener.onStatusChanged( status );
         status = STATUS_t.CAR_STOPPED;
         if( listener != null )listener.onStatusChanged( status );
 
