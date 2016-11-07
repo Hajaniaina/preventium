@@ -1,6 +1,7 @@
 package com.preventium.boxpreventium.server.EPC;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.preventium.boxpreventium.enums.FORCE_t;
@@ -145,6 +146,11 @@ public class ReaderEPCFile {
         Log.d(TAG, "lat/long enable: " + lat_long );
     }
 
+    public boolean loadFromApp( Context ctx ) {
+//        SharedPreferences sp = ctx.getSharedPreferences(KEY_CFG, Context.MODE_PRIVATE);
+//        int epc =  sp.getString( String.format(Locale.getDefault(),KEY_Sms_Call,i), "");
+        return loadFromApp(ctx,1);
+    }
 
     public boolean loadFromApp( Context ctx, int epc ) {
         boolean ret = false;

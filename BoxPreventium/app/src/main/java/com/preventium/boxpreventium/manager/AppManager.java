@@ -177,76 +177,67 @@ public class AppManager extends ThreadDefault
                 sleep(500);
 
                 calculateMovements();
-
-                if( status == STATUS_t.CAR_STOPPED ) {
-
-                    clear_force_ui();
-
-                    boolean ready_to_started = ( modules.getNumberOfBoxConnected() > 0
-                            && mov_t_last != MOVING_t.STP /*&& engine_t == ENGINE_t.ON*/);
-                    if (!ready_to_started) {
-                        mov_t_chrono.stop();
-                    } else {
-                        if (!mov_t_chrono.isStarted()) mov_t_chrono.start();
-                        if (mov_t_chrono.getSeconds() > SECS_TO_SET_PARCOURS_START) {
-
-                            // ....
-                            readerEPCFile.loadFromApp(ctx,1);
-
-//                            database.clearAll();
-
-                            addLog("START PARCOURS");
-                            status = STATUS_t.CAR_MOVING;
-                            if (listener != null) listener.onStatusChanged(status);
-                            parcour_id = System.currentTimeMillis();
-
-                            // MISE A JOUR DU CHRONO
-                            chronoRide.start();
-                            updateRideTime();
-
-                        }
-
-                    }
-
-                } else if( status == STATUS_t.CAR_MOVING || status == STATUS_t.CAR_PAUSING ) {
+                
+                if( status == STATUS_t.CAR_STOPPED
+                        || status == STATUS_t.CAR_MOVING || status == STATUS_t.CAR_PAUSING ) {
 
                     // MISE A JOUR DU CHRONO
                     updateRideTime();
 
-
-                    // SET PAUSING
-                    if( mov_t_last == MOVING_t.STP
-                            && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE
-                            && status == STATUS_t.CAR_MOVING ) {
-                        status = STATUS_t.CAR_PAUSING;
-                        if( listener != null ) listener.onStatusChanged( status );
-                        addLog("PAUSE PARCOURS");
-                        clear_force_ui();
-                    }
-                    // SET STOPPED
-                    else if( mov_t_last == MOVING_t.STP
-                            && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED
-                            && status == STATUS_t.CAR_PAUSING ) {
-                        status = STATUS_t.CAR_STOPPED;
-                        if( listener != null ) listener.onStatusChanged( status );
-                        addLog("STOP PARCOURS");
-                        clear_force_ui();
+                    switch ( status ) {
+                        case CAR_STOPPED: {
+                            clear_force_ui();
+                            boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 1
+                                    && mov_t_last != MOVING_t.STP /*&& engine_t == ENGINE_t.ON*/);
+                            if (!ready_to_started) {
+                                mov_t_chrono.stop();
+                            } else {
+                                if (!mov_t_chrono.isStarted()) mov_t_chrono.start();
+                                if (mov_t_chrono.getSeconds() > SECS_TO_SET_PARCOURS_START) {
+                                    // ....
+                                    readerEPCFile.loadFromApp(ctx);
+//                            database.clearAll();
+                                    addLog("START PARCOURS");
+                                    status = STATUS_t.CAR_MOVING;
+                                    if (listener != null) listener.onStatusChanged(status);
+                                    parcour_id = System.currentTimeMillis();
+                                    // MISE A JOUR DU CHRONO
+                                    chronoRide.start();
+                                    updateRideTime();
+                                }
+                            }
+                        } break;
+                        case CAR_MOVING: {
+                            prepare_eca();
+                            // SET PAUSING
+                            if (mov_t_last == MOVING_t.STP
+                                    && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE) {
+                                status = STATUS_t.CAR_PAUSING;
+                                if (listener != null) listener.onStatusChanged(status);
+                                addLog("PAUSE PARCOURS");
+                                clear_force_ui();
+                            }
+                        } break;
+                        case CAR_PAUSING: {
+                            // SET STOPPED
+                            if (mov_t_last == MOVING_t.STP
+                                    && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED) {
+                                status = STATUS_t.CAR_STOPPED;
+                                if (listener != null) listener.onStatusChanged(status);
+                                addLog("STOP PARCOURS");
+                                clear_force_ui();
 //database.generate_eca_file();
-
+                            }
+                            // SET RESUME
+                            else if (mov_t_last != MOVING_t.STP
+                                    && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_RESUME) {
+                                status = STATUS_t.CAR_MOVING;
+                                if (listener != null) listener.onStatusChanged(status);
+                                addLog("RESUME PARCOURS");
+                                clear_force_ui();
+                            }
+                        } break;
                     }
-                    // SET RESUME
-                    else if( mov_t_last != MOVING_t.STP
-                            && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_RESUME
-                            && status == STATUS_t.CAR_PAUSING ) {
-                        status = STATUS_t.CAR_MOVING;
-                        if( listener != null ) listener.onStatusChanged( status );
-                        addLog("RESUME PARCOURS");
-                        clear_force_ui();
-                    } else if( status == STATUS_t.CAR_MOVING ){
-                        //addLog("IN PARCOURS");
-                        prepare_eca();
-                    }
-
                 }
             }
         }
