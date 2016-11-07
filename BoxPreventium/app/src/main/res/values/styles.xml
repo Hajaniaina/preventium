@@ -1,22 +1,11 @@
 <resources>
 
     <!-- Base application themes -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-         <!--
-         <item name="colorPrimary">@color/colorPrimary</item>
-         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-         <item name="colorAccent">@color/colorAccent</item>
-         -->
-     </style>
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar"></style>
 
      <style name="AppThemeDialog" parent="Base.Theme.AppCompat.Light.Dialog.FixedSize">
-         <!--
-         <item name="colorPrimary">@color/colorPrimary</item>
-         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-         <item name="colorAccent">@color/colorAccent</item>
-         -->
          <item name="windowNoTitle">true</item>
-         <item name="windowFixedWidthMajor">350dp</item>
+         <item name="windowFixedWidthMajor">@dimen/app_theme_dialog_width</item>
          <item name="windowActionBar">false</item>
      </style>
 

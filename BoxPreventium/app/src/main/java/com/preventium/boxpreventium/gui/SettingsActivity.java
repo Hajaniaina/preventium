@@ -3,6 +3,7 @@ package com.preventium.boxpreventium.gui;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
@@ -12,6 +13,7 @@ import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceScreen;
 import android.support.v4.app.NavUtils;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.app.ActionBar;
@@ -133,13 +135,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      * Make sure to deny any unknown fragments here.
      */
     protected boolean isValidFragment (String fragmentName) {
-
-        /*
-        return PreferenceFragment.class.getName().equals(fragmentName)
-                || GeneralPreferenceFragment.class.getName().equals(fragmentName)
-                || DataSyncPreferenceFragment.class.getName().equals(fragmentName)
-                || NotificationPreferenceFragment.class.getName().equals(fragmentName);
-        */
 
         return true;
     }

@@ -117,8 +117,8 @@ public class AppManager extends ThreadDefault
         if( location != null ) {
             startThread();
             //addLog("NEW POS: " + location.getLatitude() + " " + location.getLongitude() );
-            this.locations.add( 0, location );
-            while ( this.locations.size() > 10 ) this.locations.remove( this.locations.size() - 1 );
+            this.locations.add(0, location);
+            while (this.locations.size() > 10) this.locations.remove(this.locations.size() - 1);
         }
     }
 

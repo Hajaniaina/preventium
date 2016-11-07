@@ -6,12 +6,13 @@
     android:background="@color/white">
 
     <ImageView
-        android:id="@+id/profile_image"
-        android:layout_width="96dp"
-        android:layout_height="96dp"
+        android:id="@+id/lock_image"
+        android:layout_width="@dimen/pinlock_ic_size"
+        android:layout_height="@dimen/pinlock_ic_size"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="36dp"
+        android:layout_marginTop="@dimen/pinlock_margin_top"
         android:elevation="4dp"
+        android:tint="@color/colorAppGreen"
         android:src="@drawable/ic_lock">
     </ImageView>
 
@@ -19,13 +20,13 @@
         android:id="@+id/indicator_dots"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/profile_image"
+        android:layout_below="@id/lock_image"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="42dp"
+        android:layout_marginTop="@dimen/pinlock_dots_margin_top"
         app:dotEmptyBackground="@color/colorAppRed"
-        app:dotFilledBackground="@color/colorAppBlue"
-        app:dotSpacing="22dp"
-        app:dotDiameter="10dp">
+        app:dotFilledBackground="@color/colorAppGreen"
+        app:dotSpacing="@dimen/pinlock_dots_spacing"
+        app:dotDiameter="@dimen/pinlock_dots_diameter">
     </com.andrognito.pinlockview.IndicatorDots>
 
     <com.andrognito.pinlockview.PinLockView
@@ -33,14 +34,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/indicator_dots"
-        android:paddingLeft="18dp"
+        android:layout_marginTop="@dimen/pinlock_keypad_margin_top"
+        android:paddingStart="@dimen/pinlock_keypad_padding_start"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="36dp"
-        app:keypadButtonSize="44dp"
-        app:keypadTextSize="20dp"
-        app:keypadVerticalSpacing="10dp"
-        app:keypadHorizontalSpacing="18dp"
-        app:keypadShowDeleteButton="true"
+        app:keypadButtonSize="@dimen/pinlock_keypad_size"
+        app:keypadTextSize="@dimen/pinlock_keypad_text_size"
+        app:keypadVerticalSpacing="@dimen/pinlock_keypad_vertical_spacing"
+        app:keypadHorizontalSpacing="@dimen/pinlock_keypad_horizontal_spacing"
+        app:keypadShowDeleteButton="false"
         app:keypadTextColor="@color/mine_shaft"
         app:pinLength="4">
     </com.andrognito.pinlockview.PinLockView>

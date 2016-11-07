@@ -40,8 +40,8 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:layout_marginLeft="200dp"
-        android:layout_marginRight="200dp"
+        android:layout_marginLeft="@dimen/marker_delete_button_margin"
+        android:layout_marginRight="@dimen/marker_delete_button_margin"
         android:backgroundTint="@color/colorAppRed"
         android:text="@string/delete_string" />
 

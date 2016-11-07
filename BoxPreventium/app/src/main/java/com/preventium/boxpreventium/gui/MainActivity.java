@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -11,19 +12,22 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.net.Uri;
+import android.os.CountDownTimer;
+import android.os.SystemClock;
+import android.preference.PreferenceManager;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
-import android.text.Layout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.animation.BounceInterpolator;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ScrollView;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -49,6 +53,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private static final String TAG = "MainActivity";
 
+    private static final int MAP_ZOOM_ON_MOVE  = 17;
+    private static final int MAP_ZOOM_ON_PAUSE = 15;
+
     private PositionManager posManager;
     private MarkerManager markerManager;
     private ScoreView scoreView;
@@ -59,7 +66,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private TextView debugView;
     private TextView boxNumView;
     private TextView drivingTimeView;
-    private ScrollView debugScroll;
+    private ImageView backgroundView;
 
     private FloatingActionMenu optMenu;
     private FloatingActionButton infoButton;
@@ -69,11 +76,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton menuButton1;
     private FloatingActionButton menuButton2;
     private FloatingActionButton menuButton3;
-    private FloatingActionButton menuButton4;
-    private FloatingActionButton menuButton5;
 
     private GoogleMap googleMap;
     private ProgressDialog progress;
+    private SharedPreferences sharedPreferences;
+    private boolean toggle = false;
     private SupportMapFragment mapFrag;
     private int mapType = GoogleMap.MAP_TYPE_NORMAL;
     private boolean startMarkerAdded = false;
@@ -93,6 +100,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         appManager = new AppManager(this, this);
         pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
         appColor = new AppColor(this);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
 
         progress = new ProgressDialog(this);
         progress.setMessage(getString(R.string.progress_map_string));
@@ -115,10 +123,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         boxNumView = (TextView) findViewById(R.id.box_num_connected);
         drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
+        changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
 
+        backgroundView = (ImageView) findViewById(R.id.background_image);
         debugView = (TextView) findViewById(R.id.debug_view);
-        debugView.setVisibility(View.GONE);
-        debugScroll = (ScrollView) findViewById(R.id.debugScroller);
+        debugView.setVisibility(View.INVISIBLE);
 
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
 
@@ -164,6 +173,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         // outState.putParcelable("accForceView", accForceView);
         // outState.putParcelable("scoreView", scoreView);
+        // outState.putParcelable("speedView", speedView);
+
         super.onSaveInstanceState(outState);
     }
 
@@ -187,6 +198,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         this.googleMap.getUiSettings().setMyLocationButtonEnabled(false);
         this.googleMap.getUiSettings().setAllGesturesEnabled(true);
+
         mapReady = true;
 
         if (progress != null && progress.isShowing()) {
@@ -248,7 +260,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                changeViewColorFilter(drivingTimeView, AppColor.GREEN);
                 drivingTimeView.setText(txt);
             }
         });
@@ -324,7 +335,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     case CAR_MOVING:
 
-                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "MOVE");
+                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "RUN");
 
                         if (mapReady) {
 
@@ -332,8 +343,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         }
 
                         disableActionButtons(true);
-                        // speedView.hide(false);
-                        // scoreView.hide(false);
+                        speedView.hide(false);
                         changeViewColorFilter(drivingTimeView, AppColor.GREEN);
 
                         break;
@@ -344,16 +354,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (mapReady) {
 
-                            CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(15).bearing(0).tilt(0).build();
+                            CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_PAUSE).bearing(0).tilt(0).build();
                             googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                             googleMap.getUiSettings().setAllGesturesEnabled(true);
                         }
 
                         changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
                         disableActionButtons(false);
-                        // speedView.hide(true);
+                        speedView.hide(true);
                         accForceView.hide(true);
-                        // scoreView.hide(true);
 
                         break;
                 }
@@ -371,7 +380,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (txt.isEmpty()) {
 
-                    debugView.setVisibility(View.GONE);
+                    debugView.setVisibility(View.INVISIBLE);
 
                 }
                 else {
@@ -414,7 +423,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         opt.color(Color.rgb(0, 160, 255));
         opt.add(startPoint, endPoint);
 
-        // roadLinesList.add(googleMap.addPolyline(opt));
         googleMap.addPolyline(opt);
     }
 
@@ -452,7 +460,38 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    private void flashBackground (int duration) {
+
+        int ms = duration * 1000;
+
+        new CountDownTimer(ms, 500) {
+
+            public void onTick (long millisUntilFinished) {
+
+                if (toggle) {
+
+                    toggle = false;
+                    backgroundView.setVisibility(View.VISIBLE);
+                }
+                else {
+
+                    toggle = true;
+                    backgroundView.setVisibility(View.INVISIBLE);
+                }
+            }
+
+            public void onFinish() {
+
+                backgroundView.setVisibility(View.GONE);
+            }
+
+        }.start();
+    }
+
     protected void showCallDialog() {
+
+        // String syncConnPref = sharedPreferences.getString("phone_select_sms", "default");
+        // Snackbar.make(getCurrentFocus(), syncConnPref, Snackbar.LENGTH_LONG).setAction("Action", null).show();
 
         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
         alertBuilder.setMessage(getString(R.string.make_call_confirma_string));
@@ -757,7 +796,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     startMarkerAdded = true;
                     markerManager.addMarker(getString(R.string.start_marker_string), lastPos, CustomMarker.MARKER_START);
 
-                    CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(15).bearing(0).tilt(0).build();
+                    CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_PAUSE).bearing(0).tilt(0).build();
                     googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
                     if (progress != null && progress.isShowing()) {
@@ -768,11 +807,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (globalStatus == STATUS_t.CAR_MOVING) {
 
-                    int currSpeed = posManager.getInstantSpeed();
-                    speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_1, currSpeed);
+                    speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_1, posManager.getInstantSpeed());
 
                     googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
-                    CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(18).bearing(0).tilt(30).build();
+                    CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_MOVE).bearing(0).tilt(30).build();
                     googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 }
                 else {
@@ -867,10 +905,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         menuButton1 = (FloatingActionButton) findViewById(R.id.menu_button1);
         menuButton2 = (FloatingActionButton) findViewById(R.id.menu_button2);
         menuButton3 = (FloatingActionButton) findViewById(R.id.menu_button3);
-        menuButton4 = (FloatingActionButton) findViewById(R.id.menu_button4);
-        menuButton5 = (FloatingActionButton) findViewById(R.id.menu_button5);
 
-        menuButton1.setImageResource(R.drawable.ic_action_play);
+        menuButton1.setImageResource(R.drawable.ic_play);
 
         menuButton1.setOnClickListener(new View.OnClickListener() {
 
@@ -885,8 +921,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     menuButton1.setImageResource(R.drawable.ic_play);
                 }
-
-                optMenu.close(true);
             }
         });
 
@@ -913,26 +947,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View view) {
 
-                optMenu.close(true);
-            }
-        });
-
-        menuButton4.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-
-                appManager.on_constant_speed();
-                optMenu.close(true);
-            }
-        });
-
-        menuButton5.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-
-                appManager.on_acceleration();
                 optMenu.close(true);
             }
         });

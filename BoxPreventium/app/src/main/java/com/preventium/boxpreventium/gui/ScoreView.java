@@ -88,7 +88,7 @@ public class ScoreView implements Parcelable {
 
             if (hide) {
 
-                view.setVisibility(View.GONE);
+                view.setVisibility(View.INVISIBLE);
             }
             else {
 

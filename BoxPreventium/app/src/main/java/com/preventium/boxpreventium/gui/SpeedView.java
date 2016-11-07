@@ -61,7 +61,6 @@ public class SpeedView implements Parcelable {
 
             view.setValue(100);
             view.setTextMode(TextMode.TEXT);
-            view.setTextSize(54);
             view.setText("0");
         }
 
@@ -94,7 +93,7 @@ public class SpeedView implements Parcelable {
 
                 if (hide) {
 
-                    view.setVisibility(View.GONE);
+                    view.setVisibility(View.INVISIBLE);
                 }
                 else {
 
@@ -161,10 +160,10 @@ public class SpeedView implements Parcelable {
     @Override
     public void writeToParcel (Parcel dest, int flags) {
 
-        dest.writeByte(this.visible ? (byte) 1 : (byte) 0);
-        dest.writeSerializable(this.viewMap);
-        dest.writeSerializable(this.levelMap);
-        dest.writeSerializable(this.speedMap);
+        dest.writeByte(visible ? (byte) 1 : (byte) 0);
+        dest.writeSerializable(viewMap);
+        dest.writeSerializable(levelMap);
+        dest.writeSerializable(speedMap);
     }
 
     public static final Parcelable.Creator<SpeedView> CREATOR = new Parcelable.Creator<SpeedView>() {
