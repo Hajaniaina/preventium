@@ -24,6 +24,7 @@
     <string name="next">Next</string>
 
     <!-- VLAD -->
+    <!-- Main GUI -->
 
     <string name="delete_string">Delete</string>
     <string name="cancel_string">Cancel</string>
@@ -40,10 +41,12 @@
     <string name="make_call_string">Call a predefined number</string>
     <string name="make_call_confirma_string">Make a voice call?</string>
     <string name="pin_error_string">Wrong PIN</string>
+    <string name="permissions_enable_string">This application need all permissions to be enabled</string>
 
     <!-- Progress -->
+
     <string name="progress_loading_string">Loading...</string>
-    <string name="progress_map_string">Connecting to Google Maps</string>
+    <string name="progress_map_string">Loading Google Maps</string>
     <string name="progress_location_string">Waiting for GPS data</string>
     <string name="progress_cfg_string">Downloading CFG data</string>
     <string name="progress_epc_string">Downloading EPC data</string>

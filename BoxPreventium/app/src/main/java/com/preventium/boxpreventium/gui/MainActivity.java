@@ -13,9 +13,8 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.net.Uri;
 import android.os.CountDownTimer;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
-import android.support.design.widget.Snackbar;
+import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -23,7 +22,6 @@ import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.animation.BounceInterpolator;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -31,6 +29,9 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.firetrap.permissionhelper.action.OnDenyAction;
+import com.firetrap.permissionhelper.action.OnGrantAction;
+import com.firetrap.permissionhelper.helper.PermissionHelper;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
@@ -52,7 +53,6 @@ import com.preventium.boxpreventium.manager.AppManager;
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
 
     private static final String TAG = "MainActivity";
-
     private static final int MAP_ZOOM_ON_MOVE  = 17;
     private static final int MAP_ZOOM_ON_PAUSE = 15;
 
@@ -77,6 +77,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton menuButton2;
     private FloatingActionButton menuButton3;
 
+    private PermissionHelper.PermissionBuilder permissionRequest;
     private GoogleMap googleMap;
     private ProgressDialog progress;
     private SharedPreferences sharedPreferences;
@@ -84,6 +85,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private SupportMapFragment mapFrag;
     private int mapType = GoogleMap.MAP_TYPE_NORMAL;
     private boolean startMarkerAdded = false;
+    private boolean initDone = false;
     private boolean mapReady = false;
     private Intent pinLockIntent;
     private AppColor appColor;
@@ -96,54 +98,40 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mapReady = false;
-        appManager = new AppManager(this, this);
-        pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
-        appColor = new AppColor(this);
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+        Log.d(TAG, "onCreate");
 
-        progress = new ProgressDialog(this);
-        progress.setMessage(getString(R.string.progress_map_string));
-        progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        progress.setIndeterminate(true);
-        progress.setCancelable(false);
-        progress.setProgressNumberFormat(null);
-        progress.setProgressPercentFormat(null);
+        if (checkPermissions()) {
 
-        if (!isFinishing()) {
+            if (savedInstanceState == null) {
 
-            progress.show();
+                init(true);
+            }
+            else {
+
+                init(false);
+            }
+        }
+        else {
+
+            requestPermissions();
         }
 
-        markerManager = new MarkerManager(this);
-        speedView = new SpeedView(this);
-        scoreView = new ScoreView(this);
-        accForceView = new AccForceView(this);
-        accForceView.hide(true);
+        if (!isLocationEnabled()) {
 
-        boxNumView = (TextView) findViewById(R.id.box_num_connected);
-        drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
-        changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
-
-        backgroundView = (ImageView) findViewById(R.id.background_image);
-        debugView = (TextView) findViewById(R.id.debug_view);
-        debugView.setVisibility(View.INVISIBLE);
-
-        mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-
-        if (savedInstanceState == null) {
-
-            mapFrag.setRetainInstance(true);
+            showLocationEnableDialog();
         }
-
-        mapFrag.getMapAsync(this);
     }
 
     @Override
     public void onPause() {
 
         Log.d(TAG, "onPause");
-        progress.dismiss();
+
+        if (progress != null) {
+
+            progress.dismiss();
+        }
+
         super.onPause();
     }
 
@@ -189,6 +177,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
 
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult (int requestCode, String[] permissions, int[] grantResults) {
+
+        Log.d(TAG, "onRequestPermissionsResult");
+        permissionRequest.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override
@@ -391,6 +387,146 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 debugView.setText(txt);
             }
         });
+    }
+
+    private void init (boolean firstLaunch) {
+
+        mapReady = false;
+        initDone = true;
+        appManager = new AppManager(this, this);
+        pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
+        appColor = new AppColor(this);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+
+        progress = new ProgressDialog(this);
+        progress.setMessage(getString(R.string.progress_map_string));
+        progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        progress.setIndeterminate(true);
+        progress.setCancelable(false);
+        progress.setProgressNumberFormat(null);
+        progress.setProgressPercentFormat(null);
+
+        if (!isFinishing()) {
+
+            progress.show();
+        }
+
+        markerManager = new MarkerManager(this);
+        speedView = new SpeedView(this);
+        scoreView = new ScoreView(this);
+        accForceView = new AccForceView(this);
+        accForceView.hide(true);
+
+        boxNumView = (TextView) findViewById(R.id.box_num_connected);
+        drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
+        changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
+
+        backgroundView = (ImageView) findViewById(R.id.background_image);
+        debugView = (TextView) findViewById(R.id.debug_view);
+        debugView.setVisibility(View.INVISIBLE);
+
+        mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+
+        if (firstLaunch) {
+
+            mapFrag.setRetainInstance(true);
+        }
+
+        mapFrag.getMapAsync(this);
+    }
+
+    private boolean checkPermissions() {
+
+        boolean ok = true;
+
+        if (!PermissionHelper.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+
+            ok = false;
+        }
+
+        if (!PermissionHelper.checkPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+            ok = false;
+        }
+
+        if (!PermissionHelper.checkPermissions(this, Manifest.permission.CALL_PHONE)) {
+
+            ok = false;
+        }
+
+        return ok;
+    }
+
+    private void requestPermissions() {
+
+        permissionRequest = PermissionHelper.with(this)
+                .build(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.CALL_PHONE)
+                .onPermissionsDenied(new OnDenyAction() {
+
+                    @Override
+                    public void call (int requestCode, boolean shouldShowRequestPermissionRationale) {
+
+                        Log.d(TAG, "Permissions denied");
+
+                        if (shouldShowRequestPermissionRationale) {
+
+                            permissionRequest.showRational(R.string.rationale_title, R.string.permissions_enable_string, R.style.AppTheme);
+                        }
+                    }
+                })
+                .onPermissionsGranted(new OnGrantAction() {
+
+                    @Override
+                    public void call (int requestCode) {
+
+                        Log.d(TAG, "Permissions granted");
+
+                        if (!initDone) {
+
+                            init(true);
+                        }
+                    }
+                })
+                .request(0);
+    }
+
+    public  boolean isLocationEnabled() {
+
+        boolean enabled = false;
+
+        try {
+
+            if (Settings.Secure.getInt(getApplicationContext().getContentResolver(), Settings.Secure.LOCATION_MODE) != Settings.Secure.LOCATION_MODE_OFF) {
+
+                enabled = true;
+            }
+        }
+        catch (Settings.SettingNotFoundException e) {
+
+            e.printStackTrace();
+        }
+
+        return enabled;
+    }
+
+    public void showLocationEnableDialog() {
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+
+        alertDialog.setCancelable(false);
+        alertDialog.setTitle("GPS settings");
+        alertDialog.setMessage("GPS is disabled. To continue please activate 'High Precision' mode in the settings menu");
+
+        alertDialog.setPositiveButton("Settings", new DialogInterface.OnClickListener() {
+
+            public void onClick (DialogInterface dialog,int which) {
+
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
+            }
+        });
+
+        alertDialog.show();
     }
 
     private void changeViewColorFilter (View view, int color) {
