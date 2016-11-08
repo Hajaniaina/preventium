@@ -117,7 +117,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             requestPermissions();
         }
 
-        if (!isLocationEnabled()) {
+        if (!PositionManager.isLocationEnabled(getApplicationContext())) {
 
             showLocationEnableDialog();
         }
@@ -142,7 +142,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             requestPermissions();
         }
 
-        if (!isLocationEnabled()) {
+        if (!PositionManager.isLocationEnabled(getApplicationContext())) {
 
             showLocationEnableDialog();
         }
@@ -525,25 +525,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 })
                 .request(0);
-    }
-
-    public  boolean isLocationEnabled() {
-
-        boolean enabled = false;
-
-        try {
-
-            if (Settings.Secure.getInt(getApplicationContext().getContentResolver(), Settings.Secure.LOCATION_MODE) != Settings.Secure.LOCATION_MODE_OFF) {
-
-                enabled = true;
-            }
-        }
-        catch (Settings.SettingNotFoundException e) {
-
-            e.printStackTrace();
-        }
-
-        return enabled;
     }
 
     public void showLocationEnableDialog() {

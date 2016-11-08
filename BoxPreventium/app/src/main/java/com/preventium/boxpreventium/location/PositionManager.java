@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -408,5 +409,24 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
         double variance = getVariance(values, size);
         return Math.sqrt(variance);
+    }
+
+    public static boolean isLocationEnabled (Context context) {
+
+        boolean enabled = false;
+
+        try {
+
+            if (Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE) != Settings.Secure.LOCATION_MODE_OFF) {
+
+                enabled = true;
+            }
+        }
+        catch (Settings.SettingNotFoundException e) {
+
+            e.printStackTrace();
+        }
+
+        return enabled;
     }
 }
