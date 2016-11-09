@@ -404,6 +404,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
+    public void onDriveScoreChanged (float score) {
+
+    }
+
+    @Override
     public void onDebugLog (final String txt) {
 
         runOnUiThread(new Runnable() {
