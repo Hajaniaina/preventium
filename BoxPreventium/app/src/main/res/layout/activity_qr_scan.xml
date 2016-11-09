@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/activity_qr_scan"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="com.preventium.boxpreventium.gui.QrScanActivity">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center">
+
+        <fragment
+            android:id="@+id/qr_scanner"
+            android:name="com.google.android.gms.samples.vision.barcodereader.BarcodeCapture"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            app:gvb_code_format="all_format"
+            app:gvb_auto_focus="true"
+            app:gvb_draw="true"
+            app:gvb_flash="false"
+            app:gvb_rect_colors="@array/rect_color">
+        </fragment>
+
+    </RelativeLayout>
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/flash_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_flashlight"
+        fab:fab_colorNormal="@color/colorAppRed"
+        fab:fab_colorPressed="#ff5252"
+        fab:fab_shadowColor="#444"/>
+
+</android.support.design.widget.CoordinatorLayout>

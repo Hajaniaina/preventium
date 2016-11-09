@@ -11,6 +11,10 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.RingtoneManager;
+import android.media.ToneGenerator;
 import android.net.Uri;
 import android.os.CountDownTimer;
 import android.preference.PreferenceManager;
@@ -22,6 +26,7 @@ import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -49,6 +54,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.preventium.boxpreventium.manager.AppManager;
+import com.preventium.boxpreventium.utils.Connectivity;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
 
@@ -98,6 +104,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         Log.d(TAG, "onCreate");
 
@@ -119,7 +126,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         if (!PositionManager.isLocationEnabled(getApplicationContext())) {
 
-            showLocationEnableDialog();
+            showLocationAlert();
         }
     }
 
@@ -144,7 +151,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         if (!PositionManager.isLocationEnabled(getApplicationContext())) {
 
-            showLocationEnableDialog();
+            showLocationAlert();
         }
 
         super.onResume();
@@ -324,7 +331,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (progress != null) {
 
                             progress.show();
-                            progress.setMessage(getString(R.string.progress_cfg_string));
+
+                            if (Connectivity.isConnected(getApplicationContext())) {
+
+                                progress.setMessage(getString(R.string.progress_cfg_string));
+                            }
+                            else {
+
+                                progress.setMessage(getString(R.string.network_alert_string));
+                            }
                         }
 
                         break;
@@ -481,6 +496,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 ok = 0;
             }
+
+            if (!PermissionHelper.checkPermissions(this, Manifest.permission.CAMERA)) {
+
+                ok = 0;
+            }
         }
         else {
 
@@ -493,8 +513,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private void requestPermissions() {
 
         permissionRequest = PermissionHelper.with(this)
-                .build(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.CALL_PHONE)
-                .onPermissionsDenied(new OnDenyAction() {
+                .build(Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                       Manifest.permission.ACCESS_FINE_LOCATION,
+                       Manifest.permission.CALL_PHONE,
+                       Manifest.permission.SEND_SMS,
+                       Manifest.permission.CAMERA).onPermissionsDenied(new OnDenyAction() {
 
                     @Override
                     public void call (int requestCode, boolean shouldShowRequestPermissionRationale) {
@@ -503,11 +526,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (shouldShowRequestPermissionRationale) {
 
-                            showPermissionsDialog(true);
+                            showPermissionsAlert(true);
                         }
                         else {
 
-                            showPermissionsDialog(false);
+                            showPermissionsAlert(false);
                         }
                     }
                 })
@@ -527,27 +550,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 .request(0);
     }
 
-    public void showLocationEnableDialog() {
-
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
-
-        alertDialog.setCancelable(false);
-        alertDialog.setTitle(getString(R.string.location_settings_string));
-        alertDialog.setMessage(getString(R.string.location_rationale_string));
-
-        alertDialog.setPositiveButton(getString(R.string.action_settings), new DialogInterface.OnClickListener() {
-
-            public void onClick (DialogInterface dialog,int which) {
-
-                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                startActivity(intent);
-            }
-        });
-
-        alertDialog.show();
-    }
-
-    public void showPermissionsDialog (final boolean retry) {
+    public void showPermissionsAlert(final boolean retry) {
 
         final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
         alertDialog.setCancelable(false);
@@ -581,6 +584,53 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", getPackageName(), null));
                     startActivity(intent);
                 }
+            }
+        });
+
+        alertDialog.show();
+    }
+
+    public void showLocationAlert() {
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+
+        alertDialog.setCancelable(false);
+        alertDialog.setTitle(getString(R.string.location_settings_string));
+        alertDialog.setMessage(getString(R.string.location_rationale_string));
+
+        alertDialog.setPositiveButton(getString(R.string.action_settings), new DialogInterface.OnClickListener() {
+
+            public void onClick (DialogInterface dialog,int which) {
+
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
+            }
+        });
+
+        alertDialog.show();
+    }
+
+    public void showNetworkAlert() {
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+
+        alertDialog.setCancelable(true);
+        alertDialog.setTitle(getString(R.string.network_string));
+        alertDialog.setMessage(getString(R.string.network_alert_string));
+
+        alertDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+
+            public void onClick (DialogInterface dialog,int which) {
+
+            }
+        });
+
+        alertDialog.setNeutralButton(getString(R.string.action_settings),new DialogInterface.OnClickListener() {
+
+            public void onClick (DialogInterface dialog,int which) {
+
+                Intent intent = new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS);
+                startActivity(intent);
             }
         });
 
@@ -654,9 +704,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void flashBackground (int duration) {
+    private void flashBackground (int durationSeconds) {
 
-        int ms = duration * 1000;
+        int ms = durationSeconds * 1000;
 
         new CountDownTimer(ms, 500) {
 
@@ -678,6 +728,23 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 backgroundView.setVisibility(View.GONE);
             }
+
+        }.start();
+    }
+
+    private void playBeep (int durationSeconds) {
+
+        int ms = durationSeconds * 1000;
+        final ToneGenerator tone = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
+
+        new CountDownTimer(ms, 500) {
+
+            public void onTick (long millisUntilFinished) {
+
+                tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 300);
+            }
+
+            public void onFinish() {}
 
         }.start();
     }
@@ -1100,20 +1167,25 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         menuButton2 = (FloatingActionButton) findViewById(R.id.menu_button2);
         menuButton3 = (FloatingActionButton) findViewById(R.id.menu_button3);
 
-        menuButton1.setImageResource(R.drawable.ic_play);
+        menuButton1.setLabelText(getString(R.string.disable_tracking_string));
 
         menuButton1.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick (View v) {
 
-                if (globalStatus == STATUS_t.CAR_PAUSING) {
+                if (posManager.isTrackingOn()) {
 
-                    menuButton1.setImageResource(R.drawable.ic_stop);
-                }
-                else if (globalStatus == STATUS_t.CAR_MOVING) {
+                    posManager.setTrackingOn(false);
 
                     menuButton1.setImageResource(R.drawable.ic_play);
+                    menuButton1.setLabelText(getString(R.string.enable_tracking_string));
+                }
+                else {
+
+                    posManager.setTrackingOn(true);
+                    menuButton1.setLabelText(getString(R.string.disable_tracking_string));
+                    menuButton1.setImageResource(R.drawable.ic_stop);
                 }
             }
         });
@@ -1141,6 +1213,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View view) {
 
+                startActivity(new Intent(MainActivity.this, QrScanActivity.class));
                 optMenu.close(true);
             }
         });

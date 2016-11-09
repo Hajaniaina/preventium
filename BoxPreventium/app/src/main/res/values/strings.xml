@@ -26,6 +26,7 @@
     <!-- VLAD -->
     <!-- Main GUI -->
 
+    <string name="network_string">Network</string>
     <string name="delete_string">Delete</string>
     <string name="cancel_string">Cancel</string>
     <string name="marker_tittle_invalid_string">Invalid name</string>
@@ -47,6 +48,10 @@
     <string name="permissions_string">Permissions</string>
     <string name="force_permissions_string">To continue please activate all permissions in the settings menu</string>
     <string name="permissions_retry_string">Retry</string>
+    <string name="network_alert_string">No active internet connection. Make sure that 3G/4G is activated</string>
+    <string name="scan_qr_string">Scan QR code</string>
+    <string name="enable_tracking_string">Enable tracking</string>
+    <string name="disable_tracking_string">Disable tracking</string>
 
     <!-- Progress -->
 

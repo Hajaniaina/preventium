@@ -16,6 +16,8 @@
     <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    v<uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
         android:allowBackup="true"
@@ -24,7 +26,6 @@
         android:largeHeap="true"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
@@ -37,34 +38,33 @@
             android:screenOrientation="sensorLandscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".gui.SettingsActivity"
             android:keepScreenOn="true"
             android:label="@string/title_activity_settings"
             android:parentActivityName=".gui.MainActivity"
             android:screenOrientation="sensorLandscape"
-            android:theme="@style/Theme.AppCompat.Light">
-        </activity>
-
+            android:theme="@style/Theme.AppCompat.Light"></activity>
         <activity
             android:name=".gui.PinLockActivity"
             android:keepScreenOn="true"
             android:label="Pin code"
-            android:theme="@style/AppThemeDialog">
-        </activity>
-
+            android:theme="@style/AppThemeDialog"></activity>
         <activity
             android:name=".gui.InfoActivity"
             android:keepScreenOn="true"
             android:label="@string/title_activity_info"
             android:screenOrientation="sensorLandscape"
-            android:theme="@style/AppTheme">
+            android:theme="@style/AppTheme"></activity>
+        <activity
+            android:name=".gui.QrScanActivity"
+            android:keepScreenOn="true"
+            android:screenOrientation="sensorPortrait">
         </activity>
-
     </application>
 
 </manifest>

@@ -38,6 +38,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     private long updateIntervalMs = 100;
     private boolean updateEnabled = false;
     private boolean moving = false;
+    private boolean trackingOn = true;
     private ArrayList<Location> lastLocList;
 
     private List<PositionListener> posListeners;
@@ -428,5 +429,22 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
         }
 
         return enabled;
+    }
+
+    public void setTrackingOn (boolean enable) {
+
+        if (enable) {
+
+            trackingOn = true;
+        }
+        else {
+
+            trackingOn = false;
+        }
+    }
+
+    public boolean isTrackingOn() {
+
+        return trackingOn;
     }
 }

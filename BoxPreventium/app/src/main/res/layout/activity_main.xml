@@ -337,16 +337,27 @@
                 fab:menu_colorRipple="#ffee58"
                 fab:menu_shadowColor="#444">
 
-                <com.github.clans.fab.FloatingActionButton android:id="@+id/menu_button2"
+                <com.github.clans.fab.FloatingActionButton android:id="@+id/menu_button1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/ic_map"
+                    android:src="@drawable/ic_stop"
                     fab:fab_size="@dimen/fb_button_size"
                     fab:fab_colorNormal="@color/colorAppGreen"
                     fab:fab_colorPressed="@color/colorAppYellow"
                     fab:fab_colorRipple="#ffee58"
                     fab:fab_shadowColor="#444"
-                    fab:fab_label="Map type"/>
+                    fab:fab_label="               "/>
+
+                <com.github.clans.fab.FloatingActionButton android:id="@+id/menu_button2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/fab_add"
+                    fab:fab_size="@dimen/fb_button_size"
+                    fab:fab_colorNormal="@color/colorAppGreen"
+                    fab:fab_colorPressed="@color/colorAppYellow"
+                    fab:fab_colorRipple="#ffee58"
+                    fab:fab_shadowColor="#444"
+                    fab:fab_label=""/>
 
                 <com.github.clans.fab.FloatingActionButton android:id="@+id/menu_button3"
                     android:layout_width="wrap_content"
@@ -357,18 +368,7 @@
                     fab:fab_colorPressed="@color/colorAppYellow"
                     fab:fab_colorRipple="#ffee58"
                     fab:fab_shadowColor="#444"
-                    fab:fab_label="Scan QR code"/>
-
-                <com.github.clans.fab.FloatingActionButton android:id="@+id/menu_button1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/ic_play"
-                    fab:fab_size="@dimen/fb_button_size"
-                    fab:fab_colorNormal="@color/colorAppGreen"
-                    fab:fab_colorPressed="@color/colorAppYellow"
-                    fab:fab_colorRipple="#ffee58"
-                    fab:fab_shadowColor="#444"
-                    fab:fab_label="Disable tracking"/>
+                    fab:fab_label="@string/scan_qr_string"/>
 
             </com.github.clans.fab.FloatingActionMenu>
 
