@@ -138,6 +138,8 @@ public class AppManager extends ThreadDefault
         super.myRun();
 
         setLog( "AppManager begin...");
+mov_t_last = MOVING_t.UNKNOW;
+mov_t = MOVING_t.UNKNOW;
 
         STATUS_t status = STATUS_t.CAR_STOPPED;
         if( listener != null ){
@@ -181,7 +183,6 @@ public class AppManager extends ThreadDefault
 
                 updateRideTime();
 
-
                 modules.setActive(true);
 
                 if( chrono_sender.getMinutes() > 1 )
@@ -202,7 +203,8 @@ public class AppManager extends ThreadDefault
                         case CAR_STOPPED: {
                             clear_force_ui();
                             boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 0
-                                    && mov_t_last != MOVING_t.STP /*&& engine_t == ENGINE_t.ON*/);
+                                    && mov_t_last != MOVING_t.STP
+                                    && mov_t_last != MOVING_t.UNKNOW /*&& engine_t == ENGINE_t.ON*/);
                             if (!ready_to_started) {
                                 mov_t_chrono.stop();
                             } else {
