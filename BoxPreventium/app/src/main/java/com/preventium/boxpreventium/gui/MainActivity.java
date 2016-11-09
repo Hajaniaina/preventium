@@ -1083,9 +1083,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 }
 
-                if (globalStatus == STATUS_t.CAR_MOVING) {
+                speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_1, posManager.getInstantSpeed());
 
-                    speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_1, posManager.getInstantSpeed());
+                if (globalStatus == STATUS_t.CAR_MOVING) {
 
                     googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_MOVE).bearing(0).tilt(30).build();
