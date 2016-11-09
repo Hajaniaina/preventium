@@ -42,6 +42,11 @@
     <string name="make_call_confirma_string">Make a voice call?</string>
     <string name="pin_error_string">Wrong PIN</string>
     <string name="permissions_enable_string">This application need all permissions to be enabled</string>
+    <string name="location_settings_string">Location settings</string>
+    <string name="location_rationale_string">Location service is disabled. To continue please activate High Precision mode in the settings menu</string>
+    <string name="permissions_string">Permissions</string>
+    <string name="force_permissions_string">To continue please activate all permissions in the settings menu</string>
+    <string name="permissions_retry_string">Retry</string>
 
     <!-- Progress -->
 

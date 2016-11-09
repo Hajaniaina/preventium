@@ -87,6 +87,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean startMarkerAdded = false;
     private boolean initDone = false;
     private boolean mapReady = false;
+    private boolean permissionsChecked = false;
     private Intent pinLockIntent;
     private AppColor appColor;
     STATUS_t globalStatus;
@@ -100,7 +101,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         Log.d(TAG, "onCreate");
 
-        if (checkPermissions()) {
+        if (checkPermissions() > 0) {
 
             if (savedInstanceState == null) {
 
@@ -116,10 +117,37 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             requestPermissions();
         }
 
-        if (!isLocationEnabled()) {
+        if (!PositionManager.isLocationEnabled(getApplicationContext())) {
 
             showLocationEnableDialog();
         }
+    }
+
+    @Override
+    protected void onResume() {
+
+        Log.d(TAG, "onResume");
+
+        int permissionsGranted = checkPermissions();
+
+        if (permissionsGranted > 0) {
+
+            if (!initDone) {
+
+                init(true);
+            }
+        }
+        else if (permissionsGranted == 0) {
+
+            requestPermissions();
+        }
+
+        if (!PositionManager.isLocationEnabled(getApplicationContext())) {
+
+            showLocationEnableDialog();
+        }
+
+        super.onResume();
     }
 
     @Override
@@ -138,15 +166,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onStop() {
 
+        permissionsChecked = false;
         Log.d(TAG, "onStop");
         super.onStop();
-    }
-
-    @Override
-    protected void onResume() {
-
-        Log.d(TAG, "onResume");
-        super.onResume();
     }
 
     @Override
@@ -435,23 +457,34 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mapFrag.getMapAsync(this);
     }
 
-    private boolean checkPermissions() {
+    private int checkPermissions() {
 
-        boolean ok = true;
+        int ok = 1;
 
-        if (!PermissionHelper.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+        Log.d(TAG, "Check permissions");
 
-            ok = false;
+        if (!permissionsChecked) {
+
+            permissionsChecked = true;
+
+            if (!PermissionHelper.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+
+                ok = 0;
+            }
+
+            if (!PermissionHelper.checkPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                ok = 0;
+            }
+
+            if (!PermissionHelper.checkPermissions(this, Manifest.permission.CALL_PHONE)) {
+
+                ok = 0;
+            }
         }
+        else {
 
-        if (!PermissionHelper.checkPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-            ok = false;
-        }
-
-        if (!PermissionHelper.checkPermissions(this, Manifest.permission.CALL_PHONE)) {
-
-            ok = false;
+            ok = -1;
         }
 
         return ok;
@@ -470,7 +503,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (shouldShowRequestPermissionRationale) {
 
-                            permissionRequest.showRational(R.string.rationale_title, R.string.permissions_enable_string, R.style.AppTheme);
+                            showPermissionsDialog(true);
+                        }
+                        else {
+
+                            showPermissionsDialog(false);
                         }
                     }
                 })
@@ -490,39 +527,60 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 .request(0);
     }
 
-    public  boolean isLocationEnabled() {
-
-        boolean enabled = false;
-
-        try {
-
-            if (Settings.Secure.getInt(getApplicationContext().getContentResolver(), Settings.Secure.LOCATION_MODE) != Settings.Secure.LOCATION_MODE_OFF) {
-
-                enabled = true;
-            }
-        }
-        catch (Settings.SettingNotFoundException e) {
-
-            e.printStackTrace();
-        }
-
-        return enabled;
-    }
-
     public void showLocationEnableDialog() {
 
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
 
         alertDialog.setCancelable(false);
-        alertDialog.setTitle("GPS settings");
-        alertDialog.setMessage("GPS is disabled. To continue please activate 'High Precision' mode in the settings menu");
+        alertDialog.setTitle(getString(R.string.location_settings_string));
+        alertDialog.setMessage(getString(R.string.location_rationale_string));
 
-        alertDialog.setPositiveButton("Settings", new DialogInterface.OnClickListener() {
+        alertDialog.setPositiveButton(getString(R.string.action_settings), new DialogInterface.OnClickListener() {
 
             public void onClick (DialogInterface dialog,int which) {
 
                 Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                 startActivity(intent);
+            }
+        });
+
+        alertDialog.show();
+    }
+
+    public void showPermissionsDialog (final boolean retry) {
+
+        final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        alertDialog.setCancelable(false);
+        alertDialog.setTitle(getString(R.string.permissions_string));
+
+        String msg = "";
+        String btnName = "";
+
+        if (retry) {
+
+            msg = getString(R.string.permissions_enable_string);
+            btnName = getString(R.string.permissions_retry_string);
+        }
+        else {
+
+            msg = getString(R.string.force_permissions_string);
+            btnName = getString(R.string.action_settings);
+        }
+
+        alertDialog.setMessage(msg);
+        alertDialog.setPositiveButton(btnName, new DialogInterface.OnClickListener() {
+
+            public void onClick (DialogInterface dialog,int which) {
+
+                if (retry) {
+
+                    permissionRequest.retry();
+                }
+                else {
+
+                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", getPackageName(), null));
+                    startActivity(intent);
+                }
             }
         });
 
