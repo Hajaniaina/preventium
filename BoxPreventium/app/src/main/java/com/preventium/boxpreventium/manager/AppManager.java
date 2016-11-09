@@ -43,11 +43,12 @@ public class AppManager extends ThreadDefault
     private final static String TAG = "AppManager";
     private final static boolean DEBUG = true;
     private static final float MS_TO_KMH = 3.6f;
-    private static final int SECS_TO_SET_PARCOURS_START = 10;
+    private static final int SECS_TO_SET_PARCOURS_START = 5;
     private static final int SECS_TO_SET_PARCOURS_PAUSE = 10;
     private static final int SECS_TO_SET_PARCOURS_RESUME = 10;
     private static final int SECS_TO_SET_PARCOURS_STOPPED = 60;
 
+    private FilesSender fileSender = null;
 
     private String log = "";
     private ENGINE_t engine_t = ENGINE_t.UNKNOW;
@@ -58,6 +59,7 @@ public class AppManager extends ThreadDefault
         void onForceChanged( FORCE_t type, LEVEL_t level );
         void onDebugLog(String txt);
         void onStatusChanged(STATUS_t status);
+        void onDriveScoreChanged( float score );
     }
 
     private Context ctx = null;
@@ -82,6 +84,10 @@ public class AppManager extends ThreadDefault
     private Chrono mov_t_last_chrono = new Chrono();
 
     private long parcour_id = 0;
+    private long cotation_update_at = 0;
+    private long alertX_add_at = 0;
+    private long alertY_add_at = 0;
+    private long alertPos_add_at = 0;
 
 
     private List<Location> locations = new ArrayList<Location>();
@@ -95,6 +101,7 @@ public class AppManager extends ThreadDefault
         this.listener = listener;
         this.modules = new HandlerBox(ctx,this);
         this.database = new DBHelper(ctx);
+        this.fileSender = new FilesSender(ctx);
     }
 
     public boolean startThread(){
@@ -133,7 +140,10 @@ public class AppManager extends ThreadDefault
         setLog( "AppManager begin...");
 
         STATUS_t status = STATUS_t.CAR_STOPPED;
-        if( listener != null )listener.onStatusChanged( status );
+        if( listener != null ){
+            listener.onStatusChanged( status );
+            listener.onDriveScoreChanged( 0f );
+        }
 
         status = STATUS_t.GETTING_CFG;
         if( listener != null )listener.onStatusChanged( status );
@@ -151,11 +161,6 @@ public class AppManager extends ThreadDefault
             epc = getting_epc();
         }
 
-//Log.d("AAAAA","A = " + database.get_parcours_id().size() );
-////database.generate_eca_file();
-//database.get_eca_files_list();
-//database.generate_eca_file_if_needed();
-
         status = STATUS_t.CAR_PAUSING;  // For update UI correctly
         if( listener != null )listener.onStatusChanged( status );
         status = STATUS_t.CAR_STOPPED;
@@ -169,15 +174,24 @@ public class AppManager extends ThreadDefault
 
             Chrono mov_t_chrono = new Chrono();
 
+            Chrono chrono_sender = new Chrono();
+            chrono_sender.start();
+
             while (isRunning()) {
 
                 updateRideTime();
+
+
                 modules.setActive(true);
 
+                if( chrono_sender.getMinutes() > 1 )
+                {
+                    fileSender.startThread();
+                    chrono_sender.start();
+                }
                 sleep(500);
 
                 calculateMovements();
-                
                 if( status == STATUS_t.CAR_STOPPED
                         || status == STATUS_t.CAR_MOVING || status == STATUS_t.CAR_PAUSING ) {
 
@@ -187,7 +201,7 @@ public class AppManager extends ThreadDefault
                     switch ( status ) {
                         case CAR_STOPPED: {
                             clear_force_ui();
-                            boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 1
+                            boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 0
                                     && mov_t_last != MOVING_t.STP /*&& engine_t == ENGINE_t.ON*/);
                             if (!ready_to_started) {
                                 mov_t_chrono.stop();
@@ -195,6 +209,10 @@ public class AppManager extends ThreadDefault
                                 if (!mov_t_chrono.isStarted()) mov_t_chrono.start();
                                 if (mov_t_chrono.getSeconds() > SECS_TO_SET_PARCOURS_START) {
                                     // ....
+                                    cotation_update_at = 0;
+                                    alertX_add_at = 0;
+                                    alertY_add_at = 0;
+                                    alertPos_add_at = 0;
                                     readerEPCFile.loadFromApp(ctx);
 //                            database.clearAll();
                                     addLog("START PARCOURS");
@@ -209,6 +227,7 @@ public class AppManager extends ThreadDefault
                         } break;
                         case CAR_MOVING: {
                             prepare_eca();
+                            update_parcour_cotation();
                             // SET PAUSING
                             if (mov_t_last == MOVING_t.STP
                                     && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE) {
@@ -223,6 +242,7 @@ public class AppManager extends ThreadDefault
                             if (mov_t_last == MOVING_t.STP
                                     && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED) {
                                 status = STATUS_t.CAR_STOPPED;
+                                chronoRide.stop();
                                 if (listener != null) listener.onStatusChanged(status);
                                 addLog("STOP PARCOURS");
                                 clear_force_ui();
@@ -247,7 +267,6 @@ public class AppManager extends ThreadDefault
         addLog( "AppManager end.");
 
     }
-
 
     // HANDLER BOX
 
@@ -359,55 +378,57 @@ public class AppManager extends ThreadDefault
                 } else {
                     boolean exist_server_epc = false;
                     FTPFile[] files = ftp.ftpPrintFiles();
-                    String srcFileName = "";
-                    String desFileName = "";
-                    int i = 1;
-                    while (i <= 5 && isRunning()) {
+                    if( files != null ) {
+                        String srcFileName = "";
+                        String desFileName = "";
+                        int i = 1;
+                        while (i <= 5 && isRunning()) {
 
-                        srcFileName = reader_epc.getEPCFileName(ctx, i, false);
+                            srcFileName = reader_epc.getEPCFileName(ctx, i, false);
 
-                        exist_server_epc = false;
-                        for (FTPFile f : files) {
-                            if (f.isFile() && f.getName().equals(srcFileName)) {
-                                exist_server_epc = true;
-                                break;
+                            exist_server_epc = false;
+                            for (FTPFile f : files) {
+                                if (f.isFile() && f.getName().equals(srcFileName)) {
+                                    exist_server_epc = true;
+                                    break;
+                                }
                             }
-                        }
 
-                        if (exist_server_epc) {
-                            // Create folder if not exist
-                            if (!folder.exists())
-                                if (!folder.mkdirs())
-                                    Log.w(TAG, "Error while trying to create new folder!");
-                            if (folder.exists()) {
-                                desFileName = reader_epc.getEPCFilePath(ctx, i);
-                                if (ftp.ftpDownload(srcFileName, desFileName)) {
-                                    epc_file_ready = reader_epc.read(desFileName);
-                                    if (epc_file_ready) {
-                                        if (reader_epc.applyToApp(ctx, i)) {
-                                            // envoi acknowledge
-                                            try {
-                                                File temp = File.createTempFile("temp-file-name", ".tmp");
-                                                String ackFileName = reader_epc.getEPCFileName(ctx, i, true);
-                                                ftp.ftpUpload(temp.getPath(), ackFileName);
-                                                temp.delete();
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
+                            if (exist_server_epc) {
+                                // Create folder if not exist
+                                if (!folder.exists())
+                                    if (!folder.mkdirs())
+                                        Log.w(TAG, "Error while trying to create new folder!");
+                                if (folder.exists()) {
+                                    desFileName = reader_epc.getEPCFilePath(ctx, i);
+                                    if (ftp.ftpDownload(srcFileName, desFileName)) {
+                                        epc_file_ready = reader_epc.read(desFileName);
+                                        if (epc_file_ready) {
+                                            if (reader_epc.applyToApp(ctx, i)) {
+                                                // envoi acknowledge
+                                                try {
+                                                    File temp = File.createTempFile("temp-file-name", ".tmp");
+                                                    String ackFileName = reader_epc.getEPCFileName(ctx, i, true);
+                                                    ftp.ftpUpload(temp.getPath(), ackFileName);
+                                                    temp.delete();
+                                                } catch (IOException e) {
+                                                    e.printStackTrace();
+                                                }
+                                            } else {
+                                                error = true;
                                             }
                                         } else {
                                             error = true;
                                         }
-                                    } else {
-                                        error = true;
+                                        new File(desFileName).delete();
                                     }
-                                    new File(desFileName).delete();
+                                } else {
+                                    error = true;
                                 }
-                            } else {
-                                error = true;
                             }
-                        }
 
-                        i++;
+                            i++;
+                        }
                     }
                 }
                 epc_file_ready = !error;
@@ -424,35 +445,6 @@ public class AppManager extends ThreadDefault
         }
         addLog( "EPC is ready: " + epc_file_ready );
         return epc_file_ready;
-    }
-
-    private boolean sending_eca(){
-
-        boolean ret = false;
-        addLog( "Trying to sending eca_file..." );
-        FTPConfig config = DataCFG.getFptConfig(ctx);
-        FTPClientIO ftp = new FTPClientIO();
-        File folder = new File(ctx.getFilesDir(), "");
-        if( config != null && ftp.ftpConnect(config, 5000) ) {
-
-            boolean change_directory = true;
-            if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                change_directory = ftp.makeDirectory(config.getWorkDirectory());
-            boolean error = false;
-            if (!change_directory) {
-                error = true;
-                Log.w(TAG, "Error while trying to change working directory!");
-            } else {
-//        ArrayList<ECALine> alert = database.alertList();
-//        addLog( "Alert list size: " + alert.size() );
-//        addLog( "Box event data size: " + database.boxEventsData().length );
-                addLog("ECA parcours count: " + database.get_parcours_id().size() );
-            }
-
-            ftp.ftpDisconnect();
-        }
-        addLog( "ECA sending: " + ret );
-        return ret;
     }
 
     private void updateRideTime() {
@@ -564,7 +556,11 @@ public class AppManager extends ThreadDefault
                 if( !seuil_x.equals(seuil_last_x) ) seuil_chrono_x.start();
                 if( seuil_chrono_x.getSeconds() >= seuil_x.TPS ) {
                     seuil_chrono_x.start();
-                    database.addECA( parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc.get(0), null ) );
+                    // If elapsed time > 2 seconds
+                    if( alertX_add_at + 2000 < System.currentTimeMillis()) {
+                        database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc.get(0), null));
+                        alertX_add_at = System.currentTimeMillis();
+                    }
                     alertX = true;
                 }
             }
@@ -574,14 +570,22 @@ public class AppManager extends ThreadDefault
                 if( !seuil_y.equals(seuil_last_y) ) seuil_chrono_y.start();
                 if( seuil_chrono_y.getSeconds() >= seuil_y.TPS ) {
                     seuil_chrono_y.start();
-                    database.addECA( parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc.get(0), null ) );
+                    // If elapsed time > 2 seconds
+                    if( alertY_add_at + 2000 < System.currentTimeMillis()) {
+                        database.addECA( parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc.get(0), null ) );
+                        alertY_add_at = System.currentTimeMillis();
+                    }
                     alertY = true;
                 }
             }
 
             // Add location to ECA database
             if( !alertX && !alertY ){
-                database.addECA( parcour_id, ECALine.newInstance( loc.get(0), loc.get(1) ) );
+                // If elapsed time > 2 seconds
+                if( alertPos_add_at + 2000 < System.currentTimeMillis()) {
+                    database.addECA( parcour_id, ECALine.newInstance( loc.get(0), loc.get(1) ) );
+                    alertPos_add_at = System.currentTimeMillis();
+                }
             }
 
             // Update ui interface
@@ -603,6 +607,90 @@ public class AppManager extends ThreadDefault
         }
     }
 
+
+    private void update_parcour_cotation() {
+
+        if( listener != null ){
+            // If elapsed time > 5 minutes
+            if( cotation_update_at + (5*60*1000) < System.currentTimeMillis()){
+                if( readerEPCFile != null ){
+
+                    cotation_update_at = System.currentTimeMillis();
+
+                    float coeff_general;
+                    long coeff_vert, coeff_bleu, coeff_jaune, coeff_orange, coeff_rouge;
+                    long nb_vert, nb_bleu, nb_jaune, nb_orange, nb_rouge;
+
+                    // Cotation accélération
+                    coeff_general = 0.1f;
+                    coeff_vert = 1;
+                    coeff_bleu = 5;
+                    coeff_jaune = 10;
+                    coeff_orange = 15;
+                    coeff_rouge = 20;
+                    nb_vert = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(0).IDAlert);
+                    nb_bleu = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(1).IDAlert);
+                    nb_jaune = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(2).IDAlert);
+                    nb_orange = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(3).IDAlert);
+                    nb_rouge = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(4).IDAlert);
+                    float cotation_A = (
+                            (nb_vert * coeff_vert) +
+                                    (nb_bleu * coeff_bleu) +
+                                    (nb_jaune * coeff_jaune) +
+                                    (nb_orange * coeff_orange) +
+                                    (nb_rouge * coeff_rouge) ) * coeff_general;
+
+                    // Cotation freinage
+                    coeff_general = 0.5f;
+                    coeff_vert = 1;
+                    coeff_bleu = 5;
+                    coeff_jaune = 10;
+                    coeff_orange = 15;
+                    coeff_rouge = 20;
+                    nb_vert = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(5).IDAlert);
+                    nb_bleu = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(6).IDAlert);
+                    nb_jaune = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(7).IDAlert);
+                    nb_orange = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(8).IDAlert);
+                    nb_rouge = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(9).IDAlert);
+                    float cotation_F = (
+                            (nb_vert * coeff_vert) +
+                                    (nb_bleu * coeff_bleu) +
+                                    (nb_jaune * coeff_jaune) +
+                                    (nb_orange * coeff_orange) +
+                                    (nb_rouge * coeff_rouge) ) * coeff_general;
+
+                    // Cotation virage
+                    coeff_general = 0.4f;
+                    coeff_vert = 1;
+                    coeff_bleu = 5;
+                    coeff_jaune = 10;
+                    coeff_orange = 15;
+                    coeff_rouge = 20;
+                    nb_vert = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(10).IDAlert)
+                            + database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(15).IDAlert);
+                    nb_bleu = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(11).IDAlert)
+                            + database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(16).IDAlert);
+                    nb_jaune = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(12).IDAlert)
+                            + database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(17).IDAlert);
+                    nb_orange = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(13).IDAlert)
+                            + database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(18).IDAlert);
+                    nb_rouge = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(14).IDAlert)
+                            + database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(19).IDAlert);
+                    float cotation_V = (
+                            (nb_vert * coeff_vert) +
+                                    (nb_bleu * coeff_bleu) +
+                                    (nb_jaune * coeff_jaune) +
+                                    (nb_orange * coeff_orange) +
+                                    (nb_rouge * coeff_rouge) ) * coeff_general;
+
+
+                    float cotation = cotation_A + cotation_F + cotation_V;
+                    listener.onDriveScoreChanged( cotation );
+                }
+            }
+        }
+    }
+
     private void clear_force_ui(){
         if( seuil_ui != null
                 && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3 ){
@@ -610,99 +698,6 @@ public class AppManager extends ThreadDefault
             seuil_ui = null;
         }
     }
-
-//    private void updateAlertForce(){
-//
-//        if( !locations.isEmpty() ) {
-//
-//            boolean alertX = false;
-//            boolean alertY = false;
-//
-//            ecaLine_read = null;
-//            // Read the runtime value force
-//            seuil_curr_read_x = readerEPCFile.getForceSeuilForX(XmG);
-//            seuil_curr_read_y = readerEPCFile.getForceSeuilForY(YmG);
-//
-//            // Compare the runtime X value force with the prevent X value force
-//            if (seuil_curr_read_x != null) {
-//                if (!seuil_curr_read_x.equals(seuil_prev_read_x)) {
-//                    seuil_chrono_x.start();
-//                }
-//                if (seuil_chrono_x.getSeconds() >= seuil_curr_read_x.TPS) {
-//                    seuil_chrono_x.start();
-//                    Log.d(TAG, "ALERT...." + seuil_curr_read_x.toString());
-//                    addLog( "ALERT...." + seuil_curr_read_y.toString() );
-//                    ecaLine_read = ECALine.newInstance(seuil_curr_read_x.IDAlert, locations.get(0), null);
-//                    database.addECA(ecaLine_read);
-//                    alertX = true;
-//                }
-//            }
-//
-//            // Compare the runtime Y value force with the prevent Y value force
-//            if (seuil_curr_read_y != null) {
-//                if (!seuil_curr_read_y.equals(seuil_prev_read_y)) {
-//                    seuil_chrono_y.start();
-//                }
-//                if (seuil_chrono_y.getSeconds() >= seuil_curr_read_y.TPS) {
-//                    seuil_chrono_y.start();
-//                    Log.d(TAG, "ALERT...." + seuil_curr_read_y.toString());
-//                    addLog( "ALERT...." + seuil_curr_read_y.toString() );
-//                    ecaLine_read = ECALine.newInstance(seuil_curr_read_y.IDAlert, locations.get(0), null);
-//                    database.addECA(ecaLine_read);
-//                    alertY = true;
-//                }
-//            }
-//
-//            // Update UI
-//            if (alertX && alertY && seuil_curr_read_x != null && seuil_curr_read_y != null) {
-//                if (seuil_curr_read_x.level.getValue() > seuil_curr_read_y.level.getValue()) {
-//                    if (seuil_ui == null || !seuil_ui.equals(seuil_curr_read_x)) {
-//                        if (listener != null)
-//                            listener.onForceChanged(seuil_curr_read_x.type, seuil_curr_read_x.level);
-//                        seuil_ui = seuil_curr_read_x;
-//                    }
-//                } else {
-//                    if (seuil_ui == null || !seuil_ui.equals(seuil_curr_read_y)) {
-//                        if (listener != null)
-//                            listener.onForceChanged(seuil_curr_read_y.type, seuil_curr_read_y.level);
-//                        seuil_ui = seuil_curr_read_y;
-//                    }
-//                }
-//            } else if (alertX && seuil_curr_read_x != null) {
-//                if (seuil_ui == null || !seuil_ui.equals(seuil_curr_read_x)) {
-//                    if (listener != null)
-//                        listener.onForceChanged(seuil_curr_read_x.type, seuil_curr_read_x.level);
-//                    seuil_ui = seuil_curr_read_x;
-//                }
-//            } else if (alertY && seuil_curr_read_y != null) {
-//                if (seuil_ui == null || !seuil_ui.equals(seuil_curr_read_y)) {
-//                    if (listener != null)
-//                        listener.onForceChanged(seuil_curr_read_y.type, seuil_curr_read_y.level);
-//                    seuil_ui = seuil_curr_read_y;
-//                }
-//            } else {
-//                if (seuil_ui != null && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3) {
-//                    Log.d(TAG, "ALERT.... ALL IS OK");
-//                    if (listener != null)
-//                        listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW);
-//                    seuil_ui = null;
-//                }
-//            }
-//
-//            if (ecaLine_read == null && DataCFG.get_SEND_ALL_GPS_POINTS(ctx)) {
-//                ecaLine_read = ECALine.newInstance(locations.get(0), null);
-//                if (ecaLine_read != null && !ecaLine_read.equals(ecaLine_save)) {
-//                    //addLog( ecaLine_read.toString() );
-//                    database.addECA(ecaLine_read);
-//                    ecaLine_save = ecaLine_read;
-//                }
-//
-//            }
-//        }
-//
-//        seuil_prev_read_x = seuil_curr_read_x;
-//        seuil_prev_read_y = seuil_curr_read_y;
-//    }
 
     private boolean isRightRoad( Location location_1, Location location_2, Location location_3 ) {
         double Lat_rad_1 = location_1.getLatitude() * Math.PI / 180.0;

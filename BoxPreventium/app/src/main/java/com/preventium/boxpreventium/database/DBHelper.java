@@ -2,24 +2,29 @@ package com.preventium.boxpreventium.database;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.github.mikephil.charting.utils.FileUtils;
 import com.github.mikephil.charting.utils.Utils;
 import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.utils.BytesUtils;
 import com.preventium.boxpreventium.utils.ComonUtils;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
@@ -66,6 +71,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "DBHelper";
     private Context ctx = null;
+    private ECALine last_line = null;
 
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, 1);
@@ -125,24 +131,53 @@ public class DBHelper extends SQLiteOpenHelper {
 
     // ECA
 
-    public boolean addECA( long parcour_id, ECALine line ){
+    public long countNbEvent( long parcour_id, int alertID ){
+        long ret = 0;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor =  db.rawQuery( "SELECT DISTINCT COUNT(" + COLUMN_ECA_ID + ")" +
+                " FROM " + TABLE_ECA +
+                " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
+                " AND " + COLUMN_ECA_ALERTID + " = " + alertID +
+                " ;", null );
+        if( cursor != null && cursor.moveToFirst() ) {
+            ret = cursor.getLong(0);
+            cursor.close();
+        }
+        db.close();
+        return ret;
+    }
 
+    public boolean addECA( long parcour_id, ECALine line ){
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put(COLUMN_ECA_TIME, line.location.getTime() );
-        contentValues.put(COLUMN_ECA_PARCOUR_ID, parcour_id );
+        contentValues.put(COLUMN_ECA_TIME, line.location.getTime());
+        contentValues.put(COLUMN_ECA_PARCOUR_ID, parcour_id);
         contentValues.put(COLUMN_ECA_FILE_ID, -1);
-        contentValues.put(COLUMN_ECA_ALERTID, line.alertID );
-        contentValues.put(COLUMN_ECA_PADDIND, line.padding );
-        contentValues.put(COLUMN_ECA_LONG_POS, line.location.getLongitude() );
-        contentValues.put(COLUMN_ECA_LAT_POS, line.location.getLatitude() );
-        contentValues.put(COLUMN_ECA_LONG_POS_ORIENTATION, line.long_pos_orientation );
-        contentValues.put(COLUMN_ECA_LAT_POS_ORIENTATION, line.lat_pos_orientation );
-        contentValues.put(COLUMN_ECA_SPEED, line.location.getSpeed() );
-        contentValues.put(COLUMN_ECA_DISTANCE, line.distance );
+        contentValues.put(COLUMN_ECA_ALERTID, line.alertID);
+        contentValues.put(COLUMN_ECA_PADDIND, line.padding);
+        contentValues.put(COLUMN_ECA_LONG_POS, line.location.getLongitude());
+        contentValues.put(COLUMN_ECA_LAT_POS, line.location.getLatitude());
+        contentValues.put(COLUMN_ECA_LONG_POS_ORIENTATION, line.long_pos_orientation);
+        contentValues.put(COLUMN_ECA_LAT_POS_ORIENTATION, line.lat_pos_orientation);
+        contentValues.put(COLUMN_ECA_SPEED, line.location.getSpeed());
+        contentValues.put(COLUMN_ECA_DISTANCE, line.distance);
         db.insert(TABLE_ECA, null, contentValues);
+        last_line = line;
         return true;
     }
+
+//    public long getLastECATime(){
+//        long ret = -1;
+//        SQLiteDatabase db = this.getReadableDatabase();
+//        Cursor cursor =  db.rawQuery( "SELECT DISTINCT "
+//                + COLUMN_ECA_TIME + " from "
+//                + TABLE_ECA + " ORDER BY "
+//                + COLUMN_ECA_TIME + " LIMIT 1 ;", null );
+//        if( cursor != null && cursor.moveToFirst() ) {
+//            ret = cursor.getLong(0);
+//        }
+//        return ret;
+//    }
 
     public List<Long> get_parcours_id(){
         List<Long> ret = new ArrayList<Long>();
@@ -164,179 +199,48 @@ public class DBHelper extends SQLiteOpenHelper {
 //    }
 
 
-    public double distanceTraveled(){
-        double ret = 0.0;
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor =  db.rawQuery( "SELECT SUM(" + COLUMN_ECA_DISTANCE + ") from " + TABLE_ECA + ";", null );
-        if( cursor != null && cursor.moveToFirst() ) ret = cursor.getDouble(0);
-        return ret;
-    }
-
-    public ArrayList<ECALine> alertList(){
-        ArrayList<ECALine> ret = new ArrayList<ECALine>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor =  db.rawQuery( "SELECT * from " + TABLE_ECA + ";", null );
-        if( cursor != null && cursor.moveToFirst() ) {
-            ECALine line = null;
-            while ( !cursor.isAfterLast() ){
-                line = new ECALine();
-
-                line.id = cursor.getInt( cursor.getColumnIndex(COLUMN_ECA_ID) );
-                line.alertID = cursor.getInt( cursor.getColumnIndex(COLUMN_ECA_ALERTID) );
-                line.padding = cursor.getInt( cursor.getColumnIndex(COLUMN_ECA_PADDIND) );
-                line.long_pos_orientation = cursor.getInt( cursor.getColumnIndex(COLUMN_ECA_LONG_POS_ORIENTATION) );
-                line.lat_pos_orientation = cursor.getInt( cursor.getColumnIndex(COLUMN_ECA_LAT_POS_ORIENTATION) );
-                line.distance = cursor.getFloat( cursor.getColumnIndex(COLUMN_ECA_DISTANCE) );
-
-                line.location = new Location("");
-                line.location.setTime( cursor.getLong( cursor.getColumnIndex(COLUMN_ECA_TIME) ) );
-                line.location.setLongitude( cursor.getFloat( cursor.getColumnIndex(COLUMN_ECA_LONG_POS) ) );
-                line.location.setLatitude( cursor.getFloat( cursor.getColumnIndex(COLUMN_ECA_LAT_POS) ) );
-                line.location.setSpeed( cursor.getFloat( cursor.getColumnIndex(COLUMN_ECA_SPEED) ) );
-
-                Log.d("ECA", line.toString() );
-                ret.add( line );
-
-                cursor.moveToNext();
-            }
-        }
-        return ret;
-    }
-
-    public void generate_eca_file_1(){
-
-        Log.d(TAG, "generate_eca_file()");
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor =  db.rawQuery( "SELECT * from " + TABLE_ECA + ";", null );
-        if( cursor != null && cursor.moveToFirst() ) {
-            long parcour_id = 0;
-            ECALine line = null;
-            while ( !cursor.isAfterLast() ) {
-                // READ CURRENT LINE
-                parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID) );
-                line = new ECALine();
-                line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
-                line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
-                line.padding = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PADDIND));
-                line.long_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LONG_POS_ORIENTATION));
-                line.lat_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LAT_POS_ORIENTATION));
-                line.distance = cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_DISTANCE));
-                line.location = new Location("");
-                line.location.setTime(cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_TIME)));
-                line.location.setLongitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LONG_POS)));
-                line.location.setLatitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LAT_POS)));
-                line.location.setSpeed(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_SPEED)));
-
-                File folder = new File(ctx.getFilesDir() + "ECA", "");
-                // Create folder if not exist
-                if (!folder.exists())
-                    if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
-                if( folder.exists() ) {
-
-                    int cnt = 0;
-                    boolean ready = false;
-                    String filename = "";
-                    String desFileName = "";
-                    File file = null;
-                    while( !ready ) {
-                        filename = String.format(Locale.getDefault(),"%s_%s_%04d.ECA",
-                                ComonUtils.getIMEInumber(ctx), parcour_id, cnt );
-                        desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), filename);
-                        file = new File(desFileName);
-                        if (!file.exists()) {
-                            ready = true;
-                            try {
-                                if (file.createNewFile())
-                                    Log.d(TAG, "FILE CREATE:" + desFileName);
-                                else
-                                    Log.w(TAG, "FILE NOT CREATE:" + desFileName);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        } else {
-                            double bytes = file.length();
-                            double kilobytes = (bytes / 1024);
-                            double megabytes = (kilobytes / 1024);
-                            //double gigabytes = (megabytes / 1024);
-                            //double terabytes = (gigabytes / 1024);
-                            //double petabytes = (terabytes / 1024);
-                            //double exabytes = (petabytes / 1024);
-                            //double zettabytes = (exabytes / 1024);
-                            //double yottabytes = (zettabytes / 1024);
-                            if (megabytes < 0.5) {
-                                ready = true;
-                            } else {
-                                cnt++;
-                            }
-                        }
-                    }
-
-                    if( file.exists() ) {
-                        try {
-                            PrintWriter printWriter = null;
-                            printWriter = new PrintWriter(new FileOutputStream(file.getAbsolutePath(), true));
-                            printWriter.write(System.getProperty("line.separator"));
-                            printWriter.write(Arrays.toString(line.toData()));
-                            printWriter.close();
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-
-
-
-                }
-                //Log.d(TAG, line.toString());
-                cursor.moveToNext();
-            }
-        }
-    }
-
-    public boolean generate_eca_file_if_needed(){
-        Log.d(TAG, "generate_eca_file()");
-
-        boolean ret = false;
-
-        File folder = new File(ctx.getFilesDir() + "ECA", "");
-        // Create folder if not exist
-        if (!folder.exists())
-            if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
-        if( folder.exists() ) {
-
-            SQLiteDatabase db = this.getReadableDatabase();
-            Cursor cursor = db.rawQuery("SELECT * from " + TABLE_ECA + " where " + COLUMN_ECA_FILE_ID + " = -1;", null);
-            while (!cursor.isAfterLast()) {
-                long parcour_id = 0;
-                ECALine line = null;
-                while (!cursor.isAfterLast()) {
-                    // READ CURRENT LINE
-                    parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID));
-                    line = new ECALine();
-                    line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
-                    line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
-                    line.padding = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PADDIND));
-                    line.long_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LONG_POS_ORIENTATION));
-                    line.lat_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LAT_POS_ORIENTATION));
-                    line.distance = cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_DISTANCE));
-                    line.location = new Location("");
-                    line.location.setTime(cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_TIME)));
-                    line.location.setLongitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LONG_POS)));
-                    line.location.setLatitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LAT_POS)));
-                    line.location.setSpeed(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_SPEED)));
-                    Log.d("AAA", "Parcour + " + parcour_id + " -> " + line.toString());
-                }
-
-            }
-        }
-        return ret;
-
-
-
-
-
-
+//    public double distanceTraveled(){
+//        double ret = 0.0;
+//        SQLiteDatabase db = this.getReadableDatabase();
+//        Cursor cursor =  db.rawQuery( "SELECT SUM(" + COLUMN_ECA_DISTANCE + ") from " + TABLE_ECA + ";", null );
+//        if( cursor != null && cursor.moveToFirst() ) ret = cursor.getDouble(0);
+//        return ret;
+//    }
 //
+//    public ArrayList<ECALine> alertList(){
+//        ArrayList<ECALine> ret = new ArrayList<ECALine>();
+//        SQLiteDatabase db = this.getReadableDatabase();
+//        Cursor cursor =  db.rawQuery( "SELECT * from " + TABLE_ECA + ";", null );
+//        if( cursor != null && cursor.moveToFirst() ) {
+//            ECALine line = null;
+//            while ( !cursor.isAfterLast() ){
+//                line = new ECALine();
+//
+//                line.id = cursor.getInt( cursor.getColumnIndex(COLUMN_ECA_ID) );
+//                line.alertID = cursor.getInt( cursor.getColumnIndex(COLUMN_ECA_ALERTID) );
+//                line.padding = cursor.getInt( cursor.getColumnIndex(COLUMN_ECA_PADDIND) );
+//                line.long_pos_orientation = cursor.getInt( cursor.getColumnIndex(COLUMN_ECA_LONG_POS_ORIENTATION) );
+//                line.lat_pos_orientation = cursor.getInt( cursor.getColumnIndex(COLUMN_ECA_LAT_POS_ORIENTATION) );
+//                line.distance = cursor.getFloat( cursor.getColumnIndex(COLUMN_ECA_DISTANCE) );
+//
+//                line.location = new Location("");
+//                line.location.setTime( cursor.getLong( cursor.getColumnIndex(COLUMN_ECA_TIME) ) );
+//                line.location.setLongitude( cursor.getFloat( cursor.getColumnIndex(COLUMN_ECA_LONG_POS) ) );
+//                line.location.setLatitude( cursor.getFloat( cursor.getColumnIndex(COLUMN_ECA_LAT_POS) ) );
+//                line.location.setSpeed( cursor.getFloat( cursor.getColumnIndex(COLUMN_ECA_SPEED) ) );
+//
+//                Log.d("ECA", line.toString() );
+//                ret.add( line );
+//
+//                cursor.moveToNext();
+//            }
+//        }
+//        return ret;
+//    }
+//
+//    public void generate_eca_file_1(){
+//
+//        Log.d(TAG, "generate_eca_file()");
 //        SQLiteDatabase db = this.getReadableDatabase();
 //        Cursor cursor =  db.rawQuery( "SELECT * from " + TABLE_ECA + ";", null );
 //        if( cursor != null && cursor.moveToFirst() ) {
@@ -344,7 +248,7 @@ public class DBHelper extends SQLiteOpenHelper {
 //            ECALine line = null;
 //            while ( !cursor.isAfterLast() ) {
 //                // READ CURRENT LINE
-//                parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR) );
+//                parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID) );
 //                line = new ECALine();
 //                line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
 //                line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
@@ -422,19 +326,302 @@ public class DBHelper extends SQLiteOpenHelper {
 //                cursor.moveToNext();
 //            }
 //        }
+//    }
+//
+//    public boolean generate_eca_file_if_needed(){
+//        Log.d(TAG, "generate_eca_file()");
+//
+//        boolean ret = false;
+//
+//        File folder = new File(ctx.getFilesDir() + "ECA", "");
+//        // Create folder if not exist
+//        if (!folder.exists())
+//            if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
+//        if( folder.exists() ) {
+//
+//            SQLiteDatabase db = this.getReadableDatabase();
+//            Cursor cursor = db.rawQuery("SELECT * from " + TABLE_ECA + " where " + COLUMN_ECA_FILE_ID + " = -1;", null);
+//            while (!cursor.isAfterLast()) {
+//                long parcour_id = 0;
+//                ECALine line = null;
+//                while (!cursor.isAfterLast()) {
+//                    // READ CURRENT LINE
+//                    parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID));
+//                    line = new ECALine();
+//                    line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
+//                    line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
+//                    line.padding = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PADDIND));
+//                    line.long_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LONG_POS_ORIENTATION));
+//                    line.lat_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LAT_POS_ORIENTATION));
+//                    line.distance = cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_DISTANCE));
+//                    line.location = new Location("");
+//                    line.location.setTime(cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_TIME)));
+//                    line.location.setLongitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LONG_POS)));
+//                    line.location.setLatitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LAT_POS)));
+//                    line.location.setSpeed(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_SPEED)));
+//                    Log.d("AAA", "Parcour + " + parcour_id + " -> " + line.toString());
+//                }
+//
+//            }
+//        }
+//        return ret;
+//
+//
+//
+//
+//
+//
+////
+////        SQLiteDatabase db = this.getReadableDatabase();
+////        Cursor cursor =  db.rawQuery( "SELECT * from " + TABLE_ECA + ";", null );
+////        if( cursor != null && cursor.moveToFirst() ) {
+////            long parcour_id = 0;
+////            ECALine line = null;
+////            while ( !cursor.isAfterLast() ) {
+////                // READ CURRENT LINE
+////                parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR) );
+////                line = new ECALine();
+////                line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
+////                line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
+////                line.padding = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PADDIND));
+////                line.long_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LONG_POS_ORIENTATION));
+////                line.lat_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LAT_POS_ORIENTATION));
+////                line.distance = cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_DISTANCE));
+////                line.location = new Location("");
+////                line.location.setTime(cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_TIME)));
+////                line.location.setLongitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LONG_POS)));
+////                line.location.setLatitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LAT_POS)));
+////                line.location.setSpeed(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_SPEED)));
+////
+////                File folder = new File(ctx.getFilesDir() + "ECA", "");
+////                // Create folder if not exist
+////                if (!folder.exists())
+////                    if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
+////                if( folder.exists() ) {
+////
+////                    int cnt = 0;
+////                    boolean ready = false;
+////                    String filename = "";
+////                    String desFileName = "";
+////                    File file = null;
+////                    while( !ready ) {
+////                        filename = String.format(Locale.getDefault(),"%s_%s_%04d.ECA",
+////                                ComonUtils.getIMEInumber(ctx), parcour_id, cnt );
+////                        desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), filename);
+////                        file = new File(desFileName);
+////                        if (!file.exists()) {
+////                            ready = true;
+////                            try {
+////                                if (file.createNewFile())
+////                                    Log.d(TAG, "FILE CREATE:" + desFileName);
+////                                else
+////                                    Log.w(TAG, "FILE NOT CREATE:" + desFileName);
+////                            } catch (IOException e) {
+////                                e.printStackTrace();
+////                            }
+////                        } else {
+////                            double bytes = file.length();
+////                            double kilobytes = (bytes / 1024);
+////                            double megabytes = (kilobytes / 1024);
+////                            //double gigabytes = (megabytes / 1024);
+////                            //double terabytes = (gigabytes / 1024);
+////                            //double petabytes = (terabytes / 1024);
+////                            //double exabytes = (petabytes / 1024);
+////                            //double zettabytes = (exabytes / 1024);
+////                            //double yottabytes = (zettabytes / 1024);
+////                            if (megabytes < 0.5) {
+////                                ready = true;
+////                            } else {
+////                                cnt++;
+////                            }
+////                        }
+////                    }
+////
+////                    if( file.exists() ) {
+////                        try {
+////                            PrintWriter printWriter = null;
+////                            printWriter = new PrintWriter(new FileOutputStream(file.getAbsolutePath(), true));
+////                            printWriter.write(System.getProperty("line.separator"));
+////                            printWriter.write(Arrays.toString(line.toData()));
+////                            printWriter.close();
+////                        } catch (FileNotFoundException e) {
+////                            e.printStackTrace();
+////                        }
+////                    }
+////
+////
+////
+////
+////                }
+////                //Log.d(TAG, line.toString());
+////                cursor.moveToNext();
+////            }
+////        }
+//
+//    }
+//
+//    public void get_eca_files_list(){
+//        File folder = new File( String.format(Locale.getDefault(), "%s", ctx.getFilesDir()) );
+//        File[] listOfFiles = folder.listFiles();
+//        for (int i = 0; i < listOfFiles.length; i++) {
+//            if (listOfFiles[i].isFile()) {
+//                Log.d(TAG, "File " + listOfFiles[i].getName());
+//            } else if (listOfFiles[i].isDirectory()) {
+//                Log.d(TAG, "Directory " + listOfFiles[i].getName());
+//            }
+//        }
+//    }
+//
+//    public void create_eca_files(){
+//
+//    }
 
+    private final static String KEY_LAST = "LastSend";
+    private final static String KEY_LAST_eca_parcour = "last_eca_parcour";
+    private final static String KEY_LAST_eca_counter = "last_eca_counter";
+    private final static String KEY_LAST_eca_time = "last_eca_time";
+    public static long get_eca_parcour_send(Context ctx){
+        SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
+        return sp.getLong( KEY_LAST_eca_parcour, -1 );
     }
+    public static int get_eca_counter(Context ctx, long parcour){
+        SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
+        if( parcour != get_eca_parcour_send(ctx) ) return -1;
+        return sp.getInt( KEY_LAST_eca_counter, -1 );
+    }
+    public static long get_last_eca_time_send(Context ctx){
+        SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
+        return sp.getLong( KEY_LAST_eca_time, -1 );
+    }
+    public static void set_eca_parcour_send(Context ctx, long parcours){
+        SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putLong( KEY_LAST_eca_parcour, parcours );
+        editor.apply();
+    }
+    public static void set_eca_counter(Context ctx, int counter){
+        SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putInt( KEY_LAST_eca_counter, counter );
+        editor.apply();
+    }
+    public static void set_last_eca_time_send(Context ctx, long time){
+        SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putLong( KEY_LAST_eca_time, time );
+        editor.apply();
+    }
+    public boolean update_last_send(Context ctx, long time){
+        boolean ret = false;
 
-    public void get_eca_files_list(){
-        File folder = new File( String.format(Locale.getDefault(), "%s", ctx.getFilesDir()) );
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_ECA +
+                " WHERE " + COLUMN_ECA_TIME + " = " + time +
+                " ORDER BY " + COLUMN_ECA_ID + " LIMIT 1 ;", null);
+        if( cursor.moveToFirst() ){
+            SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sp.edit();
+            long parcour_id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID));
+            int counter = get_eca_counter(ctx,parcour_id) + 1;
+            editor.putLong( KEY_LAST_eca_time, time );
+            editor.putLong(KEY_LAST_eca_parcour,parcour_id);
+            editor.putInt(KEY_LAST_eca_counter,counter);
+            editor.apply();
+            ret = true;
+        }
+        cursor.close();
+        db.close();
+        return ret;
+    }
+    public long create_eca_file(Context ctx, long after_time){
+        long ret_time = -1;
+        File folder = new File(ctx.getFilesDir(), "ECA");
+        // Create folder if not exist
+        if (!folder.exists())
+            if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
+        if( folder.exists() ) {
+            SQLiteDatabase db = this.getReadableDatabase();
+            Cursor cursor = db.rawQuery(
+                    "SELECT * FROM " + TABLE_ECA +
+                            " WHERE " + COLUMN_ECA_TIME + " > " + after_time +
+                            " ORDER BY " + COLUMN_ECA_TIME + " ;", null);
+            if ( cursor.moveToFirst() ) {
+                ECALine line = null;
+                long parcour_id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID));
+                long cnt = get_eca_counter(ctx,parcour_id) + 1;
+                String filename = String.format(Locale.getDefault(),"%s_%s_%04d.ECA",
+                        ComonUtils.getIMEInumber(ctx), parcour_id, cnt );
+                File file = new File(folder.getAbsolutePath(), filename );
+                try {
+                    if( file.createNewFile() ){
+                        Log.d(TAG, "FILE CREATE:" + file.getAbsolutePath());
+                        OutputStream output
+                                = new BufferedOutputStream(
+                                new FileOutputStream(file.getAbsolutePath()));
+                        output.write( new byte[]{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00} );// Vehicule ID
+                        line = new ECALine();
+                        while ( !cursor.isAfterLast() ) {
+                            if( parcour_id
+                                    == cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID)) )
+                            {
+                                line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
+                                line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
+                                line.padding = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PADDIND));
+                                line.long_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LONG_POS_ORIENTATION));
+                                line.lat_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LAT_POS_ORIENTATION));
+                                line.distance = cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_DISTANCE));
+                                line.location = new Location("");
+                                line.location.setTime(cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_TIME)));
+                                line.location.setLongitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LONG_POS)));
+                                line.location.setLatitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LAT_POS)));
+                                line.location.setSpeed(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_SPEED)));
+                                ret_time = line.location.getTime();
+//                                try {
+//                                    PrintWriter printWriter = null;
+//                                    printWriter = new PrintWriter(new FileOutputStream(file.getAbsolutePath(), true));
+//                                    printWriter.write(line.toDataEncoded());
+//                                    printWriter.write(System.getProperty("line.separator"));
+//                                    printWriter.close();
+//                                } catch (FileNotFoundException e) {
+//                                    e.printStackTrace();
+//                                }
+
+                                output.write( line.toData() );
+                                cursor.moveToNext();
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        output.close();
+
+                    } else {
+                        Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+            cursor.close();
+            db.close();
+        }
+        return ret_time;
+    }
+    public boolean remove_eca_file(Context ctx){
+        boolean ret = true;
+        File folder = new File(ctx.getFilesDir(), "ECA");
         File[] listOfFiles = folder.listFiles();
-        for (int i = 0; i < listOfFiles.length; i++) {
-            if (listOfFiles[i].isFile()) {
-                Log.d(TAG, "File " + listOfFiles[i].getName());
-            } else if (listOfFiles[i].isDirectory()) {
-                Log.d(TAG, "Directory " + listOfFiles[i].getName());
+        if( listOfFiles != null ) {
+            for (File file : listOfFiles) {
+                if (file.isFile()) {
+                    //System.out.println(file.getName());
+                    if (!file.delete()) ret = false;
+                }
             }
         }
+        return ret;
     }
 
     // BOX CONNECTION/DISCONNECTION

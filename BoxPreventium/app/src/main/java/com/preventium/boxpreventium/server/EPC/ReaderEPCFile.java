@@ -96,6 +96,11 @@ public class ReaderEPCFile {
         return ret;
     }
 
+    public ForceSeuil getForceSeuil(int index) {
+        return  ( index >= 0 && index < seuil.length )
+                ? seuil[index] : null;
+    }
+
     public ForceSeuil getForceSeuil(double XmG, double YmG) {
         return  ( ComonUtils.interval(0.0,XmG) >= ComonUtils.interval(0.0,YmG) )
                 ? getForceSeuilForX( XmG ) : getForceSeuilForY( YmG );
