@@ -43,7 +43,7 @@ public class AppManager extends ThreadDefault
     private final static String TAG = "AppManager";
     private final static boolean DEBUG = true;
     private static final float MS_TO_KMH = 3.6f;
-    private static final int SECS_TO_SET_PARCOURS_START = 5;
+    private static final int SECS_TO_SET_PARCOURS_START = 10;
     private static final int SECS_TO_SET_PARCOURS_PAUSE = 10;
     private static final int SECS_TO_SET_PARCOURS_RESUME = 10;
     private static final int SECS_TO_SET_PARCOURS_STOPPED = 60;
