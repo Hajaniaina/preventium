@@ -2,6 +2,7 @@ package com.preventium.boxpreventium.gui;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,6 +18,7 @@ import android.media.RingtoneManager;
 import android.media.ToneGenerator;
 import android.net.Uri;
 import android.os.CountDownTimer;
+import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
@@ -433,6 +435,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void init (boolean firstLaunch) {
 
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
         mapReady = false;
         initDone = true;
         appManager = new AppManager(this, this);
@@ -737,7 +741,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }.start();
     }
 
-    private void playBeep (int durationSeconds) {
+    private void beep (int durationSeconds) {
 
         int ms = durationSeconds * 1000;
         final ToneGenerator tone = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
@@ -746,12 +750,20 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             public void onTick (long millisUntilFinished) {
 
-                tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 300);
+                tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 400);
             }
 
             public void onFinish() {}
 
         }.start();
+    }
+
+    private void vibrate (int durationSeconds) {
+
+        int ms = durationSeconds * 1000;
+
+        Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+        vibrator.vibrate(ms);
     }
 
     protected void showCallDialog() {
@@ -1172,9 +1184,32 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         menuButton2 = (FloatingActionButton) findViewById(R.id.menu_button2);
         menuButton3 = (FloatingActionButton) findViewById(R.id.menu_button3);
 
-        menuButton1.setLabelText(getString(R.string.disable_tracking_string));
-
         menuButton1.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick (View view) {
+
+                /*
+                if (mapType > GoogleMap.MAP_TYPE_HYBRID)
+                {
+                    mapType = GoogleMap.MAP_TYPE_NORMAL;
+                }
+                else
+                {
+                    mapType++;
+                }
+
+                googleMap.setMapType(mapType);
+                */
+
+                beep(5);
+                vibrate(5);
+            }
+        });
+
+        menuButton2.setLabelText(getString(R.string.disable_tracking_string));
+
+        menuButton2.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick (View v) {
@@ -1192,24 +1227,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     menuButton1.setLabelText(getString(R.string.disable_tracking_string));
                     menuButton1.setImageResource(R.drawable.ic_stop);
                 }
-            }
-        });
-
-        menuButton2.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick (View view) {
-
-                if (mapType > GoogleMap.MAP_TYPE_HYBRID)
-                {
-                    mapType = GoogleMap.MAP_TYPE_NORMAL;
-                }
-                else
-                {
-                    mapType++;
-                }
-
-                googleMap.setMapType(mapType);
             }
         });
 
