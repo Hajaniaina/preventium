@@ -10,7 +10,7 @@ import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.MOVING_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
-import com.preventium.boxpreventium.gui.CustomMarker;
+import com.preventium.boxpreventium.location.CustomMarkerData;
 import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;

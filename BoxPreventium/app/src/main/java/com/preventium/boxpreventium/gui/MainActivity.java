@@ -283,7 +283,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onChronoRideChanged (final String txt) {
+    public void onDrivingTimeChanged (final String txt) {
 
         runOnUiThread(new Runnable() {
 
@@ -411,6 +411,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onDriveScoreChanged (float score) {
 
+    }
+
+    @Override
+    public void onCustomMarkerDataListGet() {
+
+        appManager.setCustomMarkerDataList(markerManager.getUserMarkersData());
     }
 
     @Override
