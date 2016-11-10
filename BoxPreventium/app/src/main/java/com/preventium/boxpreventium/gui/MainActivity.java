@@ -615,7 +615,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         alertDialog.setCancelable(false);
         alertDialog.setTitle(getString(R.string.location_settings_string));
         alertDialog.setMessage(getString(R.string.location_rationale_string));
-        final AlertDialog alertDlg = alertDialog.create();
 
         alertDialog.setPositiveButton(getString(R.string.action_settings), new DialogInterface.OnClickListener() {
 
@@ -623,11 +622,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                 startActivity(intent);
-                alertDlg.dismiss();
             }
         });
 
-        alertDlg.show();
+        alertDialog.show();
     }
 
     public void showBluetoothAlert() {
@@ -1252,6 +1250,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onClick (View view) {
+
+                flashBackground(10);
+                vibrate(10);
+                beep(10);
 
                 /*
                 if (mapType > GoogleMap.MAP_TYPE_HYBRID)
