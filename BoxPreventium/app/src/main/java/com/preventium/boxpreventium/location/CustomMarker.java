@@ -1,4 +1,4 @@
-package com.preventium.boxpreventium.gui;
+package com.preventium.boxpreventium.location;
 
 import com.preventium.boxpreventium.R;
 import com.google.android.gms.maps.GoogleMap;
@@ -48,9 +48,20 @@ public class CustomMarker {
     private Marker marker = null;
     private int type = MARKER_INFO;
     private boolean editable = true;
-    private LatLng pos;
+    private LatLng pos = null;
+    private String title = "";
+    private boolean alert = false;
+    private int perimeterId = 0;
+    private int perimeterMeters = 0;
+    private int[] perimeterArr;
 
     CustomMarker() {
+
+        perimeterArr = new int[4];
+        perimeterArr[0] = 50;
+        perimeterArr[1] = 100;
+        perimeterArr[2] = 300;
+        perimeterArr[3] = 500;
 
         opt = new MarkerOptions();
     }
@@ -136,6 +147,42 @@ public class CustomMarker {
         return type;
     }
 
+    public void setPerimeter (int meters) {
+
+        perimeterMeters = meters;
+    }
+
+    public void setPerimeterById (int id) {
+
+        if (id > 3) {
+
+            id = 3;
+        }
+
+        perimeterId = id;
+        perimeterMeters = perimeterArr[id];
+    }
+
+    public int getPerimeter() {
+
+        return perimeterMeters;
+    }
+
+    public int getPerimeterId() {
+
+        return perimeterId;
+    }
+
+    public void enableAlert (boolean enable) {
+
+        alert = enable;
+    }
+
+    public boolean isAlertEnabled () {
+
+        return alert;
+    }
+
     public void setPos (LatLng pos) {
 
         if (!editable) {
@@ -186,6 +233,7 @@ public class CustomMarker {
 
         if (title != null && title.length() > 0) {
 
+            title = title;
             opt.title(title);
 
             if (marker != null) {
@@ -228,7 +276,7 @@ public class CustomMarker {
         this.editable = editable;
     }
 
-    public boolean editable() {
+    public boolean isEditable() {
 
         return editable;
     }

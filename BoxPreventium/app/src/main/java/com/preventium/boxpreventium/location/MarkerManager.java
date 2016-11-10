@@ -1,4 +1,4 @@
-package com.preventium.boxpreventium.gui;
+package com.preventium.boxpreventium.location;
 
 import android.app.Activity;
 
@@ -17,7 +17,7 @@ public class MarkerManager {
     private GoogleMap map = null;
     private Activity activity;
 
-    MarkerManager (Activity activity) {
+    public MarkerManager (Activity activity) {
 
         this.activity = activity;
         markersList = new ArrayList<CustomMarker>();
@@ -84,7 +84,7 @@ public class MarkerManager {
         customMarker.setTitle(title);
         customMarker.setType(type);
 
-        if (customMarker.editable()) {
+        if (customMarker.isEditable()) {
 
             customMarker.setSnippet(activity.getString(R.string.marker_snippet_string));
         }
@@ -110,5 +110,28 @@ public class MarkerManager {
         }
 
         return false;
+    }
+
+    public ArrayList<CustomMarkerData> getUserMarkersData() {
+
+        ArrayList<CustomMarkerData> markersDataList = new ArrayList<CustomMarkerData>();
+
+        for (CustomMarker customMarker : markersList) {
+
+            if (customMarker.isEditable()) {
+
+                CustomMarkerData markerData = new CustomMarkerData();
+
+                markerData.alert = customMarker.isAlertEnabled();
+                markerData.position = customMarker.getPos();
+                markerData.perimeter = customMarker.getPerimeter();
+                markerData.title = customMarker.getTitle();
+                markerData.type = customMarker.getType();
+
+                markersDataList.add(markerData);
+            }
+        }
+
+        return markersDataList;
     }
 }

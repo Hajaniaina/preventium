@@ -2,6 +2,7 @@ package com.preventium.boxpreventium.gui;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -13,8 +14,6 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.media.RingtoneManager;
 import android.media.ToneGenerator;
 import android.net.Uri;
 import android.os.CountDownTimer;
@@ -31,6 +30,8 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -43,6 +44,8 @@ import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
 import com.preventium.boxpreventium.enums.SPEED_t;
+import com.preventium.boxpreventium.location.CustomMarker;
+import com.preventium.boxpreventium.location.MarkerManager;
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.R;
 import com.github.clans.fab.FloatingActionButton;
@@ -86,9 +89,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton menuButton3;
 
     private PermissionHelper.PermissionBuilder permissionRequest;
+    private SharedPreferences sharedPreferences;
     private GoogleMap googleMap;
     private ProgressDialog progress;
-    private SharedPreferences sharedPreferences;
     private boolean toggle = false;
     private SupportMapFragment mapFrag;
     private int mapType = GoogleMap.MAP_TYPE_NORMAL;
@@ -125,17 +128,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             requestPermissions();
         }
-
-        if (!PositionManager.isLocationEnabled(getApplicationContext())) {
-
-            showLocationAlert();
-        }
     }
 
     @Override
     protected void onResume() {
 
         Log.d(TAG, "onResume");
+
+        if (!PositionManager.isLocationEnabled(getApplicationContext())) {
+
+            showLocationAlert();
+        }
+
+        if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
+
+            BluetoothAdapter.getDefaultAdapter().enable();
+        }
 
         int permissionsGranted = checkPermissions();
 
@@ -149,11 +157,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         else if (permissionsGranted == 0) {
 
             requestPermissions();
-        }
-
-        if (!PositionManager.isLocationEnabled(getApplicationContext())) {
-
-            showLocationAlert();
         }
 
         super.onResume();
@@ -606,6 +609,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         alertDialog.setCancelable(false);
         alertDialog.setTitle(getString(R.string.location_settings_string));
         alertDialog.setMessage(getString(R.string.location_rationale_string));
+        final AlertDialog alertDlg = alertDialog.create();
 
         alertDialog.setPositiveButton(getString(R.string.action_settings), new DialogInterface.OnClickListener() {
 
@@ -613,6 +617,26 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                 startActivity(intent);
+                alertDlg.dismiss();
+            }
+        });
+
+        alertDlg.show();
+    }
+
+    public void showBluetoothAlert() {
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+
+        alertDialog.setCancelable(false);
+        alertDialog.setTitle("Bluetooth");
+        alertDialog.setMessage(getString(R.string.bluetooth_rationale_string));
+
+        alertDialog.setPositiveButton(getString(R.string.activate_string), new DialogInterface.OnClickListener() {
+
+            public void onClick (DialogInterface dialog,int which) {
+
+                BluetoothAdapter.getDefaultAdapter().enable();
             }
         });
 
@@ -644,6 +668,253 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         alertDialog.show();
+    }
+
+    protected void showCallDialog() {
+
+        // String syncConnPref = sharedPreferences.getString("phone_select_sms", "default");
+        // Snackbar.make(getCurrentFocus(), syncConnPref, Snackbar.LENGTH_LONG).setAction("Action", null).show();
+
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
+        alertBuilder.setMessage(getString(R.string.make_call_confirma_string));
+        alertBuilder.setCancelable(false);
+        alertBuilder.setNegativeButton(getString(R.string.cancel_string), null);
+        alertBuilder.setPositiveButton(getString(R.string.call_string), new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick (DialogInterface dialogInterface, int i) {
+
+                makeCall("0623141536");
+            }
+        });
+
+        alertBuilder.create().show();
+
+        /*
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setCancelable(false);
+
+        Drawable drawable = ContextCompat.getDrawable(MainActivity.this, R.drawable.ic_phone_black_24p);
+        int color = ContextCompat.getColor(MainActivity.this, R.color.material_teal500);
+        drawable.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
+
+        builder.setIcon(drawable);
+        builder.setTitle("  " + getString(R.string.make_call_string));
+
+        final CharSequence[] callLsit = new CharSequence[5];
+
+        for (int i = 0; i < callLsit.length; i++) {
+
+            callLsit[i] = getString(R.string.number_string) + " " + String.valueOf(i + 1);
+        }
+
+        builder.setSingleChoiceItems(callLsit, 0, new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick (DialogInterface dialog, int which) {
+
+            }
+        });
+
+        builder.setPositiveButton(getString(R.string.call_string), new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick (DialogInterface dialog, int id) {
+
+            }
+        });
+
+        builder.setNegativeButton(getString(R.string.cancel_string), null);
+
+        AlertDialog alertDlg = builder.create();
+        alertDlg.show();
+        */
+    }
+
+    protected void showMarkerEditDialog (final Marker marker, final boolean creation) {
+
+        final CustomMarker customMarker = markerManager.getMarker(marker);
+
+        if (customMarker == null) return;
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        LayoutInflater inflater = this.getLayoutInflater();
+        builder.setView(inflater.inflate(R.layout.marker_edit_dialog, null));
+
+        builder.setPositiveButton("OK", null);
+        builder.setNegativeButton(getString(R.string.cancel_string), null);
+
+        if (!creation) builder.setNeutralButton(getString(R.string.delete_string), null);
+
+        final AlertDialog alertDlg = builder.create();
+
+        if (creation) alertDlg.setCancelable(false);
+
+        alertDlg.setOnShowListener(new DialogInterface.OnShowListener() {
+
+            @Override
+            public void onShow (DialogInterface dialogInterface) {
+
+                EditText editTitle = (EditText) alertDlg.findViewById(R.id.marker_title);
+                CheckBox alarmCheckBox = (CheckBox) alertDlg.findViewById(R.id.marker_alarm_checkbox);
+                Spinner markerTypeSpinner = (Spinner) alertDlg.findViewById(R.id.marker_type_spinner);
+                final Spinner markerPerimeterSpinner = (Spinner) alertDlg.findViewById(R.id.marker_perimeter_spinner);
+                markerPerimeterSpinner.setVisibility(View.GONE);
+
+                final String titleBefore = customMarker.getTitle();
+                editTitle.setText(titleBefore);
+
+                if (!creation) {
+
+                    if (customMarker.getType() == CustomMarker.MARKER_INFO) {
+
+                        markerTypeSpinner.setSelection(0);
+                    }
+                    else {
+
+                        markerTypeSpinner.setSelection(1);
+                    }
+
+                    if (customMarker.isAlertEnabled()) {
+
+                        alarmCheckBox.setChecked(true);
+                        markerPerimeterSpinner.setVisibility(View.VISIBLE);
+                    }
+                    else {
+
+                        alarmCheckBox.setChecked(false);
+                        markerPerimeterSpinner.setVisibility(View.GONE);
+                    }
+
+                    markerPerimeterSpinner.setSelection(customMarker.getPerimeterId());
+                }
+
+                markerTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+                    @Override
+                    public void onItemSelected (AdapterView<?> parent, View view, int position, long id) {
+
+                        if (position == 0) {
+
+                            customMarker.setType(CustomMarker.MARKER_INFO);
+                        }
+                        else {
+
+                            customMarker.setType(CustomMarker.MARKER_DANGER);
+                        }
+                    }
+
+                    @Override
+                    public void onNothingSelected (AdapterView<?> parent) {}
+                });
+
+                markerPerimeterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+                    @Override
+                    public void onItemSelected (AdapterView<?> parent, View view, int position, long id) {
+
+                        customMarker.setPerimeterById(position);
+                    }
+
+                    @Override
+                    public void onNothingSelected (AdapterView<?> parent) {}
+                });
+
+                alarmCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+                    @Override
+                    public void onCheckedChanged (CompoundButton compoundButton, boolean b) {
+
+                        if (b) {
+
+                            customMarker.enableAlert(true);
+                            markerPerimeterSpinner.setVisibility(View.VISIBLE);
+                        }
+                        else {
+
+                            customMarker.enableAlert(false);
+                            markerPerimeterSpinner.setVisibility(View.GONE);
+                        }
+                    }
+                });
+
+                Button btnOk = alertDlg.getButton(AlertDialog.BUTTON_POSITIVE);
+                Button btnCancel = alertDlg.getButton(AlertDialog.BUTTON_NEGATIVE);
+                Button btnDelete = alertDlg.getButton(AlertDialog.BUTTON_NEUTRAL);
+
+                btnOk.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick (View view) {
+
+                        EditText editTitle = (EditText) alertDlg.findViewById(R.id.marker_title);
+
+                        assert editTitle != null;
+                        String currTitle = editTitle.getText().toString();
+
+                        if (titleBefore != currTitle) {
+
+                            if (currTitle.length() > 0) {
+
+                                customMarker.setTitle(currTitle);
+
+                                // Refresh marker's title
+                                marker.hideInfoWindow();
+                                marker.showInfoWindow();
+
+                                alertDlg.dismiss();
+                            }
+                            else {
+
+                                editTitle.setError(getString(R.string.marker_tittle_invalid_string));
+                            }
+                        }
+                    }
+                });
+
+                btnCancel.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick (View view) {
+
+                        if (creation) {
+
+                            markerManager.remove(customMarker);
+                            marker.remove();
+                        }
+
+                        alertDlg.dismiss();
+                    }
+                });
+
+                btnDelete.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick (View view) {
+
+                        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
+                        alertBuilder.setMessage(getString(R.string.validate_marker_delete_string));
+
+                        alertBuilder.setNegativeButton(getString(R.string.cancel_string), null);
+                        alertBuilder.setPositiveButton(getString(R.string.delete_string), new DialogInterface.OnClickListener() {
+
+                            @Override
+                            public void onClick (DialogInterface dialogInterface, int i) {
+
+                                markerManager.remove(customMarker);
+                                marker.remove();
+                                alertDlg.dismiss();
+                            }
+                        });
+
+                        alertBuilder.create().show();
+                    }
+                });
+            }
+        });
+
+        alertDlg.show();
     }
 
     private void changeViewColorFilter (View view, int color) {
@@ -766,231 +1037,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         vibrator.vibrate(ms);
     }
 
-    protected void showCallDialog() {
-
-        // String syncConnPref = sharedPreferences.getString("phone_select_sms", "default");
-        // Snackbar.make(getCurrentFocus(), syncConnPref, Snackbar.LENGTH_LONG).setAction("Action", null).show();
-
-        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
-        alertBuilder.setMessage(getString(R.string.make_call_confirma_string));
-        alertBuilder.setCancelable(false);
-        alertBuilder.setNegativeButton(getString(R.string.cancel_string), null);
-        alertBuilder.setPositiveButton(getString(R.string.call_string), new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick (DialogInterface dialogInterface, int i) {
-
-                makeCall("0623141536");
-            }
-        });
-
-        alertBuilder.create().show();
-
-        /*
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setCancelable(false);
-
-        Drawable drawable = ContextCompat.getDrawable(MainActivity.this, R.drawable.ic_phone_black_24p);
-        int color = ContextCompat.getColor(MainActivity.this, R.color.material_teal500);
-        drawable.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
-
-        builder.setIcon(drawable);
-        builder.setTitle("  " + getString(R.string.make_call_string));
-
-        final CharSequence[] callLsit = new CharSequence[5];
-
-        for (int i = 0; i < callLsit.length; i++) {
-
-            callLsit[i] = getString(R.string.number_string) + " " + String.valueOf(i + 1);
-        }
-
-        builder.setSingleChoiceItems(callLsit, 0, new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick (DialogInterface dialog, int which) {
-
-            }
-        });
-
-        builder.setPositiveButton(getString(R.string.call_string), new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick (DialogInterface dialog, int id) {
-
-            }
-        });
-
-        builder.setNegativeButton(getString(R.string.cancel_string), null);
-
-        AlertDialog alertDlg = builder.create();
-        alertDlg.show();
-        */
-    }
-
-    protected void showMarkerEditDialog (final Marker marker, final boolean creation) {
-
-        final CustomMarker customMarker = markerManager.getMarker(marker);
-
-        if (customMarker == null) {
-
-            return;
-        }
-
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        LayoutInflater inflater = this.getLayoutInflater();
-
-        builder.setView(inflater.inflate(R.layout.marker_edit_dialog, null));
-        builder.setPositiveButton("OK", null);
-        builder.setNegativeButton(getString(R.string.cancel_string), null);
-
-        final AlertDialog alertDlg = builder.create();
-
-        if (creation) {
-
-            alertDlg.setTitle(getString(R.string.marker_create_string));
-            alertDlg.setCancelable(false);
-        }
-        else {
-
-            alertDlg.setTitle(getString(R.string.marker_edit_string));
-        }
-
-        alertDlg.setOnShowListener(new DialogInterface.OnShowListener() {
-
-            @Override
-            public void onShow (DialogInterface dialogInterface) {
-
-                // MARKER DELETE BUTTON
-                Button delMarkerButton = (Button) alertDlg.findViewById(R.id.marker_delete_button);
-
-                assert delMarkerButton != null;
-
-                if (creation) {
-
-                    delMarkerButton.setEnabled(false);
-                    delMarkerButton.setVisibility(View.GONE);
-                }
-
-                delMarkerButton.setOnClickListener(new View.OnClickListener() {
-
-                    @Override
-                    public void onClick (View view) {
-
-                        // Show confirmation dialog
-                        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
-                        alertBuilder.setMessage(getString(R.string.validate_marker_delete_string));
-
-                        alertBuilder.setNegativeButton(getString(R.string.cancel_string), null);
-                        alertBuilder.setPositiveButton(getString(R.string.delete_string), new DialogInterface.OnClickListener() {
-
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-
-                                markerManager.remove(customMarker);
-                                marker.remove();
-                                alertDlg.dismiss();
-                            }
-                        });
-
-                        alertBuilder.create().show();
-                    }
-                });
-
-                // MARKER TYPE SPINNER
-                Spinner markerTypeSpinner = (Spinner) alertDlg.findViewById(R.id.marker_type_spinner);
-                assert markerTypeSpinner != null;
-
-                if (!creation) {
-
-                    if (customMarker.getType() == CustomMarker.MARKER_INFO) {
-
-                        markerTypeSpinner.setSelection(0);
-                    }
-                    else {
-
-                        markerTypeSpinner.setSelection(1);
-                    }
-                }
-
-                markerTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-
-                    @Override
-                    public void onItemSelected (AdapterView<?> parent, View view, int position, long id) {
-
-                        if (position == 0) {
-
-                            customMarker.setType(CustomMarker.MARKER_INFO);
-                        }
-                        else {
-
-                            customMarker.setType(CustomMarker.MARKER_DANGER);
-                        }
-                    }
-
-                    @Override
-                    public void onNothingSelected (AdapterView<?> parent) {}
-                });
-
-                // MARKER TITLE EDIT
-                EditText editTitle = (EditText) alertDlg.findViewById(R.id.marker_title);
-
-                final String titleBefore = customMarker.getTitle();
-                assert editTitle != null;
-                editTitle.setText(titleBefore);
-
-                Button btnOk = alertDlg.getButton(AlertDialog.BUTTON_POSITIVE);
-                Button btnCancel = alertDlg.getButton(AlertDialog.BUTTON_NEGATIVE);
-
-                btnOk.setOnClickListener(new View.OnClickListener() {
-
-                    @Override
-                    public void onClick (View view) {
-
-                        EditText editTitle = (EditText) alertDlg.findViewById(R.id.marker_title);
-
-                        assert editTitle != null;
-                        String currTitle = editTitle.getText().toString();
-
-                        if (titleBefore != currTitle) {
-
-                            if (currTitle.length() > 0) {
-
-                                customMarker.setTitle(currTitle);
-
-                                // Refresh marker's title
-                                marker.hideInfoWindow();
-                                marker.showInfoWindow();
-
-                                alertDlg.dismiss();
-                            }
-                            else {
-
-                                editTitle.setError(getString(R.string.marker_tittle_invalid_string));
-                            }
-                        }
-                    }
-                });
-
-                btnCancel.setOnClickListener(new View.OnClickListener() {
-
-                    @Override
-                    public void onClick (View view) {
-
-                        if (creation) {
-
-                            markerManager.remove(customMarker);
-                            marker.remove();
-                        }
-
-                        alertDlg.dismiss();
-                    }
-                });
-            }
-        });
-
-        alertDlg.show();
-    }
-
     private void setMapListeners() {
 
         // MAP SHORT CLICK
@@ -1006,10 +1052,23 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         googleMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
 
             @Override
-            public void onMapLongClick (LatLng latLng) {
+            public void onMapLongClick (final LatLng latLng) {
 
-                Marker marker = markerManager.addMarker("", latLng, CustomMarker.MARKER_INFO);
-                showMarkerEditDialog(marker, true);
+                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
+                alertBuilder.setMessage(getString(R.string.validate_marker_create_string));
+
+                alertBuilder.setNegativeButton(getString(R.string.cancel_string), null);
+                alertBuilder.setPositiveButton(getString(R.string.create_string), new DialogInterface.OnClickListener() {
+
+                    @Override
+                    public void onClick (DialogInterface dialogInterface, int i) {
+
+                        Marker marker = markerManager.addMarker("", latLng, CustomMarker.MARKER_INFO);
+                        showMarkerEditDialog(marker, true);
+                    }
+                });
+
+                alertBuilder.create().show();
             }
         });
 
@@ -1032,7 +1091,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 CustomMarker customMarker = markerManager.getMarker(marker);
 
-                if (customMarker.editable()) {
+                if (customMarker.isEditable()) {
 
                     showMarkerEditDialog(marker, false);
                 }
@@ -1083,9 +1142,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 }
 
-                speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_1, posManager.getInstantSpeed());
-
                 if (globalStatus == STATUS_t.CAR_MOVING) {
+
+                    speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_1, posManager.getInstantSpeed());
 
                     googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_MOVE).bearing(0).tilt(30).build();
@@ -1100,13 +1159,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onPositionUpdate (Location prevLoc, Location currLoc) {
 
-                if (globalStatus == STATUS_t.CAR_MOVING) {
+                // if (globalStatus != STATUS_t.CAR_STOPPED) {}
 
-                    LatLng prevPos = new LatLng(prevLoc.getLatitude(), prevLoc.getLongitude());
-                    LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());
+                LatLng prevPos = new LatLng(prevLoc.getLatitude(), prevLoc.getLongitude());
+                LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());
 
-                    drawLine(prevPos, currPos);
-                }
+                drawLine(prevPos, currPos);
             }
         });
     }
@@ -1201,9 +1259,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 googleMap.setMapType(mapType);
                 */
-
-                beep(5);
-                vibrate(5);
             }
         });
 
@@ -1214,18 +1269,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View v) {
 
-                if (posManager.isTrackingOn()) {
+                if (posManager.isUpdatesEnabled()) {
 
-                    posManager.setTrackingOn(false);
+                    posManager.enableUpdates(false);
 
                     menuButton1.setImageResource(R.drawable.ic_play);
                     menuButton1.setLabelText(getString(R.string.enable_tracking_string));
                 }
                 else {
 
-                    posManager.setTrackingOn(true);
-                    menuButton1.setLabelText(getString(R.string.disable_tracking_string));
+                    posManager.enableUpdates(true);
+
                     menuButton1.setImageResource(R.drawable.ic_stop);
+                    menuButton1.setLabelText(getString(R.string.disable_tracking_string));
                 }
             }
         });

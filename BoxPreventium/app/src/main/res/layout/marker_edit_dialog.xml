@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="wrap_content"
@@ -17,32 +18,41 @@
         android:id="@+id/marker_title"
         android:inputType="text"
         android:hint="@string/new_marker_string"
+        android:layout_weight="1"
+        android:layout_height="0dp"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:layout_marginLeft="30dp"
-        android:layout_marginRight="30dp"
-        android:layout_marginBottom="4dp" />
+        android:layout_marginRight="30dp" />
 
     <Spinner
-        android:id="@+id/marker_type_spinner"
-        android:entries="@array/marker_types"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+       android:id="@+id/marker_type_spinner"
+       android:entries="@array/marker_types"
+       android:layout_weight="1"
+       android:layout_height="0dp"
+       android:layout_width="fill_parent"
+       android:layout_marginTop="12dp"
+       android:layout_marginLeft="30dp"
+       android:layout_marginRight="30dp" />
+
+    <CheckBox
+        android:id="@+id/marker_alarm_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_weight="1"
+        android:layout_height="0dp"
         android:layout_marginTop="12dp"
         android:layout_marginLeft="30dp"
-        android:layout_marginRight="30dp"
-        android:layout_marginBottom="4dp" />
+        android:text="Alarm" />
 
-    <Button
-        style="@style/Widget.AppCompat.Button.Colored"
-        android:id="@+id/marker_delete_button"
+    <Spinner
+        android:id="@+id/marker_perimeter_spinner"
+        android:entries="@array/marker_perimeters"
+        android:layout_weight="1"
+        android:layout_height="0dp"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginLeft="@dimen/marker_delete_button_margin"
-        android:layout_marginRight="@dimen/marker_delete_button_margin"
-        android:backgroundTint="@color/colorAppRed"
-        android:text="@string/delete_string" />
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp" />
 
 </LinearLayout>

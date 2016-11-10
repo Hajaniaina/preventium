@@ -27,6 +27,8 @@
     <!-- Main GUI -->
 
     <string name="network_string">Network</string>
+    <string name="create_string">Create</string>
+    <string name="activate_string">Activate</string>
     <string name="delete_string">Delete</string>
     <string name="cancel_string">Cancel</string>
     <string name="marker_tittle_invalid_string">Invalid name</string>
@@ -36,6 +38,7 @@
     <string name="start_marker_string">Start</string>
     <string name="finish_marker_string">Finish</string>
     <string name="marker_snippet_string">Tap here to edit this marker</string>
+    <string name="validate_marker_create_string">Create a marker at this location?</string>
     <string name="validate_marker_delete_string">Delete this marker?</string>
     <string name="call_string">Call</string>
     <string name="number_string">Number</string>
@@ -44,7 +47,8 @@
     <string name="pin_error_string">Wrong PIN</string>
     <string name="permissions_enable_string">This application need all permissions to be enabled</string>
     <string name="location_settings_string">Location settings</string>
-    <string name="location_rationale_string">Location service is disabled. To continue please activate High Precision mode in the settings menu</string>
+    <string name="location_rationale_string">Location service is disabled. Activate High Precision mode in the Android settings to continue</string>
+    <string name="bluetooth_rationale_string">Bluetooth is disabled. Activate it to continue</string>
     <string name="permissions_string">Permissions</string>
     <string name="force_permissions_string">To continue please activate all permissions in the settings menu</string>
     <string name="permissions_retry_string">Retry</string>
@@ -52,15 +56,19 @@
     <string name="scan_qr_string">Scan QR code</string>
     <string name="enable_tracking_string">Enable tracking</string>
     <string name="disable_tracking_string">Disable tracking</string>
-
-    <!-- Progress -->
-
     <string name="progress_loading_string">Loading...</string>
     <string name="progress_map_string">Loading Google Maps</string>
     <string name="progress_location_string">Waiting for GPS data</string>
     <string name="progress_cfg_string">Downloading CFG data</string>
     <string name="progress_epc_string">Downloading EPC data</string>
     <string name="progress_ready_string">Ready</string>
+
+    <string-array name="marker_perimeters">
+        <item>50m</item>
+        <item>100m</item>
+        <item>300m</item>
+        <item>500m</item>
+    </string-array>
 
     <string-array name="marker_types">
         <item>INFO</item>
