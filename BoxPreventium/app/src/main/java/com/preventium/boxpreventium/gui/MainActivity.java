@@ -416,7 +416,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onCustomMarkerDataListGet() {
 
-        appManager.setCustomMarkerDataList(markerManager.getUserMarkersData());
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                appManager.setCustomMarkerDataList(markerManager.getUserMarkersData());
+            }
+        });
     }
 
     @Override

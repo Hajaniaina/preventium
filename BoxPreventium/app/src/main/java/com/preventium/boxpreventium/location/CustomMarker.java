@@ -245,7 +245,7 @@ public class CustomMarker {
 
     public String getTitle() {
 
-        return title;;
+        return title;
     }
 
     public void setIcon (BitmapDescriptor bitmap) {
