@@ -1,7 +1,6 @@
 package com.preventium.boxpreventium.manager;
 
 import android.content.Context;
-import android.content.Intent;
 import android.location.Location;
 import android.util.Log;
 
@@ -11,6 +10,7 @@ import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.MOVING_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
+import com.preventium.boxpreventium.gui.CustomMarker;
 import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
@@ -18,7 +18,6 @@ import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.ForceSeuil;
 import com.preventium.boxpreventium.server.EPC.ReaderEPCFile;
-import com.preventium.boxpreventium.server.FilesDownloader;
 import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.ThreadDefault;
@@ -55,11 +54,12 @@ public class AppManager extends ThreadDefault
 
     public interface AppManagerListener {
         void onNumberOfBoxChanged( int nb );
-        void onChronoRideChanged( String txt );
+        void onDrivingTimeChanged(String txt );
         void onForceChanged( FORCE_t type, LEVEL_t level );
         void onDebugLog(String txt);
         void onStatusChanged(STATUS_t status);
         void onDriveScoreChanged( float score );
+        void onCustomMarkerDataListGet();
     }
 
     private Context ctx = null;
@@ -77,6 +77,8 @@ public class AppManager extends ThreadDefault
     ForceSeuil seuil_last_x = null;
     ForceSeuil seuil_last_y = null;
 
+    private boolean customMarkerList_Received = false;
+    private ArrayList<CustomMarker> customMarkerList = null;
 
     private MOVING_t mov_t = MOVING_t.STP;
     private MOVING_t mov_t_last = MOVING_t.UNKNOW;
@@ -88,12 +90,15 @@ public class AppManager extends ThreadDefault
     private long alertX_add_at = 0;
     private long alertY_add_at = 0;
     private long alertPos_add_at = 0;
+    private long try_send_eca_at  = 0;
 
 
     private List<Location> locations = new ArrayList<Location>();
 
     private Chrono chronoRide = new Chrono();
     private String chronoRideTxt = "";
+
+    private Chrono chrono_ready_to_start = Chrono.newInstance();
 
     public AppManager(Context ctx, AppManagerListener listener) {
         super(null);
@@ -104,170 +109,60 @@ public class AppManager extends ThreadDefault
         this.fileSender = new FilesSender(ctx);
     }
 
-    public boolean startThread(){
-        boolean ret = false;
-        if( !isRunning()  ) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    AppManager.this.run();
-                }
-            }).start();
-            ret = true;
+    private void switchON( boolean on ){
+        if( on ) {
+            if (!isRunning()) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        AppManager.this.run();
+                    }
+                }).start();
+            }
+        } else {
+            setStop();
         }
-        return ret;
+
     }
 
-    public void stopThread(){setStop();}
-
-    public void setLocation( Location location ) {
-        if( location != null ) {
-            startThread();
-            //addLog("NEW POS: " + location.getLatitude() + " " + location.getLongitude() );
-            this.locations.add(0, location);
-            while (this.locations.size() > 10) this.locations.remove(this.locations.size() - 1);
-        }
-    }
-
-    public void on_constant_speed(){ modules.on_constant_speed(); }
-
-    public void on_acceleration(){ modules.on_acceleration(); }
 
     @Override
     public void myRun() throws InterruptedException {
         super.myRun();
 
         setLog( "AppManager begin...");
-mov_t_last = MOVING_t.UNKNOW;
-mov_t = MOVING_t.UNKNOW;
 
-        STATUS_t status = STATUS_t.CAR_STOPPED;
-        if( listener != null ){
-            listener.onStatusChanged( status );
-            listener.onDriveScoreChanged( 0f );
-        }
+        download_cfg();
+        download_epc();
+        STATUS_t status = first_init();
+        upload_eca(true);
 
-        status = STATUS_t.GETTING_CFG;
-        if( listener != null )listener.onStatusChanged( status );
-        boolean cfg = getting_cfg();
-        while ( isRunning() && !cfg  ){
-            sleep(1000);
-            cfg = getting_cfg();
-        }
+        while( isRunning() ) {
+            modules.setActive( true );
+            sleep(500);
+            upload_eca(false);
+            change_driving_time();
+            calc_movements();
 
-        status = STATUS_t.GETTING_EPC;
-        if( listener != null )listener.onStatusChanged( status );
-        boolean epc = getting_epc();
-        while( isRunning() && !epc ) {
-            sleep(1000);
-            epc = getting_epc();
-        }
-
-        status = STATUS_t.CAR_PAUSING;  // For update UI correctly
-        if( listener != null )listener.onStatusChanged( status );
-        status = STATUS_t.CAR_STOPPED;
-        if( listener != null )listener.onStatusChanged( status );
-
-        if( isRunning() ) {
-//            database.clearAll();
-            engine_t = ENGINE_t.UNKNOW;
-            chronoRideTxt = "0:00";
-            chronoRide = new Chrono();
-
-            Chrono mov_t_chrono = new Chrono();
-
-            Chrono chrono_sender = new Chrono();
-            chrono_sender.start();
-
-            while (isRunning()) {
-
-                updateRideTime();
-
-                modules.setActive(true);
-
-                if( chrono_sender.getMinutes() > 1 )
-                {
-                    fileSender.startThread();
-                    chrono_sender.start();
-                }
-                sleep(500);
-
-                calculateMovements();
-                if( status == STATUS_t.CAR_STOPPED
-                        || status == STATUS_t.CAR_MOVING || status == STATUS_t.CAR_PAUSING ) {
-
-                    // MISE A JOUR DU CHRONO
-                    updateRideTime();
-
-                    switch ( status ) {
-                        case CAR_STOPPED: {
-                            clear_force_ui();
-                            boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 0
-                                    && mov_t_last != MOVING_t.STP
-                                    && mov_t_last != MOVING_t.UNKNOW /*&& engine_t == ENGINE_t.ON*/);
-                            if (!ready_to_started) {
-                                mov_t_chrono.stop();
-                            } else {
-                                if (!mov_t_chrono.isStarted()) mov_t_chrono.start();
-                                if (mov_t_chrono.getSeconds() > SECS_TO_SET_PARCOURS_START) {
-                                    // ....
-                                    cotation_update_at = 0;
-                                    alertX_add_at = 0;
-                                    alertY_add_at = 0;
-                                    alertPos_add_at = 0;
-                                    readerEPCFile.loadFromApp(ctx);
-//                            database.clearAll();
-                                    addLog("START PARCOURS");
-                                    status = STATUS_t.CAR_MOVING;
-                                    if (listener != null) listener.onStatusChanged(status);
-                                    parcour_id = System.currentTimeMillis();
-                                    // MISE A JOUR DU CHRONO
-                                    chronoRide.start();
-                                    updateRideTime();
-                                }
-                            }
-                        } break;
-                        case CAR_MOVING: {
-                            prepare_eca();
-                            update_parcour_cotation();
-                            // SET PAUSING
-                            if (mov_t_last == MOVING_t.STP
-                                    && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE) {
-                                status = STATUS_t.CAR_PAUSING;
-                                if (listener != null) listener.onStatusChanged(status);
-                                addLog("PAUSE PARCOURS");
-                                clear_force_ui();
-                            }
-                        } break;
-                        case CAR_PAUSING: {
-                            // SET STOPPED
-                            if (mov_t_last == MOVING_t.STP
-                                    && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED) {
-                                status = STATUS_t.CAR_STOPPED;
-                                chronoRide.stop();
-                                if (listener != null) listener.onStatusChanged(status);
-                                addLog("STOP PARCOURS");
-                                clear_force_ui();
-//database.generate_eca_file();
-                            }
-                            // SET RESUME
-                            else if (mov_t_last != MOVING_t.STP
-                                    && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_RESUME) {
-                                status = STATUS_t.CAR_MOVING;
-                                if (listener != null) listener.onStatusChanged(status);
-                                addLog("RESUME PARCOURS");
-                                clear_force_ui();
-                            }
-                        } break;
-                    }
-                }
+            switch ( status ) {
+                case GETTING_CFG:
+                case GETTING_EPC:
+                    break;
+                case CAR_STOPPED:
+                    status = on_stopped();
+                    break;
+                case CAR_MOVING:
+                    status = on_moved();
+                    break;
+                case CAR_PAUSING:
+                    status = on_paused();
+                    break;
             }
-        }
 
-        modules.setActive( false );
+        }
+        modules.setActive(false);
 
         addLog( "AppManager end.");
-
     }
 
     // HANDLER BOX
@@ -302,36 +197,89 @@ mov_t = MOVING_t.UNKNOW;
 
     // PRIVATE
 
-    private boolean getting_cfg() throws InterruptedException {
-        addLog( "Trying to prepare cfg_file..." );
-        boolean cfg_file_ready = false;
-        if( isRunning() ) {
-            while ( isRunning() && !cfg_file_ready ) {
-                ReaderCFGFile reader_cfg = new ReaderCFGFile();
-                FTPConfig config = new FTPConfig("ftp.ikalogic.com","ikalogic","Tecteca1",21);
-                FTPClientIO ftp = new FTPClientIO();
-                File folder = new File(ctx.getFilesDir(), "");
-                if( ftp.ftpConnect(config, 5000) ) {
+    /// ============================================================================================
+    /// UI
+    /// ============================================================================================
+    private STATUS_t first_init(){
+        mov_t_last = MOVING_t.UNKNOW;
+        mov_t = MOVING_t.UNKNOW;
+        engine_t = ENGINE_t.UNKNOW;
+        chronoRideTxt = "0:00";
+        chronoRide = Chrono.newInstance();
+        if( listener != null ){
+            // For update UI correctly
+            listener.onDebugLog("");
+            listener.onDrivingTimeChanged(chronoRideTxt);
+            listener.onDriveScoreChanged( 0f );
+            listener.onStatusChanged( STATUS_t.CAR_PAUSING );
+            listener.onStatusChanged( STATUS_t.CAR_STOPPED );
+        }
+        parcour_id = 0;
+        cotation_update_at = 0;
+        alertX_add_at = 0;
+        alertY_add_at = 0;
+        alertPos_add_at = 0;
+        try_send_eca_at  = 0;
+        return STATUS_t.CAR_STOPPED;
+    }
 
-                    boolean exist_server_cfg = false;
-                    FTPFile[] files = ftp.ftpPrintFiles();
-                    String srcFileName = ComonUtils.getIMEInumber(ctx) + ".CFG";
-                    for ( FTPFile f : files ) {
-                        if( f.isFile() && f.getName().equals(srcFileName) ){
-                            exist_server_cfg = true;
-                            break;
-                        }
+    private void change_driving_time() {
+        String txt = String.format(Locale.getDefault(),"%d:%02d",(int)chronoRide.getHours(),(int)chronoRide.getMinutes());
+        if( !chronoRideTxt.equals(txt) ) {
+            if( listener != null ) listener.onDrivingTimeChanged( txt );
+            chronoRideTxt = txt;
+        }
+    }
+
+    /// ============================================================================================
+    /// .CFG
+    /// ============================================================================================
+
+    // Downloading .cfg file if is needed
+    private boolean download_cfg() throws InterruptedException {
+        boolean cfg = false;
+
+        if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
+
+        File folder = new File(ctx.getFilesDir(), "");
+        ReaderCFGFile reader = new ReaderCFGFile();
+        FTPConfig config = new FTPConfig("ftp.ikalogic.com","ikalogic","Tecteca1",21);
+        FTPClientIO ftp = new FTPClientIO();
+
+        while ( isRunning() && !cfg  ){
+            if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
+
+            // Trying to connect to FTP server...
+            if( ftp.ftpConnect(config, 5000) ) {
+
+                // Checking if .CFG file is in FTP server ?
+                boolean exist_server_cfg = false;
+                boolean exist_server_ack = false;
+                String srcFileName = ComonUtils.getIMEInumber(ctx) + ".CFG";
+                String srcAckName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
+                FTPFile[] files = ftp.ftpPrintFiles();
+                for ( FTPFile f : files ) {
+                    if( f.isFile() ) {
+                        if (f.getName().equals(srcFileName)) exist_server_cfg = true;
+                        if (f.getName().equals(srcAckName)) exist_server_ack = true;
                     }
-                    if( exist_server_cfg ){
+                    if( exist_server_ack && exist_server_cfg ) break;
+                }
+                // If .CFG file exist in the FTP server
+                cfg = ( exist_server_ack && reader.loadFromApp(ctx) );
+                if( !cfg ) {
+                    if (exist_server_cfg) {
                         // Create folder if not exist
                         if (!folder.exists())
-                            if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
-                        if( folder.exists() ) {
+                            if (!folder.mkdirs())
+                                Log.w(TAG, "Error while trying to create new folder!");
+                        if (folder.exists()) {
+                            // Trying to download .CFG file...
                             String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
-                            if( ftp.ftpDownload(srcFileName, desFileName) ) {
-                                cfg_file_ready = reader_cfg.read(desFileName);
-                                if( cfg_file_ready ) {
-                                    reader_cfg.applyToApp(ctx);
+                            if (ftp.ftpDownload(srcFileName, desFileName)) {
+                                cfg = reader.read(desFileName);
+                                if (cfg) {
+                                    reader.applyToApp(ctx);
                                     // envoi acknowledge
                                     try {
                                         File temp = File.createTempFile("temp-file-name", ".tmp");
@@ -341,124 +289,173 @@ mov_t = MOVING_t.UNKNOW;
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                     }
+                                    new File(desFileName).delete();
                                 }
-                                new File(desFileName).delete();
                             }
                         }
                     } else {
-                        cfg_file_ready = reader_cfg.loadFromApp(ctx);
+                        cfg = reader.loadFromApp(ctx);
                     }
-
-                    ftp.ftpDisconnect();
-
-                    if( isRunning() && !cfg_file_ready ) sleep(1000);
                 }
+                // Disconnect from FTP server.
+                ftp.ftpDisconnect();
             }
+            if( isRunning() && !cfg ) sleep(1000);
         }
-        addLog( "CFG is ready: " + cfg_file_ready);
-        return cfg_file_ready;
+        return cfg;
     }
 
-    private boolean getting_epc(){
-        addLog( "Trying to prepare epc_file..." );
-        boolean epc_file_ready = false;
-        if( isRunning() ) {
-            ReaderEPCFile reader_epc = new ReaderEPCFile();
-            FTPConfig config = DataCFG.getFptConfig(ctx);
-            FTPClientIO ftp = new FTPClientIO();
-            File folder = new File(ctx.getFilesDir(), "");
-            if( config != null && ftp.ftpConnect(config, 5000) ) {
+    /// ============================================================================================
+    /// .EPC
+    /// ============================================================================================
 
+    // Downloading .EPC files if is needed
+    private boolean download_epc() throws InterruptedException {
+        boolean ready = false;
+
+        if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
+
+        File folder = new File(ctx.getFilesDir(), "");
+        ReaderEPCFile reader = new ReaderEPCFile();
+        FTPConfig config = DataCFG.getFptConfig(ctx);
+        FTPClientIO ftp = new FTPClientIO();
+
+        while( isRunning() && !ready ) {
+            if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
+
+            // Trying to connect to FTP server...
+            if( ftp.ftpConnect(config, 5000) ) {
+
+                // Changing working directory if needed
                 boolean change_directory = true;
                 if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
                     change_directory = ftp.makeDirectory(config.getWorkDirectory());
 
-                boolean error = false;
-                if (!change_directory) {
-                    error = true;
+                if( !change_directory ) {
                     Log.w(TAG, "Error while trying to change working directory!");
                 } else {
+
+                    boolean epc;
                     boolean exist_server_epc = false;
+                    boolean exist_server_ack = false;
                     FTPFile[] files = ftp.ftpPrintFiles();
-                    if( files != null ) {
-                        String srcFileName = "";
-                        String desFileName = "";
-                        int i = 1;
-                        while (i <= 5 && isRunning()) {
+                    String srcFileName = "";
+                    String srcAckName = "";
+                    String desFileName = "";
+                    int i = 1;
+                    while( i <= 5 && isRunning() ) {
 
-                            srcFileName = reader_epc.getEPCFileName(ctx, i, false);
+                        exist_server_epc = false;
+                        exist_server_ack = false;
 
-                            exist_server_epc = false;
-                            for (FTPFile f : files) {
-                                if (f.isFile() && f.getName().equals(srcFileName)) {
-                                    exist_server_epc = true;
-                                    break;
-                                }
+                        // Checking if .EPC file is in FTP server ?
+                        srcFileName = reader.getEPCFileName(ctx, i, false);
+                        srcAckName = reader.getEPCFileName(ctx, i, true);
+                        for ( FTPFile f : files ) {
+                            if( f.isFile() ) {
+                                if (f.getName().equals(srcFileName)) exist_server_epc = true;
+                                if (f.getName().equals(srcAckName)) exist_server_ack = true;
                             }
+                            if( exist_server_ack && exist_server_epc ) break;
+                        }
 
+                        // If .EPC file exist in the FTP server
+                        epc = ( exist_server_ack && reader.loadFromApp(ctx,i) );
+                        if( !epc ) {
                             if (exist_server_epc) {
                                 // Create folder if not exist
                                 if (!folder.exists())
                                     if (!folder.mkdirs())
                                         Log.w(TAG, "Error while trying to create new folder!");
                                 if (folder.exists()) {
-                                    desFileName = reader_epc.getEPCFilePath(ctx, i);
+                                    // Trying to download .EPC file...
+                                    desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
                                     if (ftp.ftpDownload(srcFileName, desFileName)) {
-                                        epc_file_ready = reader_epc.read(desFileName);
-                                        if (epc_file_ready) {
-                                            if (reader_epc.applyToApp(ctx, i)) {
-                                                // envoi acknowledge
-                                                try {
-                                                    File temp = File.createTempFile("temp-file-name", ".tmp");
-                                                    String ackFileName = reader_epc.getEPCFileName(ctx, i, true);
-                                                    ftp.ftpUpload(temp.getPath(), ackFileName);
-                                                    temp.delete();
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                }
-                                            } else {
-                                                error = true;
+                                        epc = reader.read(desFileName);
+                                        if( epc ) {
+                                            reader.applyToApp(ctx,i);
+                                            // envoi acknowledge
+                                            try {
+                                                File temp = File.createTempFile("temp-file-name", ".tmp");
+                                                ftp.ftpUpload(temp.getPath(), srcAckName);
+                                                temp.delete();
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
                                             }
-                                        } else {
-                                            error = true;
+                                            new File(desFileName).delete();
                                         }
-                                        new File(desFileName).delete();
                                     }
-                                } else {
-                                    error = true;
                                 }
                             }
-
-                            i++;
+                        } else {
+                            epc = reader.loadFromApp(ctx,i);
                         }
+
+                        i++;
                     }
                 }
-                epc_file_ready = !error;
-                if (epc_file_ready) {
-                    // Counting epc files...
-                    epc_file_ready = !DataEPC.getAppEpcExist(ctx).isEmpty();
-                }
-
+                // Disconnect from FTP server.
                 ftp.ftpDisconnect();
+            }
 
-            }else{
-                Log.w(TAG, "Error while trying to connecting!");
+            ready = !DataEPC.getAppEpcExist(ctx).isEmpty();
+            if( isRunning() && !ready ) sleep(1000);
+        }
+
+        return ready;
+    }
+
+    /// ============================================================================================
+    /// .ECA
+    /// ============================================================================================
+
+    /// Uploading .ECA file if is needed
+    private boolean upload_eca( boolean now ){
+        boolean ret = false;
+        // If now is true or elapsed time > 1 minutes
+        if( now
+                || try_send_eca_at + 60000 < System.currentTimeMillis() ){
+            fileSender.startThread();
+            try_send_eca_at = System.currentTimeMillis();
+            ret = true;
+        }
+        return ret;
+    }
+
+    /// ============================================================================================
+    /// .POS (Map markers)
+    /// ============================================================================================
+
+    // Set list of map markers
+    public void setCustomMarkerDataList(ArrayList<CustomMarkerData> list){
+        customMarkerList = list;
+        customMarkerList_Received = true;
+    }
+
+    // Create .POS files (Position of map markers) and uploading to the server.
+    private void upload_custom_markers() throws InterruptedException {
+        if( listener != null ){
+            customMarkerList_Received = false;
+            customMarkerList = null;
+            listener.onCustomMarkerDataListGet();
+            Chrono chrono = Chrono.newInstance();
+            chrono.start();
+            while( chrono.getSeconds() < 5 && !customMarkerList_Received ){
+                sleep(500);
+            }
+            if( customMarkerList_Received ){
+                if( customMarkerList != null && customMarkerList.size() > 0 ){
+
+                }
             }
         }
-        addLog( "EPC is ready: " + epc_file_ready );
-        return epc_file_ready;
     }
 
-    private void updateRideTime() {
-        String txt = String.format(Locale.getDefault(),"%d:%02d",(int)chronoRide.getHours(),(int)chronoRide.getMinutes());
-        if( !chronoRideTxt.equals(txt) ) {
-            if( listener != null ) listener.onChronoRideChanged( txt );
-            chronoRideTxt = txt;
-            //if( DEBUG ) Log.d(TAG,"Chrono ride changed: " + txt );
-        }
-    }
+    /// ============================================================================================
+    /// CALCUL
+    /// ============================================================================================
 
-    private void calculateMovements(){
+    private void calc_movements(){
         this.mov_t = MOVING_t.UNKNOW;
         this.XmG = 0f;
         boolean rightRoad = false;
@@ -475,12 +472,8 @@ mov_t = MOVING_t.UNKNOW;
                 if (list.get(i).getSpeed() > speed_max) speed_max = list.get(i).getSpeed();
                 // Checking acceleration and braking
                 if (i < list.size() - 1) {
-                    if (list.get(i).getSpeed() < list.get(i + 1).getSpeed()) {
-                        acceleration = false;
-                    }
-                    if (list.get(i).getSpeed() > list.get(i + 1).getSpeed()) {
-                        freinage = false;
-                    }
+                    if (list.get(i).getSpeed() < list.get(i + 1).getSpeed())acceleration = false;
+                    if (list.get(i).getSpeed() > list.get(i + 1).getSpeed())freinage = false;
                 }
             }
             if (speed_max * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
@@ -488,18 +481,16 @@ mov_t = MOVING_t.UNKNOW;
             else if (acceleration) mov_t = MOVING_t.ACC;
             else if (freinage) mov_t = MOVING_t.BRK;
             else mov_t = MOVING_t.NCS;
-
             // CALCULATE FORCE X
             // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le g :
             // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
             // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
-            double mG = ((locations.get(0).getSpeed() - locations.get(1).getSpeed())
+            this.XmG = ((locations.get(0).getSpeed() - locations.get(1).getSpeed())
                     / (9.81 * ((locations.get(0).getTime() - locations.get(1).getTime()) * 0.001)))
                     * 1000.0;
-            this.XmG = mG;
         }
 
-        if (mov_t != mov_t_last)
+        if ( mov_t != mov_t_last)
         {
             mov_t_last_chrono.start();
             mov_chrono.start();
@@ -541,76 +532,7 @@ mov_t = MOVING_t.UNKNOW;
         }
     }
 
-    private void prepare_eca(){
-        if( locations.size() > 3 ) {
-
-            List<Location> loc = locations.subList(0,2);
-
-            boolean alertX = false;
-            boolean alertY = false;
-
-            // Read the runtime value force
-            ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
-            ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(YmG);
-
-            // Compare the runtime X value force with the prevent X value force, and add alert to ECA database
-            if( seuil_x != null ) {
-                if( !seuil_x.equals(seuil_last_x) ) seuil_chrono_x.start();
-                if( seuil_chrono_x.getSeconds() >= seuil_x.TPS ) {
-                    seuil_chrono_x.start();
-                    // If elapsed time > 2 seconds
-                    if( alertX_add_at + 2000 < System.currentTimeMillis()) {
-                        database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc.get(0), null));
-                        alertX_add_at = System.currentTimeMillis();
-                    }
-                    alertX = true;
-                }
-            }
-
-            // Compare the runtime Y value force with the prevent Y value force, and add alert to ECA database
-            if( seuil_y != null ) {
-                if( !seuil_y.equals(seuil_last_y) ) seuil_chrono_y.start();
-                if( seuil_chrono_y.getSeconds() >= seuil_y.TPS ) {
-                    seuil_chrono_y.start();
-                    // If elapsed time > 2 seconds
-                    if( alertY_add_at + 2000 < System.currentTimeMillis()) {
-                        database.addECA( parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc.get(0), null ) );
-                        alertY_add_at = System.currentTimeMillis();
-                    }
-                    alertY = true;
-                }
-            }
-
-            // Add location to ECA database
-            if( !alertX && !alertY ){
-                // If elapsed time > 2 seconds
-                if( alertPos_add_at + 2000 < System.currentTimeMillis()) {
-                    database.addECA( parcour_id, ECALine.newInstance( loc.get(0), loc.get(1) ) );
-                    alertPos_add_at = System.currentTimeMillis();
-                }
-            }
-
-            // Update ui interface
-            ForceSeuil seuil = null;
-            if( alertX && alertY ) {
-                if( seuil_x.level.getValue() > seuil_y.level.getValue() ) alertY = false;
-                else  alertX = false;
-            }
-            if( alertX ) seuil = seuil_x; else if( alertY ) seuil = seuil_y;
-            if( seuil != null ) {
-                if (seuil_ui == null || !seuil_ui.equals(seuil)) {
-                    if (listener != null) listener.onForceChanged(seuil.type, seuil.level);
-                    seuil_ui = seuil;
-                }
-            } else {
-                clear_force_ui();
-            }
-
-        }
-    }
-
-
-    private void update_parcour_cotation() {
+    private void calc_parcour_cotation() {
 
         if( listener != null ){
             // If elapsed time > 5 minutes
@@ -693,14 +615,6 @@ mov_t = MOVING_t.UNKNOW;
         }
     }
 
-    private void clear_force_ui(){
-        if( seuil_ui != null
-                && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3 ){
-            if( listener != null ) listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
-            seuil_ui = null;
-        }
-    }
-
     private boolean isRightRoad( Location location_1, Location location_2, Location location_3 ) {
         double Lat_rad_1 = location_1.getLatitude() * Math.PI / 180.0;
         double Lat_rad_2 = location_2.getLatitude() * Math.PI / 180.0;
@@ -730,6 +644,188 @@ mov_t = MOVING_t.UNKNOW;
         return ( (Math.max(A_deg_1,A_deg_2) - Math.min(A_deg_1,A_deg_2) ) < 3.0 );
     }
 
+    private void calc_eca(){
+        if( locations.size() > 3 ) {
+
+            List<Location> loc = locations.subList(0,2);
+
+            boolean alertX = false;
+            boolean alertY = false;
+
+            // Read the runtime value force
+            ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
+            ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(YmG);
+
+            // Compare the runtime X value force with the prevent X value force, and add alert to ECA database
+            if( seuil_x != null ) {
+                if( !seuil_x.equals(seuil_last_x) ) seuil_chrono_x.start();
+                if( seuil_chrono_x.getSeconds() >= seuil_x.TPS ) {
+                    seuil_chrono_x.start();
+                    // If elapsed time > 2 seconds
+                    if( alertX_add_at + 2000 < System.currentTimeMillis()) {
+                        database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc.get(0), null));
+                        alertX_add_at = System.currentTimeMillis();
+                    }
+                    alertX = true;
+                }
+            }
+
+            // Compare the runtime Y value force with the prevent Y value force, and add alert to ECA database
+            if( seuil_y != null ) {
+                if( !seuil_y.equals(seuil_last_y) ) seuil_chrono_y.start();
+                if( seuil_chrono_y.getSeconds() >= seuil_y.TPS ) {
+                    seuil_chrono_y.start();
+                    // If elapsed time > 2 seconds
+                    if( alertY_add_at + 2000 < System.currentTimeMillis()) {
+                        database.addECA( parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc.get(0), null ) );
+                        alertY_add_at = System.currentTimeMillis();
+                    }
+                    alertY = true;
+                }
+            }
+
+            // Add location to ECA database
+            if( !alertX && !alertY ){
+                // If elapsed time > 2 seconds
+                if( alertPos_add_at + 2000 < System.currentTimeMillis()) {
+                    database.addECA( parcour_id, ECALine.newInstance( loc.get(0), loc.get(1) ) );
+                    alertPos_add_at = System.currentTimeMillis();
+                }
+            }
+
+            // Update ui interface
+            ForceSeuil seuil = null;
+            if( alertX && alertY ) {
+                if( seuil_x.level.getValue() > seuil_y.level.getValue() ) alertY = false;
+                else  alertX = false;
+            }
+            if( alertX ) seuil = seuil_x; else if( alertY ) seuil = seuil_y;
+            if( seuil != null ) {
+                if (seuil_ui == null || !seuil_ui.equals(seuil)) {
+                    if (listener != null) listener.onForceChanged(seuil.type, seuil.level);
+                    seuil_ui = seuil;
+                }
+            } else {
+                clear_force_ui();
+            }
+
+        }
+    }
+
+    /// ============================================================================================
+    /// PARCOUR
+    /// ============================================================================================
+
+    private STATUS_t on_stopped(){
+        STATUS_t ret = STATUS_t.CAR_STOPPED;
+
+        // Clear UI
+        clear_force_ui();
+
+        // Checking if ready to start a new parcours
+        boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 0
+                && mov_t_last != MOVING_t.STP
+                && mov_t_last != MOVING_t.UNKNOW /*&& engine_t == ENGINE_t.ON*/);
+
+        if ( !ready_to_started ) {
+            chrono_ready_to_start.stop();
+        } else {
+            if ( !chrono_ready_to_start.isStarted() ) chrono_ready_to_start.start();
+            if ( chrono_ready_to_start.getSeconds() > SECS_TO_SET_PARCOURS_START ) {
+                // ....
+                cotation_update_at = 0;
+                alertX_add_at = 0;
+                alertY_add_at = 0;
+                alertPos_add_at = 0;
+                readerEPCFile.loadFromApp(ctx);
+                addLog("START PARCOURS");
+                parcour_id = System.currentTimeMillis();
+                chronoRide.start();
+                ret = STATUS_t.CAR_MOVING;
+                if (listener != null) listener.onStatusChanged(ret);
+            }
+        }
+        return ret;
+    }
+
+    private STATUS_t on_paused() throws InterruptedException {
+        STATUS_t ret = STATUS_t.CAR_PAUSING;
+
+        // Checking if car is stopped
+        if (mov_t_last == MOVING_t.STP
+                && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED) {
+
+            chronoRide.stop();
+            upload_custom_markers();
+            ret = STATUS_t.CAR_STOPPED;
+            if (listener != null) listener.onStatusChanged(ret);
+            addLog("STOP PARCOURS");
+            clear_force_ui();
+        }
+        // Or checking if car re-moving
+        else if (mov_t_last != MOVING_t.STP
+                && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_RESUME) {
+            ret = STATUS_t.CAR_MOVING;
+            if (listener != null) listener.onStatusChanged(ret);
+            addLog("RESUME PARCOURS");
+            clear_force_ui();
+        }
+
+        return ret;
+    }
+
+    private STATUS_t on_moved(){
+        STATUS_t ret = STATUS_t.CAR_MOVING;
+
+        calc_eca();
+        calc_parcour_cotation();
+
+        // Checking if car is in pause
+        if (mov_t_last == MOVING_t.STP
+                && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE) {
+            ret = STATUS_t.CAR_PAUSING;
+            if (listener != null) listener.onStatusChanged(ret);
+            addLog("PAUSE PARCOURS");
+            clear_force_ui();
+        }
+
+        return ret;
+    }
+
+    /// ============================================================================================
+    /// LOCATIONS
+    /// ============================================================================================
+
+    public void setLocation( Location location ) {
+        if( location != null )
+        {
+            this.locations.add(0, location);
+            while (this.locations.size() > 10) this.locations.remove(this.locations.size() - 1);
+
+            switchON( true );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private void clear_force_ui(){
+        if( seuil_ui != null
+                && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3 ){
+            if( listener != null ) listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
+            seuil_ui = null;
+        }
+    }
+
     private void setLog( String txt ){
         log = txt;
     }
@@ -739,5 +835,7 @@ mov_t = MOVING_t.UNKNOW;
         log += txt;
         if( listener != null ) listener.onDebugLog( log );
     }
+
+
 
 }
