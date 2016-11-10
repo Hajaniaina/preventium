@@ -101,8 +101,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean permissionsChecked = false;
     private Intent pinLockIntent;
     private AppColor appColor;
-    STATUS_t globalStatus;
-    LatLng lastPos;
+    private STATUS_t globalStatus;
+    private LatLng lastPos;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -988,9 +988,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void flashBackground (int durationSeconds) {
+    private void drawAttention (int seconds) {
 
-        int ms = durationSeconds * 1000;
+        flashBackground(seconds);
+        vibrate(seconds);
+        beep(seconds);
+    }
+
+    private void flashBackground (int seconds) {
+
+        int ms = seconds * 1000;
 
         new CountDownTimer(ms, 500) {
 
@@ -1016,16 +1023,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }.start();
     }
 
-    private void beep (int durationSeconds) {
+    private void beep (int seconds) {
 
-        int ms = durationSeconds * 1000;
+        int ms = seconds * 1000;
         final ToneGenerator tone = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
 
         new CountDownTimer(ms, 500) {
 
             public void onTick (long millisUntilFinished) {
 
-                tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 400);
+                tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 200);
             }
 
             public void onFinish() {}
@@ -1035,7 +1042,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void vibrate (int durationSeconds) {
 
-        int ms = durationSeconds * 1000;
+        int ms = seconds * 1000;
 
         Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
         vibrator.vibrate(ms);
@@ -1251,9 +1258,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View view) {
 
-                flashBackground(10);
-                vibrate(10);
-                beep(10);
+                drawAttention(5);
 
                 /*
                 if (mapType > GoogleMap.MAP_TYPE_HYBRID)
