@@ -26,8 +26,13 @@ import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 
 import org.apache.commons.net.ftp.FTPFile;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -45,7 +50,7 @@ public class AppManager extends ThreadDefault
     private static final int SECS_TO_SET_PARCOURS_START = 10;
     private static final int SECS_TO_SET_PARCOURS_PAUSE = 10;
     private static final int SECS_TO_SET_PARCOURS_RESUME = 10;
-    private static final int SECS_TO_SET_PARCOURS_STOPPED = 60;
+    private static final int SECS_TO_SET_PARCOURS_STOPPED = 30;
 
     private FilesSender fileSender = null;
 
@@ -158,7 +163,6 @@ public class AppManager extends ThreadDefault
                     status = on_paused();
                     break;
             }
-
         }
         modules.setActive(false);
 
@@ -446,6 +450,67 @@ public class AppManager extends ThreadDefault
             if( customMarkerList_Received ){
                 if( customMarkerList != null && customMarkerList.size() > 0 ){
 
+                    // CREATE FILE
+                    File folder = new File(ctx.getFilesDir(), "POS");
+                    // Create folder if not exist
+                    if (!folder.exists())
+                        if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
+                    if( folder.exists() ) {
+                        String filename = String.format(Locale.getDefault(),"%s_%s.POS",
+                                ComonUtils.getIMEInumber(ctx), parcour_id );
+                        File file = new File(folder.getAbsolutePath(), filename );
+                        try {
+                            if( !file.createNewFile() ){
+                                Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
+                            } else {
+                                FileWriter fileWriter = new FileWriter(file);
+                                String line = "";
+                                for ( CustomMarkerData mk : customMarkerList ) {
+                                    line = String.format(Locale.getDefault(),
+                                            "%f;%f;%d;%d;%d;%s;\n",
+                                            mk.position.longitude,
+                                            mk.position.latitude,
+                                            mk.type,
+                                            (mk.alert ? 1 : 0),
+                                            mk.perimeter,
+                                            mk.title);
+                                    fileWriter.write( line );
+                                }
+                                fileWriter.flush();
+                                fileWriter.close();
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+
+            // UPLOAD .POS FILES
+            File folder = new File(ctx.getFilesDir(), "POS");
+            if ( folder.exists() ){
+                File[] listOfFiles = folder.listFiles(new FilenameFilter() {
+                    public boolean accept(File dir, String name) {
+                        return name.toLowerCase().endsWith(".POS");
+                    }
+                });
+                if( listOfFiles != null && listOfFiles.length > 1 ){
+                    FTPConfig config = DataCFG.getFptConfig(ctx);
+                    FTPClientIO ftp = new FTPClientIO();
+                    if( config != null && ftp.ftpConnect(config, 5000) ) {
+                        boolean change_directory = true;
+                        if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                            change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                        if (!change_directory) {
+                            Log.w(TAG, "Error while trying to change working directory!");
+                        } else {
+                            for ( File file : listOfFiles ) {
+                                if( ftp.ftpUpload(file.getAbsolutePath(),file.getName()) ){
+                                    file.delete();
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
