@@ -78,7 +78,7 @@ public class AppManager extends ThreadDefault
     ForceSeuil seuil_last_y = null;
 
     private boolean customMarkerList_Received = false;
-    private ArrayList<CustomMarker> customMarkerList = null;
+    private ArrayList<CustomMarkerData> customMarkerList = null;
 
     private MOVING_t mov_t = MOVING_t.STP;
     private MOVING_t mov_t_last = MOVING_t.UNKNOW;
