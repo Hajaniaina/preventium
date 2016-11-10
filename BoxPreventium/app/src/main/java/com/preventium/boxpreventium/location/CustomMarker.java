@@ -245,12 +245,7 @@ public class CustomMarker {
 
     public String getTitle() {
 
-        if (marker != null) {
-
-            return marker.getTitle();
-        }
-
-        return null;
+        return title;
     }
 
     public void setIcon (BitmapDescriptor bitmap) {
