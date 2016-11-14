@@ -26,8 +26,13 @@ import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 
 import org.apache.commons.net.ftp.FTPFile;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -43,9 +48,9 @@ public class AppManager extends ThreadDefault
     private final static boolean DEBUG = true;
     private static final float MS_TO_KMH = 3.6f;
     private static final int SECS_TO_SET_PARCOURS_START = 10;
-    private static final int SECS_TO_SET_PARCOURS_PAUSE = 10;
+    private static final int SECS_TO_SET_PARCOURS_PAUSE = 240; // 4 minutes = 4 * 60 secs = 240 secs
     private static final int SECS_TO_SET_PARCOURS_RESUME = 10;
-    private static final int SECS_TO_SET_PARCOURS_STOPPED = 60;
+    private static final int SECS_TO_SET_PARCOURS_STOPPED = 25200; // 7 hours = 7 * 3600 secs = 25200 secs
 
     private FilesSender fileSender = null;
 
@@ -91,7 +96,7 @@ public class AppManager extends ThreadDefault
     private long alertY_add_at = 0;
     private long alertPos_add_at = 0;
     private long try_send_eca_at  = 0;
-
+    private boolean button_stop = false;
 
     private List<Location> locations = new ArrayList<Location>();
 
@@ -158,7 +163,6 @@ public class AppManager extends ThreadDefault
                     status = on_paused();
                     break;
             }
-
         }
         modules.setActive(false);
 
@@ -201,6 +205,7 @@ public class AppManager extends ThreadDefault
     /// UI
     /// ============================================================================================
     private STATUS_t first_init(){
+        button_stop = false;
         mov_t_last = MOVING_t.UNKNOW;
         mov_t = MOVING_t.UNKNOW;
         engine_t = ENGINE_t.UNKNOW;
@@ -428,24 +433,89 @@ public class AppManager extends ThreadDefault
 
     // Set list of map markers
     public void setCustomMarkerDataList(ArrayList<CustomMarkerData> list){
+addLog( "setCustomMarkerDataList " + list.size() );
         customMarkerList = list;
         customMarkerList_Received = true;
     }
 
     // Create .POS files (Position of map markers) and uploading to the server.
     private void upload_custom_markers() throws InterruptedException {
+addLog( "upload_custom_markers" );
         if( listener != null ){
             customMarkerList_Received = false;
             customMarkerList = null;
             listener.onCustomMarkerDataListGet();
             Chrono chrono = Chrono.newInstance();
             chrono.start();
+addLog( "waiting..." );
             while( chrono.getSeconds() < 5 && !customMarkerList_Received ){
                 sleep(500);
             }
+addLog( "customMarkerList_Received: " + customMarkerList_Received );
             if( customMarkerList_Received ){
                 if( customMarkerList != null && customMarkerList.size() > 0 ){
+addLog( "customMarkerList size: " + customMarkerList.size() );
+                    // CREATE FILE
+                    File folder = new File(ctx.getFilesDir(), "POS");
+                    // Create folder if not exist
+                    if (!folder.exists())
+                        if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
+                    if( folder.exists() ) {
+                        String filename = String.format(Locale.getDefault(),"%s_%s.POS",
+                                ComonUtils.getIMEInumber(ctx), parcour_id );
+                        File file = new File(folder.getAbsolutePath(), filename );
+                        try {
+                            if( !file.createNewFile() ){
+                                Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
+                            } else {
+                                FileWriter fileWriter = new FileWriter(file);
+                                String line = "";
+                                for ( CustomMarkerData mk : customMarkerList ) {
+                                    line = String.format(Locale.getDefault(),
+                                            "%f;%f;%d;%d;%d;%s;\n",
+                                            mk.position.longitude,
+                                            mk.position.latitude,
+                                            mk.type,
+                                            (mk.alert ? 1 : 0),
+                                            mk.perimeter,
+                                            mk.title);
+                                    fileWriter.write( line );
+                                }
+                                fileWriter.flush();
+                                fileWriter.close();
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
 
+            // UPLOAD .POS FILES
+            File folder = new File(ctx.getFilesDir(), "POS");
+            if ( folder.exists() ){
+                File[] listOfFiles = folder.listFiles(new FilenameFilter() {
+                    public boolean accept(File dir, String name) {
+                        return name.toLowerCase().endsWith(".POS");
+                    }
+                });
+                if( listOfFiles != null && listOfFiles.length > 1 ){
+                    FTPConfig config = DataCFG.getFptConfig(ctx);
+                    FTPClientIO ftp = new FTPClientIO();
+                    if( config != null && ftp.ftpConnect(config, 5000) ) {
+                        boolean change_directory = true;
+                        if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                            change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                        if (!change_directory) {
+                            Log.w(TAG, "Error while trying to change working directory!");
+                        } else {
+                            for ( File file : listOfFiles ) {
+                                if( ftp.ftpUpload(file.getAbsolutePath(),file.getName()) ){
+                                    file.delete();
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -459,6 +529,13 @@ public class AppManager extends ThreadDefault
         this.mov_t = MOVING_t.UNKNOW;
         this.XmG = 0f;
         boolean rightRoad = false;
+
+        if (locations.size() > 0) {
+            if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
+                locations.clear();
+            }
+        }
+
         if( locations.size() >= 3 ) {
             List<Location> list = this.locations.subList(0,3);
             rightRoad = isRightRoad( list.get(0), list.get(1), list.get(2) );
@@ -716,11 +793,14 @@ public class AppManager extends ThreadDefault
     /// PARCOUR
     /// ============================================================================================
 
+    public void setStopped(){ button_stop = true; }
+
     private STATUS_t on_stopped(){
         STATUS_t ret = STATUS_t.CAR_STOPPED;
 
         // Clear UI
         clear_force_ui();
+        button_stop = false;
 
         // Checking if ready to start a new parcours
         boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 0
@@ -752,8 +832,10 @@ public class AppManager extends ThreadDefault
         STATUS_t ret = STATUS_t.CAR_PAUSING;
 
         // Checking if car is stopped
-        if (mov_t_last == MOVING_t.STP
-                && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED) {
+        if ( button_stop ||
+                ( mov_t_last == MOVING_t.STP
+                && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED ) )
+        {
 
             chronoRide.stop();
             upload_custom_markers();

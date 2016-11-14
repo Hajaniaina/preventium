@@ -71,8 +71,8 @@ Log.d(TAG,"last_time_temp = " + last_time_temp );
             File folder = new File(_ctx.getFilesDir(), "ECA");
             File[] listOfFiles = folder.listFiles();
 Log.d(TAG,"folder = " + folder.getAbsolutePath() );
-Log.d(TAG,"listOfFiles.length = " + listOfFiles.length );
-            if( listOfFiles.length == 1 ){
+//Log.d(TAG,"listOfFiles.length = " + listOfFiles.length );
+            if( listOfFiles != null && listOfFiles.length == 1 ){
                 FTPConfig config = DataCFG.getFptConfig(_ctx);
                 FTPClientIO ftp = new FTPClientIO();
 Log.d(TAG,"Trying to connect...");
