@@ -316,6 +316,18 @@
 
             </LinearLayout>
 
+            <com.github.clans.fab.FloatingActionButton android:id="@+id/button_stop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="238dp"
+                android:layout_marginStart="110dp"
+                android:src="@drawable/ic_check"
+                fab:fab_size="@dimen/fb_button_size"
+                fab:fab_colorNormal="@color/colorAppRed"
+                fab:fab_colorPressed="@color/colorAppBlue"
+                fab:fab_colorRipple="#ff5252"
+                fab:fab_shadowColor="#444"/>
+
             <!-- ACTION MENU -->
             <com.github.clans.fab.FloatingActionMenu android:id="@+id/opt_menu"
                 android:layout_width="match_parent"

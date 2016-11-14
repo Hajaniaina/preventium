@@ -88,9 +88,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton menuButton2;
     private FloatingActionButton menuButton3;
 
-    private PermissionHelper.PermissionBuilder permissionRequest;
-    private SharedPreferences sharedPreferences;
     private GoogleMap googleMap;
+    private LatLng lastPos;
     private ProgressDialog progress;
     private boolean toggle = false;
     private SupportMapFragment mapFrag;
@@ -102,7 +101,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private Intent pinLockIntent;
     private AppColor appColor;
     private STATUS_t globalStatus;
-    private LatLng lastPos;
+    private SharedPreferences sharedPreferences;
+    private PermissionHelper.PermissionBuilder permissionRequest;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -455,9 +455,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         mapReady = false;
         initDone = true;
+        appColor = new AppColor(this);
         appManager = new AppManager(this, this);
         pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
-        appColor = new AppColor(this);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
 
         progress = new ProgressDialog(this);
@@ -575,7 +575,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 .request(0);
     }
 
-    public void showPermissionsAlert(final boolean retry) {
+    public void showPermissionsAlert (final boolean retry) {
 
         final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
         alertDialog.setCancelable(false);
@@ -1047,7 +1047,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }.start();
     }
 
-    private void vibrate (int durationSeconds) {
+    private void vibrate (int seconds) {
 
         int ms = seconds * 1000;
 
