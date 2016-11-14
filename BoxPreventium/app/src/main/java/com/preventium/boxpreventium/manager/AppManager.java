@@ -2,6 +2,7 @@ package com.preventium.boxpreventium.manager;
 
 import android.content.Context;
 import android.location.Location;
+import android.support.v4.util.Pair;
 import android.util.Log;
 
 import com.preventium.boxpreventium.database.DBHelper;
@@ -36,6 +37,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Created by Franck on 23/09/2016.
@@ -65,6 +67,7 @@ public class AppManager extends ThreadDefault
         void onStatusChanged(STATUS_t status);
         void onDriveScoreChanged( float score );
         void onCustomMarkerDataListGet();
+        void onUiTimeout(int timer_id, STATUS_t status);
     }
 
     private Context ctx = null;
@@ -99,6 +102,8 @@ public class AppManager extends ThreadDefault
     private boolean button_stop = false;
 
     private List<Location> locations = new ArrayList<Location>();
+
+    private List<Pair<Long,Integer>> ui_timers = new ArrayList<>(); // Long: delay in seconds, Integer: timer id
 
     private Chrono chronoRide = new Chrono();
     private String chronoRideTxt = "";
@@ -142,6 +147,12 @@ public class AppManager extends ThreadDefault
         STATUS_t status = first_init();
         upload_eca(true);
 
+        add_ui_timer(10,1);
+        add_ui_timer(20,2);
+        add_ui_timer(30,3);
+        add_ui_timer(40,4);
+        add_ui_timer(50,5);
+
         while( isRunning() ) {
             modules.setActive( true );
             sleep(500);
@@ -163,6 +174,8 @@ public class AppManager extends ThreadDefault
                     status = on_paused();
                     break;
             }
+
+            listen_timers( status );
         }
         modules.setActive(false);
 
@@ -204,6 +217,7 @@ public class AppManager extends ThreadDefault
     /// ============================================================================================
     /// UI
     /// ============================================================================================
+
     private STATUS_t first_init(){
         button_stop = false;
         mov_t_last = MOVING_t.UNKNOW;
@@ -308,6 +322,36 @@ public class AppManager extends ThreadDefault
             if( isRunning() && !cfg ) sleep(1000);
         }
         return cfg;
+    }
+
+    /// ============================================================================================
+    /// UI Timers
+    /// ============================================================================================
+
+    /// Add timer to timer list
+    public void add_ui_timer(long secs, int timer_id){ui_timers.add( Pair.create(secs,timer_id) ); }
+
+    /// Remove all timers
+    public void clear_ui_timer(){ ui_timers.clear(); }
+
+    /// Listening timeout
+    private void listen_timers(STATUS_t status){
+        long secs = (long) chronoRide.getSeconds();
+        if( !ui_timers.isEmpty() ) {
+            Pair<Long, Integer> timer;
+            long timeout_secs;
+            int timer_id;
+            for (int i = ui_timers.size() - 1; i >= 0; i--) {
+                timer = ui_timers.get(i);
+                timeout_secs = timer.first;
+                timer_id = timer.second;
+                if( secs >= timeout_secs ){
+                    if( listener != null ) listener.onUiTimeout( timer_id, status );
+                    ui_timers.remove(i);
+                    Log.d("AAAA","UI Timeout: " + timer_id + " " + status );
+                }
+            }
+        }
     }
 
     /// ============================================================================================
