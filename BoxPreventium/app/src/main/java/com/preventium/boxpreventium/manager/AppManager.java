@@ -19,6 +19,7 @@ import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.ForceSeuil;
 import com.preventium.boxpreventium.server.EPC.ReaderEPCFile;
+import com.preventium.boxpreventium.utils.BytesUtils;
 import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.ThreadDefault;
@@ -34,6 +35,7 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -94,6 +96,7 @@ public class AppManager extends ThreadDefault
     private Chrono mov_t_last_chrono = new Chrono();
 
     private long parcour_id = 0;
+    private long driver_id = 0;
     private long cotation_update_at = 0;
     private long alertX_add_at = 0;
     private long alertY_add_at = 0;
@@ -140,7 +143,7 @@ public class AppManager extends ThreadDefault
     public void myRun() throws InterruptedException {
         super.myRun();
 
-        setLog( "AppManager begin...");
+        setLog( "AppManager begin..." );
 
         download_cfg();
         download_epc();
@@ -249,6 +252,14 @@ public class AppManager extends ThreadDefault
             chronoRideTxt = txt;
         }
     }
+
+    /// ============================================================================================
+    /// Driver ID
+    /// ============================================================================================
+
+    public long get_driver_id(){ return driver_id; };
+
+    public void set_driver_id( long driver_id ){ this.driver_id = driver_id; }
 
     /// ============================================================================================
     /// .CFG
@@ -461,9 +472,15 @@ public class AppManager extends ThreadDefault
     /// Uploading .ECA file if is needed
     private boolean upload_eca( boolean now ){
         boolean ret = false;
+
         // If now is true or elapsed time > 1 minutes
         if( now
                 || try_send_eca_at + 60000 < System.currentTimeMillis() ){
+
+            // Update driver id table if necessary
+            database.add_driver(parcour_id,driver_id);
+
+            // Trying to send file
             fileSender.startThread();
             try_send_eca_at = System.currentTimeMillis();
             ret = true;

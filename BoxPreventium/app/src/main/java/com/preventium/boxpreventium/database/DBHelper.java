@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -69,9 +70,13 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CEP_LAT_POS = "lat_pos";
     public static final String COLUMN_CEP_STATUS = "status";
 
+    public static final String TABLE_DRIVER = "eca_driver";
+    public static final String COLUMN_DRIVER_TIME = "time";
+    public static final String COLUMN_DRIVER_ID = "id";
+    public static final String COLUMN_DRIVER_PARCOUR_ID = "parcour_id";
+
     private static final String TAG = "DBHelper";
     private Context ctx = null;
-    private ECALine last_line = null;
 
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, 1);
@@ -82,29 +87,36 @@ public class DBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         String TABLE_CREATE =
                 "CREATE TABLE " + TABLE_ECA + " (" +
-                        COLUMN_ECA_ID + " INTEGER PRIMARY KEY, " +
-                        COLUMN_ECA_PARCOUR_ID + " INTEGER, " +
-                        COLUMN_ECA_FILE_ID + " INTEGER, " +
-                        COLUMN_ECA_TIME + " INTEGER, " +
-                        COLUMN_ECA_ALERTID + " INTEGER, " +
-                        COLUMN_ECA_PADDIND + " INTEGER, " +
-                        COLUMN_ECA_LONG_POS + " FLOAT, " +
-                        COLUMN_ECA_LAT_POS + " FLOAT, " +
-                        COLUMN_ECA_LONG_POS_ORIENTATION + " INTEGER, " +
-                        COLUMN_ECA_LAT_POS_ORIENTATION + " INTEGER, " +
-                        COLUMN_ECA_SPEED + " FLOAT, " +
-                        COLUMN_ECA_DISTANCE + " FLOAT);" ;
+                COLUMN_ECA_ID + " INTEGER PRIMARY KEY, " +
+                COLUMN_ECA_PARCOUR_ID + " INTEGER, " +
+                COLUMN_ECA_FILE_ID + " INTEGER, " +
+                COLUMN_ECA_TIME + " INTEGER, " +
+                COLUMN_ECA_ALERTID + " INTEGER, " +
+                COLUMN_ECA_PADDIND + " INTEGER, " +
+                COLUMN_ECA_LONG_POS + " FLOAT, " +
+                COLUMN_ECA_LAT_POS + " FLOAT, " +
+                COLUMN_ECA_LONG_POS_ORIENTATION + " INTEGER, " +
+                COLUMN_ECA_LAT_POS_ORIENTATION + " INTEGER, " +
+                COLUMN_ECA_SPEED + " FLOAT, " +
+                COLUMN_ECA_DISTANCE + " FLOAT);" ;
         sqLiteDatabase.execSQL(TABLE_CREATE);
 
-        TABLE_CREATE ="CREATE TABLE " + TABLE_CEP + " (" +
-                COLUMN_CEP_ID + " INTEGER PRIMARY KEY, " +
-                COLUMN_CEP_TIME + " INTEGER, " +
-                COLUMN_CEP_MAC + " TEXT, " +
-                COLUMN_CEP_LONG_POS + " FLOAT, " +
-                COLUMN_CEP_LAT_POS + " FLOAT, " +
-                COLUMN_CEP_STATUS + " INTEGER);";
+        TABLE_CREATE =
+                "CREATE TABLE " + TABLE_CEP + " (" +
+                        COLUMN_CEP_ID + " INTEGER PRIMARY KEY, " +
+                        COLUMN_CEP_TIME + " INTEGER, " +
+                        COLUMN_CEP_MAC + " TEXT, " +
+                        COLUMN_CEP_LONG_POS + " FLOAT, " +
+                        COLUMN_CEP_LAT_POS + " FLOAT, " +
+                        COLUMN_CEP_STATUS + " INTEGER);";
         sqLiteDatabase.execSQL(TABLE_CREATE);
 
+        TABLE_CREATE =
+                "CREATE TABLE " + TABLE_DRIVER + " (" +
+                        COLUMN_DRIVER_TIME+ " INTEGER PRIMARY KEY, " +
+                        COLUMN_DRIVER_ID + " INTEGER, " +
+                        COLUMN_DRIVER_PARCOUR_ID + " INTEGER );";
+        sqLiteDatabase.execSQL(TABLE_CREATE);
     }
 
     @Override
@@ -113,21 +125,18 @@ public class DBHelper extends SQLiteOpenHelper {
         sqLiteDatabase.execSQL(TABLE_DROP);
         TABLE_DROP = "DROP TABLE IF EXISTS " + TABLE_CEP + ";";
         sqLiteDatabase.execSQL(TABLE_DROP);
+        TABLE_DROP = "DROP TABLE IF EXISTS " + TABLE_DRIVER + ";";
+        sqLiteDatabase.execSQL(TABLE_DROP);
         onCreate(sqLiteDatabase);
     }
 
-    public void clearAll(){
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_ECA,null,null);
-        db.delete(TABLE_CEP,null,null);
-    }
 
     public void clear(){
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_ECA,null,null);
         db.delete(TABLE_CEP,null,null);
+        db.delete(TABLE_DRIVER,null,null);
     }
-
 
     // ECA
 
@@ -147,7 +156,7 @@ public class DBHelper extends SQLiteOpenHelper {
         return ret;
     }
 
-    public boolean addECA( long parcour_id, ECALine line ){
+    public boolean addECA( long parcour_id, ECALine line ) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COLUMN_ECA_TIME, line.location.getTime());
@@ -162,8 +171,40 @@ public class DBHelper extends SQLiteOpenHelper {
         contentValues.put(COLUMN_ECA_SPEED, line.location.getSpeed());
         contentValues.put(COLUMN_ECA_DISTANCE, line.distance);
         db.insert(TABLE_ECA, null, contentValues);
-        last_line = line;
         return true;
+    }
+
+    // DRIVER
+    public boolean add_driver( long parcour_id, long driver_id){
+        long time = System.currentTimeMillis();
+        if( get_driver_id(parcour_id,time) == driver_id ) return true;
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COLUMN_DRIVER_TIME, time );
+        contentValues.put(COLUMN_DRIVER_ID, driver_id );
+        contentValues.put(COLUMN_DRIVER_PARCOUR_ID, parcour_id);
+        long row = db.insert(TABLE_DRIVER, null, contentValues);
+        db.close();
+        return row >= 0;
+    }
+
+    public long get_driver_id(long parcour_id, long time){
+        long ret = 0;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor =
+                db.rawQuery(
+                "SELECT " + COLUMN_DRIVER_ID +
+                " FROM " + TABLE_DRIVER +
+                " WHERE " + COLUMN_DRIVER_PARCOUR_ID + " = " + parcour_id +
+                " AND " + COLUMN_DRIVER_TIME + " >= " + time +
+                " ORDER BY " + COLUMN_DRIVER_TIME + " LIMIT 1 ;", null );
+
+        if( cursor != null && cursor.moveToFirst() ) {
+            ret = cursor.getLong(0);
+            cursor.close();
+        }
+        db.close();
+        return ret;
     }
 
 //    public long getLastECATime(){
@@ -549,6 +590,8 @@ public class DBHelper extends SQLiteOpenHelper {
                 ECALine line = null;
                 long parcour_id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID));
                 long cnt = get_eca_counter(ctx,parcour_id) + 1;
+                long time = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_TIME));
+                long driver_id = get_driver_id(parcour_id, time);
                 String filename = String.format(Locale.getDefault(),"%s_%s_%04d.ECA",
                         ComonUtils.getIMEInumber(ctx), parcour_id, cnt );
                 File file = new File(folder.getAbsolutePath(), filename );
@@ -558,7 +601,8 @@ public class DBHelper extends SQLiteOpenHelper {
                         OutputStream output
                                 = new BufferedOutputStream(
                                 new FileOutputStream(file.getAbsolutePath()));
-                        output.write( new byte[]{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00} );// Vehicule ID
+                        //output.write( new byte[]{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00} );// Vehicule ID
+                        output.write( ByteBuffer.allocate(8).putLong(driver_id).array() ); // Driver ID
                         line = new ECALine();
                         while ( !cursor.isAfterLast() ) {
                             if( parcour_id
