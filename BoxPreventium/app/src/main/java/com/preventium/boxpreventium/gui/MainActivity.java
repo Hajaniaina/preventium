@@ -84,6 +84,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton callButton;
     private FloatingActionButton formButton;
     private FloatingActionButton settingsButton;
+    private FloatingActionButton stopButton;
     private FloatingActionButton menuButton1;
     private FloatingActionButton menuButton2;
     private FloatingActionButton menuButton3;
@@ -1193,6 +1194,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         callButton = (FloatingActionButton) findViewById(R.id.button_call);
         formButton = (FloatingActionButton) findViewById(R.id.button_formation);
         settingsButton = (FloatingActionButton) findViewById(R.id.button_settings);
+        stopButton = (FloatingActionButton) findViewById(R.id.button_stop);
 
         // INFO
         infoButton.setOnClickListener (new View.OnClickListener() {
@@ -1233,6 +1235,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 // startActivity(pinLockIntent);
                 startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+            }
+        });
+
+        // STOP
+        stopButton.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick (View view) {
+
+                appManager.setStopped();
             }
         });
 
