@@ -150,12 +150,6 @@ public class AppManager extends ThreadDefault
         STATUS_t status = first_init();
         upload_eca(true);
 
-        add_ui_timer(10,1);
-        add_ui_timer(20,2);
-        add_ui_timer(30,3);
-        add_ui_timer(40,4);
-        add_ui_timer(50,5);
-
         while( isRunning() ) {
             modules.setActive( true );
             sleep(500);
@@ -501,21 +495,18 @@ addLog( "setCustomMarkerDataList " + list.size() );
 
     // Create .POS files (Position of map markers) and uploading to the server.
     private void upload_custom_markers() throws InterruptedException {
-addLog( "upload_custom_markers" );
+
         if( listener != null ){
             customMarkerList_Received = false;
             customMarkerList = null;
             listener.onCustomMarkerDataListGet();
             Chrono chrono = Chrono.newInstance();
             chrono.start();
-addLog( "waiting..." );
             while( chrono.getSeconds() < 5 && !customMarkerList_Received ){
                 sleep(500);
             }
-addLog( "customMarkerList_Received: " + customMarkerList_Received );
             if( customMarkerList_Received ){
-                if( customMarkerList != null && customMarkerList.size() > 0 ){
-addLog( "customMarkerList size: " + customMarkerList.size() );
+                if( parcour_id > 0 && customMarkerList != null && customMarkerList.size() > 0 ){
                     // CREATE FILE
                     File folder = new File(ctx.getFilesDir(), "POS");
                     // Create folder if not exist
@@ -526,9 +517,7 @@ addLog( "customMarkerList size: " + customMarkerList.size() );
                                 ComonUtils.getIMEInumber(ctx), parcour_id );
                         File file = new File(folder.getAbsolutePath(), filename );
                         try {
-                            if( !file.createNewFile() ){
-                                Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
-                            } else {
+                            if( file.createNewFile() ){
                                 FileWriter fileWriter = new FileWriter(file);
                                 String line = "";
                                 for ( CustomMarkerData mk : customMarkerList ) {
@@ -544,6 +533,8 @@ addLog( "customMarkerList size: " + customMarkerList.size() );
                                 }
                                 fileWriter.flush();
                                 fileWriter.close();
+                            } else {
+                                Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
                             }
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -551,16 +542,16 @@ addLog( "customMarkerList size: " + customMarkerList.size() );
                     }
                 }
             }
-
             // UPLOAD .POS FILES
             File folder = new File(ctx.getFilesDir(), "POS");
             if ( folder.exists() ){
                 File[] listOfFiles = folder.listFiles(new FilenameFilter() {
                     public boolean accept(File dir, String name) {
-                        return name.toLowerCase().endsWith(".POS");
+                        return name.toUpperCase().endsWith(".POS");
                     }
                 });
-                if( listOfFiles != null && listOfFiles.length > 1 ){
+
+                if( listOfFiles != null && listOfFiles.length > 0 ){
                     FTPConfig config = DataCFG.getFptConfig(ctx);
                     FTPClientIO ftp = new FTPClientIO();
                     if( config != null && ftp.ftpConnect(config, 5000) ) {
@@ -873,7 +864,6 @@ addLog( "customMarkerList size: " + customMarkerList.size() );
         } else {
             if ( !chrono_ready_to_start.isStarted() ) chrono_ready_to_start.start();
             if ( chrono_ready_to_start.getSeconds() > SECS_TO_SET_PARCOURS_START ) {
-                // ....
                 cotation_update_at = 0;
                 alertX_add_at = 0;
                 alertY_add_at = 0;
