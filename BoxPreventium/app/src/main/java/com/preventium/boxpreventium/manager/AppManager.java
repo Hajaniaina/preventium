@@ -2,6 +2,7 @@ package com.preventium.boxpreventium.manager;
 
 import android.content.Context;
 import android.location.Location;
+import android.support.annotation.Nullable;
 import android.support.v4.util.Pair;
 import android.util.Log;
 
@@ -69,6 +70,7 @@ public class AppManager extends ThreadDefault
         void onStatusChanged(STATUS_t status);
         void onDriveScoreChanged( float score );
         void onCustomMarkerDataListGet();
+        void onParcoursTypeGet();
         void onUiTimeout(int timer_id, STATUS_t status);
     }
 
@@ -89,6 +91,8 @@ public class AppManager extends ThreadDefault
 
     private boolean customMarkerList_Received = false;
     private ArrayList<CustomMarkerData> customMarkerList = null;
+
+    private String parcoursTypeName = null;
 
     private MOVING_t mov_t = MOVING_t.STP;
     private MOVING_t mov_t_last = MOVING_t.UNKNOW;
@@ -488,7 +492,6 @@ public class AppManager extends ThreadDefault
 
     // Set list of map markers
     public void setCustomMarkerDataList(ArrayList<CustomMarkerData> list){
-addLog( "setCustomMarkerDataList " + list.size() );
         customMarkerList = list;
         customMarkerList_Received = true;
     }
@@ -542,12 +545,95 @@ addLog( "setCustomMarkerDataList " + list.size() );
                     }
                 }
             }
+
             // UPLOAD .POS FILES
             File folder = new File(ctx.getFilesDir(), "POS");
             if ( folder.exists() ){
                 File[] listOfFiles = folder.listFiles(new FilenameFilter() {
                     public boolean accept(File dir, String name) {
                         return name.toUpperCase().endsWith(".POS");
+                    }
+                });
+
+                if( listOfFiles != null && listOfFiles.length > 0 ){
+                    FTPConfig config = DataCFG.getFptConfig(ctx);
+                    FTPClientIO ftp = new FTPClientIO();
+                    if( config != null && ftp.ftpConnect(config, 5000) ) {
+                        boolean change_directory = true;
+                        if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                            change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                        if (!change_directory) {
+                            Log.w(TAG, "Error while trying to change working directory!");
+                        } else {
+                            for ( File file : listOfFiles ) {
+                                if( ftp.ftpUpload(file.getAbsolutePath(),file.getName()) ){
+                                    file.delete();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// ============================================================================================
+    /// PARCOURS TYPE
+    /// ============================================================================================
+
+    // Set current parcours is a parcours type,
+    // if parcoursName is null, do not set this parcours is a parcours type
+    public void setParcoursType( @Nullable  String parcoursName ){
+        if( parcoursName == null ) parcoursName = "";
+        parcoursTypeName = parcoursName;
+    }
+
+    // Create .PT file (Parcours type) and uploading to the server.
+    private void upload_parcours_type() throws InterruptedException {
+
+        if( listener != null ){
+            parcoursTypeName = null;
+            listener.onParcoursTypeGet();
+            Chrono chrono = Chrono.newInstance();
+            chrono.start();
+            while( chrono.getSeconds() < 60 && parcoursTypeName == null ){
+                sleep(500);
+            }
+            if( parcoursTypeName != null ){
+                if( parcour_id > 0 && !parcoursTypeName.isEmpty() ){
+                    // CREATE FILE
+                    File folder = new File(ctx.getFilesDir(), "PT");
+                    // Create folder if not exist
+                    if (!folder.exists())
+                        if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
+                    if( folder.exists() ) {
+                        String filename = String.format(Locale.getDefault(), "%s_%s.PT",
+                                ComonUtils.getIMEInumber(ctx), parcour_id);
+                        File file = new File(folder.getAbsolutePath(), filename );
+                        try {
+                            if( file.createNewFile() ){
+                                FileWriter fileWriter = new FileWriter(file);
+                                fileWriter.write( String.format(Locale.getDefault(),
+                                        "%s;%d;%s",
+                                        ComonUtils.getIMEInumber(ctx), parcour_id, parcoursTypeName) );
+                                fileWriter.flush();
+                                fileWriter.close();
+                            } else {
+                                Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+
+            // UPLOAD .PT FILES
+            File folder = new File(ctx.getFilesDir(), "PT");
+            if ( folder.exists() ){
+                File[] listOfFiles = folder.listFiles(new FilenameFilter() {
+                    public boolean accept(File dir, String name) {
+                        return name.toUpperCase().endsWith(".PT");
                     }
                 });
 
@@ -890,6 +976,7 @@ addLog( "setCustomMarkerDataList " + list.size() );
 
             chronoRide.stop();
             upload_custom_markers();
+            upload_parcours_type();
             ret = STATUS_t.CAR_STOPPED;
             if (listener != null) listener.onStatusChanged(ret);
             addLog("STOP PARCOURS");
