@@ -16,7 +16,7 @@ public enum STATUS_t {
     PAR_STOPPED(3),
     PAR_STARTED(4),
     PAR_PAUSING(5),
-    PAR_RESUME(5);
+    PAR_RESUME(6);
 
 
     private int value;
