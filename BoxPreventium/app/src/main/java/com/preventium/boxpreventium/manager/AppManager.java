@@ -486,6 +486,46 @@ public class AppManager extends ThreadDefault
         return ret;
     }
 
+    /// ============================================================================================
+    /// .CEP
+    /// ============================================================================================
+
+    /// Create .CEP file (Connections Events of Preventium's devices) and uploading to the server.
+    private void upload_cep(){
+        if( parcour_id > 0 ) {
+            database.create_cep_file(parcour_id);
+            database.clear_cep_data();
+        }
+
+        // UPLOAD .CEP FILES
+        File folder = new File(ctx.getFilesDir(), "CEP");
+        if ( folder.exists() ){
+            File[] listOfFiles = folder.listFiles(new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.toUpperCase().endsWith(".CEP");
+                }
+            });
+
+            if( listOfFiles != null && listOfFiles.length > 0 ){
+                FTPConfig config = DataCFG.getFptConfig(ctx);
+                FTPClientIO ftp = new FTPClientIO();
+                if( config != null && ftp.ftpConnect(config, 5000) ) {
+                    boolean change_directory = true;
+                    if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                        change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                    if (!change_directory) {
+                        Log.w(TAG, "Error while trying to change working directory!");
+                    } else {
+                        for ( File file : listOfFiles ) {
+                            if( ftp.ftpUpload(file.getAbsolutePath(),file.getName()) ){
+                                file.delete();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     /// ============================================================================================
     /// .POS (Map markers)
@@ -976,6 +1016,7 @@ public class AppManager extends ThreadDefault
         {
 
             chronoRide.stop();
+            upload_cep();
             upload_custom_markers();
             upload_parcours_type();
             ret = STATUS_t.CAR_STOPPED;
