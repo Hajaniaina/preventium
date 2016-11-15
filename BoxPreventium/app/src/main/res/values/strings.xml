@@ -53,7 +53,8 @@
     <string name="force_permissions_string">To continue please activate all permissions in the settings menu</string>
     <string name="permissions_retry_string">Retry</string>
     <string name="network_alert_string">No active internet connection. Make sure that 3G/4G is activated</string>
-    <string name="scan_qr_string">Scan QR code</string>
+    <string name="scan_qr_ok_string">Code scanned</string>
+    <string name="scan_qr_error_string">Wrong QR code. Try again</string>
     <string name="enable_tracking_string">Enable tracking</string>
     <string name="disable_tracking_string">Disable tracking</string>
     <string name="progress_loading_string">Loading...</string>
