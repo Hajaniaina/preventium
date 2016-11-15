@@ -286,18 +286,11 @@ public class AppManager extends ThreadDefault
             if( ftp.ftpConnect(config, 5000) ) {
 
                 // Checking if .CFG file is in FTP server ?
-                boolean exist_server_cfg = false;
-                boolean exist_server_ack = false;
                 String srcFileName = ComonUtils.getIMEInumber(ctx) + ".CFG";
                 String srcAckName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
-                FTPFile[] files = ftp.ftpPrintFiles();
-                for ( FTPFile f : files ) {
-                    if( f.isFile() ) {
-                        if (f.getName().equals(srcFileName)) exist_server_cfg = true;
-                        if (f.getName().equals(srcAckName)) exist_server_ack = true;
-                    }
-                    if( exist_server_ack && exist_server_cfg ) break;
-                }
+                boolean exist_server_cfg = ftp.checkFileExists( srcFileName );
+                boolean exist_server_ack = ftp.checkFileExists( srcAckName );
+
                 // If .CFG file exist in the FTP server
                 cfg = ( exist_server_ack && reader.loadFromApp(ctx) );
                 if( !cfg ) {
@@ -362,7 +355,6 @@ public class AppManager extends ThreadDefault
                 if( secs >= timeout_secs ){
                     if( listener != null ) listener.onUiTimeout( timer_id, status );
                     ui_timers.remove(i);
-                    Log.d("AAAA","UI Timeout: " + timer_id + " " + status );
                 }
             }
         }
@@ -408,19 +400,11 @@ public class AppManager extends ThreadDefault
                     int i = 1;
                     while( i <= 5 && isRunning() ) {
 
-                        exist_server_epc = false;
-                        exist_server_ack = false;
-
                         // Checking if .EPC file is in FTP server ?
                         srcFileName = reader.getEPCFileName(ctx, i, false);
                         srcAckName = reader.getEPCFileName(ctx, i, true);
-                        for ( FTPFile f : files ) {
-                            if( f.isFile() ) {
-                                if (f.getName().equals(srcFileName)) exist_server_epc = true;
-                                if (f.getName().equals(srcAckName)) exist_server_ack = true;
-                            }
-                            if( exist_server_ack && exist_server_epc ) break;
-                        }
+                        exist_server_epc = ftp.checkFileExists( srcFileName );
+                        exist_server_ack = ftp.checkFileExists( srcAckName );
 
                         // If .EPC file exist in the FTP server
                         epc = ( exist_server_ack && reader.loadFromApp(ctx,i) );
@@ -469,7 +453,7 @@ public class AppManager extends ThreadDefault
     }
 
     /// ============================================================================================
-    /// .OBJ
+    /// .DOBJ
     /// ============================================================================================
 
     // Downloading .DOBJ files if is needed
@@ -499,20 +483,12 @@ public class AppManager extends ThreadDefault
                 } else {
 
                     boolean dobj = false;
-                    boolean exist_server_dobj = false;
-                    boolean exist_server_ack = false;
-                    FTPFile[] files = ftp.ftpPrintFiles();
 
                     // Checking if .DOBJ file is in FTP server ?
                     String srcFileName = ReaderDOBJFile.getOBJFileName(ctx, false);
                     String srcAckName = ReaderDOBJFile.getOBJFileName(ctx, true);
-                    for ( FTPFile f : files ) {
-                        if( f.isFile() ) {
-                            if (f.getName().equals(srcFileName)) exist_server_dobj = true;
-                            if (f.getName().equals(srcAckName)) exist_server_ack = true;
-                        }
-                        if( exist_server_ack && exist_server_dobj ) break;
-                    }
+                    boolean exist_server_dobj = ftp.checkFileExists( srcFileName );
+                    boolean exist_server_ack = ftp.checkFileExists( srcAckName );
 
                     // If .DOBJ file exist in the FTP server
                     dobj = ( exist_server_ack && DataDOBJ.preferenceFileExist(ctx) );
@@ -1009,7 +985,7 @@ public class AppManager extends ThreadDefault
                 if( seuil_chrono_x.getSeconds() >= seuil_x.TPS ) {
                     seuil_chrono_x.start();
                     // If elapsed time > 2 seconds
-                    if( alertX_add_at + 2000 < System.currentTimeMillis()) {
+                    if( System.currentTimeMillis() - alertX_add_at >= 2000 ) {
                         database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc.get(0), null));
                         alertX_add_at = System.currentTimeMillis();
                     }
@@ -1023,7 +999,7 @@ public class AppManager extends ThreadDefault
                 if( seuil_chrono_y.getSeconds() >= seuil_y.TPS ) {
                     seuil_chrono_y.start();
                     // If elapsed time > 2 seconds
-                    if( alertY_add_at + 2000 < System.currentTimeMillis()) {
+                    if( System.currentTimeMillis() - alertY_add_at >= 2000 ) {
                         database.addECA( parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc.get(0), null ) );
                         alertY_add_at = System.currentTimeMillis();
                     }
@@ -1034,7 +1010,7 @@ public class AppManager extends ThreadDefault
             // Add location to ECA database
             if( !alertX && !alertY ){
                 // If elapsed time > 2 seconds
-                if( alertPos_add_at + 2000 < System.currentTimeMillis()) {
+                if( System.currentTimeMillis() - alertPos_add_at >= 2000  ) {
                     database.addECA( parcour_id, ECALine.newInstance( loc.get(0), loc.get(1) ) );
                     alertPos_add_at = System.currentTimeMillis();
                 }

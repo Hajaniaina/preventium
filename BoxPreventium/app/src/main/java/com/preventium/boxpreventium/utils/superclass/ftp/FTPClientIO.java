@@ -14,6 +14,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Created by Franck on 21/09/2016.
@@ -72,6 +73,22 @@ public class FTPClientIO {
     }
 
     public boolean ftpIsConnected() { return mFTPClient != null && mFTPClient.isConnected(); }
+
+    public boolean checkFileExists(String filePath) {
+        boolean fileExists = false;
+        InputStream inputStream = null;
+        try {
+            inputStream = mFTPClient.retrieveFileStream(filePath);
+            fileExists = inputStream != null && mFTPClient.getReplyCode() != 550;
+            if (inputStream != null) {
+                inputStream.close();
+                mFTPClient.completePendingCommand();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return fileExists;
+    }
 
     public String ftpPrintWorkingDirectory() {
         String ret = "";
