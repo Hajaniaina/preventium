@@ -60,6 +60,7 @@
     <string name="progress_location_string">Waiting for GPS data</string>
     <string name="progress_cfg_string">Downloading CFG data</string>
     <string name="progress_epc_string">Downloading EPC data</string>
+    <string name="progress_obj_string">Downloading OBJ data</string>
     <string name="progress_ready_string">Ready</string>
     <string name="scan_qr_ok_string">Code scanned</string>
     <string name="scan_qr_error_string">Wrong QR code. Try again</string>

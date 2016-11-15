@@ -54,12 +54,12 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
         checkBoxVehicleFront = (CheckBox) findViewById(R.id.checkbox_vehicle_front);
         checkBoxVehicleBack = (CheckBox) findViewById(R.id.checkbox_vehicle_back);
 
-        if (qrRequest.vehicleFrontEnabled) {
+        if (!qrRequest.vehicleFrontEnabled) {
 
             checkBoxVehicleFront.setVisibility(View.GONE);
         }
 
-        if (qrRequest.vehicleBackEnabled) {
+        if (!qrRequest.vehicleBackEnabled) {
 
             checkBoxVehicleBack.setVisibility(View.GONE);
         }

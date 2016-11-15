@@ -103,10 +103,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean permissionsChecked = false;
     private Intent pinLockIntent;
     private AppColor appColor;
-    private STATUS_t globalStatus;
     private SharedPreferences sharedPreferences;
     private PermissionHelper.PermissionBuilder permissionRequest;
     private QrScanRequest qrRequest;
+    private boolean parcourActive = false;
+    private boolean parcourPause = false;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -307,7 +308,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                if (globalStatus == STATUS_t.PAR_STARTED) {     /////////////////////////////////////////////////////////////////////
+                if (parcourActive && !parcourPause) {
 
                     if (type != FORCE_t.UNKNOW) {
 
@@ -330,8 +331,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void run() {
-
-                globalStatus = status;
 
                 switch (status) {
 
@@ -363,20 +362,20 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         break;
 
-                    case PAR_STOPPED:
-
-                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "STOP");
-                        changeViewColorFilter(drivingTimeView, AppColor.GREY);
+                    case GETTING_DOBJ:
 
                         if (progress != null) {
 
-                            progress.setMessage(getString(R.string.progress_ready_string));
-                            progress.hide();
+                            progress.show();
+                            progress.setMessage(getString(R.string.progress_obj_string));
                         }
 
                         break;
 
                     case PAR_STARTED:
+
+                        parcourActive = true;
+                        parcourPause = false;
 
                         speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "RUN");
 
@@ -385,17 +384,30 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             googleMap.getUiSettings().setAllGesturesEnabled(false);
                         }
 
-                        disableActionButtons(true);
-                        speedView.hide(false);
                         changeViewColorFilter(drivingTimeView, AppColor.GREEN);
 
                         break;
 
                     case PAR_RESUME:
 
+                        parcourActive = true;
+                        parcourPause = false;
+
+                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "RESUME");
+
+                        if (mapReady) {
+
+                            googleMap.getUiSettings().setAllGesturesEnabled(false);
+                        }
+
+                        changeViewColorFilter(drivingTimeView, AppColor.GREEN);
+
                         break;
 
                     case PAR_PAUSING:
+
+                        parcourActive = true;
+                        parcourPause = true;
 
                         speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "PAUSE");
 
@@ -407,9 +419,23 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         }
 
                         changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
-                        disableActionButtons(false);
-                        speedView.hide(true);
                         accForceView.hide(true);
+
+                        break;
+
+                    case PAR_STOPPED:
+
+                        parcourActive = false;
+                        parcourPause = false;
+
+                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "STOP");
+                        changeViewColorFilter(drivingTimeView, AppColor.GREY);
+
+                        if (progress != null) {
+
+                            progress.setMessage(getString(R.string.progress_ready_string));
+                            progress.hide();
+                        }
 
                         break;
                 }
@@ -1231,7 +1257,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 }
 
-                if (globalStatus == STATUS_t.CAR_MOVING) {
+                if (parcourActive) {
 
                     speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_1, posManager.getInstantSpeed());
 
@@ -1248,12 +1274,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onPositionUpdate (Location prevLoc, Location currLoc) {
 
-                // if (globalStatus != STATUS_t.CAR_STOPPED) {}
+                if (parcourActive) {
 
-                LatLng prevPos = new LatLng(prevLoc.getLatitude(), prevLoc.getLongitude());
-                LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());
+                    LatLng prevPos = new LatLng(prevLoc.getLatitude(), prevLoc.getLongitude());
+                    LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());
 
-                drawLine(prevPos, currPos);
+                    drawLine(prevPos, currPos);
+                }
             }
         });
     }
