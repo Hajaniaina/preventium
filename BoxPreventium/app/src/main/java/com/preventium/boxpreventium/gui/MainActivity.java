@@ -20,7 +20,6 @@ import android.os.CountDownTimer;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -66,10 +65,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private static final String TAG = "MainActivity";
 
-    private static final int MAP_ZOOM_ON_MOVE  = 17;
-    private static final int MAP_ZOOM_ON_PAUSE = 15;
-
-    private static final int QR_CODE_REQUEST = 0;
+    private static final int MAP_ZOOM_ON_MOVE   = 17;
+    private static final int MAP_ZOOM_ON_PAUSE  = 15;
+    private static final int QR_CODE_REQUEST_ID = 0;
 
     private PositionManager posManager;
     private MarkerManager markerManager;
@@ -108,6 +106,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private STATUS_t globalStatus;
     private SharedPreferences sharedPreferences;
     private PermissionHelper.PermissionBuilder permissionRequest;
+    private QrScanRequest qrRequest;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -417,6 +416,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onDriveScoreChanged (float score) {
 
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+            }
+        });
     }
 
     @Override
@@ -428,6 +434,32 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void run() {
 
                 appManager.setCustomMarkerDataList(markerManager.getUserMarkersData());
+            }
+        });
+    }
+
+    @Override
+    public void onParcoursTypeGet() {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                appManager.set_parcours_type(null);
+            }
+        });
+    }
+
+    @Override
+    public void onUiTimeout (int timer_id, STATUS_t status) {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                //appManager.add_ui_timer();
+                //appManager.clear_ui_timer();
             }
         });
     }
@@ -458,20 +490,26 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onActivityResult (int requestCode, int resultCode, Intent data) {
 
-        if (requestCode == QR_CODE_REQUEST) {
+        if (requestCode == QR_CODE_REQUEST_ID) {
 
             if (resultCode == RESULT_OK) {
 
-                String extra;
+                if (data.hasExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM)) {
 
-                if (data.hasExtra(QrScanActivity.SCAN_DRIVER_PREFIX)) {
+                    qrRequest = data.getParcelableExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM);
 
-                    extra = data.getStringExtra(QrScanActivity.SCAN_DRIVER_PREFIX);
-                }
+                    if (qrRequest.driverIdReq == QrScanRequest.REQUEST_COMPLETED) {
 
-                if (data.hasExtra(QrScanActivity.SCAN_VEHICLE_PREFIX)) {
+                        appManager.set_driver_id(qrRequest.driverId);
+                    }
 
-                    extra = data.getStringExtra(QrScanActivity.SCAN_VEHICLE_PREFIX);
+                    if (qrRequest.vehicleFrontReq == QrScanRequest.REQUEST_COMPLETED) {
+
+                    }
+
+                    if (qrRequest.vehicleBackReq == QrScanRequest.REQUEST_COMPLETED) {
+
+                    }
                 }
             }
         }
@@ -487,6 +525,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
         appManager = new AppManager(this, this);
+        qrRequest = new QrScanRequest();
 
         progress = new ProgressDialog(this);
         progress.setMessage(getString(R.string.progress_map_string));
@@ -1251,7 +1290,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onClick (final View view) {
 
                 Intent intent = new Intent(MainActivity.this, QrScanActivity.class);
-                startActivityForResult(intent, QR_CODE_REQUEST);
+                intent.putExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM, qrRequest);
+                startActivityForResult(intent, QR_CODE_REQUEST_ID);
             }
         });
 

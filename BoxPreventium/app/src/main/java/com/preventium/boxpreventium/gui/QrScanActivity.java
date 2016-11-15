@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.SparseArray;
 import android.view.View;
+import android.widget.CheckBox;
 
 import com.github.clans.fab.FloatingActionButton;
 import com.google.android.gms.samples.vision.barcodereader.BarcodeCapture;
@@ -21,18 +22,22 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
 
     private static final String TAG = "QrScanActivity";
 
-    private static final int QR_CODE_REQUEST = 0;
-
-    private static final int SCAN_DRIVER_ID = 1;
-    private static final int SCAN_VEHICLE   = 2;
-
-    public static final String SCAN_DRIVER_PREFIX  = "DRIVER";
-    public static final String SCAN_VEHICLE_PREFIX = "VEHICLE";
+    public static final String QR_SCAN_REQUEST_PARAM = "QR_REQUEST";
+    public static final String SCAN_DRIVER_PREFIX    = "DRIVER";
+    public static final String SCAN_VEHICLE_PREFIX   = "VEHICLE";
+    public static final String SCAN_VEHICLE_FRONT    = "FRONT";
+    public static final String SCAN_VEHICLE_BACK     = "BACK";
 
     private Intent returnIntent;
+    private AppColor appColor;
     private BarcodeCapture barcodeCapture;
     private boolean flashOn = false;
-    private int scanMode = 0;
+    private boolean scannedOnce = false;
+    private QrScanRequest qrRequest;
+
+    private CheckBox checkBoxDriverId;
+    private CheckBox checkBoxVehicleFront;
+    private CheckBox checkBoxVehicleBack;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -40,33 +45,36 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_qr_scan);
 
+        appColor = new AppColor(this);
         returnIntent = getIntent();
+        qrRequest = returnIntent.getParcelableExtra(QR_SCAN_REQUEST_PARAM);
         setResult(Activity.RESULT_CANCELED, returnIntent);
+
+        checkBoxDriverId = (CheckBox) findViewById(R.id.checkbox_driver_id);
+        checkBoxVehicleFront = (CheckBox) findViewById(R.id.checkbox_vehicle_front);
+        checkBoxVehicleBack = (CheckBox) findViewById(R.id.checkbox_vehicle_back);
+
+        if (qrRequest.vehicleFrontEnabled) {
+
+            checkBoxVehicleFront.setVisibility(View.GONE);
+        }
+
+        if (qrRequest.vehicleBackEnabled) {
+
+            checkBoxVehicleBack.setVisibility(View.GONE);
+        }
+
+        scannedOnce = false;
+        updateCheckBoxes();
+
+        if (qrRequest.driverIdReq == QrScanRequest.REQUEST_COMPLETED) {
+
+            checkBoxDriverId.setTextColor(appColor.getColor(AppColor.GREY));
+        }
 
         barcodeCapture = (BarcodeCapture) getSupportFragmentManager().findFragmentById(R.id.qr_scanner);
         barcodeCapture.setTouchAsCallback(false);
-
-        FloatingActionButton scanDriverButton = (FloatingActionButton) findViewById(R.id.button_qr_driver);
-        scanDriverButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick (View view) {
-
-                scanMode = SCAN_DRIVER_ID;
-                barcodeCapture.setRetrieval(QrScanActivity.this);
-            }
-        });
-
-        FloatingActionButton scanVehicleButton = (FloatingActionButton) findViewById(R.id.button_qr_vehicle);
-        scanVehicleButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick (View view) {
-
-                scanMode = SCAN_VEHICLE;
-                barcodeCapture.setRetrieval(QrScanActivity.this);
-            }
-        });
+        barcodeCapture.setRetrieval(QrScanActivity.this);
 
         FloatingActionButton flashButton = (FloatingActionButton) findViewById(R.id.button_qr_flash);
         flashButton.setOnClickListener(new View.OnClickListener() {
@@ -107,39 +115,62 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
             @Override
             public void run() {
 
-                    String msg = barcode.displayValue;
+                String code = barcode.displayValue;
 
-                    if (scanMode == SCAN_DRIVER_ID) {
+                if (code.startsWith(SCAN_DRIVER_PREFIX)) {
 
-                        if (msg.startsWith(SCAN_DRIVER_PREFIX)) {
+                    if (!scannedOnce) {
 
-                            showConfirmDialog(getString(R.string.scan_qr_ok_string));
+                        scannedOnce = true;
+                        long driverId = parseDriverId(code.substring(code.lastIndexOf(":") + 1));
 
-                            returnIntent.putExtra(SCAN_DRIVER_PREFIX, msg.substring(msg.lastIndexOf(":") + 1));
-                            setResult(Activity.RESULT_OK, returnIntent);
+                        if (driverId > 0) {
+
+                            if (qrRequest.driverIdReq == QrScanRequest.REQUEST_PENDING) {
+
+                                qrRequest.driverIdReq = QrScanRequest.REQUEST_COMPLETED;
+                            }
+
+                            qrRequest.driverId = driverId;
+                            showConfirmDialog(true);
                         }
                         else {
 
-                            showConfirmDialog(getString(R.string.scan_qr_error_string));
+                            showConfirmDialog(false);
                         }
                     }
-                    else if (scanMode == SCAN_VEHICLE) {
+                }
+                else if (code.startsWith(SCAN_VEHICLE_PREFIX)) {
 
-                        if (msg.startsWith(SCAN_VEHICLE_PREFIX)) {
+                    if (code.contains(SCAN_VEHICLE_FRONT)) {
 
-                            showConfirmDialog(getString(R.string.scan_qr_ok_string));
+                        if (qrRequest.vehicleFrontReq == QrScanRequest.REQUEST_PENDING) {
 
-                            returnIntent.putExtra(SCAN_DRIVER_PREFIX, msg.substring(msg.lastIndexOf(":") + 1));
-                            setResult(Activity.RESULT_OK, returnIntent);
-                        }
-                        else
-
-                            showConfirmDialog(getString(R.string.scan_qr_error_string));
+                            qrRequest.vehicleFrontReq = QrScanRequest.REQUEST_COMPLETED;
+                            showConfirmDialog(true);
                         }
                     }
+                    else if (code.contains(SCAN_VEHICLE_BACK)) {
 
-                    barcodeCapture.setRetrieval(null);
-                    barcodeCapture.refresh();
+                        if (qrRequest.vehicleBackReq == QrScanRequest.REQUEST_PENDING) {
+
+                            qrRequest.vehicleBackReq = QrScanRequest.REQUEST_COMPLETED;
+                            showConfirmDialog(true);
+                        }
+                    }
+                    else {
+
+                        showConfirmDialog(false);
+                    }
+                }
+                else {
+
+                    showConfirmDialog(false);
+                }
+
+                updateCheckBoxes();
+                returnIntent.putExtra(QR_SCAN_REQUEST_PARAM, qrRequest);
+                setResult(Activity.RESULT_OK, returnIntent);
             }
         });
     }
@@ -159,14 +190,30 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
 
     }
 
-    private void showConfirmDialog (String msg) {
+    private void showConfirmDialog (boolean ok) {
 
-        final AlertDialog.Builder builder = new AlertDialog.Builder(QrScanActivity.this);
+        int themeId;
+        String msg;
+
+        if (ok) {
+
+            msg = getString(R.string.scan_qr_ok_string);
+            themeId = R.style.QRAlertPositiveDialogStyle;
+        }
+        else {
+
+            msg = getString(R.string.scan_qr_error_string);
+            themeId = R.style.QRAlertNegativeDialogStyle;
+        }
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this, themeId);
+
         builder.setTitle("");
         builder.setMessage(msg);
+
         final AlertDialog dialog = builder.show();
 
-        new CountDownTimer(2000, 2000) {
+        new CountDownTimer(1500, 1500) {
 
             public void onTick (long millisUntilFinished) {}
 
@@ -179,5 +226,66 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
             }
 
         }.start();
+    }
+
+    private long parseDriverId (String str) {
+
+        try {
+
+            long num = Long.parseLong(str);
+
+            if (num > 0) {
+
+                return num;
+            }
+        }
+        catch (NumberFormatException e)
+        {
+            return -1;
+        }
+
+        return 0;
+    }
+
+    private void updateCheckBoxes() {
+
+        if (qrRequest.driverIdReq == QrScanRequest.REQUEST_PENDING) {
+
+            checkBoxDriverId.setChecked(false);
+            checkBoxDriverId.setTextColor(appColor.getColor(AppColor.RED));
+        }
+        else {
+
+            checkBoxDriverId.setChecked(true);
+            checkBoxDriverId.setTextColor(appColor.getColor(AppColor.GREEN));
+        }
+
+        if (qrRequest.vehicleFrontEnabled) {
+
+            if (qrRequest.vehicleFrontReq == QrScanRequest.REQUEST_PENDING) {
+
+                checkBoxVehicleFront.setChecked(false);
+                checkBoxVehicleFront.setTextColor(appColor.getColor(AppColor.RED));
+            }
+            else {
+
+                checkBoxVehicleFront.setChecked(true);
+                checkBoxVehicleFront.setTextColor(appColor.getColor(AppColor.GREEN));
+            }
+        }
+
+        if (qrRequest.vehicleBackEnabled) {
+
+            if (qrRequest.vehicleBackReq == QrScanRequest.REQUEST_PENDING) {
+
+                checkBoxVehicleBack.setChecked(false);
+                checkBoxVehicleBack.setTextColor(appColor.getColor(AppColor.RED));
+            }
+            else {
+
+                checkBoxVehicleBack.setChecked(true);
+                checkBoxVehicleBack.setTextColor(appColor.getColor(AppColor.GREEN));
+            }
+        }
     }
 }

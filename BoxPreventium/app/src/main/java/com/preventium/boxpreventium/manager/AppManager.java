@@ -149,8 +149,8 @@ public class AppManager extends ThreadDefault
 
         setLog( "AppManager begin..." );
 
-        download_cfg();
-        download_epc();
+        //download_cfg();
+        //download_epc();
         STATUS_t status = first_init();
         upload_eca(true);
 

@@ -53,8 +53,6 @@
     <string name="force_permissions_string">To continue please activate all permissions in the settings menu</string>
     <string name="permissions_retry_string">Retry</string>
     <string name="network_alert_string">No active internet connection. Make sure that 3G/4G is activated</string>
-    <string name="scan_qr_ok_string">Code scanned</string>
-    <string name="scan_qr_error_string">Wrong QR code. Try again</string>
     <string name="enable_tracking_string">Enable tracking</string>
     <string name="disable_tracking_string">Disable tracking</string>
     <string name="progress_loading_string">Loading...</string>
@@ -63,6 +61,11 @@
     <string name="progress_cfg_string">Downloading CFG data</string>
     <string name="progress_epc_string">Downloading EPC data</string>
     <string name="progress_ready_string">Ready</string>
+    <string name="scan_qr_ok_string">Code scanned</string>
+    <string name="scan_qr_error_string">Wrong QR code. Try again</string>
+    <string name="scan_qr_driver_id_string">Driver identificator</string>
+    <string name="scan_qr_vehicle_front_string">Vehicle front</string>
+    <string name="scan_qr_vehicle_back_string">Vehicle back</string>
 
     <string-array name="marker_perimeters">
         <item>50m</item>

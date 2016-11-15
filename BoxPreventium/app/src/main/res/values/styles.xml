@@ -9,6 +9,24 @@
          <item name="windowActionBar">false</item>
      </style>
 
+    <style name="QRAlertPositiveDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <!-- Used for the buttons -->
+        <item name="colorAccent">#ffffff</item>
+        <!-- Used for the title and text -->
+        <item name="android:textColorPrimary">#ffffff</item>
+        <!-- Used for the background -->
+        <item name="android:background">#4CAF50</item>
+    </style>
+
+    <style name="QRAlertNegativeDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <!-- Used for the buttons -->
+        <item name="colorAccent">#ffffff</item>
+        <!-- Used for the title and text -->
+        <item name="android:textColorPrimary">#ffffff</item>
+        <!-- Used for the background -->
+        <item name="android:background">#ff1744</item>
+    </style>
+
      <style name="device_name_text" >
          <item name="android:layout_width" >fill_parent</item>
          <item name="android:layout_height" >wrap_content</item>
