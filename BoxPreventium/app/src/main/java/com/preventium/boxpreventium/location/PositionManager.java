@@ -36,8 +36,8 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     private GoogleApiClient googleApiClient;
     private Location refLocation = null, currLocation;
     private long updateIntervalMs = 100;
-    private boolean updateEnabled = false;
     private boolean moving = false;
+    private boolean updateEnabled = true;
     private ArrayList<Location> lastLocList;
 
     private List<PositionListener> posListeners;

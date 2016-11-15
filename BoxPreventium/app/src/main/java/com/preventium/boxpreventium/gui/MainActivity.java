@@ -20,6 +20,7 @@ import android.os.CountDownTimer;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -64,8 +65,11 @@ import com.preventium.boxpreventium.utils.Connectivity;
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
 
     private static final String TAG = "MainActivity";
+
     private static final int MAP_ZOOM_ON_MOVE  = 17;
     private static final int MAP_ZOOM_ON_PAUSE = 15;
+
+    private static final int QR_CODE_REQUEST = 0;
 
     private PositionManager posManager;
     private MarkerManager markerManager;
@@ -82,7 +86,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionMenu optMenu;
     private FloatingActionButton infoButton;
     private FloatingActionButton callButton;
-    private FloatingActionButton formButton;
+    private FloatingActionButton scanQrCodeButton;
     private FloatingActionButton settingsButton;
     private FloatingActionButton stopButton;
     private FloatingActionButton menuButton1;
@@ -363,6 +367,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     case CAR_STOPPED:
 
                         speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "STOP");
+                        changeViewColorFilter(drivingTimeView, AppColor.GREY);
 
                         if (progress != null) {
 
@@ -450,6 +455,28 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
+    @Override
+    protected void onActivityResult (int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == QR_CODE_REQUEST) {
+
+            if (resultCode == RESULT_OK) {
+
+                String extra;
+
+                if (data.hasExtra(QrScanActivity.SCAN_DRIVER_PREFIX)) {
+
+                    extra = data.getStringExtra(QrScanActivity.SCAN_DRIVER_PREFIX);
+                }
+
+                if (data.hasExtra(QrScanActivity.SCAN_VEHICLE_PREFIX)) {
+
+                    extra = data.getStringExtra(QrScanActivity.SCAN_VEHICLE_PREFIX);
+                }
+            }
+        }
+    }
+
     private void init (boolean firstLaunch) {
 
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -457,9 +484,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mapReady = false;
         initDone = true;
         appColor = new AppColor(this);
-        appManager = new AppManager(this, this);
         pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+        appManager = new AppManager(this, this);
 
         progress = new ProgressDialog(this);
         progress.setMessage(getString(R.string.progress_map_string));
@@ -964,7 +991,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void disableActionButtons (boolean disable) {
 
-        FloatingActionButton[] actionBtnArray = {infoButton, callButton, formButton, settingsButton};
+        FloatingActionButton[] actionBtnArray = {infoButton, callButton, scanQrCodeButton, settingsButton};
 
         for (int i = 0; i < actionBtnArray.length; i++) {
 
@@ -981,7 +1008,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void hideActionButtons (boolean hide) {
 
-        FloatingActionButton[] actionBtnArray = {infoButton, callButton, formButton, settingsButton};
+        FloatingActionButton[] actionBtnArray = {infoButton, callButton, scanQrCodeButton, settingsButton};
 
         for (int i = 0; i < actionBtnArray.length; i++) {
 
@@ -1192,7 +1219,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         infoButton = (FloatingActionButton) findViewById(R.id.button_info);
         callButton = (FloatingActionButton) findViewById(R.id.button_call);
-        formButton = (FloatingActionButton) findViewById(R.id.button_formation);
+        scanQrCodeButton = (FloatingActionButton) findViewById(R.id.button_qrcode);
         settingsButton = (FloatingActionButton) findViewById(R.id.button_settings);
         stopButton = (FloatingActionButton) findViewById(R.id.button_stop);
 
@@ -1217,13 +1244,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        // FORM
-        formButton.setOnClickListener(new View.OnClickListener() {
+        // QR CODE
+        scanQrCodeButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick (final View view) {
 
-                startActivity(pinLockIntent);
+                Intent intent = new Intent(MainActivity.this, QrScanActivity.class);
+                startActivityForResult(intent, QR_CODE_REQUEST);
             }
         });
 
@@ -1305,15 +1333,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     posManager.enableUpdates(false);
 
-                    menuButton1.setImageResource(R.drawable.ic_play);
-                    menuButton1.setLabelText(getString(R.string.enable_tracking_string));
+                    menuButton2.setImageResource(R.drawable.ic_play);
+                    menuButton2.setLabelText(getString(R.string.enable_tracking_string));
                 }
                 else {
 
                     posManager.enableUpdates(true);
 
-                    menuButton1.setImageResource(R.drawable.ic_stop);
-                    menuButton1.setLabelText(getString(R.string.disable_tracking_string));
+                    menuButton2.setImageResource(R.drawable.ic_stop);
+                    menuButton2.setLabelText(getString(R.string.disable_tracking_string));
                 }
             }
         });
@@ -1323,7 +1351,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View view) {
 
-                startActivity(new Intent(MainActivity.this, QrScanActivity.class));
                 optMenu.close(true);
             }
         });

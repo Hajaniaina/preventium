@@ -9,14 +9,15 @@
     android:layout_height="match_parent">
 
     <!-- GOOGLE MAP -->
-    <fragment android:id="@+id/map"
-          android:name="com.google.android.gms.maps.SupportMapFragment"
-          android:layout_width="match_parent"
-          android:layout_height="match_parent"
-          map:cameraTilt="90"
-          map:mapType="normal"
-          map:uiCompass="false"
-          tools:layout="@layout/activity_main">
+    <fragment
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        map:cameraTilt="90"
+        map:mapType="normal"
+        map:uiCompass="false"
+        tools:layout="@layout/activity_main">
     </fragment>
 
     <ImageView android:id="@+id/background_image"
@@ -135,13 +136,14 @@
         </LinearLayout>
 
         <!-- SPEED INFO/LIMIT WIDGETS -->
-        <LinearLayout android:id="@+id/speed_info_layout"
-                        android:orientation="vertical"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="top|start"
-                        android:layout_marginTop="@dimen/speed_layout_margin_top"
-                        android:layout_marginStart="@dimen/speed_layout_margin_start">
+        <LinearLayout
+            android:id="@+id/speed_info_layout"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_marginTop="@dimen/speed_layout_margin_top"
+            android:layout_marginStart="@dimen/speed_layout_margin_start">
 
             <at.grabner.circleprogress.CircleProgressView
                 android:id="@+id/speed1_view"
@@ -217,12 +219,14 @@
 
         </LinearLayout>
 
-        <RelativeLayout android:id="@+id/actions_layout"
-                        android:layout_height="wrap_content"
-                        android:layout_width="wrap_content">
+        <RelativeLayout
+            android:id="@+id/actions_layout"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content">
 
             <!-- ACC FORCES & DRIVING SCORE WIDGETS -->
-            <LinearLayout android:id="@+id/force_layout"
+            <LinearLayout
+                android:id="@+id/force_layout"
                 android:orientation="vertical"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -231,7 +235,8 @@
                 android:layout_marginStart="@dimen/force_layout_margin_start"
                 android:layout_marginEnd="@dimen/force_layout_margin_end">
 
-                <TextView android:id="@+id/driving_score_view"
+                <TextView
+                    android:id="@+id/driving_score_view"
                     android:layout_width="@dimen/driving_score_layout_width"
                     android:layout_height="@dimen/driving_score_layout_height"
                     android:layout_marginTop="@dimen/driving_score_layout_margin_top"
@@ -270,7 +275,8 @@
                     android:layout_marginEnd="@dimen/buttons_layout_margin_end"
                     android:layout_marginStart="@dimen/buttons_layout_margin_start">
 
-                <com.github.clans.fab.FloatingActionButton android:id="@+id/button_info"
+                <com.github.clans.fab.FloatingActionButton
+                    android:id="@+id/button_info"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/buttons_margin_top1"
@@ -281,7 +287,8 @@
                     fab:fab_colorRipple="#ff5252"
                     fab:fab_shadowColor="#444"/>
 
-                <com.github.clans.fab.FloatingActionButton android:id="@+id/button_call"
+                <com.github.clans.fab.FloatingActionButton
+                    android:id="@+id/button_call"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/buttons_margin_top2"
@@ -292,18 +299,20 @@
                     fab:fab_colorRipple="#ff5252"
                     fab:fab_shadowColor="#444"/>
 
-                <com.github.clans.fab.FloatingActionButton android:id="@+id/button_formation"
+                <com.github.clans.fab.FloatingActionButton
+                    android:id="@+id/button_qrcode"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/buttons_margin_top2"
-                    android:src="@drawable/ic_lock_outline"
+                    android:src="@drawable/ic_qrcode"
                     fab:fab_size="@dimen/fb_button_size"
                     fab:fab_colorNormal="@color/colorAppBlue"
                     fab:fab_colorPressed="@color/colorAppRed"
                     fab:fab_colorRipple="#ff5252"
                     fab:fab_shadowColor="#444"/>
 
-                <com.github.clans.fab.FloatingActionButton android:id="@+id/button_settings"
+                <com.github.clans.fab.FloatingActionButton
+                    android:id="@+id/button_settings"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/buttons_margin_top2"
@@ -316,7 +325,8 @@
 
             </LinearLayout>
 
-            <com.github.clans.fab.FloatingActionButton android:id="@+id/button_stop"
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/button_stop"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="238dp"
@@ -324,12 +334,13 @@
                 android:src="@drawable/ic_check"
                 fab:fab_size="@dimen/fb_button_size"
                 fab:fab_colorNormal="@color/colorAppRed"
-                fab:fab_colorPressed="@color/colorAppBlue"
+                fab:fab_colorPressed="@color/colorAppGreen"
                 fab:fab_colorRipple="#ff5252"
                 fab:fab_shadowColor="#444"/>
 
             <!-- ACTION MENU -->
-            <com.github.clans.fab.FloatingActionMenu android:id="@+id/opt_menu"
+            <com.github.clans.fab.FloatingActionMenu
+                android:id="@+id/opt_menu"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_alignParentBottom="true"
@@ -349,18 +360,20 @@
                 fab:menu_colorRipple="#ffee58"
                 fab:menu_shadowColor="#444">
 
-                <com.github.clans.fab.FloatingActionButton android:id="@+id/menu_button1"
+                <com.github.clans.fab.FloatingActionButton
+                    android:id="@+id/menu_button1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/fab_add"
+                    android:src="@drawable/ic_sos"
                     fab:fab_size="@dimen/fb_button_size"
-                    fab:fab_colorNormal="@color/colorAppGreen"
-                    fab:fab_colorPressed="@color/colorAppYellow"
+                    fab:fab_colorNormal="@color/colorAppRed"
+                    fab:fab_colorPressed="@color/colorAppGreen"
                     fab:fab_colorRipple="#ffee58"
                     fab:fab_shadowColor="#444"
-                    fab:fab_label=""/>
+                    fab:fab_label="S.O.S."/>
 
-                <com.github.clans.fab.FloatingActionButton android:id="@+id/menu_button2"
+                <com.github.clans.fab.FloatingActionButton
+                    android:id="@+id/menu_button2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@drawable/ic_stop"
@@ -371,21 +384,23 @@
                     fab:fab_shadowColor="#444"
                     fab:fab_label="               "/>
 
-                <com.github.clans.fab.FloatingActionButton android:id="@+id/menu_button3"
+                <com.github.clans.fab.FloatingActionButton
+                    android:id="@+id/menu_button3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/ic_qrcode"
+                    android:src="@drawable/fab_add"
                     fab:fab_size="@dimen/fb_button_size"
                     fab:fab_colorNormal="@color/colorAppGreen"
                     fab:fab_colorPressed="@color/colorAppYellow"
                     fab:fab_colorRipple="#ffee58"
                     fab:fab_shadowColor="#444"
-                    fab:fab_label="@string/scan_qr_string"/>
+                    fab:fab_label=""/>
 
             </com.github.clans.fab.FloatingActionMenu>
 
             <!-- BOX NUM WIDGET -->
-            <LinearLayout android:id="@+id/box_layout"
+            <LinearLayout
+                android:id="@+id/box_layout"
                 android:orientation="vertical"
                 android:layout_width="@dimen/box_num_layout_width"
                 android:layout_height="wrap_content"
@@ -395,7 +410,8 @@
                 android:layout_marginStart="@dimen/box_num_layout_margin_start"
                 android:layout_marginEnd="@dimen/box_num_layout_margin_end">
 
-                <TextView android:id="@+id/box_num_connected"
+                <TextView
+                    android:id="@+id/box_num_connected"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/box_num_margin_top"

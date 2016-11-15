@@ -1,5 +1,7 @@
 package com.preventium.boxpreventium.gui;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.CountDownTimer;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -18,20 +20,55 @@ import xyz.belvi.mobilevisionbarcodescanner.BarcodeRetriever;
 public class QrScanActivity extends AppCompatActivity implements BarcodeRetriever {
 
     private static final String TAG = "QrScanActivity";
+
+    private static final int QR_CODE_REQUEST = 0;
+
+    private static final int SCAN_DRIVER_ID = 1;
+    private static final int SCAN_VEHICLE   = 2;
+
+    public static final String SCAN_DRIVER_PREFIX  = "DRIVER";
+    public static final String SCAN_VEHICLE_PREFIX = "VEHICLE";
+
+    private Intent returnIntent;
     private BarcodeCapture barcodeCapture;
     private boolean flashOn = false;
+    private int scanMode = 0;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate (Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_qr_scan);
 
+        returnIntent = getIntent();
+        setResult(Activity.RESULT_CANCELED, returnIntent);
+
         barcodeCapture = (BarcodeCapture) getSupportFragmentManager().findFragmentById(R.id.qr_scanner);
-        barcodeCapture.setRetrieval(this);
         barcodeCapture.setTouchAsCallback(false);
 
-        FloatingActionButton flashButton = (FloatingActionButton) findViewById(R.id.flash_button);
+        FloatingActionButton scanDriverButton = (FloatingActionButton) findViewById(R.id.button_qr_driver);
+        scanDriverButton.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick (View view) {
+
+                scanMode = SCAN_DRIVER_ID;
+                barcodeCapture.setRetrieval(QrScanActivity.this);
+            }
+        });
+
+        FloatingActionButton scanVehicleButton = (FloatingActionButton) findViewById(R.id.button_qr_vehicle);
+        scanVehicleButton.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick (View view) {
+
+                scanMode = SCAN_VEHICLE;
+                barcodeCapture.setRetrieval(QrScanActivity.this);
+            }
+        });
+
+        FloatingActionButton flashButton = (FloatingActionButton) findViewById(R.id.button_qr_flash);
         flashButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -50,6 +87,16 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
                 barcodeCapture.refresh();
             }
         });
+
+        FloatingActionButton closeButton = (FloatingActionButton) findViewById(R.id.button_qr_close);
+        closeButton.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick (View view) {
+
+                onBackPressed();
+            }
+        });
     }
 
     @Override
@@ -60,24 +107,39 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
             @Override
             public void run() {
 
-                final AlertDialog.Builder builder = new AlertDialog.Builder(QrScanActivity.this);
-                builder.setTitle("");
-                builder.setMessage(barcode.displayValue);
-                final AlertDialog dialog = builder.show();
+                    String msg = barcode.displayValue;
 
-                new CountDownTimer(2000, 2000) {
+                    if (scanMode == SCAN_DRIVER_ID) {
 
-                    public void onTick (long millisUntilFinished) {}
+                        if (msg.startsWith(SCAN_DRIVER_PREFIX)) {
 
-                    public void onFinish() {
+                            showConfirmDialog(getString(R.string.scan_qr_ok_string));
 
-                        if (dialog.isShowing()) {
+                            returnIntent.putExtra(SCAN_DRIVER_PREFIX, msg.substring(msg.lastIndexOf(":") + 1));
+                            setResult(Activity.RESULT_OK, returnIntent);
+                        }
+                        else {
 
-                            dialog.dismiss();
+                            showConfirmDialog(getString(R.string.scan_qr_error_string));
+                        }
+                    }
+                    else if (scanMode == SCAN_VEHICLE) {
+
+                        if (msg.startsWith(SCAN_VEHICLE_PREFIX)) {
+
+                            showConfirmDialog(getString(R.string.scan_qr_ok_string));
+
+                            returnIntent.putExtra(SCAN_DRIVER_PREFIX, msg.substring(msg.lastIndexOf(":") + 1));
+                            setResult(Activity.RESULT_OK, returnIntent);
+                        }
+                        else
+
+                            showConfirmDialog(getString(R.string.scan_qr_error_string));
                         }
                     }
 
-                }.start();
+                    barcodeCapture.setRetrieval(null);
+                    barcodeCapture.refresh();
             }
         });
     }
@@ -95,5 +157,27 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
     @Override
     public void onRetrievedFailed (String reason) {
 
+    }
+
+    private void showConfirmDialog (String msg) {
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(QrScanActivity.this);
+        builder.setTitle("");
+        builder.setMessage(msg);
+        final AlertDialog dialog = builder.show();
+
+        new CountDownTimer(2000, 2000) {
+
+            public void onTick (long millisUntilFinished) {}
+
+            public void onFinish() {
+
+                if (dialog.isShowing()) {
+
+                    dialog.dismiss();
+                }
+            }
+
+        }.start();
     }
 }
