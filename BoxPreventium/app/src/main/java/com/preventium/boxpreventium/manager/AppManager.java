@@ -265,6 +265,35 @@ public class AppManager extends ThreadDefault
     public void set_driver_id( long driver_id ){ this.driver_id = driver_id; }
 
     /// ============================================================================================
+    /// UI Timers
+    /// ============================================================================================
+
+    /// Add timer to timer list
+    public void add_ui_timer(long secs, int timer_id){ui_timers.add( Pair.create(secs,timer_id) ); }
+
+    /// Remove all timers
+    public void clear_ui_timer(){ ui_timers.clear(); }
+
+    /// Listening timeout
+    private void listen_timers(STATUS_t status){
+        long secs = (long) chronoRide.getSeconds();
+        if( !ui_timers.isEmpty() ) {
+            Pair<Long, Integer> timer;
+            long timeout_secs;
+            int timer_id;
+            for (int i = ui_timers.size() - 1; i >= 0; i--) {
+                timer = ui_timers.get(i);
+                timeout_secs = timer.first;
+                timer_id = timer.second;
+                if( secs >= timeout_secs ){
+                    if( listener != null ) listener.onUiTimeout( timer_id, status );
+                    ui_timers.remove(i);
+                }
+            }
+        }
+    }
+
+    /// ============================================================================================
     /// .CFG
     /// ============================================================================================
 
@@ -329,35 +358,6 @@ public class AppManager extends ThreadDefault
             if( isRunning() && !cfg ) sleep(1000);
         }
         return cfg;
-    }
-
-    /// ============================================================================================
-    /// UI Timers
-    /// ============================================================================================
-
-    /// Add timer to timer list
-    public void add_ui_timer(long secs, int timer_id){ui_timers.add( Pair.create(secs,timer_id) ); }
-
-    /// Remove all timers
-    public void clear_ui_timer(){ ui_timers.clear(); }
-
-    /// Listening timeout
-    private void listen_timers(STATUS_t status){
-        long secs = (long) chronoRide.getSeconds();
-        if( !ui_timers.isEmpty() ) {
-            Pair<Long, Integer> timer;
-            long timeout_secs;
-            int timer_id;
-            for (int i = ui_timers.size() - 1; i >= 0; i--) {
-                timer = ui_timers.get(i);
-                timeout_secs = timer.first;
-                timer_id = timer.second;
-                if( secs >= timeout_secs ){
-                    if( listener != null ) listener.onUiTimeout( timer_id, status );
-                    ui_timers.remove(i);
-                }
-            }
-        }
     }
 
     /// ============================================================================================
