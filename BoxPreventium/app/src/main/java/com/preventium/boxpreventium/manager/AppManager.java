@@ -20,7 +20,8 @@ import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.ForceSeuil;
 import com.preventium.boxpreventium.server.EPC.ReaderEPCFile;
-import com.preventium.boxpreventium.utils.BytesUtils;
+import com.preventium.boxpreventium.server.DOBJ.DataDOBJ;
+import com.preventium.boxpreventium.server.DOBJ.ReaderDOBJFile;
 import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.ThreadDefault;
@@ -29,25 +30,20 @@ import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 
 import org.apache.commons.net.ftp.FTPFile;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * Created by Franck on 23/09/2016.
  */
 
 public class AppManager extends ThreadDefault
-    implements HandlerBox.NotifyListener{
+        implements HandlerBox.NotifyListener{
 
     private final static String TAG = "AppManager";
     private final static boolean DEBUG = true;
@@ -139,7 +135,6 @@ public class AppManager extends ThreadDefault
         } else {
             setStop();
         }
-
     }
 
 
@@ -149,8 +144,9 @@ public class AppManager extends ThreadDefault
 
         setLog( "AppManager begin..." );
 
-        //download_cfg();
-        //download_epc();
+        download_cfg();
+        download_epc();
+        download_dobj();
         STATUS_t status = first_init();
         upload_eca(true);
 
@@ -164,14 +160,16 @@ public class AppManager extends ThreadDefault
             switch ( status ) {
                 case GETTING_CFG:
                 case GETTING_EPC:
+                case GETTING_DOBJ:
                     break;
-                case CAR_STOPPED:
+                case PAR_STOPPED:
                     status = on_stopped();
                     break;
-                case CAR_MOVING:
-                    status = on_moved();
+                case PAR_STARTED:
+                case PAR_RESUME:
+                    status = on_moved(status);
                     break;
-                case CAR_PAUSING:
+                case PAR_PAUSING:
                     status = on_paused();
                     break;
             }
@@ -204,7 +202,6 @@ public class AppManager extends ThreadDefault
 
     @Override
     public void onForceChanged(double mG) {
-        //if( DEBUG ) Log.d(TAG,"mG = " + mG );
         this.YmG = mG;
     }
 
@@ -231,8 +228,8 @@ public class AppManager extends ThreadDefault
             listener.onDebugLog("");
             listener.onDrivingTimeChanged(chronoRideTxt);
             listener.onDriveScoreChanged( 0f );
-            listener.onStatusChanged( STATUS_t.CAR_PAUSING );
-            listener.onStatusChanged( STATUS_t.CAR_STOPPED );
+            listener.onStatusChanged( STATUS_t.PAR_PAUSING);
+            listener.onStatusChanged( STATUS_t.PAR_STOPPED);
         }
         parcour_id = 0;
         cotation_update_at = 0;
@@ -240,7 +237,7 @@ public class AppManager extends ThreadDefault
         alertY_add_at = 0;
         alertPos_add_at = 0;
         try_send_eca_at  = 0;
-        return STATUS_t.CAR_STOPPED;
+        return STATUS_t.PAR_STOPPED;
     }
 
     private void change_driving_time() {
@@ -248,6 +245,14 @@ public class AppManager extends ThreadDefault
         if( !chronoRideTxt.equals(txt) ) {
             if( listener != null ) listener.onDrivingTimeChanged( txt );
             chronoRideTxt = txt;
+        }
+    }
+
+    private void clear_force_ui(){
+        if( seuil_ui != null
+                && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3 ){
+            if( listener != null ) listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
+            seuil_ui = null;
         }
     }
 
@@ -464,6 +469,92 @@ public class AppManager extends ThreadDefault
     }
 
     /// ============================================================================================
+    /// .OBJ
+    /// ============================================================================================
+
+    // Downloading .DOBJ files if is needed
+    private boolean download_dobj() throws InterruptedException {
+        boolean ready = false;
+
+        if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
+
+        File folder = new File(ctx.getFilesDir(), "");
+        ReaderDOBJFile reader = new ReaderDOBJFile();
+        FTPConfig config = DataCFG.getFptConfig(ctx);
+        FTPClientIO ftp = new FTPClientIO();
+
+        while( isRunning() && !ready ) {
+            if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
+
+            // Trying to connect to FTP server...
+            if( ftp.ftpConnect(config, 5000) ) {
+
+                // Changing working directory if needed
+                boolean change_directory = true;
+                if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                    change_directory = ftp.makeDirectory(config.getWorkDirectory());
+
+                if( !change_directory ) {
+                    Log.w(TAG, "Error while trying to change working directory!");
+                } else {
+
+                    boolean dobj = false;
+                    boolean exist_server_dobj = false;
+                    boolean exist_server_ack = false;
+                    FTPFile[] files = ftp.ftpPrintFiles();
+
+                    // Checking if .DOBJ file is in FTP server ?
+                    String srcFileName = ReaderDOBJFile.getOBJFileName(ctx, false);
+                    String srcAckName = ReaderDOBJFile.getOBJFileName(ctx, true);
+                    for ( FTPFile f : files ) {
+                        if( f.isFile() ) {
+                            if (f.getName().equals(srcFileName)) exist_server_dobj = true;
+                            if (f.getName().equals(srcAckName)) exist_server_ack = true;
+                        }
+                        if( exist_server_ack && exist_server_dobj ) break;
+                    }
+
+                    // If .DOBJ file exist in the FTP server
+                    dobj = ( exist_server_ack && DataDOBJ.preferenceFileExist(ctx) );
+                    if( !dobj ) {
+                        if (exist_server_dobj) {
+                            // Create folder if not exist
+                            if (!folder.exists())
+                                if (!folder.mkdirs())
+                                    Log.w(TAG, "Error while trying to create new folder!");
+                            if (folder.exists()) {
+                                // Trying to download .OBJ file...
+                                String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+                                if (ftp.ftpDownload(srcFileName, desFileName)) {
+                                    dobj = reader.read(ctx,desFileName,false);
+                                    if( dobj ) {
+                                        ready = reader.read(ctx,desFileName,true);
+                                        // envoi acknowledge
+                                        try {
+                                            File temp = File.createTempFile("temp-file-name", ".tmp");
+                                            ftp.ftpUpload(temp.getPath(), srcAckName);
+                                            temp.delete();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                        new File(desFileName).delete();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Disconnect from FTP server.
+            ftp.ftpDisconnect();
+
+            if( !ready ) ready = DataDOBJ.preferenceFileExist(ctx);
+            if( isRunning() && !ready ) sleep(1000);
+        }
+        return ready;
+    }
+
+    /// ============================================================================================
     /// .ECA
     /// ============================================================================================
 
@@ -486,6 +577,46 @@ public class AppManager extends ThreadDefault
         return ret;
     }
 
+    /// ============================================================================================
+    /// .CEP
+    /// ============================================================================================
+
+    /// Create .CEP file (Connections Events of Preventium's devices) and uploading to the server.
+    private void upload_cep(){
+        if( parcour_id > 0 ) {
+            database.create_cep_file(parcour_id);
+            database.clear_cep_data();
+        }
+
+        // UPLOAD .CEP FILES
+        File folder = new File(ctx.getFilesDir(), "CEP");
+        if ( folder.exists() ){
+            File[] listOfFiles = folder.listFiles(new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.toUpperCase().endsWith(".CEP");
+                }
+            });
+
+            if( listOfFiles != null && listOfFiles.length > 0 ){
+                FTPConfig config = DataCFG.getFptConfig(ctx);
+                FTPClientIO ftp = new FTPClientIO();
+                if( config != null && ftp.ftpConnect(config, 5000) ) {
+                    boolean change_directory = true;
+                    if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                        change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                    if (!change_directory) {
+                        Log.w(TAG, "Error while trying to change working directory!");
+                    } else {
+                        for ( File file : listOfFiles ) {
+                            if( ftp.ftpUpload(file.getAbsolutePath(),file.getName()) ){
+                                file.delete();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     /// ============================================================================================
     /// .POS (Map markers)
@@ -935,7 +1066,7 @@ public class AppManager extends ThreadDefault
     public void setStopped(){ button_stop = true; }
 
     private STATUS_t on_stopped(){
-        STATUS_t ret = STATUS_t.CAR_STOPPED;
+        STATUS_t ret = STATUS_t.PAR_STOPPED;
 
         // Clear UI
         clear_force_ui();
@@ -959,7 +1090,7 @@ public class AppManager extends ThreadDefault
                 addLog("START PARCOURS");
                 parcour_id = System.currentTimeMillis();
                 chronoRide.start();
-                ret = STATUS_t.CAR_MOVING;
+                ret = STATUS_t.PAR_STARTED;
                 if (listener != null) listener.onStatusChanged(ret);
             }
         }
@@ -967,18 +1098,19 @@ public class AppManager extends ThreadDefault
     }
 
     private STATUS_t on_paused() throws InterruptedException {
-        STATUS_t ret = STATUS_t.CAR_PAUSING;
+        STATUS_t ret = STATUS_t.PAR_PAUSING;
 
         // Checking if car is stopped
         if ( button_stop ||
                 ( mov_t_last == MOVING_t.STP
-                && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED ) )
+                        && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED ) )
         {
 
             chronoRide.stop();
+            upload_cep();
             upload_custom_markers();
             upload_parcours_type();
-            ret = STATUS_t.CAR_STOPPED;
+            ret = STATUS_t.PAR_STOPPED;
             if (listener != null) listener.onStatusChanged(ret);
             addLog("STOP PARCOURS");
             clear_force_ui();
@@ -986,7 +1118,7 @@ public class AppManager extends ThreadDefault
         // Or checking if car re-moving
         else if (mov_t_last != MOVING_t.STP
                 && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_RESUME) {
-            ret = STATUS_t.CAR_MOVING;
+            ret = STATUS_t.PAR_RESUME;
             if (listener != null) listener.onStatusChanged(ret);
             addLog("RESUME PARCOURS");
             clear_force_ui();
@@ -995,8 +1127,8 @@ public class AppManager extends ThreadDefault
         return ret;
     }
 
-    private STATUS_t on_moved(){
-        STATUS_t ret = STATUS_t.CAR_MOVING;
+    private STATUS_t on_moved(STATUS_t status){
+        STATUS_t ret = status;
 
         calc_eca();
         calc_parcour_cotation();
@@ -1004,7 +1136,7 @@ public class AppManager extends ThreadDefault
         // Checking if car is in pause
         if (mov_t_last == MOVING_t.STP
                 && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE) {
-            ret = STATUS_t.CAR_PAUSING;
+            ret = STATUS_t.PAR_PAUSING;
             if (listener != null) listener.onStatusChanged(ret);
             addLog("PAUSE PARCOURS");
             clear_force_ui();
@@ -1027,25 +1159,9 @@ public class AppManager extends ThreadDefault
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-    private void clear_force_ui(){
-        if( seuil_ui != null
-                && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3 ){
-            if( listener != null ) listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
-            seuil_ui = null;
-        }
-    }
+    /// ============================================================================================
+    /// DEBUG
+    /// ============================================================================================
 
     private void setLog( String txt ){
         log = txt;
@@ -1056,7 +1172,5 @@ public class AppManager extends ThreadDefault
         log += txt;
         if( listener != null ) listener.onDebugLog( log );
     }
-
-
 
 }
