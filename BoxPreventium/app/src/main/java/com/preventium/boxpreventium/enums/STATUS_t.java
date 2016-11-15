@@ -13,9 +13,10 @@ public enum STATUS_t {
     GETTING_CFG(0),
     GETTING_EPC(1),
     GETTING_DOBJ(2),
-    CAR_STOPPED(3),
-    CAR_MOVING(4),
-    CAR_PAUSING(5);
+    PAR_STOPPED(3),
+    PAR_STARTED(4),
+    PAR_PAUSING(5),
+    PAR_RESUME(5);
 
 
     private int value;
@@ -36,12 +37,14 @@ public enum STATUS_t {
                 return "STATUS_t[GETTING_EPC]";
             case GETTING_DOBJ  :
                 return "STATUS_t[GETTING_DOBJ]";
-            case CAR_STOPPED    :
-                return "STATUS_t[CAR_STOPPED]";
-            case CAR_MOVING    :
-                return "STATUS_t[CAR_MOVING]";
-            case CAR_PAUSING    :
-                return "STATUS_t[CAR_PAUSING]";
+            case PAR_STOPPED:
+                return "STATUS_t[PAR_STOPPED]";
+            case PAR_STARTED:
+                return "STATUS_t[PAR_STARTED]";
+            case PAR_PAUSING:
+                return "STATUS_t[PAR_PAUSING]";
+            case PAR_RESUME:
+                return "STATUS_t[PAR_RESUME]";
             default                 :
                 return "STATUS_t[???]";
         }

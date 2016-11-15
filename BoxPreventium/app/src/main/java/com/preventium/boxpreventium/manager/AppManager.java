@@ -162,13 +162,14 @@ public class AppManager extends ThreadDefault
                 case GETTING_EPC:
                 case GETTING_DOBJ:
                     break;
-                case CAR_STOPPED:
+                case PAR_STOPPED:
                     status = on_stopped();
                     break;
-                case CAR_MOVING:
-                    status = on_moved();
+                case PAR_STARTED:
+                case PAR_RESUME:
+                    status = on_moved(status);
                     break;
-                case CAR_PAUSING:
+                case PAR_PAUSING:
                     status = on_paused();
                     break;
             }
@@ -227,8 +228,8 @@ public class AppManager extends ThreadDefault
             listener.onDebugLog("");
             listener.onDrivingTimeChanged(chronoRideTxt);
             listener.onDriveScoreChanged( 0f );
-            listener.onStatusChanged( STATUS_t.CAR_PAUSING );
-            listener.onStatusChanged( STATUS_t.CAR_STOPPED );
+            listener.onStatusChanged( STATUS_t.PAR_PAUSING);
+            listener.onStatusChanged( STATUS_t.PAR_STOPPED);
         }
         parcour_id = 0;
         cotation_update_at = 0;
@@ -236,7 +237,7 @@ public class AppManager extends ThreadDefault
         alertY_add_at = 0;
         alertPos_add_at = 0;
         try_send_eca_at  = 0;
-        return STATUS_t.CAR_STOPPED;
+        return STATUS_t.PAR_STOPPED;
     }
 
     private void change_driving_time() {
@@ -1065,7 +1066,7 @@ public class AppManager extends ThreadDefault
     public void setStopped(){ button_stop = true; }
 
     private STATUS_t on_stopped(){
-        STATUS_t ret = STATUS_t.CAR_STOPPED;
+        STATUS_t ret = STATUS_t.PAR_STOPPED;
 
         // Clear UI
         clear_force_ui();
@@ -1089,7 +1090,7 @@ public class AppManager extends ThreadDefault
                 addLog("START PARCOURS");
                 parcour_id = System.currentTimeMillis();
                 chronoRide.start();
-                ret = STATUS_t.CAR_MOVING;
+                ret = STATUS_t.PAR_STARTED;
                 if (listener != null) listener.onStatusChanged(ret);
             }
         }
@@ -1097,7 +1098,7 @@ public class AppManager extends ThreadDefault
     }
 
     private STATUS_t on_paused() throws InterruptedException {
-        STATUS_t ret = STATUS_t.CAR_PAUSING;
+        STATUS_t ret = STATUS_t.PAR_PAUSING;
 
         // Checking if car is stopped
         if ( button_stop ||
@@ -1109,7 +1110,7 @@ public class AppManager extends ThreadDefault
             upload_cep();
             upload_custom_markers();
             upload_parcours_type();
-            ret = STATUS_t.CAR_STOPPED;
+            ret = STATUS_t.PAR_STOPPED;
             if (listener != null) listener.onStatusChanged(ret);
             addLog("STOP PARCOURS");
             clear_force_ui();
@@ -1117,7 +1118,7 @@ public class AppManager extends ThreadDefault
         // Or checking if car re-moving
         else if (mov_t_last != MOVING_t.STP
                 && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_RESUME) {
-            ret = STATUS_t.CAR_MOVING;
+            ret = STATUS_t.PAR_RESUME;
             if (listener != null) listener.onStatusChanged(ret);
             addLog("RESUME PARCOURS");
             clear_force_ui();
@@ -1126,8 +1127,8 @@ public class AppManager extends ThreadDefault
         return ret;
     }
 
-    private STATUS_t on_moved(){
-        STATUS_t ret = STATUS_t.CAR_MOVING;
+    private STATUS_t on_moved(STATUS_t status){
+        STATUS_t ret = status;
 
         calc_eca();
         calc_parcour_cotation();
@@ -1135,7 +1136,7 @@ public class AppManager extends ThreadDefault
         // Checking if car is in pause
         if (mov_t_last == MOVING_t.STP
                 && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE) {
-            ret = STATUS_t.CAR_PAUSING;
+            ret = STATUS_t.PAR_PAUSING;
             if (listener != null) listener.onStatusChanged(ret);
             addLog("PAUSE PARCOURS");
             clear_force_ui();
