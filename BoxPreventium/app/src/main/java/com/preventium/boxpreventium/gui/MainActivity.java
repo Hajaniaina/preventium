@@ -307,7 +307,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                if (globalStatus == STATUS_t.CAR_MOVING) {
+                if (globalStatus == STATUS_t.PAR_STARTED) {     /////////////////////////////////////////////////////////////////////
 
                     if (type != FORCE_t.UNKNOW) {
 
@@ -363,7 +363,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         break;
 
-                    case CAR_STOPPED:
+                    case PAR_STOPPED:
 
                         speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "STOP");
                         changeViewColorFilter(drivingTimeView, AppColor.GREY);
@@ -376,7 +376,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         break;
 
-                    case CAR_MOVING:
+                    case PAR_STARTED:
 
                         speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "RUN");
 
@@ -391,7 +391,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         break;
 
-                    case CAR_PAUSING:
+                    case PAR_RESUME:
+
+                        break;
+
+                    case PAR_PAUSING:
 
                         speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "PAUSE");
 
