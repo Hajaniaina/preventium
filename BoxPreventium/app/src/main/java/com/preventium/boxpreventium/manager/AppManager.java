@@ -251,6 +251,14 @@ public class AppManager extends ThreadDefault
         }
     }
 
+    private void clear_force_ui(){
+        if( seuil_ui != null
+                && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3 ){
+            if( listener != null ) listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
+            seuil_ui = null;
+        }
+    }
+    
     /// ============================================================================================
     /// Driver ID
     /// ============================================================================================
@@ -1068,25 +1076,9 @@ public class AppManager extends ThreadDefault
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-    private void clear_force_ui(){
-        if( seuil_ui != null
-                && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3 ){
-            if( listener != null ) listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
-            seuil_ui = null;
-        }
-    }
+    /// ============================================================================================
+    /// DEBUG
+    /// ============================================================================================
 
     private void setLog( String txt ){
         log = txt;
@@ -1097,7 +1089,5 @@ public class AppManager extends ThreadDefault
         log += txt;
         if( listener != null ) listener.onDebugLog( log );
     }
-
-
 
 }
