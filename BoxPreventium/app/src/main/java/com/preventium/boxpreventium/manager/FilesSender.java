@@ -49,10 +49,6 @@ public class FilesSender extends ThreadDefault {
     @Override
     public void myRun() throws InterruptedException {
         super.myRun();
-Log.d(TAG,"MyRun started" );
-//DBHelper.set_eca_parcour_send(_ctx,-1);
-//DBHelper.set_last_eca_time_send(_ctx,-1);
-
 
         DBHelper db = new DBHelper(_ctx);
 
@@ -61,8 +57,6 @@ Log.d(TAG,"MyRun started" );
         // CREATE ECA FILE
         long last_time = DBHelper.get_last_eca_time_send(_ctx);
         long last_time_temp = db.create_eca_file( _ctx, last_time );
-Log.d(TAG,"last_time = " + last_time );
-Log.d(TAG,"last_time_temp = " + last_time_temp );
 
         if( last_time_temp > last_time ){
 
@@ -70,17 +64,13 @@ Log.d(TAG,"last_time_temp = " + last_time_temp );
             boolean success = false;
             File folder = new File(_ctx.getFilesDir(), "ECA");
             File[] listOfFiles = folder.listFiles();
-Log.d(TAG,"folder = " + folder.getAbsolutePath() );
-//Log.d(TAG,"listOfFiles.length = " + listOfFiles.length );
             if( listOfFiles != null && listOfFiles.length == 1 ){
                 FTPConfig config = DataCFG.getFptConfig(_ctx);
                 FTPClientIO ftp = new FTPClientIO();
-Log.d(TAG,"Trying to connect...");
                 if( config != null && ftp.ftpConnect(config, 5000) ) {
                     boolean change_directory = true;
                     if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
                         change_directory = ftp.makeDirectory(config.getWorkDirectory());
-Log.d(TAG,"change_directory = " + change_directory );
                     if (!change_directory) {
                         Log.w(TAG, "Error while trying to change working directory!");
                     } else {
@@ -90,7 +80,6 @@ Log.d(TAG,"change_directory = " + change_directory );
                     ftp.ftpDisconnect();
                 }
             }
-Log.d(TAG,"success = " + success );
 
             // UPDATE LAST SENDING INFO
             if( success )
@@ -100,6 +89,5 @@ Log.d(TAG,"success = " + success );
         // REMOVE ECA FILE
         db.remove_eca_file(_ctx);
 
-Log.d(TAG,"MyRun finished" );
     }
 }
