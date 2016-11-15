@@ -486,6 +486,7 @@ public class AppManager extends ThreadDefault
         return ret;
     }
 
+
     /// ============================================================================================
     /// .POS (Map markers)
     /// ============================================================================================
@@ -583,7 +584,7 @@ public class AppManager extends ThreadDefault
 
     // Set current parcours is a parcours type,
     // if parcoursName is null, do not set this parcours is a parcours type
-    public void setParcoursType( @Nullable  String parcoursName ){
+    public void set_parcours_type(@Nullable  String parcoursName ){
         if( parcoursName == null ) parcoursName = "";
         parcoursTypeName = parcoursName;
     }
