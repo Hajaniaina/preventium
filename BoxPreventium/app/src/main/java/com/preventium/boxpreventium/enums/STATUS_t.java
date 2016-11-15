@@ -12,9 +12,10 @@ import java.util.Map;
 public enum STATUS_t {
     GETTING_CFG(0),
     GETTING_EPC(1),
-    CAR_STOPPED(2),
-    CAR_MOVING(3),
-    CAR_PAUSING(4);
+    GETTING_DOBJ(2),
+    CAR_STOPPED(3),
+    CAR_MOVING(4),
+    CAR_PAUSING(5);
 
 
     private int value;
@@ -33,6 +34,8 @@ public enum STATUS_t {
                 return "STATUS_t[GETTING_CFG]";
             case GETTING_EPC  :
                 return "STATUS_t[GETTING_EPC]";
+            case GETTING_DOBJ  :
+                return "STATUS_t[GETTING_DOBJ]";
             case CAR_STOPPED    :
                 return "STATUS_t[CAR_STOPPED]";
             case CAR_MOVING    :

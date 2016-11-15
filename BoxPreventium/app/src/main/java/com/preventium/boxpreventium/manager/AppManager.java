@@ -20,7 +20,8 @@ import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.ForceSeuil;
 import com.preventium.boxpreventium.server.EPC.ReaderEPCFile;
-import com.preventium.boxpreventium.utils.BytesUtils;
+import com.preventium.boxpreventium.server.DOBJ.DataDOBJ;
+import com.preventium.boxpreventium.server.DOBJ.ReaderDOBJFile;
 import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.ThreadDefault;
@@ -29,18 +30,13 @@ import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 
 import org.apache.commons.net.ftp.FTPFile;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * Created by Franck on 23/09/2016.
@@ -139,7 +135,6 @@ public class AppManager extends ThreadDefault
         } else {
             setStop();
         }
-
     }
 
 
@@ -151,6 +146,7 @@ public class AppManager extends ThreadDefault
 
         download_cfg();
         download_epc();
+        download_dobj();
         STATUS_t status = first_init();
         upload_eca(true);
 
@@ -164,6 +160,7 @@ public class AppManager extends ThreadDefault
             switch ( status ) {
                 case GETTING_CFG:
                 case GETTING_EPC:
+                case GETTING_DOBJ:
                     break;
                 case CAR_STOPPED:
                     status = on_stopped();
@@ -204,7 +201,6 @@ public class AppManager extends ThreadDefault
 
     @Override
     public void onForceChanged(double mG) {
-        //if( DEBUG ) Log.d(TAG,"mG = " + mG );
         this.YmG = mG;
     }
 
@@ -258,7 +254,7 @@ public class AppManager extends ThreadDefault
             seuil_ui = null;
         }
     }
-    
+
     /// ============================================================================================
     /// Driver ID
     /// ============================================================================================
@@ -468,6 +464,92 @@ public class AppManager extends ThreadDefault
             if( isRunning() && !ready ) sleep(1000);
         }
 
+        return ready;
+    }
+
+    /// ============================================================================================
+    /// .OBJ
+    /// ============================================================================================
+
+    // Downloading .DOBJ files if is needed
+    private boolean download_dobj() throws InterruptedException {
+        boolean ready = false;
+
+        if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
+
+        File folder = new File(ctx.getFilesDir(), "");
+        ReaderDOBJFile reader = new ReaderDOBJFile();
+        FTPConfig config = DataCFG.getFptConfig(ctx);
+        FTPClientIO ftp = new FTPClientIO();
+
+        while( isRunning() && !ready ) {
+            if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
+
+            // Trying to connect to FTP server...
+            if( ftp.ftpConnect(config, 5000) ) {
+
+                // Changing working directory if needed
+                boolean change_directory = true;
+                if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                    change_directory = ftp.makeDirectory(config.getWorkDirectory());
+
+                if( !change_directory ) {
+                    Log.w(TAG, "Error while trying to change working directory!");
+                } else {
+
+                    boolean dobj = false;
+                    boolean exist_server_dobj = false;
+                    boolean exist_server_ack = false;
+                    FTPFile[] files = ftp.ftpPrintFiles();
+
+                    // Checking if .DOBJ file is in FTP server ?
+                    String srcFileName = ReaderDOBJFile.getOBJFileName(ctx, false);
+                    String srcAckName = ReaderDOBJFile.getOBJFileName(ctx, true);
+                        for ( FTPFile f : files ) {
+                            if( f.isFile() ) {
+                                if (f.getName().equals(srcFileName)) exist_server_dobj = true;
+                                if (f.getName().equals(srcAckName)) exist_server_ack = true;
+                            }
+                            if( exist_server_ack && exist_server_dobj ) break;
+                        }
+
+                        // If .DOBJ file exist in the FTP server
+                        dobj = ( exist_server_ack && DataDOBJ.preferenceFileExist(ctx) );
+                        if( !dobj ) {
+                            if (exist_server_dobj) {
+                                // Create folder if not exist
+                                if (!folder.exists())
+                                    if (!folder.mkdirs())
+                                        Log.w(TAG, "Error while trying to create new folder!");
+                                if (folder.exists()) {
+                                    // Trying to download .OBJ file...
+                                    String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+                                    if (ftp.ftpDownload(srcFileName, desFileName)) {
+                                        dobj = reader.read(ctx,desFileName,false);
+                                        if( dobj ) {
+                                            ready = reader.read(ctx,desFileName,true);
+                                            // envoi acknowledge
+                                            try {
+                                                File temp = File.createTempFile("temp-file-name", ".tmp");
+                                                ftp.ftpUpload(temp.getPath(), srcAckName);
+                                                temp.delete();
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                            }
+                                            new File(desFileName).delete();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // Disconnect from FTP server.
+                ftp.ftpDisconnect();
+
+            if( !ready ) ready = DataDOBJ.preferenceFileExist(ctx);
+            if( isRunning() && !ready ) sleep(1000);
+        }
         return ready;
     }
 
