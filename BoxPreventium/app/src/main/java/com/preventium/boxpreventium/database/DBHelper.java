@@ -111,6 +111,28 @@ public class DBHelper extends SQLiteOpenHelper {
         db.delete(TABLE_ECA,null,null);
         db.delete(TABLE_CEP,null,null);
         db.delete(TABLE_DRIVER,null,null);
+        db.close();
+    }
+
+    public void clear_obselete_data(){
+
+        long end = startOfDays(System.currentTimeMillis());
+        long begin = end - (5 * 24 * 3600 * 1000);
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_ECA,COLUMN_ECA_TIME + " < " + begin,null);
+        db.delete(TABLE_CEP,COLUMN_CEP_TIME + " < " + begin,null);
+        db.delete(TABLE_DRIVER,COLUMN_DRIVER_TIME + " < " + begin,null);
+        db.close();
+    }
+
+    private long startOfDays(long timestamp){
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis( timestamp );
+        cal.set(Calendar.HOUR_OF_DAY, 0); //set hours to zero
+        cal.set(Calendar.MINUTE, 0); // set minutes to zero
+        cal.set(Calendar.SECOND, 0); //set seconds to zero
+        return cal.getTimeInMillis();
     }
 
     /// ============================================================================================

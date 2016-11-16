@@ -150,7 +150,7 @@ public class AppManager extends ThreadDefault
         super.myRun();
 
         setLog( "AppManager begin..." );
-        
+        database.clear_obselete_data();
         download_cfg();
         download_epc();
         download_dobj();
@@ -160,6 +160,7 @@ public class AppManager extends ThreadDefault
         while( isRunning() ) {
             modules.setActive( true );
             sleep(500);
+            database.clear_obselete_data();
             upload_eca(false);
             change_driving_time();
             calc_movements();
