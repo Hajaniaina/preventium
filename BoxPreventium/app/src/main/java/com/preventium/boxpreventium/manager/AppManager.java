@@ -1042,25 +1042,25 @@ public class AppManager extends ThreadDefault
         int evt_rouge = ( nb_rouge > 0 ) ? nb_rouge * 100 / nb_total : 0;
 
         // TEST
-        if( DataDOBJ.ACCELERATIONS.equals(type) ){
-            evt_vert = 46;
-            evt_bleu = 21;
-            evt_jaune = 16;
-            evt_orange = 11;
-            evt_rouge = 6;
-        } else if( DataDOBJ.FREINAGES.equals(type) ){
-            evt_vert = 93;
-            evt_bleu = 0;
-            evt_jaune = 1;
-            evt_orange = 4;
-            evt_rouge = 2;
-        } else if( DataDOBJ.VIRAGES.equals(type) ){
-            evt_vert = 46;
-            evt_bleu = 21;
-            evt_jaune = 16;
-            evt_orange = 11;
-            evt_rouge = 6;
-        }
+//        if( DataDOBJ.ACCELERATIONS.equals(type) ){
+//            evt_vert = 46;
+//            evt_bleu = 21;
+//            evt_jaune = 16;
+//            evt_orange = 11;
+//            evt_rouge = 6;
+//        } else if( DataDOBJ.FREINAGES.equals(type) ){
+//            evt_vert = 93;
+//            evt_bleu = 0;
+//            evt_jaune = 1;
+//            evt_orange = 4;
+//            evt_rouge = 2;
+//        } else if( DataDOBJ.VIRAGES.equals(type) ){
+//            evt_vert = 46;
+//            evt_bleu = 21;
+//            evt_jaune = 16;
+//            evt_orange = 11;
+//            evt_rouge = 6;
+//        }
 
         // CALCUL INTERMEDIARE PAR SEUIL
         int calc_vert = ( evt_vert >= obj_vert ) ? 20*coeff_vert : 0;
