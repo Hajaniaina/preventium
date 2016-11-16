@@ -106,7 +106,7 @@ public class AppManager extends ThreadDefault
 
     private List<Location> locations = new ArrayList<Location>();
 
-    private List<Pair<Long,Integer>> ui_timers = new ArrayList<>(); // Long: delay in seconds, Integer: timer id
+    private List<Pair<Long,Integer>> ui_timers = new ArrayList<>(); // Long: timestamp, Integer: timer id
 
     private Chrono chronoRide = new Chrono();
     private String chronoRideTxt = "";
@@ -141,6 +141,11 @@ public class AppManager extends ThreadDefault
     @Override
     public void myRun() throws InterruptedException {
         super.myRun();
+
+        add_ui_timer(15,15);
+        add_ui_timer(30,30);
+        add_ui_timer(45,45);
+        add_ui_timer(50,50);
 
         setLog( "AppManager begin..." );
 
@@ -269,23 +274,26 @@ public class AppManager extends ThreadDefault
     /// ============================================================================================
 
     /// Add timer to timer list
-    public void add_ui_timer(long secs, int timer_id){ui_timers.add( Pair.create(secs,timer_id) ); }
+    public void add_ui_timer(long secs, int timer_id){
+        long timestamp = System.currentTimeMillis() + (secs*1000);
+        ui_timers.add( Pair.create(timestamp,timer_id) );
+    }
 
     /// Remove all timers
     public void clear_ui_timer(){ ui_timers.clear(); }
 
     /// Listening timeout
     private void listen_timers(STATUS_t status){
-        long secs = (long) chronoRide.getSeconds();
+        long timestamp = System.currentTimeMillis();
         if( !ui_timers.isEmpty() ) {
             Pair<Long, Integer> timer;
-            long timeout_secs;
+            long timeout_at;
             int timer_id;
             for (int i = ui_timers.size() - 1; i >= 0; i--) {
                 timer = ui_timers.get(i);
-                timeout_secs = timer.first;
+                timeout_at = timer.first;
                 timer_id = timer.second;
-                if( secs >= timeout_secs ){
+                if( timestamp >= timeout_at ){
                     if( listener != null ) listener.onUiTimeout( timer_id, status );
                     ui_timers.remove(i);
                 }
