@@ -150,8 +150,7 @@ public class AppManager extends ThreadDefault
         super.myRun();
 
         setLog( "AppManager begin..." );
-
-
+        
         download_cfg();
         download_epc();
         download_dobj();
@@ -972,6 +971,7 @@ public class AppManager extends ThreadDefault
     /// CALCUL COTATION
     /// ============================================================================================
 
+    // Calculate note of the current parcours
     private void calc_parcour_cotation() {
 
         if( listener != null ){
@@ -1020,15 +1020,7 @@ public class AppManager extends ThreadDefault
         }
     }
 
-    private long startOfDays(long timestamp){
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis( timestamp );
-        cal.set(Calendar.HOUR_OF_DAY, 0); //set hours to zero
-        cal.set(Calendar.MINUTE, 0); // set minutes to zero
-        cal.set(Calendar.SECOND, 0); //set seconds to zero
-        return cal.getTimeInMillis();
-    }
-
+    // Calculate note of the forces for the current parcours ( A, V, F and M )
     private void calc_cotation_forces() {
 
         if( listener != null ){
@@ -1186,6 +1178,15 @@ public class AppManager extends ThreadDefault
         long begin = 0;
         long end = System.currentTimeMillis() + 10000;
         return get_cotation_force(type, parcour_id, begin, end);
+    }
+
+    private long startOfDays(long timestamp){
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis( timestamp );
+        cal.set(Calendar.HOUR_OF_DAY, 0); //set hours to zero
+        cal.set(Calendar.MINUTE, 0); // set minutes to zero
+        cal.set(Calendar.SECOND, 0); //set seconds to zero
+        return cal.getTimeInMillis();
     }
 
     /// ============================================================================================
