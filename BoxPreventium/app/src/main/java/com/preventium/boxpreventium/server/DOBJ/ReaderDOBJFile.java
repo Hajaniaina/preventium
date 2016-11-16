@@ -24,7 +24,7 @@ public class ReaderDOBJFile {
         return ComonUtils.getIMEInumber(ctx) + ".DOBJ";
     }
 
-    public static String getEPCFilePath(Context ctx) {
+    public static String getOBJFilePath(Context ctx) {
         String fileName = getOBJFileName(ctx,false);
         return String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), fileName);
     }
@@ -55,7 +55,7 @@ public class ReaderDOBJFile {
                             tmp[1] = data[i++];
                             tmp[2] = data[i++];
                             tmp[3] = data[i++];
-                            coeff_general[t] = ByteBuffer.wrap(tmp).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+                            coeff_general[t] = ByteBuffer.wrap(tmp).getFloat();
                             coeff_green[t] = data[i++];
                             coeff_blue[t] = data[i++];
                             coeff_yellow[t] = data[i++];

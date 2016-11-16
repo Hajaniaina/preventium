@@ -142,11 +142,6 @@ public class AppManager extends ThreadDefault
     public void myRun() throws InterruptedException {
         super.myRun();
 
-        add_ui_timer(15,15);
-        add_ui_timer(30,30);
-        add_ui_timer(45,45);
-        add_ui_timer(50,50);
-
         setLog( "AppManager begin..." );
 
         download_cfg();
@@ -863,127 +858,6 @@ public class AppManager extends ThreadDefault
         }
     }
 
-    private void calc_parcour_cotation() {
-
-        if( listener != null ){
-            // If elapsed time > 5 minutes
-            if( cotation_update_at + (5*60*1000) < System.currentTimeMillis()){
-                if( readerEPCFile != null ){
-
-                    cotation_update_at = System.currentTimeMillis();
-
-                    float coeff_general;
-                    long coeff_vert, coeff_bleu, coeff_jaune, coeff_orange, coeff_rouge;
-                    long obj_vert, obj_bleu, obj_jaune, obj_orange, obj_rouge;
-                    long nb_vert, nb_bleu, nb_jaune, nb_orange, nb_rouge;
-
-                    // Cotation accélération
-                    coeff_general = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.GENERAL);
-                    coeff_vert = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.VERT);
-                    coeff_bleu = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.BLEU);
-                    coeff_jaune = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.JAUNE);
-                    coeff_orange = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ORANGE);
-                    coeff_rouge = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ROUGE);
-                    obj_vert = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.VERT);
-                    obj_bleu = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.BLEU);
-                    obj_jaune = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.JAUNE);
-                    obj_orange = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ORANGE);
-                    obj_rouge = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ROUGE);
-
-                    nb_vert = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(0).IDAlert);
-                    nb_bleu = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(1).IDAlert);
-                    nb_jaune = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(2).IDAlert);
-                    nb_orange = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(3).IDAlert);
-                    nb_rouge = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(4).IDAlert);
-                    float cotation_A = (
-                            (nb_vert * coeff_vert) +
-                                    (nb_bleu * coeff_bleu) +
-                                    (nb_jaune * coeff_jaune) +
-                                    (nb_orange * coeff_orange) +
-                                    (nb_rouge * coeff_rouge) ) * coeff_general;
-
-                    // Cotation freinage
-                    coeff_general = 0.5f;
-                    coeff_vert = 1;
-                    coeff_bleu = 5;
-                    coeff_jaune = 10;
-                    coeff_orange = 15;
-                    coeff_rouge = 20;
-                    nb_vert = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(5).IDAlert);
-                    nb_bleu = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(6).IDAlert);
-                    nb_jaune = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(7).IDAlert);
-                    nb_orange = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(8).IDAlert);
-                    nb_rouge = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(9).IDAlert);
-                    float cotation_F = (
-                            (nb_vert * coeff_vert) +
-                                    (nb_bleu * coeff_bleu) +
-                                    (nb_jaune * coeff_jaune) +
-                                    (nb_orange * coeff_orange) +
-                                    (nb_rouge * coeff_rouge) ) * coeff_general;
-
-                    // Cotation virage
-                    coeff_general = 0.4f;
-                    coeff_vert = 1;
-                    coeff_bleu = 5;
-                    coeff_jaune = 10;
-                    coeff_orange = 15;
-                    coeff_rouge = 20;
-                    nb_vert = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(10).IDAlert)
-                            + database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(15).IDAlert);
-                    nb_bleu = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(11).IDAlert)
-                            + database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(16).IDAlert);
-                    nb_jaune = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(12).IDAlert)
-                            + database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(17).IDAlert);
-                    nb_orange = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(13).IDAlert)
-                            + database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(18).IDAlert);
-                    nb_rouge = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(14).IDAlert)
-                            + database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(19).IDAlert);
-                    float cotation_V = (
-                            (nb_vert * coeff_vert) +
-                                    (nb_bleu * coeff_bleu) +
-                                    (nb_jaune * coeff_jaune) +
-                                    (nb_orange * coeff_orange) +
-                                    (nb_rouge * coeff_rouge) ) * coeff_general;
-
-
-                    float cotation = cotation_A + cotation_F + cotation_V;
-                    listener.onDriveScoreChanged( cotation );
-                }
-            }
-        }
-    }
-
-    private float get_note( String type ){
-        float ret = 0f;
-
-        if( !DataDOBJ.ACCELERATIONS.equals(type)
-                && !DataDOBJ.FREINAGES.equals(type)
-                && !DataDOBJ.VIRAGES.equals(type) ) return ret;
-
-
-        float coeff_general = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.GENERAL);
-        int coeff_vert = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.VERT);
-        int coeff_bleu = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.BLEU);
-        int coeff_jaune = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.JAUNE);
-        int coeff_orange = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ORANGE);
-        int coeff_rouge = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ROUGE);
-
-        int obj_vert = DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.VERT);
-        int obj_bleu = DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.BLEU);
-        int obj_jaune = DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.JAUNE);
-        int obj_orange = DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ORANGE);
-        int obj_rouge = DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ROUGE);
-
-        int nb_vert = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(0).IDAlert);
-        int nb_bleu = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(1).IDAlert);
-        int nb_jaune = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(2).IDAlert);
-        int nb_orange = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(3).IDAlert);
-        int nb_rouge = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(4).IDAlert);
-        int nb_total = nb_vert + nb_bleu + nb_jaune + nb_rouge;
-
-        return ret;
-    }
-
     private boolean isRightRoad( Location location_1, Location location_2, Location location_3 ) {
         double Lat_rad_1 = location_1.getLatitude() * Math.PI / 180.0;
         double Lat_rad_2 = location_2.getLatitude() * Math.PI / 180.0;
@@ -1079,6 +953,140 @@ public class AppManager extends ThreadDefault
             }
 
         }
+    }
+
+    /// ============================================================================================
+    /// CALCUL COTATION
+    /// ============================================================================================
+
+    private void calc_parcour_cotation() {
+
+        if( listener != null ){
+            // If elapsed time > 5 minutes
+            if( cotation_update_at + (5*60*1000) < System.currentTimeMillis()){
+                if( readerEPCFile != null ){
+
+                    cotation_update_at = System.currentTimeMillis();
+                    float cotation_A = get_cotation_force(DataDOBJ.ACCELERATIONS,parcour_id);
+                    float cotation_F = get_cotation_force(DataDOBJ.FREINAGES,parcour_id);
+                    float cotation_V = get_cotation_force(DataDOBJ.VIRAGES,parcour_id);
+                    float coeff_A = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.ACCELERATIONS);
+                    float coeff_F = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.FREINAGES);
+                    float coeff_V = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.VIRAGES);
+                    float cotation = ((cotation_A + cotation_F + cotation_V)/3)
+                            / ((coeff_A + coeff_F + coeff_V)/3);
+                    listener.onDriveScoreChanged( cotation );
+                }
+            }
+        }
+    }
+
+    /// Get force cotation (A,F,V)per parcours (per all parcours if parcour_id <= 0 )
+    /// between timespamp
+    private float get_cotation_force( String type, long parcour_id, long begin, long end ){
+        float ret = 0f;
+
+        if( !DataDOBJ.ACCELERATIONS.equals(type)
+                && !DataDOBJ.FREINAGES.equals(type)
+                && !DataDOBJ.VIRAGES.equals(type) ) return ret;
+
+
+        // COEFFICIENTS
+        float coeff_general = DataDOBJ.get_coefficient_general(ctx,type);
+        int coeff_vert = DataDOBJ.get_coefficient(ctx,type,DataDOBJ.VERT);
+        int coeff_bleu = DataDOBJ.get_coefficient(ctx,type,DataDOBJ.BLEU);
+        int coeff_jaune = DataDOBJ.get_coefficient(ctx,type,DataDOBJ.JAUNE);
+        int coeff_orange = DataDOBJ.get_coefficient(ctx,type,DataDOBJ.ORANGE);
+        int coeff_rouge = DataDOBJ.get_coefficient(ctx,type,DataDOBJ.ROUGE);
+
+        // OBJECTIFS FIXES AU CONDUCTEUR (in percent)
+        int obj_vert = DataDOBJ.get_objectif(ctx,type,DataDOBJ.VERT);
+        int obj_bleu = DataDOBJ.get_objectif(ctx,type,DataDOBJ.BLEU);
+        int obj_jaune = DataDOBJ.get_objectif(ctx,type,DataDOBJ.JAUNE);
+        int obj_orange = DataDOBJ.get_objectif(ctx,type,DataDOBJ.ORANGE);
+        int obj_rouge = DataDOBJ.get_objectif(ctx,type,DataDOBJ.ROUGE);
+
+        // VALEUR DU PARCOURS (Par seuil, en nombre d evenement)
+        int nb_vert, nb_bleu, nb_jaune, nb_orange, nb_rouge;
+        if( DataDOBJ.ACCELERATIONS.equals(type) ){
+            nb_vert = database.countNbEvent(readerEPCFile.getForceSeuil(0).IDAlert, parcour_id, begin, end);
+            nb_bleu = database.countNbEvent(readerEPCFile.getForceSeuil(1).IDAlert, parcour_id, begin, end);
+            nb_jaune = database.countNbEvent(readerEPCFile.getForceSeuil(2).IDAlert, parcour_id, begin, end);
+            nb_orange = database.countNbEvent(readerEPCFile.getForceSeuil(3).IDAlert, parcour_id, begin, end);
+            nb_rouge = database.countNbEvent(readerEPCFile.getForceSeuil(4).IDAlert, parcour_id, begin, end);
+        } else if( DataDOBJ.FREINAGES.equals(type) ){
+            nb_vert = database.countNbEvent(readerEPCFile.getForceSeuil(5).IDAlert, parcour_id, begin, end);
+            nb_bleu = database.countNbEvent(readerEPCFile.getForceSeuil(6).IDAlert, parcour_id, begin, end);
+            nb_jaune = database.countNbEvent(readerEPCFile.getForceSeuil(7).IDAlert, parcour_id, begin, end);
+            nb_orange = database.countNbEvent(readerEPCFile.getForceSeuil(8).IDAlert, parcour_id, begin, end);
+            nb_rouge = database.countNbEvent(readerEPCFile.getForceSeuil(9).IDAlert, parcour_id, begin, end);
+        } else {//if( DataDOBJ.VIRAGES.equals(type) ){
+            nb_vert = database.countNbEvent(readerEPCFile.getForceSeuil(10).IDAlert, parcour_id, begin, end);
+            nb_bleu = database.countNbEvent(readerEPCFile.getForceSeuil(11).IDAlert, parcour_id, begin, end);
+            nb_jaune = database.countNbEvent(readerEPCFile.getForceSeuil(12).IDAlert, parcour_id, begin, end);
+            nb_orange = database.countNbEvent(readerEPCFile.getForceSeuil(13).IDAlert, parcour_id, begin, end);
+            nb_rouge = database.countNbEvent(readerEPCFile.getForceSeuil(14).IDAlert, parcour_id, begin, end);
+            nb_vert += database.countNbEvent(readerEPCFile.getForceSeuil(15).IDAlert, parcour_id, begin, end);
+            nb_bleu += database.countNbEvent(readerEPCFile.getForceSeuil(16).IDAlert, parcour_id, begin, end);
+            nb_jaune += database.countNbEvent(readerEPCFile.getForceSeuil(17).IDAlert, parcour_id, begin, end);
+            nb_orange += database.countNbEvent(readerEPCFile.getForceSeuil(18).IDAlert, parcour_id, begin, end);
+            nb_rouge += database.countNbEvent(readerEPCFile.getForceSeuil(19).IDAlert, parcour_id, begin, end);
+        }
+        int nb_total = nb_vert + nb_bleu + nb_jaune + nb_orange + nb_rouge;
+
+        // VALEUR DU PARCOURS (Par seuil, en pourcentage)
+        int evt_vert = ( nb_vert > 0 ) ? nb_vert * 100 / nb_total : 0;
+        int evt_bleu = ( nb_bleu > 0 ) ? nb_bleu * 100 / nb_total : 0;
+        int evt_jaune = ( nb_jaune > 0 ) ? nb_jaune * 100 / nb_total : 0;
+        int evt_orange = ( nb_orange > 0 ) ? nb_orange * 100 / nb_total : 0;
+        int evt_rouge = ( nb_rouge > 0 ) ? nb_rouge * 100 / nb_total : 0;
+
+        // TEST
+        if( DataDOBJ.ACCELERATIONS.equals(type) ){
+            evt_vert = 46;
+            evt_bleu = 21;
+            evt_jaune = 16;
+            evt_orange = 11;
+            evt_rouge = 6;
+        } else if( DataDOBJ.FREINAGES.equals(type) ){
+            evt_vert = 93;
+            evt_bleu = 0;
+            evt_jaune = 1;
+            evt_orange = 4;
+            evt_rouge = 2;
+        } else if( DataDOBJ.VIRAGES.equals(type) ){
+            evt_vert = 46;
+            evt_bleu = 21;
+            evt_jaune = 16;
+            evt_orange = 11;
+            evt_rouge = 6;
+        }
+
+        // CALCUL INTERMEDIARE PAR SEUIL
+        int calc_vert = ( evt_vert >= obj_vert ) ? 20*coeff_vert : 0;
+        int calc_jaune = ( evt_jaune <= obj_jaune ) ? 0 : (obj_jaune-evt_jaune)*coeff_jaune;
+        int calc_orange = ( evt_orange <= obj_orange ) ? 0 : (obj_orange-evt_orange)*coeff_orange;
+        int calc_rouge = ( evt_rouge <= obj_rouge ) ? 0 : (obj_rouge-evt_rouge)*coeff_rouge;
+
+        // CALCUL MOYENNE POUR CETTE FORCE
+        int tmp = (calc_vert+(calc_jaune+calc_orange+calc_rouge));
+        ret = ( tmp <= 0 ) ? 0f : tmp*coeff_general;
+
+        return ret;
+    }
+
+    // Get force cotation by parcours, or all parcours (parcours_id = -1), in the last X seconds
+    private float get_cotation_force( String type, long parcour_id, long secs  ){
+        long begin = System.currentTimeMillis() - (secs*1000);
+        long end = System.currentTimeMillis() + 10000;
+        return get_cotation_force(type, parcour_id, begin, end);
+    }
+
+    // Get force cotation per parcours, or all parcours (parcours_id = -1);
+    private float get_cotation_force( String type, long parcour_id ){
+        long begin = 0;
+        long end = System.currentTimeMillis() + 10000;
+        return get_cotation_force(type, parcour_id, begin, end);
     }
 
     /// ============================================================================================

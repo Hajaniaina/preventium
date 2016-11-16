@@ -132,21 +132,41 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String COLUMN_ECA_SPEED = "speed";
     private static final String COLUMN_ECA_DISTANCE = "distance";
 
-    /// Get number of event by parcours and by events type
-    public int countNbEvent( long parcour_id, int alertID ){
+    /// Get number of event by parcours, or all parcours (parcours_id = -1), by events type,
+    /// between timespamp
+    public int countNbEvent( int alertID, long parcour_id, long begin, long end  ){
         int ret = 0;
+        String request =
+                "SELECT DISTINCT COUNT(" + COLUMN_ECA_ID + ") " +
+                "FROM " + TABLE_ECA + " WHERE " +
+                COLUMN_ECA_ALERTID + " = " + alertID + " AND ";
+        if( parcour_id > 0 ) request +=
+                COLUMN_ECA_PARCOUR_ID + " = " + parcour_id + " AND ";
+        request +=
+                COLUMN_ECA_TIME + " BETWEEN " + begin + " AND " + end + ";";
+
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor =  db.rawQuery( "SELECT DISTINCT COUNT(" + COLUMN_ECA_ID + ")" +
-                " FROM " + TABLE_ECA +
-                " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
-                " AND " + COLUMN_ECA_ALERTID + " = " + alertID +
-                " ;", null );
+        Cursor cursor =  db.rawQuery( request, null );
         if( cursor != null && cursor.moveToFirst() ) {
             ret = cursor.getInt(0);
             cursor.close();
         }
         db.close();
         return ret;
+    }
+
+    // Get number of event by parcours, or all parcours (parcours_id = -1), in the last X seconds
+    public int countNbEvent( int alertID, long parcour_id, long secs  ){
+        long begin = System.currentTimeMillis() - (secs*1000);
+        long end = System.currentTimeMillis() + 10000;
+        return countNbEvent(alertID, parcour_id, begin, end);
+    }
+
+    // Get number of event by parcours, or all parcours (parcours_id = -1);
+    public int countNbEvent( int alertID, long parcour_id ){
+        long begin = 0;
+        long end = System.currentTimeMillis() + 10000;
+        return countNbEvent(alertID, parcour_id, begin, end);
     }
 
     /// Add an ECA event for a parcours
