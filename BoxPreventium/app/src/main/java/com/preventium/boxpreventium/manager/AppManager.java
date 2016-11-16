@@ -2,6 +2,8 @@ package com.preventium.boxpreventium.manager;
 
 import android.content.Context;
 import android.location.Location;
+import android.os.SystemClock;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v4.util.Pair;
 import android.util.Log;
@@ -11,6 +13,7 @@ import com.preventium.boxpreventium.enums.ENGINE_t;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.MOVING_t;
+import com.preventium.boxpreventium.enums.SCORE_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
 import com.preventium.boxpreventium.location.CustomMarkerData;
 import com.preventium.boxpreventium.module.HandlerBox;
@@ -35,6 +38,7 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
@@ -64,10 +68,12 @@ public class AppManager extends ThreadDefault
         void onForceChanged( FORCE_t type, LEVEL_t level );
         void onDebugLog(String txt);
         void onStatusChanged(STATUS_t status);
-        void onDriveScoreChanged( float score );
         void onCustomMarkerDataListGet();
         void onParcoursTypeGet();
         void onUiTimeout(int timer_id, STATUS_t status);
+
+        void onNoteChanged( int note_par, LEVEL_t level_par, LEVEL_t level_5_days );
+        void onScoreChanged(SCORE_t type, LEVEL_t level);
     }
 
     private Context ctx = null;
@@ -98,6 +104,7 @@ public class AppManager extends ThreadDefault
     private long parcour_id = 0;
     private long driver_id = 0;
     private long cotation_update_at = 0;
+    private long forces_update_at = 0;
     private long alertX_add_at = 0;
     private long alertY_add_at = 0;
     private long alertPos_add_at = 0;
@@ -143,6 +150,7 @@ public class AppManager extends ThreadDefault
         super.myRun();
 
         setLog( "AppManager begin..." );
+
 
         download_cfg();
         download_epc();
@@ -227,12 +235,17 @@ public class AppManager extends ThreadDefault
             // For update UI correctly
             listener.onDebugLog("");
             listener.onDrivingTimeChanged(chronoRideTxt);
-            listener.onDriveScoreChanged( 0f );
+            listener.onNoteChanged(20,LEVEL_t.LEVEL_UNKNOW,LEVEL_t.LEVEL_UNKNOW);
+            listener.onScoreChanged(SCORE_t.ACCELERATING,LEVEL_t.LEVEL_UNKNOW);
+            listener.onScoreChanged(SCORE_t.BRAKING,LEVEL_t.LEVEL_UNKNOW);
+            listener.onScoreChanged(SCORE_t.CORNERING,LEVEL_t.LEVEL_UNKNOW);
+            listener.onScoreChanged(SCORE_t.AVERAGE,LEVEL_t.LEVEL_UNKNOW);
             listener.onStatusChanged( STATUS_t.PAR_PAUSING);
             listener.onStatusChanged( STATUS_t.PAR_STOPPED);
         }
         parcour_id = 0;
         cotation_update_at = 0;
+        forces_update_at = 0;
         alertX_add_at = 0;
         alertY_add_at = 0;
         alertPos_add_at = 0;
@@ -975,7 +988,93 @@ public class AppManager extends ThreadDefault
                     float coeff_V = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.VIRAGES);
                     float cotation = ((cotation_A + cotation_F + cotation_V)/3)
                             / ((coeff_A + coeff_F + coeff_V)/3);
-                    listener.onDriveScoreChanged( cotation );
+
+                    LEVEL_t level_note;
+                    if( cotation >= 16f ) level_note = LEVEL_t.LEVEL_1;
+                    else if( cotation >= 13f ) level_note = LEVEL_t.LEVEL_2;
+                    else if( cotation >= 9f ) level_note = LEVEL_t.LEVEL_3;
+                    else if( cotation >= 6f ) level_note = LEVEL_t.LEVEL_4;
+                    else level_note = LEVEL_t.LEVEL_5;
+
+                    long end = startOfDays(System.currentTimeMillis());
+                    long begin = end - (5 * 24 * 3600 * 1000);
+                    cotation_A = get_cotation_force(DataDOBJ.ACCELERATIONS,-1,begin,end);
+                    cotation_F = get_cotation_force(DataDOBJ.FREINAGES,-1,begin,end);
+                    cotation_V = get_cotation_force(DataDOBJ.VIRAGES,-1,begin,end);
+                    coeff_A = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.ACCELERATIONS);
+                    coeff_F = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.FREINAGES);
+                    coeff_V = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.VIRAGES);
+                    cotation = ((cotation_A + cotation_F + cotation_V)/3)
+                            / ((coeff_A + coeff_F + coeff_V)/3);
+
+                    LEVEL_t level_5_days;
+                    if( cotation >= 16f ) level_5_days = LEVEL_t.LEVEL_1;
+                    else if( cotation >= 13f ) level_5_days = LEVEL_t.LEVEL_2;
+                    else if( cotation >= 9f ) level_5_days = LEVEL_t.LEVEL_3;
+                    else if( cotation >= 6f ) level_5_days = LEVEL_t.LEVEL_4;
+                    else level_5_days = LEVEL_t.LEVEL_5;
+
+                    listener.onNoteChanged( (int)cotation, level_note, level_5_days );
+                }
+            }
+        }
+    }
+
+    private long startOfDays(long timestamp){
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis( timestamp );
+        cal.set(Calendar.HOUR_OF_DAY, 0); //set hours to zero
+        cal.set(Calendar.MINUTE, 0); // set minutes to zero
+        cal.set(Calendar.SECOND, 0); //set seconds to zero
+        return cal.getTimeInMillis();
+    }
+
+    private void calc_cotation_forces() {
+
+        if( listener != null ){
+            // If elapsed time > 5 minutes
+            if( forces_update_at + (5*60*1000) < System.currentTimeMillis()){
+                if( readerEPCFile != null ){
+
+                    // Calcul force note: 10 minutes = 600 seondes
+                    forces_update_at = System.currentTimeMillis();
+                    float A = get_cotation_force(DataDOBJ.ACCELERATIONS,parcour_id,600);
+                    float F = get_cotation_force(DataDOBJ.FREINAGES,parcour_id,600);
+                    float V = get_cotation_force(DataDOBJ.VIRAGES,parcour_id,600);
+                    float M = (A+F+V) > 0 ? (A+F+V)/3 : 0;
+
+                    // Update note for "Accelerations"
+                    LEVEL_t level;
+                    if( A >= 16f ) level = LEVEL_t.LEVEL_1;
+                    else if( A >= 13f ) level = LEVEL_t.LEVEL_2;
+                    else if( A >= 9f ) level = LEVEL_t.LEVEL_3;
+                    else if( A >= 6f ) level = LEVEL_t.LEVEL_4;
+                    else level = LEVEL_t.LEVEL_5;
+                    listener.onScoreChanged( SCORE_t.ACCELERATING, level );
+
+                    // Update note for "Freinages"
+                    if( F >= 16f ) level = LEVEL_t.LEVEL_1;
+                    else if( F >= 13f ) level = LEVEL_t.LEVEL_2;
+                    else if( F >= 9f ) level = LEVEL_t.LEVEL_3;
+                    else if( F >= 6f ) level = LEVEL_t.LEVEL_4;
+                    else level = LEVEL_t.LEVEL_5;
+                    listener.onScoreChanged( SCORE_t.BRAKING, level );
+
+                    // Update note for "Virage"
+                    if( V >= 16f ) level = LEVEL_t.LEVEL_1;
+                    else if( V >= 13f ) level = LEVEL_t.LEVEL_2;
+                    else if( V >= 9f ) level = LEVEL_t.LEVEL_3;
+                    else if( V >= 6f ) level = LEVEL_t.LEVEL_4;
+                    else level = LEVEL_t.LEVEL_5;
+                    listener.onScoreChanged( SCORE_t.CORNERING, level );
+
+                    // Update force averages, "MOYENNE"
+                    if( M >= 16f ) level = LEVEL_t.LEVEL_1;
+                    else if( M >= 13f ) level = LEVEL_t.LEVEL_2;
+                    else if( M >= 9f ) level = LEVEL_t.LEVEL_3;
+                    else if( M >= 6f ) level = LEVEL_t.LEVEL_4;
+                    else level = LEVEL_t.LEVEL_5;
+                    listener.onScoreChanged( SCORE_t.AVERAGE, level );
                 }
             }
         }
@@ -1113,6 +1212,7 @@ public class AppManager extends ThreadDefault
             if ( !chrono_ready_to_start.isStarted() ) chrono_ready_to_start.start();
             if ( chrono_ready_to_start.getSeconds() > SECS_TO_SET_PARCOURS_START ) {
                 cotation_update_at = 0;
+                forces_update_at = 0;
                 alertX_add_at = 0;
                 alertY_add_at = 0;
                 alertPos_add_at = 0;
@@ -1121,7 +1221,15 @@ public class AppManager extends ThreadDefault
                 parcour_id = System.currentTimeMillis();
                 chronoRide.start();
                 ret = STATUS_t.PAR_STARTED;
-                if (listener != null) listener.onStatusChanged(ret);
+                if (listener != null){
+                    listener.onForceChanged(FORCE_t.UNKNOW,LEVEL_t.LEVEL_UNKNOW);
+                    listener.onNoteChanged(20,LEVEL_t.LEVEL_1, LEVEL_t.LEVEL_UNKNOW);
+                    listener.onScoreChanged(SCORE_t.ACCELERATING,LEVEL_t.LEVEL_1);
+                    listener.onScoreChanged(SCORE_t.BRAKING,LEVEL_t.LEVEL_1);
+                    listener.onScoreChanged(SCORE_t.CORNERING,LEVEL_t.LEVEL_1);
+                    listener.onScoreChanged(SCORE_t.AVERAGE,LEVEL_t.LEVEL_1);
+                    listener.onStatusChanged(ret);
+                }
             }
         }
         return ret;
@@ -1162,6 +1270,7 @@ public class AppManager extends ThreadDefault
 
         calc_eca();
         calc_parcour_cotation();
+        calc_cotation_forces();
 
         // Checking if car is in pause
         if (mov_t_last == MOVING_t.STP
