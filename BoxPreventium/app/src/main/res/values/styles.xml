@@ -1,7 +1,7 @@
 <resources>
 
     <!-- Base application themes -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar"></style>
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar" />
 
      <style name="AppThemeDialog" parent="Base.Theme.AppCompat.Light.Dialog.FixedSize">
          <item name="windowNoTitle">true</item>
@@ -9,7 +9,7 @@
          <item name="windowActionBar">false</item>
      </style>
 
-    <style name="QRAlertPositiveDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
+    <style name="PositiveDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
         <!-- Used for the buttons -->
         <item name="colorAccent">#ffffff</item>
         <!-- Used for the title and text -->
@@ -18,13 +18,22 @@
         <item name="android:background">#4CAF50</item>
     </style>
 
-    <style name="QRAlertNegativeDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
+    <style name="NegativeDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
         <!-- Used for the buttons -->
         <item name="colorAccent">#ffffff</item>
         <!-- Used for the title and text -->
         <item name="android:textColorPrimary">#ffffff</item>
         <!-- Used for the background -->
         <item name="android:background">#ff1744</item>
+    </style>
+
+    <style name="InfoDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <!-- Used for the buttons -->
+        <item name="colorAccent">#ffffff</item>
+        <!-- Used for the title and text -->
+        <item name="android:textColorPrimary">#ffffff</item>
+        <!-- Used for the background -->
+        <item name="android:background">#03a9f4</item>
     </style>
 
      <style name="device_name_text" >

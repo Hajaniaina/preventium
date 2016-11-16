@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:fab="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -7,7 +9,8 @@
     android:fitsSystemWindows="true"
     android:background="#ffffff">
 
-    <android.support.v4.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    <android.support.v4.widget.NestedScrollView
+        xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -20,13 +23,13 @@
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="10dp">
+            android:padding="@dimen/info_layout_padding">
 
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="500dp"
-                android:padding="10dp">
+                android:layout_height="@dimen/info_layout_height"
+                android:padding="@dimen/info_layout_padding">
 
                 <com.github.mikephil.charting.charts.PieChart
                     android:id="@+id/pie_chart1"
@@ -45,8 +48,8 @@
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="500dp"
-                android:padding="10dp">
+                android:layout_height="@dimen/info_layout_height"
+                android:padding="@dimen/info_layout_padding">
 
                 <com.github.mikephil.charting.charts.PieChart
                     android:id="@+id/pie_chart3"
@@ -65,8 +68,8 @@
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="500dp"
-                android:padding="10dp">
+                android:layout_height="@dimen/info_layout_height"
+                android:padding="@dimen/info_layout_padding">
 
                 <com.github.mikephil.charting.charts.PieChart
                     android:id="@+id/pie_chart5"
@@ -95,6 +98,7 @@
         android:src="@drawable/fab_add"
         fab:fab_colorNormal="@color/colorAppRed"
         fab:fab_colorPressed="#ff5252"
-        fab:fab_shadowColor="#444"/>
+        fab:fab_shadowColor="#444"
+        android:visibility="gone"/>
 
 </android.support.design.widget.CoordinatorLayout>

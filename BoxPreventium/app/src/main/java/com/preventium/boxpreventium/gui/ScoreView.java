@@ -35,19 +35,22 @@ public class ScoreView implements Parcelable {
         levelMap = new HashMap<>();
 
         viewMap.put(SCORE_t.CORNERING, ((TextView) activity.findViewById(R.id.corner_note_view)));
-        viewMap.put(SCORE_t.BRAKING,((TextView) activity.findViewById(R.id.brake_note_view)));
+        viewMap.put(SCORE_t.BRAKING, ((TextView) activity.findViewById(R.id.brake_note_view)));
         viewMap.put(SCORE_t.ACCELERATING,((TextView) activity.findViewById(R.id.acc_note_view)));
-        viewMap.put(SCORE_t.AVERAGE,((TextView) activity.findViewById(R.id.avg_note_view)));
+        viewMap.put(SCORE_t.AVERAGE, ((TextView) activity.findViewById(R.id.avg_note_view)));
+        viewMap.put(SCORE_t.FINAL, ((TextView) activity.findViewById(R.id.driving_score_view)));
 
         levelMap.put(SCORE_t.CORNERING, null);
         levelMap.put(SCORE_t.BRAKING, null);
         levelMap.put(SCORE_t.ACCELERATING, null);
         levelMap.put(SCORE_t.AVERAGE, null);
+        levelMap.put(SCORE_t.FINAL, null);
 
         setScore(SCORE_t.CORNERING, LEVEL_t.LEVEL_UNKNOW);
         setScore(SCORE_t.BRAKING, LEVEL_t.LEVEL_UNKNOW);
         setScore(SCORE_t.ACCELERATING, LEVEL_t.LEVEL_UNKNOW);
         setScore(SCORE_t.AVERAGE, LEVEL_t.LEVEL_UNKNOW);
+        setFinalScore(LEVEL_t.LEVEL_UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0);
     }
 
     protected ScoreView (Parcel in) {
@@ -59,18 +62,20 @@ public class ScoreView implements Parcelable {
     public void restore (Activity activity) {
 
         appColor = new AppColor(activity);
-        viewMap = new HashMap<SCORE_t, TextView>();
-        levelMap = new HashMap<SCORE_t, LEVEL_t>();
+        viewMap = new HashMap<>();
+        levelMap = new HashMap<>();
 
         viewMap.put(SCORE_t.CORNERING, ((TextView) activity.findViewById(R.id.corner_note_view)));
-        viewMap.put(SCORE_t.BRAKING,((TextView) activity.findViewById(R.id.brake_note_view)));
-        viewMap.put(SCORE_t.ACCELERATING,((TextView) activity.findViewById(R.id.acc_note_view)));
-        viewMap.put(SCORE_t.AVERAGE,((TextView) activity.findViewById(R.id.avg_note_view)));
+        viewMap.put(SCORE_t.BRAKING, ((TextView) activity.findViewById(R.id.brake_note_view)));
+        viewMap.put(SCORE_t.ACCELERATING, ((TextView) activity.findViewById(R.id.acc_note_view)));
+        viewMap.put(SCORE_t.AVERAGE, ((TextView) activity.findViewById(R.id.avg_note_view)));
+        viewMap.put(SCORE_t.FINAL, ((TextView) activity.findViewById(R.id.driving_score_view)));
 
         setScore(SCORE_t.CORNERING, levelMap.get(SCORE_t.CORNERING));
         setScore(SCORE_t.BRAKING, levelMap.get(SCORE_t.BRAKING));
         setScore(SCORE_t.ACCELERATING, levelMap.get(SCORE_t.ACCELERATING));
         setScore(SCORE_t.AVERAGE, levelMap.get(SCORE_t.AVERAGE));
+        setFinalScore(levelMap.get(SCORE_t.FINAL), LEVEL_t.LEVEL_UNKNOW, 0);
 
         if (visible) {
 
@@ -107,15 +112,30 @@ public class ScoreView implements Parcelable {
             case BRAKING:
             case ACCELERATING:
             case AVERAGE:
+
                 Drawable drawable = viewMap.get(scoreId).getBackground();
                 drawable.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
                 viewMap.get(scoreId).setBackground(drawable);
+
                 break;
 
             default: break;
         }
 
         levelMap.put(scoreId, level);
+    }
+
+    public void setFinalScore (LEVEL_t level, LEVEL_t levelAvg, int value) {
+
+        if (value < 0) value = 0;
+        if (value > 20) value = 20;
+
+        viewMap.get(SCORE_t.FINAL).setText(String.valueOf(value));
+        viewMap.get(SCORE_t.FINAL).setTextColor(appColor.getColor(level));
+
+        Drawable drawable = viewMap.get(SCORE_t.FINAL).getBackground();
+        drawable.setColorFilter(appColor.getColor(levelAvg), PorterDuff.Mode.SRC_ATOP);
+        viewMap.get(SCORE_t.FINAL).setBackground(drawable);
     }
 
     @Override

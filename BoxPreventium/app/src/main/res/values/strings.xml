@@ -30,6 +30,8 @@
     <string name="create_string">Create</string>
     <string name="activate_string">Activate</string>
     <string name="delete_string">Delete</string>
+    <string name="yes_string">Yes</string>
+    <string name="no_string">No</string>
     <string name="cancel_string">Cancel</string>
     <string name="marker_tittle_invalid_string">Invalid name</string>
     <string name="new_marker_string">Marker name</string>
@@ -45,10 +47,12 @@
     <string name="make_call_string">Call a predefined number</string>
     <string name="make_call_confirma_string">Make a voice call?</string>
     <string name="pin_error_string">Wrong PIN</string>
+    <string name="end_day_confirm_string">Have you finished your work day?</string>
     <string name="permissions_enable_string">This application need all permissions to be enabled</string>
     <string name="location_settings_string">Location settings</string>
     <string name="location_rationale_string">Location service is disabled. Activate High Precision mode in the Android settings to continue</string>
     <string name="bluetooth_rationale_string">Bluetooth is disabled. Activate it to continue</string>
+    <string name="qr_rationale_string">One or more QR scans are pending</string>
     <string name="permissions_string">Permissions</string>
     <string name="force_permissions_string">To continue please activate all permissions in the settings menu</string>
     <string name="permissions_retry_string">Retry</string>
@@ -62,11 +66,12 @@
     <string name="progress_epc_string">Downloading EPC data</string>
     <string name="progress_obj_string">Downloading OBJ data</string>
     <string name="progress_ready_string">Ready</string>
-    <string name="scan_qr_ok_string">Code scanned</string>
+    <string name="scan_qr_ok_string">Code OK</string>
     <string name="scan_qr_error_string">Wrong QR code. Try again</string>
     <string name="scan_qr_driver_id_string">Driver identificator</string>
     <string name="scan_qr_vehicle_front_string">Vehicle front</string>
     <string name="scan_qr_vehicle_back_string">Vehicle back</string>
+    <string name="send_sos_string">SOS sms will be in</string>
 
     <string-array name="marker_perimeters">
         <item>50m</item>

@@ -11,7 +11,8 @@ public enum SCORE_t {
     CORNERING(0),
     BRAKING(1),
     ACCELERATING(2),
-    AVERAGE(3);
+    AVERAGE(3),
+    FINAL(4);
 
     private int value;
     private static Map<Integer, SCORE_t> map = new HashMap<>();
@@ -38,6 +39,8 @@ public enum SCORE_t {
                 return "SCORE_t[ACCELERATING]";
             case AVERAGE:
                 return "SCORE_t[AVERAGE]";
+            case FINAL:
+                return "SCORE_t[FINAL]";
             default                 :
                 return "SCORE_t[???]";
         }

@@ -1,11 +1,14 @@
 package com.preventium.boxpreventium.gui;
 
 import android.Manifest;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -24,6 +27,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,6 +40,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.firetrap.permissionhelper.action.OnDenyAction;
 import com.firetrap.permissionhelper.action.OnGrantAction;
@@ -59,15 +64,20 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.preventium.boxpreventium.manager.AppManager;
+import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
+
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
 
     private static final String TAG = "MainActivity";
 
-    private static final int MAP_ZOOM_ON_MOVE   = 17;
-    private static final int MAP_ZOOM_ON_PAUSE  = 15;
-    private static final int QR_CODE_REQUEST_ID = 0;
+    private static final int MAP_ZOOM_ON_MOVE = 17;
+    private static final int MAP_ZOOM_ON_PAUSE = 15;
+    private static final int QR_REQUEST_ID = 0;
+    private static final int QR_REQUEST_PENDING_TMR = 0;
 
     private PositionManager posManager;
     private MarkerManager markerManager;
@@ -93,21 +103,25 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap googleMap;
     private LatLng lastPos;
+    private Location lastLocation;
+    private AppColor appColor;
     private ProgressDialog progress;
     private boolean toggle = false;
     private SupportMapFragment mapFrag;
     private int mapType = GoogleMap.MAP_TYPE_NORMAL;
     private boolean startMarkerAdded = false;
     private boolean initDone = false;
+    private boolean actionCanceled = false;
     private boolean mapReady = false;
     private boolean permissionsChecked = false;
     private Intent pinLockIntent;
-    private AppColor appColor;
     private SharedPreferences sharedPreferences;
     private PermissionHelper.PermissionBuilder permissionRequest;
     private QrScanRequest qrRequest;
     private boolean parcourActive = false;
     private boolean parcourPause = false;
+
+    // --------------------------------------------------------------------------------------------//
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -227,6 +241,36 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
+    protected void onActivityResult (int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == QR_REQUEST_ID) {
+
+            if (resultCode == RESULT_OK) {
+
+                if (data.hasExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM)) {
+
+                    qrRequest = data.getParcelableExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM);
+
+                    if (qrRequest.driverIdReq == QrScanRequest.REQUEST_COMPLETED) {
+
+                        appManager.set_driver_id(qrRequest.driverId);
+                    }
+
+                    if (qrRequest.vehicleFrontReq == QrScanRequest.REQUEST_COMPLETED) {
+
+                    }
+
+                    if (qrRequest.vehicleBackReq == QrScanRequest.REQUEST_COMPLETED) {
+
+                    }
+                }
+            }
+        }
+    }
+
+    // --------------------------------------------------------------------------------------------//
+
+    @Override
     public void onMapReady (GoogleMap googleMap) {
 
         this.googleMap = googleMap;
@@ -256,6 +300,166 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         setMapListeners();
         setButtonListeners();
         setPositionListeners();
+    }
+
+    // --------------------------------------------------------------------------------------------//
+
+    @Override
+    public void onStatusChanged (final STATUS_t status) {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                switch (status) {
+
+                    case GETTING_CFG:
+
+                        if (progress != null) {
+
+                            progress.show();
+
+                            if (Connectivity.isConnected(getApplicationContext())) {
+
+                                progress.setMessage(getString(R.string.progress_cfg_string));
+                            }
+                            else {
+
+                                progress.setMessage(getString(R.string.network_alert_string));
+                            }
+                        }
+
+                        break;
+
+                    case GETTING_EPC:
+
+                        if (progress != null) {
+
+                            progress.show();
+                            progress.setMessage(getString(R.string.progress_epc_string));
+                        }
+
+                        break;
+
+                    case GETTING_DOBJ:
+
+                        if (progress != null) {
+
+                            progress.show();
+                            progress.setMessage(getString(R.string.progress_obj_string));
+                        }
+
+                        break;
+
+                    case PAR_STARTED:
+
+                        parcourActive = true;
+                        parcourPause = false;
+
+                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "RUN");
+
+                        if (mapReady) {
+
+                            googleMap.getUiSettings().setAllGesturesEnabled(false);
+                        }
+
+                        stopButton.setVisibility(View.GONE);
+
+                        changeViewColorFilter(drivingTimeView, AppColor.GREEN);
+
+                        boolean qrRequestPending = false;
+
+                        if (qrRequest.driverIdReq == QrScanRequest.REQUEST_PENDING) {
+
+                            qrRequestPending = true;
+                        }
+
+                        if (qrRequest.vehicleFrontEnabled) {
+
+                            if (qrRequest.vehicleFrontReq == QrScanRequest.REQUEST_PENDING) {
+
+                                qrRequestPending = true;
+                            }
+                        }
+
+                        if (qrRequest.vehicleBackEnabled) {
+
+                            if (qrRequest.vehicleBackReq == QrScanRequest.REQUEST_PENDING) {
+
+                                qrRequestPending = true;
+                            }
+                        }
+
+                        if (qrRequestPending) {
+
+                            appManager.add_ui_timer(15, QR_REQUEST_PENDING_TMR);
+                        }
+
+                        break;
+
+                    case PAR_RESUME:
+
+                        parcourActive = true;
+                        parcourPause = false;
+
+                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "RESUME");
+
+                        if (mapReady) {
+
+                            googleMap.getUiSettings().setAllGesturesEnabled(false);
+                        }
+
+                        stopButton.setVisibility(View.GONE);
+
+                        changeViewColorFilter(drivingTimeView, AppColor.GREEN);
+
+                        break;
+
+                    case PAR_PAUSING:
+
+                        parcourActive = true;
+                        parcourPause = true;
+
+                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "PAUSE");
+
+                        if (mapReady) {
+
+                            CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_PAUSE).bearing(0).tilt(0).build();
+                            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                            googleMap.getUiSettings().setAllGesturesEnabled(true);
+                        }
+
+                        stopButton.setVisibility(View.VISIBLE);
+
+                        changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
+
+                        accForceView.hide(true);
+
+                        break;
+
+                    case PAR_STOPPED:
+
+                        parcourActive = false;
+                        parcourPause = false;
+
+                        appManager.clear_ui_timer();
+
+                        stopButton.setVisibility(View.GONE);
+
+                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "STOP");
+                        changeViewColorFilter(drivingTimeView, AppColor.GREY);
+
+                        if (progress != null) {
+
+                            progress.setMessage(getString(R.string.progress_ready_string));
+                            progress.hide();
+                        }
+
+                        break;
+                }
+            }
+        });
     }
 
     @Override
@@ -325,125 +529,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onStatusChanged (final STATUS_t status) {
-
-        runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-
-                switch (status) {
-
-                    case GETTING_CFG:
-
-                        if (progress != null) {
-
-                            progress.show();
-
-                            if (Connectivity.isConnected(getApplicationContext())) {
-
-                                progress.setMessage(getString(R.string.progress_cfg_string));
-                            }
-                            else {
-
-                                progress.setMessage(getString(R.string.network_alert_string));
-                            }
-                        }
-
-                        break;
-
-                    case GETTING_EPC:
-
-                        if (progress != null) {
-
-                            progress.show();
-                            progress.setMessage(getString(R.string.progress_epc_string));
-                        }
-
-                        break;
-
-                    case GETTING_DOBJ:
-
-                        if (progress != null) {
-
-                            progress.show();
-                            progress.setMessage(getString(R.string.progress_obj_string));
-                        }
-
-                        break;
-
-                    case PAR_STARTED:
-
-                        parcourActive = true;
-                        parcourPause = false;
-
-                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "RUN");
-
-                        if (mapReady) {
-
-                            googleMap.getUiSettings().setAllGesturesEnabled(false);
-                        }
-
-                        changeViewColorFilter(drivingTimeView, AppColor.GREEN);
-
-                        break;
-
-                    case PAR_RESUME:
-
-                        parcourActive = true;
-                        parcourPause = false;
-
-                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "RESUME");
-
-                        if (mapReady) {
-
-                            googleMap.getUiSettings().setAllGesturesEnabled(false);
-                        }
-
-                        changeViewColorFilter(drivingTimeView, AppColor.GREEN);
-
-                        break;
-
-                    case PAR_PAUSING:
-
-                        parcourActive = true;
-                        parcourPause = true;
-
-                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "PAUSE");
-
-                        if (mapReady) {
-
-                            CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_PAUSE).bearing(0).tilt(0).build();
-                            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                            googleMap.getUiSettings().setAllGesturesEnabled(true);
-                        }
-
-                        changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
-                        accForceView.hide(true);
-
-                        break;
-
-                    case PAR_STOPPED:
-
-                        parcourActive = false;
-                        parcourPause = false;
-
-                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "STOP");
-                        changeViewColorFilter(drivingTimeView, AppColor.GREY);
-
-                        if (progress != null) {
-
-                            progress.setMessage(getString(R.string.progress_ready_string));
-                            progress.hide();
-                        }
-
-                        break;
-                }
-            }
-        });
-    }
-
-    @Override
     public void onDriveScoreChanged (float score) {
 
         runOnUiThread(new Runnable() {
@@ -482,14 +567,21 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onUiTimeout (int timer_id, STATUS_t status) {
+    public void onUiTimeout (final int timer_id, final STATUS_t status) {
 
         runOnUiThread(new Runnable() {
 
             @Override
             public void run() {
-                //appManager.add_ui_timer();
-                //appManager.clear_ui_timer();
+
+                if (timer_id == QR_REQUEST_PENDING_TMR) {
+
+                    if (parcourActive) {
+
+                        drawAttention(5);
+                        showQrRequestAlert();
+                    }
+                }
             }
         });
     }
@@ -517,33 +609,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    @Override
-    protected void onActivityResult (int requestCode, int resultCode, Intent data) {
-
-        if (requestCode == QR_CODE_REQUEST_ID) {
-
-            if (resultCode == RESULT_OK) {
-
-                if (data.hasExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM)) {
-
-                    qrRequest = data.getParcelableExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM);
-
-                    if (qrRequest.driverIdReq == QrScanRequest.REQUEST_COMPLETED) {
-
-                        appManager.set_driver_id(qrRequest.driverId);
-                    }
-
-                    if (qrRequest.vehicleFrontReq == QrScanRequest.REQUEST_COMPLETED) {
-
-                    }
-
-                    if (qrRequest.vehicleBackReq == QrScanRequest.REQUEST_COMPLETED) {
-
-                    }
-                }
-            }
-        }
-    }
+    // --------------------------------------------------------------------------------------------//
 
     private void init (boolean firstLaunch) {
 
@@ -557,7 +623,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         appManager = new AppManager(this, this);
         qrRequest = new QrScanRequest();
 
-        progress = new ProgressDialog(this);
+        progress = new ProgressDialog(this, R.style.InfoDialogStyle);
         progress.setMessage(getString(R.string.progress_map_string));
         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progress.setIndeterminate(true);
@@ -732,50 +798,48 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         alertDialog.show();
     }
 
-    public void showBluetoothAlert() {
+    public void showQrRequestAlert() {
 
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.NegativeDialogStyle);
 
-        alertDialog.setCancelable(false);
-        alertDialog.setTitle("Bluetooth");
-        alertDialog.setMessage(getString(R.string.bluetooth_rationale_string));
+        builder.setCancelable(true);
+        builder.setMessage(getString(R.string.qr_rationale_string));
 
-        alertDialog.setPositiveButton(getString(R.string.activate_string), new DialogInterface.OnClickListener() {
+        final AlertDialog dialog = builder.show();
 
-            public void onClick (DialogInterface dialog,int which) {
+        new CountDownTimer(15000, 15000) {
 
-                BluetoothAdapter.getDefaultAdapter().enable();
+            public void onTick (long millisUntilFinished) {}
+
+            public void onFinish() {
+
+                if (dialog.isShowing()) {
+
+                    dialog.dismiss();
+                }
             }
-        });
 
-        alertDialog.show();
+        }.start();
     }
 
-    public void showNetworkAlert() {
+    public void askEndDayConfirmation () {
 
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 
-        alertDialog.setCancelable(true);
-        alertDialog.setTitle(getString(R.string.network_string));
-        alertDialog.setMessage(getString(R.string.network_alert_string));
+        builder.setMessage(getString(R.string.end_day_confirm_string));
+        builder.setCancelable(false);
 
-        alertDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton(getString(R.string.no_string), null);
+        builder.setPositiveButton(getString(R.string.yes_string), new DialogInterface.OnClickListener() {
 
-            public void onClick (DialogInterface dialog,int which) {
+            @Override
+            public void onClick (DialogInterface dialogInterface, int i) {
 
+                appManager.setStopped();
             }
         });
 
-        alertDialog.setNeutralButton(getString(R.string.action_settings),new DialogInterface.OnClickListener() {
-
-            public void onClick (DialogInterface dialog,int which) {
-
-                Intent intent = new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS);
-                startActivity(intent);
-            }
-        });
-
-        alertDialog.show();
+        builder.show();
     }
 
     protected void showCallDialog() {
@@ -1043,7 +1107,151 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         startActivity(intent);
+    }
 
+    private String getSmsHeader() {
+
+        String str = "[";
+
+        str += ComonUtils.getIMEInumber(getApplicationContext()) + " ";
+        str += String.valueOf(qrRequest.driverId) + " ";
+
+        if (lastLocation != null) {
+
+            str += String.valueOf(lastLocation.getLatitude()) + " ";
+            str += String.valueOf(lastLocation.getLongitude()) + " ";
+            String date = new SimpleDateFormat("d MMM yyyy HH:mm:ss", Locale.FRANCE).format(lastLocation.getTime());
+            str += date;
+        }
+
+        str += "]";
+        return str;
+    }
+
+    private void sendSms (String phoneNumber, String msg) {
+
+        /*
+        try {
+
+            SmsManager smsManager = SmsManager.getDefault();
+            smsManager.sendTextMessage(phoneNumber, null, msg, null, null);
+        }
+        catch (Exception ex) {
+
+            ex.printStackTrace();
+        }
+        */
+
+        String SENT = "SMS_SENT";
+        String DELIVERED = "SMS_DELIVERED";
+
+        PendingIntent sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT), 0);
+        PendingIntent deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED), 0);
+
+        registerReceiver(new BroadcastReceiver() {
+
+            @Override
+            public void onReceive (Context arg0, Intent arg1) {
+
+                switch (getResultCode())
+                {
+                    case RESULT_OK:
+                        Toast.makeText(getBaseContext(), "SMS sent", Toast.LENGTH_SHORT).show();
+                        break;
+
+                    case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
+                        Toast.makeText(getBaseContext(), "Generic failure", Toast.LENGTH_SHORT).show();
+                        break;
+
+                    case SmsManager.RESULT_ERROR_NO_SERVICE:
+                        Toast.makeText(getBaseContext(), "No service", Toast.LENGTH_SHORT).show();
+                        break;
+
+                    case SmsManager.RESULT_ERROR_NULL_PDU:
+                        Toast.makeText(getBaseContext(), "Null PDU", Toast.LENGTH_SHORT).show();
+                        break;
+
+                    case SmsManager.RESULT_ERROR_RADIO_OFF:
+                        Toast.makeText(getBaseContext(), "Radio off", Toast.LENGTH_SHORT).show();
+                        break;
+                }
+            }
+        }, new IntentFilter(SENT));
+
+        registerReceiver(new BroadcastReceiver() {
+
+            @Override
+            public void onReceive (Context arg0, Intent arg1) {
+
+                switch (getResultCode())
+                {
+                    case RESULT_OK:
+                        Toast.makeText(getBaseContext(), "SMS delivered", Toast.LENGTH_SHORT).show();
+                        break;
+
+                    case RESULT_CANCELED:
+                        Toast.makeText(getBaseContext(), "SMS not delivered", Toast.LENGTH_SHORT).show();
+                        break;
+                }
+            }
+        }, new IntentFilter(DELIVERED));
+
+        SmsManager sms = SmsManager.getDefault();
+        sms.sendTextMessage(phoneNumber, null, msg, sentPI, deliveredPI);
+    }
+
+    private void sendSos() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        actionCanceled = false;
+
+        builder.setMessage(getString(R.string.send_sos_string) + " 5 sec");
+        builder.setCancelable(false);
+
+        builder.setNegativeButton(getString(R.string.cancel_string), new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick (DialogInterface dialogInterface, int i) {
+
+                actionCanceled = true;
+            }
+        });
+
+        final AlertDialog dialog = builder.show();
+
+        new CountDownTimer(5000, 1000) {
+
+            int countdown = 5;
+
+            public void onTick (long millisUntilFinished) {
+
+                if (actionCanceled) {
+
+                    cancel();
+                    dialog.dismiss();
+                }
+                else {
+
+                    dialog.setMessage(getString(R.string.send_sos_string) + " " + String.valueOf(countdown) + " sec");
+                    countdown--;
+                }
+            }
+
+            public void onFinish() {
+
+                if (!actionCanceled) {
+
+                    String msg = "SOS " + getSmsHeader();
+                    sendSms("0623141536", msg);
+                }
+
+                if (dialog.isShowing()) {
+
+                    dialog.dismiss();
+                }
+            }
+
+        }.start();
     }
 
     private void drawLine (LatLng startPoint, LatLng endPoint) {
@@ -1241,6 +1449,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onRawPositionUpdate (Location location) {
 
                 appManager.setLocation(location);
+
+                lastLocation = location;
                 lastPos = new LatLng(location.getLatitude(), location.getLongitude());
 
                 if (!startMarkerAdded) {
@@ -1291,7 +1501,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         callButton = (FloatingActionButton) findViewById(R.id.button_call);
         scanQrCodeButton = (FloatingActionButton) findViewById(R.id.button_qrcode);
         settingsButton = (FloatingActionButton) findViewById(R.id.button_settings);
+
         stopButton = (FloatingActionButton) findViewById(R.id.button_stop);
+        stopButton.setVisibility(View.GONE);
 
         // INFO
         infoButton.setOnClickListener (new View.OnClickListener() {
@@ -1322,7 +1534,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 Intent intent = new Intent(MainActivity.this, QrScanActivity.class);
                 intent.putExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM, qrRequest);
-                startActivityForResult(intent, QR_CODE_REQUEST_ID);
+                startActivityForResult(intent, QR_REQUEST_ID);
             }
         });
 
@@ -1343,7 +1555,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View view) {
 
-                appManager.setStopped();
+                askEndDayConfirmation();
             }
         });
 
@@ -1376,7 +1588,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View view) {
 
-                drawAttention(5);
+                sendSos();
 
                 /*
                 if (mapType > GoogleMap.MAP_TYPE_HYBRID)
@@ -1426,4 +1638,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
     }
+
+    // --------------------------------------------------------------------------------------------//
 }

@@ -5,15 +5,12 @@ import android.os.Bundle;
 
 import com.preventium.boxpreventium.R;
 import com.github.clans.fab.FloatingActionButton;
-import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.PercentFormatter;
-import com.github.mikephil.charting.utils.ColorTemplate;
 
-import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -72,14 +69,13 @@ public class InfoActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG).setAction("Action", null).show();
             }
         });
     }
 
     private void setData (int id, int count, float range) {
 
-        ArrayList<PieEntry> values = new ArrayList<PieEntry>();
+        ArrayList<PieEntry> values = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
 

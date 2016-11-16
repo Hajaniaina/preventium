@@ -144,18 +144,24 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
 
                     if (code.contains(SCAN_VEHICLE_FRONT)) {
 
-                        if (qrRequest.vehicleFrontReq == QrScanRequest.REQUEST_PENDING) {
+                        if (qrRequest.vehicleFrontEnabled) {
 
-                            qrRequest.vehicleFrontReq = QrScanRequest.REQUEST_COMPLETED;
-                            showConfirmDialog(true);
+                            if (qrRequest.vehicleFrontReq == QrScanRequest.REQUEST_PENDING) {
+
+                                qrRequest.vehicleFrontReq = QrScanRequest.REQUEST_COMPLETED;
+                                showConfirmDialog(true);
+                            }
                         }
                     }
                     else if (code.contains(SCAN_VEHICLE_BACK)) {
 
-                        if (qrRequest.vehicleBackReq == QrScanRequest.REQUEST_PENDING) {
+                        if (qrRequest.vehicleBackEnabled) {
 
-                            qrRequest.vehicleBackReq = QrScanRequest.REQUEST_COMPLETED;
-                            showConfirmDialog(true);
+                            if (qrRequest.vehicleBackReq == QrScanRequest.REQUEST_PENDING) {
+
+                                qrRequest.vehicleBackReq = QrScanRequest.REQUEST_COMPLETED;
+                                showConfirmDialog(true);
+                            }
                         }
                     }
                     else {
@@ -176,19 +182,13 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
     }
 
     @Override
-    public void onRetrievedMultiple (final Barcode closetToClick, final List<BarcodeGraphic> barcodeGraphics) {
-
-    }
+    public void onRetrievedMultiple (final Barcode closetToClick, final List<BarcodeGraphic> barcodeGraphics) {}
 
     @Override
-    public void onBitmapScanned (SparseArray<Barcode> sparseArray) {
-
-    }
+    public void onRetrievedFailed (String reason) {}
 
     @Override
-    public void onRetrievedFailed (String reason) {
-
-    }
+    public void onBitmapScanned (SparseArray<Barcode> sparseArray) {}
 
     private void showConfirmDialog (boolean ok) {
 
@@ -198,12 +198,12 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
         if (ok) {
 
             msg = getString(R.string.scan_qr_ok_string);
-            themeId = R.style.QRAlertPositiveDialogStyle;
+            themeId = R.style.PositiveDialogStyle;
         }
         else {
 
             msg = getString(R.string.scan_qr_error_string);
-            themeId = R.style.QRAlertNegativeDialogStyle;
+            themeId = R.style.NegativeDialogStyle;
         }
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(this, themeId);

@@ -242,16 +242,16 @@
                     android:layout_marginTop="@dimen/driving_score_layout_margin_top"
                     android:layout_marginStart="@dimen/driving_score_layout_margin_start"
                     android:gravity="center"
-                    android:background="@drawable/text_border_grey"
+                    android:background="@drawable/text_border_gray"
                     android:elevation="4dp"
                     android:textColor="@color/colorAppGrey"
                     android:textSize="@dimen/driving_score_text_size"
-                    android:text="0"
                     android:textStyle="bold"
                     android:shadowColor="@color/material_grey600"
                     android:shadowDx="2"
                     android:shadowDy="2"
-                    android:shadowRadius="2"/>
+                    android:shadowRadius="2"
+                    android:text="0"/>
 
                 <ImageView android:id="@+id/acc_force_view"
                     android:layout_width="@dimen/force_layout_width"

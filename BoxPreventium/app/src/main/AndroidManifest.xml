@@ -30,7 +30,6 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
-
         <activity
             android:name=".gui.MainActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
@@ -49,18 +48,18 @@
             android:label="@string/title_activity_settings"
             android:parentActivityName=".gui.MainActivity"
             android:screenOrientation="sensorLandscape"
-            android:theme="@style/Theme.AppCompat.Light"></activity>
+            android:theme="@style/Theme.AppCompat.Light" />
         <activity
             android:name=".gui.PinLockActivity"
             android:keepScreenOn="true"
             android:label="Pin code"
-            android:theme="@style/AppThemeDialog"></activity>
+            android:theme="@style/AppThemeDialog" />
         <activity
             android:name=".gui.InfoActivity"
             android:keepScreenOn="true"
             android:label="@string/title_activity_info"
             android:screenOrientation="sensorLandscape"
-            android:theme="@style/AppTheme"></activity>
+            android:theme="@style/AppTheme" />
         <activity
             android:name=".gui.QrScanActivity"
             android:keepScreenOn="true"
