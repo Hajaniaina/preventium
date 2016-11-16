@@ -133,8 +133,8 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String COLUMN_ECA_DISTANCE = "distance";
 
     /// Get number of event by parcours and by events type
-    public long countNbEvent( long parcour_id, int alertID ){
-        long ret = 0;
+    public int countNbEvent( long parcour_id, int alertID ){
+        int ret = 0;
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor =  db.rawQuery( "SELECT DISTINCT COUNT(" + COLUMN_ECA_ID + ")" +
                 " FROM " + TABLE_ECA +
@@ -142,7 +142,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 " AND " + COLUMN_ECA_ALERTID + " = " + alertID +
                 " ;", null );
         if( cursor != null && cursor.moveToFirst() ) {
-            ret = cursor.getLong(0);
+            ret = cursor.getInt(0);
             cursor.close();
         }
         db.close();

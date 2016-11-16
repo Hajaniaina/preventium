@@ -866,15 +866,22 @@ public class AppManager extends ThreadDefault
 
                     float coeff_general;
                     long coeff_vert, coeff_bleu, coeff_jaune, coeff_orange, coeff_rouge;
+                    long obj_vert, obj_bleu, obj_jaune, obj_orange, obj_rouge;
                     long nb_vert, nb_bleu, nb_jaune, nb_orange, nb_rouge;
 
                     // Cotation accélération
-                    coeff_general = 0.1f;
-                    coeff_vert = 1;
-                    coeff_bleu = 5;
-                    coeff_jaune = 10;
-                    coeff_orange = 15;
-                    coeff_rouge = 20;
+                    coeff_general = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.GENERAL);
+                    coeff_vert = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.VERT);
+                    coeff_bleu = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.BLEU);
+                    coeff_jaune = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.JAUNE);
+                    coeff_orange = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ORANGE);
+                    coeff_rouge = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ROUGE);
+                    obj_vert = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.VERT);
+                    obj_bleu = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.BLEU);
+                    obj_jaune = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.JAUNE);
+                    obj_orange = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ORANGE);
+                    obj_rouge = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ROUGE);
+
                     nb_vert = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(0).IDAlert);
                     nb_bleu = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(1).IDAlert);
                     nb_jaune = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(2).IDAlert);
@@ -936,6 +943,37 @@ public class AppManager extends ThreadDefault
                 }
             }
         }
+    }
+
+    private float get_note( String type ){
+        float ret = 0f;
+
+        if( !DataDOBJ.ACCELERATIONS.equals(type)
+                && !DataDOBJ.FREINAGES.equals(type)
+                && !DataDOBJ.VIRAGES.equals(type) ) return ret;
+
+
+        float coeff_general = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.GENERAL);
+        int coeff_vert = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.VERT);
+        int coeff_bleu = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.BLEU);
+        int coeff_jaune = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.JAUNE);
+        int coeff_orange = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ORANGE);
+        int coeff_rouge = DataDOBJ.get_coefficient(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ROUGE);
+
+        int obj_vert = DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.VERT);
+        int obj_bleu = DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.BLEU);
+        int obj_jaune = DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.JAUNE);
+        int obj_orange = DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ORANGE);
+        int obj_rouge = DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ROUGE);
+
+        int nb_vert = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(0).IDAlert);
+        int nb_bleu = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(1).IDAlert);
+        int nb_jaune = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(2).IDAlert);
+        int nb_orange = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(3).IDAlert);
+        int nb_rouge = database.countNbEvent(parcour_id, readerEPCFile.getForceSeuil(4).IDAlert);
+        int nb_total = nb_vert + nb_bleu + nb_jaune + nb_rouge;
+
+        return ret;
     }
 
     private boolean isRightRoad( Location location_1, Location location_2, Location location_3 ) {
