@@ -71,7 +71,7 @@
     <string name="scan_qr_driver_id_string">Driver identificator</string>
     <string name="scan_qr_vehicle_front_string">Vehicle front</string>
     <string name="scan_qr_vehicle_back_string">Vehicle back</string>
-    <string name="send_sos_string">SOS sms will be in</string>
+    <string name="send_sos_string">Sending SOS in</string>
 
     <string-array name="marker_perimeters">
         <item>50m</item>

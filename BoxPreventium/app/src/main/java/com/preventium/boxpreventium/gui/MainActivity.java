@@ -47,6 +47,7 @@ import com.firetrap.permissionhelper.action.OnGrantAction;
 import com.firetrap.permissionhelper.helper.PermissionHelper;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
+import com.preventium.boxpreventium.enums.SCORE_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
 import com.preventium.boxpreventium.enums.SPEED_t;
 import com.preventium.boxpreventium.location.CustomMarker;
@@ -114,7 +115,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean actionCanceled = false;
     private boolean mapReady = false;
     private boolean permissionsChecked = false;
-    private Intent pinLockIntent;
     private SharedPreferences sharedPreferences;
     private PermissionHelper.PermissionBuilder permissionRequest;
     private QrScanRequest qrRequest;
@@ -529,18 +529,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onDriveScoreChanged (float score) {
-
-        runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-
-            }
-        });
-    }
-
-    @Override
     public void onCustomMarkerDataListGet() {
 
         runOnUiThread(new Runnable() {
@@ -587,6 +575,32 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
+    public void onNoteChanged (final int note_par, final LEVEL_t level_par, final LEVEL_t level_5_days) {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                scoreView.setFinalScore(level_par, level_5_days, note_par);
+            }
+        });
+    }
+
+    @Override
+    public void onScoreChanged (final SCORE_t type, final LEVEL_t level) {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                scoreView.setScore(type, level);
+            }
+        });
+    }
+
+    @Override
     public void onDebugLog (final String txt) {
 
         runOnUiThread(new Runnable() {
@@ -618,7 +632,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mapReady = false;
         initDone = true;
         appColor = new AppColor(this);
-        pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
         appManager = new AppManager(this, this);
         qrRequest = new QrScanRequest();
@@ -1113,13 +1126,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         String str = "[";
 
-        str += ComonUtils.getIMEInumber(getApplicationContext()) + " ";
-        str += String.valueOf(qrRequest.driverId) + " ";
+        str += ComonUtils.getIMEInumber(getApplicationContext()) + ", ";
+        str += String.valueOf(qrRequest.driverId) + ", ";
 
         if (lastLocation != null) {
 
             str += String.valueOf(lastLocation.getLatitude()) + " ";
-            str += String.valueOf(lastLocation.getLongitude()) + " ";
+            str += String.valueOf(lastLocation.getLongitude()) + ", ";
             String date = new SimpleDateFormat("d MMM yyyy HH:mm:ss", Locale.FRANCE).format(lastLocation.getTime());
             str += date;
         }
@@ -1544,6 +1557,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (final View view) {
 
+                // Intent pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
                 // startActivity(pinLockIntent);
                 startActivity(new Intent(MainActivity.this, SettingsActivity.class));
             }
