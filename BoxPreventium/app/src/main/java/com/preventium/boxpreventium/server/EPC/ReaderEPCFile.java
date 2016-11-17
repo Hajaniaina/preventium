@@ -2,8 +2,10 @@ package com.preventium.boxpreventium.server.EPC;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
+import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.utils.ComonUtils;
@@ -152,9 +154,13 @@ public class ReaderEPCFile {
     }
 
     public boolean loadFromApp( Context ctx ) {
-//        SharedPreferences sp = ctx.getSharedPreferences(KEY_CFG, Context.MODE_PRIVATE);
-//        int epc =  sp.getString( String.format(Locale.getDefault(),KEY_Sms_Call,i), "");
-        return loadFromApp(ctx,1);
+
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String key = ctx.getResources().getString(R.string.epc_selected);
+        int val = ctx.getResources().getInteger(R.integer.epc_selected_def);
+        val = sp.getInt(key,val);
+
+        return loadFromApp(ctx,val);
     }
 
     public boolean loadFromApp( Context ctx, int epc ) {

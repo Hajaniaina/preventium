@@ -2,6 +2,7 @@
 
     <!-- Selected EPC file, values: 1, 2, 3, 4 ou 5, default: 1-->
     <string name="epc_selected">epc_selected</string>
+    <integer name="epc_selected_def">1</integer>
 
     <!-- Trigger shock, value minimum: 1000mG, default: 1000 mG -->
     <string name="shock_trigger_mG">shock_trigger_mG</string>
