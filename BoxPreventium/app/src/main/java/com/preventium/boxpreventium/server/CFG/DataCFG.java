@@ -2,7 +2,9 @@ package com.preventium.boxpreventium.server.CFG;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
+import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 
 import java.util.Locale;
@@ -89,4 +91,22 @@ public class DataCFG {
         editor.apply();
     }
 
+    public static void set_prefs_to_UI(Context ctx) {
+
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+        SharedPreferences.Editor editor = sp.edit();
+
+        editor.putString( ctx.getResources().getString(R.string.numero_1),
+                DataCFG.get_SMS_CALL(ctx,1) );
+        editor.putString( ctx.getResources().getString(R.string.numero_2),
+                DataCFG.get_SMS_CALL(ctx,2) );
+        editor.putString( ctx.getResources().getString(R.string.numero_3),
+                DataCFG.get_SMS_CALL(ctx,3) );
+        editor.putString( ctx.getResources().getString(R.string.numero_4),
+                DataCFG.get_SMS_CALL(ctx,4) );
+        editor.putString( ctx.getResources().getString(R.string.numero_5),
+                DataCFG.get_SMS_CALL(ctx,5) );
+
+        editor.apply();
+    }
 }

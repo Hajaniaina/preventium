@@ -106,6 +106,7 @@ public class ReaderCFGFile {
         DataCFG.set_SMS_CALL(ctx,5,SMS_CALL_5);
         DataCFG.set_SEND_IN_REAL_TIME(ctx,reception_trajet_en_temps_reel);
         DataCFG.set_SEND_ALL_GPS_POINTS(ctx,envoi_de_tous_les_points_gps);
+        DataCFG.set_prefs_to_UI(ctx);
     }
 
     public FTPConfig getFptConfig(){ return new FTPConfig(FTP,FTP_Login,FTP_pwd, FTP_Port,FTP_Path); }

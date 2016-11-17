@@ -1,11 +1,15 @@
 package com.preventium.boxpreventium.manager;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.location.Location;
+import android.preference.Preference;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.util.Pair;
 import android.util.Log;
 
+import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.database.DBHelper;
 import com.preventium.boxpreventium.enums.ENGINE_t;
 import com.preventium.boxpreventium.enums.FORCE_t;
@@ -37,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.prefs.Preferences;
 
 /**
  * Created by Franck on 23/09/2016.
@@ -145,7 +150,7 @@ public class AppManager extends ThreadDefault
     @Override
     public void myRun() throws InterruptedException {
         super.myRun();
-        
+
         setLog( "AppManager begin..." );
         database.clear_obselete_data();
         download_cfg();
@@ -1221,10 +1226,17 @@ public class AppManager extends ThreadDefault
     /// SHOCK
     /// ============================================================================================
 
+    /// Check shock
     private void check_shock() {
         if( listener != null ) {
-            if( interval(0.0, XmG ) > 1000.0
-                    || interval(0.0, YmG_shock) > 1000.0 ) {
+
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+            String key = ctx.getResources().getString(R.string.shock_trigger_mG);
+            int val = ctx.getResources().getInteger(R.integer.shock_trigger_mG_def);
+            val = sp.getInt(key,val);
+
+            if( interval(0.0, XmG ) > val
+                    || interval(0.0, YmG_shock) > val ) {
                 listener.onShock();
             }
         }
