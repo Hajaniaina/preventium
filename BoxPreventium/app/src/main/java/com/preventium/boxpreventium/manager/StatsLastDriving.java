@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 
 import com.preventium.boxpreventium.database.DBHelper;
 import com.preventium.boxpreventium.enums.LEVEL_t;
+import com.preventium.boxpreventium.enums.SCORE_t;
 import com.preventium.boxpreventium.server.DOBJ.DataDOBJ;
 import com.preventium.boxpreventium.utils.ComonUtils;
 
@@ -59,10 +60,82 @@ public class StatsLastDriving {
     }
 
     /// ============================================================================================
+    /// CHECK IF DATA READY
+    /// ============================================================================================
+
+    private static boolean dataIsAvailable(Context ctx) {
+        return ( get_start_at(ctx) > 0
+                && objectifIsAvailable(ctx,SCORE_t.ACCELERATING)
+                && objectifIsAvailable(ctx,SCORE_t.BRAKING)
+                && objectifIsAvailable(ctx,SCORE_t.CORNERING)
+                && resultIsAvailable(ctx,SCORE_t.ACCELERATING)
+                && resultIsAvailable(ctx,SCORE_t.BRAKING)
+                && resultIsAvailable(ctx,SCORE_t.CORNERING) );
+    }
+
+    private static boolean objectifIsAvailable(Context ctx, SCORE_t score_t){
+        switch ( score_t ) {
+            case CORNERING:
+                return !(get_start_at(ctx) <= 0
+                        || get_objectif_V(ctx, LEVEL_t.LEVEL_1) <= 0
+                        || get_objectif_V(ctx, LEVEL_t.LEVEL_2) <= 0
+                        || get_objectif_V(ctx, LEVEL_t.LEVEL_3) <= 0
+                        || get_objectif_V(ctx, LEVEL_t.LEVEL_4) <= 0
+                        || get_objectif_V(ctx, LEVEL_t.LEVEL_5) <= 0);
+            case BRAKING:
+                return !(get_start_at(ctx) <= 0
+                        || get_objectif_F(ctx, LEVEL_t.LEVEL_1) <= 0
+                        || get_objectif_F(ctx, LEVEL_t.LEVEL_2) <= 0
+                        || get_objectif_F(ctx, LEVEL_t.LEVEL_3) <= 0
+                        || get_objectif_F(ctx, LEVEL_t.LEVEL_4) <= 0
+                        || get_objectif_F(ctx, LEVEL_t.LEVEL_5) <= 0);
+            case ACCELERATING:
+                return !(get_start_at(ctx) <= 0
+                        || get_objectif_A(ctx, LEVEL_t.LEVEL_1) <= 0
+                        || get_objectif_A(ctx, LEVEL_t.LEVEL_2) <= 0
+                        || get_objectif_A(ctx, LEVEL_t.LEVEL_3) <= 0
+                        || get_objectif_A(ctx, LEVEL_t.LEVEL_4) <= 0
+                        || get_objectif_A(ctx, LEVEL_t.LEVEL_5) <= 0);
+
+        }
+
+        return false;
+    }
+
+    private static boolean resultIsAvailable(Context ctx, SCORE_t score_t){
+        switch ( score_t ) {
+            case CORNERING:
+                return !(get_start_at(ctx) <= 0
+                        || get_resultat_V(ctx, LEVEL_t.LEVEL_1) <= 0
+                        || get_resultat_V(ctx, LEVEL_t.LEVEL_2) <= 0
+                        || get_resultat_V(ctx, LEVEL_t.LEVEL_3) <= 0
+                        || get_resultat_V(ctx, LEVEL_t.LEVEL_4) <= 0
+                        || get_resultat_V(ctx, LEVEL_t.LEVEL_5) <= 0);
+            case BRAKING:
+                return !(get_start_at(ctx) <= 0
+                        || get_resultat_F(ctx, LEVEL_t.LEVEL_1) <= 0
+                        || get_resultat_F(ctx, LEVEL_t.LEVEL_2) <= 0
+                        || get_resultat_F(ctx, LEVEL_t.LEVEL_3) <= 0
+                        || get_resultat_F(ctx, LEVEL_t.LEVEL_4) <= 0
+                        || get_resultat_F(ctx, LEVEL_t.LEVEL_5) <= 0);
+            case ACCELERATING:
+                return !(get_start_at(ctx) <= 0
+                        || get_resultat_A(ctx, LEVEL_t.LEVEL_1) <= 0
+                        || get_resultat_A(ctx, LEVEL_t.LEVEL_2) <= 0
+                        || get_resultat_A(ctx, LEVEL_t.LEVEL_3) <= 0
+                        || get_resultat_A(ctx, LEVEL_t.LEVEL_4) <= 0
+                        || get_resultat_A(ctx, LEVEL_t.LEVEL_5) <= 0);
+
+        }
+
+        return false;
+    }
+
+    /// ============================================================================================
     /// PHONE INFO
     /// ============================================================================================
 
-    public static void getIMEI(Context ctx){ ComonUtils.getIMEInumber(ctx); }
+    public static String getIMEI(Context ctx){ return ComonUtils.getIMEInumber(ctx); }
 
     /// ============================================================================================
     /// PARCOURS INFO
