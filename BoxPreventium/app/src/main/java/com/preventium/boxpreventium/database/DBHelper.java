@@ -358,6 +358,43 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     /// ============================================================================================
+    /// PARCOURS
+    /// ============================================================================================
+
+    public long get_last_parcours_id(){
+        long ret = -1;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor =  db.rawQuery(
+                "SELECT DISTINCT " + COLUMN_ECA_PARCOUR_ID +
+                        " FROM " + TABLE_ECA +
+                        " ORDER BY DESC " + COLUMN_ECA_PARCOUR_ID +
+                        " LIMIT 1 ;", null );
+        if( cursor != null && cursor.moveToFirst() ) {
+            ret = cursor.getLong(0);
+            cursor.close();
+        }
+        db.close();
+        return ret;
+    }
+
+    public long get_distance(long parcour_id) {
+        long ret = 0;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor =  db.rawQuery(
+                "SELECT SUM( " + COLUMN_ECA_DISTANCE +
+                        " ) FROM " + TABLE_ECA +
+                        " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id, null );
+        if( cursor != null && cursor.moveToFirst() ) {
+            ret = cursor.getLong(0);
+            cursor.close();
+        }
+        db.close();
+        return ret;
+    }
+
+
+
+    /// ============================================================================================
     /// DRIVER ID
     /// ============================================================================================
 
@@ -521,7 +558,6 @@ public class DBHelper extends SQLiteOpenHelper {
         db.delete(TABLE_CEP,null,null);
         db.close();
     }
-
 
 //    public byte[] boxEventsData(){
 //
