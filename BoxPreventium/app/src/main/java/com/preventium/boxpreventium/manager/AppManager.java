@@ -2,8 +2,6 @@ package com.preventium.boxpreventium.manager;
 
 import android.content.Context;
 import android.location.Location;
-import android.os.SystemClock;
-import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v4.util.Pair;
 import android.util.Log;
@@ -148,7 +146,7 @@ public class AppManager extends ThreadDefault
     @Override
     public void myRun() throws InterruptedException {
         super.myRun();
-
+        
         setLog( "AppManager begin..." );
         database.clear_obselete_data();
         download_cfg();
@@ -1154,6 +1152,36 @@ public class AppManager extends ThreadDefault
 //            evt_rouge = 6;
 //        }
 
+
+        /// UPDATE STATS OF THE LAST DRIVING
+        if( parcour_id == StatsLastDriving.get_start_at(ctx) ) {
+            if( DataDOBJ.ACCELERATIONS.equals(type) ){
+                StatsLastDriving.init_objectif(ctx);
+                StatsLastDriving.set_resultat_A(ctx,LEVEL_t.LEVEL_1,evt_vert);
+                StatsLastDriving.set_resultat_A(ctx,LEVEL_t.LEVEL_2,evt_vert);
+                StatsLastDriving.set_resultat_A(ctx,LEVEL_t.LEVEL_3,evt_vert);
+                StatsLastDriving.set_resultat_A(ctx,LEVEL_t.LEVEL_4,evt_vert);
+                StatsLastDriving.set_resultat_A(ctx,LEVEL_t.LEVEL_5,evt_vert);
+            } else if( DataDOBJ.FREINAGES.equals(type) ){
+                StatsLastDriving.init_objectif(ctx);
+                StatsLastDriving.set_resultat_F(ctx,LEVEL_t.LEVEL_1,evt_vert);
+                StatsLastDriving.set_resultat_F(ctx,LEVEL_t.LEVEL_2,evt_vert);
+                StatsLastDriving.set_resultat_F(ctx,LEVEL_t.LEVEL_3,evt_vert);
+                StatsLastDriving.set_resultat_F(ctx,LEVEL_t.LEVEL_4,evt_vert);
+                StatsLastDriving.set_resultat_F(ctx,LEVEL_t.LEVEL_5,evt_vert);
+            } else {//if( DataDOBJ.VIRAGES.equals(type) ){
+                StatsLastDriving.init_objectif(ctx);
+                StatsLastDriving.set_resultat_V(ctx,LEVEL_t.LEVEL_1,evt_vert);
+                StatsLastDriving.set_resultat_V(ctx,LEVEL_t.LEVEL_2,evt_vert);
+                StatsLastDriving.set_resultat_V(ctx,LEVEL_t.LEVEL_3,evt_vert);
+                StatsLastDriving.set_resultat_V(ctx,LEVEL_t.LEVEL_4,evt_vert);
+                StatsLastDriving.set_resultat_V(ctx,LEVEL_t.LEVEL_5,evt_vert);
+            }
+            StatsLastDriving.set_distance( ctx, database.get_distance(parcour_id) );
+            StatsLastDriving.set_times( ctx, (long) chronoRide.getSeconds());
+
+        }
+
         // CALCUL INTERMEDIARE PAR SEUIL
         int calc_vert = ( evt_vert >= obj_vert ) ? 20*coeff_vert : 0;
         int calc_jaune = ( evt_jaune <= obj_jaune ) ? 0 : (obj_jaune-evt_jaune)*coeff_jaune;
@@ -1219,8 +1247,10 @@ public class AppManager extends ThreadDefault
                 alertY_add_at = 0;
                 alertPos_add_at = 0;
                 readerEPCFile.loadFromApp(ctx);
+
                 addLog("START PARCOURS");
                 parcour_id = System.currentTimeMillis();
+                StatsLastDriving.startDriving(ctx,parcour_id);
                 chronoRide.start();
                 ret = STATUS_t.PAR_STARTED;
                 if (listener != null){
