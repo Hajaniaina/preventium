@@ -29,8 +29,6 @@ import com.preventium.boxpreventium.utils.ThreadDefault;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPClientIO;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 
-import org.apache.commons.net.ftp.FTPFile;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
@@ -72,6 +70,7 @@ public class AppManager extends ThreadDefault
 
         void onNoteChanged( int note_par, LEVEL_t level_par, LEVEL_t level_5_days );
         void onScoreChanged(SCORE_t type, LEVEL_t level);
+        void onShock();
     }
 
     private Context ctx = null;
@@ -82,12 +81,13 @@ public class AppManager extends ThreadDefault
 
     private ReaderEPCFile readerEPCFile = new ReaderEPCFile();
     private double XmG = 0.0;
-    private double YmG = 0.0;
-    ForceSeuil seuil_ui = null;
+    private double YmG_smooth = 0.0;
+    private double YmG_shock = 0.0;
+    private ForceSeuil seuil_ui = null;
     private Chrono seuil_chrono_x = new Chrono();
     private Chrono seuil_chrono_y = new Chrono();
-    ForceSeuil seuil_last_x = null;
-    ForceSeuil seuil_last_y = null;
+    private ForceSeuil seuil_last_x = null;
+    private ForceSeuil seuil_last_y = null;
 
     private boolean customMarkerList_Received = false;
     private ArrayList<CustomMarkerData> customMarkerList = null;
@@ -206,8 +206,9 @@ public class AppManager extends ThreadDefault
     }
 
     @Override
-    public void onForceChanged(double mG) {
-        this.YmG = mG;
+    public void onForceChanged(double mG_smooth, double mG_shock) {
+        this.YmG_smooth = mG_smooth;
+        this.YmG_shock = mG_shock;
     }
 
     @Override
@@ -817,7 +818,7 @@ public class AppManager extends ThreadDefault
             else if (freinage) mov_t = MOVING_t.BRK;
             else mov_t = MOVING_t.NCS;
             // CALCULATE FORCE X
-            // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le g :
+            // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
             // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
             // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
             this.XmG = ((locations.get(0).getSpeed() - locations.get(1).getSpeed())
@@ -906,7 +907,7 @@ public class AppManager extends ThreadDefault
 
             // Read the runtime value force
             ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
-            ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(YmG);
+            ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(YmG_smooth);
 
             // Compare the runtime X value force with the prevent X value force, and add alert to ECA database
             if( seuil_x != null ) {
@@ -1217,6 +1218,25 @@ public class AppManager extends ThreadDefault
     }
 
     /// ============================================================================================
+    /// SHOCK
+    /// ============================================================================================
+
+    private void check_shock() {
+        if( listener != null ) {
+            if( interval(0.0, XmG ) > 1000.0
+                    || interval(0.0, YmG_shock) > 1000.0 ) {
+                listener.onShock();
+            }
+        }
+    }
+
+    private double interval(double d1, double d2){
+        double ret = d1 - d2;
+        if( ret < 0.0 ) ret = -ret;
+        return ret;
+    }
+
+    /// ============================================================================================
     /// PARCOUR
     /// ============================================================================================
 
@@ -1301,6 +1321,7 @@ public class AppManager extends ThreadDefault
         calc_eca();
         calc_parcour_cotation();
         calc_cotation_forces();
+        check_shock();
 
         // Checking if car is in pause
         if (mov_t_last == MOVING_t.STP

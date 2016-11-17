@@ -2,7 +2,9 @@ package com.preventium.boxpreventium.module;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.hardware.Sensor;
 import android.util.Log;
+import android.util.Pair;
 
 import com.preventium.boxpreventium.enums.ENGINE_t;
 import com.preventium.boxpreventium.module.device.BluetoothBox;
@@ -10,6 +12,7 @@ import com.preventium.boxpreventium.module.enums.CONNEXION_STATE_t;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.module.trames.BatteryInfo;
+import com.preventium.boxpreventium.module.trames.SensorShockAccelerometerInfo;
 import com.preventium.boxpreventium.module.trames.SensorSmoothAccelerometerInfo;
 import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ThreadDefault;
@@ -30,7 +33,7 @@ public class HandlerBox extends ThreadDefault
         void onScanState(boolean scanning);
         void onDeviceState( String device_mac, boolean connected );
         void onNumberOfBox(int nb);
-        void onForceChanged(double mG);
+        void onForceChanged(double mG_smooth, double mG_shock);
         void onEngineStateChanged(ENGINE_t state);
     }
 
@@ -46,7 +49,8 @@ public class HandlerBox extends ThreadDefault
     private boolean calibrate_1 = false;
     private boolean calibrate_2 = false;
 
-    double last_force_mG = 0.0, curr_force_mG = 0.0;
+    private double last_smooth_mG = 0.0, curr_smooth_mG = 0.0;
+    private double last_shock_mG = 0.0, curr_shock_mG = 0.0;
     private ENGINE_t last_engine_t = ENGINE_t.UNKNOW;
 
     public HandlerBox(Context ctx, NotifyListener listener) {
@@ -134,16 +138,18 @@ public class HandlerBox extends ThreadDefault
         chrono.start();
         discoverBox.scan();
 
-        last_force_mG = curr_force_mG = 0.0;
+        curr_smooth_mG = last_smooth_mG = 0.0;
+        curr_shock_mG = last_shock_mG = 0.0;
         last_engine_t = ENGINE_t.UNKNOW;
 
         int nb = mBoxList.size();
         if( listener != null ) {
             listener.onNumberOfBox( nb );
-            listener.onForceChanged( last_force_mG );
+            listener.onForceChanged( last_smooth_mG, last_shock_mG );
             listener.onEngineStateChanged( last_engine_t );
         }
 
+        double mG_shock;
         while( isRunning() ) {
 
             sleep(1000);
@@ -153,7 +159,8 @@ public class HandlerBox extends ThreadDefault
                 chrono.start(); // Restart chrono who indicate the elapsed time since the last scan
             }
 
-            curr_force_mG = 0.0;
+            curr_smooth_mG = 0.0;
+            curr_shock_mG = 0.0;
             for( int i = mBoxList.size()-1; i >= 0; i-- ) {
 
                 if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
@@ -163,21 +170,40 @@ public class HandlerBox extends ThreadDefault
                 } else {
                     SensorSmoothAccelerometerInfo smooth = mBoxList.get(i).getSmooth();
                     if( smooth != null ) {
-                        if( interval(0.0,smooth.value()) >= interval(0.0,curr_force_mG) ) {
-                            curr_force_mG = smooth.value();
+                        if( interval(0.0,smooth.value()) >= interval(0.0,curr_smooth_mG) ) {
+                            curr_smooth_mG = smooth.value();
                         }
                     }
+
+                    SensorShockAccelerometerInfo shock = mBoxList.get(i).getShock();
+                    if( shock != null ) {
+                        if( interval(0.0,shock.value()) >= interval(0.0,curr_shock_mG) ) {
+                            curr_shock_mG = shock.value();
+                        }
+                    }
+
                 }
             }
 
-
-            //Log.d(TAG,"Force changed: " + last_force_mG + " mG -> " + curr_force_mG + " mG." );
-            if( last_force_mG != curr_force_mG ) {
-                last_force_mG = curr_force_mG;
-                if( listener != null )
-                    listener.onForceChanged( curr_force_mG );
-                if( DEBUG ) Log.d(TAG,"Force changed: " + last_force_mG + " mG.");
+            boolean change = false;
+            if( last_smooth_mG != curr_smooth_mG ) {
+                last_smooth_mG = curr_smooth_mG;
+                change = true;
             }
+            if( last_shock_mG != curr_shock_mG ) {
+                last_shock_mG = curr_shock_mG;
+                change = true;
+            }
+            if( change ) {
+                if( listener != null ) listener.onForceChanged( curr_smooth_mG, curr_shock_mG );
+            }
+            //Log.d(TAG,"Force changed: " + last_force_mG + " mG -> " + curr_force_mG + " mG." );
+//            if( last_smooth_mG != curr_smooth_mG ) {
+//                last_smooth_mG = curr_smooth_mG;
+//                if( listener != null )
+//                    listener.onForceChanged( curr_smooth_mG );
+//                if( DEBUG ) Log.d(TAG,"Force changed: " + last_smooth_mG + " mG.");
+//            }
 
             // Calibration 'g' on constant speed
             if( calibrate_1 ) {
