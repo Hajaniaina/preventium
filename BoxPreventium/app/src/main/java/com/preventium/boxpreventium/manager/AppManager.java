@@ -142,7 +142,6 @@ public class AppManager extends ThreadDefault
         }
     }
 
-
     @Override
     public void myRun() throws InterruptedException {
         super.myRun();
@@ -407,7 +406,6 @@ public class AppManager extends ThreadDefault
                     boolean epc;
                     boolean exist_server_epc = false;
                     boolean exist_server_ack = false;
-                    FTPFile[] files = ftp.ftpPrintFiles();
                     String srcFileName = "";
                     String srcAckName = "";
                     String desFileName = "";
