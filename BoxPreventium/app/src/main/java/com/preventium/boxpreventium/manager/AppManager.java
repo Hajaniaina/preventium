@@ -763,7 +763,17 @@ public class AppManager extends ThreadDefault
             }
         }
     }
-    
+
+    /// ============================================================================================
+    /// TRACKING
+    /// ============================================================================================
+
+    private boolean _tracking = true;
+
+    public void setTracking( boolean enabled ){ _tracking = enabled; }
+
+    public boolean getTracking(){ return _tracking; }
+
     /// ============================================================================================
     /// CALCUL
     /// ============================================================================================
@@ -916,7 +926,7 @@ public class AppManager extends ThreadDefault
                     seuil_chrono_x.start();
                     // If elapsed time > 2 seconds
                     if( System.currentTimeMillis() - alertX_add_at >= 2000 ) {
-                        database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc.get(0), null));
+                        if( _tracking ) database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc.get(0), null));
                         alertX_add_at = System.currentTimeMillis();
                     }
                     alertX = true;
@@ -930,7 +940,7 @@ public class AppManager extends ThreadDefault
                     seuil_chrono_y.start();
                     // If elapsed time > 2 seconds
                     if( System.currentTimeMillis() - alertY_add_at >= 2000 ) {
-                        database.addECA( parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc.get(0), null ) );
+                        if( _tracking ) database.addECA( parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc.get(0), null ) );
                         alertY_add_at = System.currentTimeMillis();
                     }
                     alertY = true;
@@ -943,7 +953,7 @@ public class AppManager extends ThreadDefault
                 if( System.currentTimeMillis() - alertPos_add_at >= 2000  ) {
 // A TESTER
 //                    if( loc.get(0).distanceTo(loc.get(1)) > 10 ) {
-                        database.addECA(parcour_id, ECALine.newInstance(loc.get(0), loc.get(1)));
+                        if( _tracking ) database.addECA(parcour_id, ECALine.newInstance(loc.get(0), loc.get(1)));
                         alertPos_add_at = System.currentTimeMillis();
 //                    }
                 }
