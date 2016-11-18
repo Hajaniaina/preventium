@@ -1,6 +1,7 @@
 package com.preventium.boxpreventium.gui;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.view.View;
@@ -64,16 +65,16 @@ public class SpeedView implements Parcelable {
             view.setText("0");
         }
 
-        viewMap.get(SPEED_t.MAX_LIMIT).setVisibility(View.GONE);
+        // viewMap.get(SPEED_t.MAX_LIMIT).setVisibility(View.GONE);
     }
 
     public void restore (Activity activity) {
 
         init(activity);
 
-        setSpeed(SPEED_t.IN_CORNERS, levelMap.get(SPEED_t.IN_CORNERS), speedMap.get(SPEED_t.IN_CORNERS));
-        setSpeed(SPEED_t.IN_STRAIGHT_LINE, levelMap.get(SPEED_t.IN_STRAIGHT_LINE), speedMap.get(SPEED_t.IN_STRAIGHT_LINE));
-        setSpeed(SPEED_t.MAX_LIMIT, levelMap.get(SPEED_t.MAX_LIMIT), speedMap.get(SPEED_t.MAX_LIMIT));
+        setSpeed(SPEED_t.IN_CORNERS, levelMap.get(SPEED_t.IN_CORNERS), speedMap.get(SPEED_t.IN_CORNERS), true);
+        setSpeed(SPEED_t.IN_STRAIGHT_LINE, levelMap.get(SPEED_t.IN_STRAIGHT_LINE), speedMap.get(SPEED_t.IN_STRAIGHT_LINE), true);
+        setSpeed(SPEED_t.MAX_LIMIT, levelMap.get(SPEED_t.MAX_LIMIT), speedMap.get(SPEED_t.MAX_LIMIT), true);
 
         if (visible) {
 
@@ -105,23 +106,7 @@ public class SpeedView implements Parcelable {
         visible = !hide;
     }
 
-    public void setText (SPEED_t speedId, String msg) {
-
-        switch (speedId) {
-
-            case IN_CORNERS:
-            case IN_STRAIGHT_LINE:
-            case MAX_LIMIT:
-
-                viewMap.get(speedId).setText(msg);
-
-                break;
-
-            default: break;
-        }
-    }
-
-    public void setSpeed (SPEED_t speedId, LEVEL_t level, Integer speed) {
+    public void setSpeed (SPEED_t speedId, LEVEL_t level, Integer speed, boolean speedValid) {
 
         if (speed < 0) {
 
@@ -141,6 +126,15 @@ public class SpeedView implements Parcelable {
 
                 viewMap.get(speedId).setText(speed.toString());
                 viewMap.get(speedId).setBarColor(appColor.getColor(level));
+
+                if (speedValid) {
+
+                    viewMap.get(speedId).setTextColor(Color.BLACK);
+                }
+                else {
+
+                    viewMap.get(speedId).setTextColor(appColor.getColor(AppColor.RED));
+                }
 
                 break;
 

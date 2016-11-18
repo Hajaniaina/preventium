@@ -23,7 +23,7 @@
     <header
         android:fragment="com.preventium.boxpreventium.gui.SettingsActivity$PhonePreferenceFragment"
         android:icon="@drawable/ic_phone_black_24p"
-        android:title="Phone numbers">
+        android:title="@string/pref_title_phone">
     </header>
 
 </preference-headers>

@@ -23,6 +23,7 @@ import android.os.CountDownTimer;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -115,6 +116,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean actionCanceled = false;
     private boolean mapReady = false;
     private boolean permissionsChecked = false;
+    private boolean shockDetected = false;
     private SharedPreferences sharedPref;
     private PermissionHelper.PermissionBuilder permissionRequest;
     private QrScanRequest qrRequest;
@@ -357,7 +359,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         parcourActive = true;
                         parcourPause = false;
 
-                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "RUN");
+                        Snackbar.make(getCurrentFocus(), "RUN", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
 
                         if (mapReady) {
 
@@ -403,7 +405,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         parcourActive = true;
                         parcourPause = false;
 
-                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "RESUME");
+                        Snackbar.make(getCurrentFocus(), "RESUME", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
 
                         if (mapReady) {
 
@@ -421,7 +423,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         parcourActive = true;
                         parcourPause = true;
 
-                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "PAUSE");
+                        Snackbar.make(getCurrentFocus(), "PAUSE", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
 
                         if (mapReady) {
 
@@ -447,7 +449,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         stopButton.setVisibility(View.GONE);
 
-                        speedView.setText(SPEED_t.IN_STRAIGHT_LINE, "STOP");
+                        Snackbar.make(getCurrentFocus(), "STOP", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
+
                         changeViewColorFilter(drivingTimeView, AppColor.GREY);
 
                         if (progress != null) {
@@ -596,6 +599,34 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void run() {
 
                 scoreView.setScore(type, level);
+            }
+        });
+    }
+
+    @Override
+    public void onShock() {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                if (!shockDetected) {
+
+                    shockDetected = true;
+
+                    new CountDownTimer(5000, 5000) {
+
+                        public void onTick(long millisUntilFinished) {}
+
+                        public void onFinish() {
+
+                            shockDetected = false;
+                            sendSms(getPhoneNumber(R.string.phone_select_sms_shock), getString(R.string.shock_string));
+                        }
+
+                    }.start();
+                }
             }
         });
     }
@@ -857,9 +888,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     protected void showCallDialog() {
 
-        // String syncConnPref = sharedPref.getString("phone_select_sms", "default");
-        // Snackbar.make(getCurrentFocus(), syncConnPref, Snackbar.LENGTH_LONG).setAction("Action", null).show();
-
         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
         alertBuilder.setMessage(getString(R.string.make_call_confirma_string));
         alertBuilder.setCancelable(false);
@@ -869,7 +897,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (DialogInterface dialogInterface, int i) {
 
-                makeCall("0623141536");
+                makeCall(getPhoneNumber(R.string.phone_select_voice));
             }
         });
 
@@ -1109,9 +1137,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         view.setBackground(background);
     }
 
-    private void makeCall (String number) {
+    private void makeCall (String phoneNumber) {
 
-        Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + number.trim()));
+        Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + phoneNumber));
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
 
@@ -1143,18 +1171,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void sendSms (String phoneNumber, String msg) {
 
-        /*
-        try {
-
-            SmsManager smsManager = SmsManager.getDefault();
-            smsManager.sendTextMessage(phoneNumber, null, msg, null, null);
-        }
-        catch (Exception ex) {
-
-            ex.printStackTrace();
-        }
-        */
-
         String SENT = "SMS_SENT";
         String DELIVERED = "SMS_DELIVERED";
 
@@ -1169,25 +1185,26 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 switch (getResultCode())
                 {
                     case RESULT_OK:
-                        Toast.makeText(getBaseContext(), "SMS sent", Toast.LENGTH_SHORT).show();
+                        Snackbar.make(getCurrentFocus(), "SMS: sent", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
                         break;
 
                     case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                        Toast.makeText(getBaseContext(), "Generic failure", Toast.LENGTH_SHORT).show();
+                        Snackbar.make(getCurrentFocus(), "SMS: Generic failure", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
                         break;
 
                     case SmsManager.RESULT_ERROR_NO_SERVICE:
-                        Toast.makeText(getBaseContext(), "No service", Toast.LENGTH_SHORT).show();
+                        Snackbar.make(getCurrentFocus(), "SMS: No service", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
                         break;
 
                     case SmsManager.RESULT_ERROR_NULL_PDU:
-                        Toast.makeText(getBaseContext(), "Null PDU", Toast.LENGTH_SHORT).show();
+                        Snackbar.make(getCurrentFocus(), "SMS: Null PDU", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
                         break;
 
                     case SmsManager.RESULT_ERROR_RADIO_OFF:
-                        Toast.makeText(getBaseContext(), "Radio off", Toast.LENGTH_SHORT).show();
+                        Snackbar.make(getCurrentFocus(), "SMS: Radio off", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
                         break;
                 }
+
             }
         }, new IntentFilter(SENT));
 
@@ -1199,18 +1216,29 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 switch (getResultCode())
                 {
                     case RESULT_OK:
-                        Toast.makeText(getBaseContext(), "SMS delivered", Toast.LENGTH_SHORT).show();
+                        Snackbar.make(getCurrentFocus(), "SMS: delivered", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
                         break;
 
                     case RESULT_CANCELED:
-                        Toast.makeText(getBaseContext(), "SMS not delivered", Toast.LENGTH_SHORT).show();
+                        Snackbar.make(getCurrentFocus(), "SMS: not delivered", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
                         break;
                 }
+
             }
+
         }, new IntentFilter(DELIVERED));
 
+        String str = msg + " " + getSmsHeader();
         SmsManager sms = SmsManager.getDefault();
-        sms.sendTextMessage(phoneNumber, null, msg, sentPI, deliveredPI);
+
+        try {
+
+            sms.sendTextMessage(phoneNumber, null, str, sentPI, deliveredPI);
+        }
+        catch (Exception ex) {
+
+            Snackbar.make(getCurrentFocus(), "Invalid phone number for SMS", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
+        }
     }
 
     private void sendSos() {
@@ -1254,8 +1282,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (!actionCanceled) {
 
-                    String msg = "SOS " + getSmsHeader();
-                    sendSms("0623141536", msg);
+                    sendSms(getPhoneNumber(R.string.phone_select_sms_sos), "SOS");
                 }
 
                 if (dialog.isShowing()) {
@@ -1373,6 +1400,26 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         vibrator.vibrate(ms);
     }
 
+    private String getPhoneNumber (int key) {
+
+        String[] numberList = new String[5];
+
+        numberList[0] = sharedPref.getString(getString(R.string.phone_number_1), "");
+        numberList[1] = sharedPref.getString(getString(R.string.phone_number_2), "");
+        numberList[2] = sharedPref.getString(getString(R.string.phone_number_3), "");
+        numberList[3] = sharedPref.getString(getString(R.string.phone_number_4), "");
+        numberList[4] = sharedPref.getString(getString(R.string.phone_number_5), "");
+
+        int number = Integer.parseInt(sharedPref.getString(getString(key), "0"));
+
+        if (number > 0) {
+
+            return numberList[number - 1].trim();
+        }
+
+        return "";
+    }
+
     private void setMapListeners() {
 
         // MAP SHORT CLICK
@@ -1482,7 +1529,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (parcourActive) {
 
-                    speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_1, posManager.getInstantSpeed());
+                    speedView.setSpeed(SPEED_t.MAX_LIMIT, LEVEL_t.LEVEL_1, posManager.getInstantSpeed(), true);
 
                     googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_MOVE).bearing(0).tilt(30).build();
@@ -1490,7 +1537,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 }
                 else {
 
-                    speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_UNKNOW, 0);
+                    speedView.setSpeed(SPEED_t.MAX_LIMIT, LEVEL_t.LEVEL_UNKNOW, 0, true);
                 }
             }
 
@@ -1620,25 +1667,27 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         menuButton2.setLabelText(getString(R.string.disable_tracking_string));
-
         menuButton2.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick (View v) {
 
-                if (posManager.isUpdatesEnabled()) {
+                if (appManager.getTracking()) {
 
-                    posManager.enableUpdates(false);
+                    appManager.setTracking(false);
 
                     menuButton2.setImageResource(R.drawable.ic_play);
                     menuButton2.setLabelText(getString(R.string.enable_tracking_string));
+
+                    sendSms(getPhoneNumber(R.string.phone_select_sms_tracking), getString(R.string.disable_tracking_string));
                 }
                 else {
 
-                    posManager.enableUpdates(true);
-
+                    appManager.setTracking(true);
                     menuButton2.setImageResource(R.drawable.ic_stop);
                     menuButton2.setLabelText(getString(R.string.disable_tracking_string));
+
+                    sendSms(getPhoneNumber(R.string.phone_select_sms_tracking), getString(R.string.enable_tracking_string));
                 }
             }
         });

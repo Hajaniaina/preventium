@@ -34,6 +34,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      * to reflect its new value.
      */
     private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = new Preference.OnPreferenceChangeListener() {
+
         @Override
         public boolean onPreferenceChange(Preference preference, Object value) {
 
@@ -216,7 +217,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         }
 
         @Override
-        public boolean onOptionsItemSelected(MenuItem item) {
+        public boolean onOptionsItemSelected (MenuItem item) {
 
             int id = item.getItemId();
 
@@ -242,12 +243,16 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_phone);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference("phone_select_sms"));
-            bindPreferenceSummaryToValue(findPreference("phone_select_voice"));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_sos)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_shock)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_pause)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_tracking)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_voice)));
         }
 
         @Override
-        public boolean onOptionsItemSelected(MenuItem item) {
+        public boolean onOptionsItemSelected (MenuItem item) {
 
             int id = item.getItemId();
 

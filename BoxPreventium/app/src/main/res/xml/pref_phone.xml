@@ -2,22 +2,72 @@
 
     <!-- NOTE: ListPreference's summary should be set to its value by the activity code. -->
 
+    <PreferenceCategory
+        android:title="@string/pref_title_sms_sos">
+
+        <ListPreference
+            android:key="@string/phone_select_sms_sos"
+            android:title="@string/pref_title_sms_sos"
+            android:entries="@array/pref_phone_numbers_titles"
+            android:entryValues="@array/pref_phone_numbers_values"
+            android:defaultValue="1"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null">
+        </ListPreference>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_title_sms_shock">
+
     <ListPreference
-        android:title="@string/pref_title_sms"
+        android:key="@string/phone_select_sms_shock"
+        android:title="@string/pref_title_sms_shock"
         android:entries="@array/pref_phone_numbers_titles"
         android:entryValues="@array/pref_phone_numbers_values"
         android:defaultValue="1"
-        android:key="phone_select_sms"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null">
+    </ListPreference>
+
+    </PreferenceCategory>
+
+    <ListPreference
+        android:key="@string/phone_select_sms_pause"
+        android:title="@string/pref_title_sms_pause"
+        android:entries="@array/pref_phone_numbers_titles"
+        android:entryValues="@array/pref_phone_numbers_values"
+        android:defaultValue="1"
         android:negativeButtonText="@null"
         android:positiveButtonText="@null">
     </ListPreference>
 
     <ListPreference
+        android:key="@string/phone_select_sms_tracking"
+        android:title="@string/pref_title_sms_tracking"
+        android:entries="@array/pref_phone_numbers_titles"
+        android:entryValues="@array/pref_phone_numbers_values"
+        android:defaultValue="1"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null">
+    </ListPreference>
+
+    <ListPreference
+        android:key="@string/phone_select_sms_qr"
+        android:title="@string/pref_title_sms_qr"
+        android:entries="@array/pref_phone_numbers_titles"
+        android:entryValues="@array/pref_phone_numbers_values"
+        android:defaultValue="1"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null">
+    </ListPreference>
+
+    <ListPreference
+        android:key="@string/phone_select_voice"
         android:title="@string/pref_title_voice_call"
         android:entries="@array/pref_phone_numbers_titles"
         android:entryValues="@array/pref_phone_numbers_values"
         android:defaultValue="1"
-        android:key="phone_select_voice"
         android:negativeButtonText="@null"
         android:positiveButtonText="@null">
     </ListPreference>
