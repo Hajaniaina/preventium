@@ -33,17 +33,27 @@
     <string name="yes_string">Yes</string>
     <string name="no_string">No</string>
     <string name="cancel_string">Cancel</string>
+    <string name="obj_string">Objective</string>
+    <string name="results_string">Result</string>
+    <string name="acc_string">Acceleration</string>
+    <string name="brakes_string">Braking</string>
+    <string name="corners_string">Corners</string>
+    <string name="number_string">Number</string>
+    <string name="call_string">Call</string>
+    <string name="unknown_string">Unknown</string>
+    <string name="permissions_string">Permissions</string>
+    <string name="permissions_retry_string">Retry</string>
+    <string name="start_marker_string">Start</string>
+    <string name="finish_marker_string">Finish</string>
+    <string name="distance_string">Distance</string>
+
     <string name="marker_tittle_invalid_string">Invalid name</string>
     <string name="new_marker_string">Marker name</string>
     <string name="marker_edit_string">Edit marker</string>
     <string name="marker_create_string">Create marker</string>
-    <string name="start_marker_string">Start</string>
-    <string name="finish_marker_string">Finish</string>
     <string name="marker_snippet_string">Tap here to edit this marker</string>
     <string name="validate_marker_create_string">Create a marker at this location?</string>
     <string name="validate_marker_delete_string">Delete this marker?</string>
-    <string name="call_string">Call</string>
-    <string name="number_string">Number</string>
     <string name="make_call_string">Call a predefined number</string>
     <string name="make_call_confirma_string">Make a voice call?</string>
     <string name="pin_error_string">Wrong PIN</string>
@@ -53,9 +63,7 @@
     <string name="location_rationale_string">Location service is disabled. Activate High Precision mode in the Android settings to continue</string>
     <string name="bluetooth_rationale_string">Bluetooth is disabled. Activate it to continue</string>
     <string name="qr_rationale_string">One or more QR scans are pending</string>
-    <string name="permissions_string">Permissions</string>
     <string name="force_permissions_string">To continue please activate all permissions in the settings menu</string>
-    <string name="permissions_retry_string">Retry</string>
     <string name="network_alert_string">No active internet connection. Make sure that 3G/4G is activated</string>
     <string name="enable_tracking_string">Enable tracking</string>
     <string name="disable_tracking_string">Disable tracking</string>
@@ -72,6 +80,8 @@
     <string name="scan_qr_vehicle_front_string">Vehicle front</string>
     <string name="scan_qr_vehicle_back_string">Vehicle back</string>
     <string name="send_sos_string">Sending SOS in</string>
+    <string name="start_time_string">Start time</string>
+    <string name="time_elapsed_string">Time elapsed</string>
 
     <string-array name="marker_perimeters">
         <item>50m</item>

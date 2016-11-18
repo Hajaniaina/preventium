@@ -55,7 +55,7 @@
             android:label="Pin code"
             android:theme="@style/AppThemeDialog" />
         <activity
-            android:name=".gui.InfoActivity"
+            android:name=".gui.StatsActivity"
             android:keepScreenOn="true"
             android:label="@string/title_activity_info"
             android:screenOrientation="sensorLandscape"
