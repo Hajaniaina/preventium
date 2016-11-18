@@ -17,30 +17,70 @@
         android:fadeScrollbars="false"
         android:scrollbarFadeDuration="0"
         tools:context="com.example.vlad.maptest.gui.InfoActivity"
-        tools:showIn="@layout/activity_info">
+        tools:showIn="@layout/activity_stats">
 
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="@dimen/info_layout_padding">
+            android:padding="@dimen/stats_layout_padding">
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:layout_marginTop="10dp">
+
+                <TextView
+                    android:id="@+id/textview_imei"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text=""/>
+
+                <TextView
+                    android:id="@+id/textview_start_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text=""/>
+
+                <TextView
+                    android:id="@+id/textview_time_elapsed"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text=""/>
+
+                <TextView
+                    android:id="@+id/textview_distance"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text=""/>
+
+            </LinearLayout>
 
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/info_layout_height"
-                android:padding="@dimen/info_layout_padding">
+                android:layout_height="@dimen/stats_layout_height">
 
                 <com.github.mikephil.charting.charts.PieChart
-                    android:id="@+id/pie_chart1"
+                    android:id="@+id/pie_chart_acc_obj"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/stats_layout_margin"
+                    android:layout_marginRight="@dimen/stats_layout_margin"
                     android:layout_weight="1" />
 
                 <com.github.mikephil.charting.charts.PieChart
-                    android:id="@+id/pie_chart2"
+                    android:id="@+id/pie_chart_acc_result"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/stats_layout_margin"
+                    android:layout_marginRight="@dimen/stats_layout_margin"
                     android:layout_weight="1" />
 
             </LinearLayout>
@@ -48,19 +88,22 @@
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/info_layout_height"
-                android:padding="@dimen/info_layout_padding">
+                android:layout_height="@dimen/stats_layout_height">
 
                 <com.github.mikephil.charting.charts.PieChart
-                    android:id="@+id/pie_chart3"
+                    android:id="@+id/pie_chart_brake_obj"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/stats_layout_margin"
+                    android:layout_marginRight="@dimen/stats_layout_margin"
                     android:layout_weight="1" />
 
                 <com.github.mikephil.charting.charts.PieChart
-                    android:id="@+id/pie_chart4"
+                    android:id="@+id/pie_chart_brake_result"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/stats_layout_margin"
+                    android:layout_marginRight="@dimen/stats_layout_margin"
                     android:layout_weight="1" />
 
             </LinearLayout>
@@ -68,19 +111,22 @@
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/info_layout_height"
-                android:padding="@dimen/info_layout_padding">
+                android:layout_height="@dimen/stats_layout_height">
 
                 <com.github.mikephil.charting.charts.PieChart
-                    android:id="@+id/pie_chart5"
+                    android:id="@+id/pie_chart_corner_obj"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/stats_layout_margin"
+                    android:layout_marginRight="@dimen/stats_layout_margin"
                     android:layout_weight="1" />
 
                 <com.github.mikephil.charting.charts.PieChart
-                    android:id="@+id/pie_chart6"
+                    android:id="@+id/pie_chart_corner_result"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/stats_layout_margin"
+                    android:layout_marginRight="@dimen/stats_layout_margin"
                     android:layout_weight="1" />
 
             </LinearLayout>

@@ -115,7 +115,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean actionCanceled = false;
     private boolean mapReady = false;
     private boolean permissionsChecked = false;
-    private SharedPreferences sharedPreferences;
+    private SharedPreferences sharedPref;
     private PermissionHelper.PermissionBuilder permissionRequest;
     private QrScanRequest qrRequest;
     private boolean parcourActive = false;
@@ -632,7 +632,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mapReady = false;
         initDone = true;
         appColor = new AppColor(this);
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
         appManager = new AppManager(this, this);
         qrRequest = new QrScanRequest();
 
@@ -857,7 +857,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     protected void showCallDialog() {
 
-        // String syncConnPref = sharedPreferences.getString("phone_select_sms", "default");
+        // String syncConnPref = sharedPref.getString("phone_select_sms", "default");
         // Snackbar.make(getCurrentFocus(), syncConnPref, Snackbar.LENGTH_LONG).setAction("Action", null).show();
 
         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
@@ -1133,7 +1133,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             str += String.valueOf(lastLocation.getLatitude()) + " ";
             str += String.valueOf(lastLocation.getLongitude()) + ", ";
-            String date = new SimpleDateFormat("d MMM yyyy HH:mm:ss", Locale.FRANCE).format(lastLocation.getTime());
+            String date = new SimpleDateFormat("d MMM yyyy HH:mm:ss", Locale.getDefault()).format(lastLocation.getTime());
             str += date;
         }
 
@@ -1524,7 +1524,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View v) {
 
-                Intent intent = new Intent(MainActivity.this, InfoActivity.class);
+                Intent intent = new Intent(MainActivity.this, StatsActivity.class);
                 startActivity(intent);
             }
         });
