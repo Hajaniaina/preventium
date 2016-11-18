@@ -632,6 +632,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
+    public void onRecommendedSpeedChanged (final SPEED_t speed_t, final int kmh, final LEVEL_t level, final boolean valid) {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                speedView.setSpeed(speed_t, level, kmh, valid);
+            }
+        });
+    }
+
+    @Override
     public void onDebugLog (final String txt) {
 
         runOnUiThread(new Runnable() {
