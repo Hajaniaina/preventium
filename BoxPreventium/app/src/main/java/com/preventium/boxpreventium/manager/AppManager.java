@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.prefs.Preferences;
+
 
 /**
  * Created by Franck on 23/09/2016.
@@ -58,11 +58,6 @@ public class AppManager extends ThreadDefault
     private static final int SECS_TO_SET_PARCOURS_RESUME = 10;
     private static final int SECS_TO_SET_PARCOURS_STOPPED = 25200; // 7 hours = 7 * 3600 secs = 25200 secs
 
-    private FilesSender fileSender = null;
-
-    private String log = "";
-    private ENGINE_t engine_t = ENGINE_t.UNKNOW;
-
     public interface AppManagerListener {
         void onNumberOfBoxChanged( int nb );
         void onDrivingTimeChanged(String txt );
@@ -78,50 +73,16 @@ public class AppManager extends ThreadDefault
         void onShock();
     }
 
+    /// ============================================================================================
+    /// AppManager
+    /// ============================================================================================
+
+    private ENGINE_t engine_t = ENGINE_t.UNKNOW;
     private Context ctx = null;
     private AppManagerListener listener = null;
-
     private HandlerBox modules = null;
     private DBHelper database = null;
 
-    private ReaderEPCFile readerEPCFile = new ReaderEPCFile();
-    private double XmG = 0.0;
-    private double YmG_smooth = 0.0;
-    private double YmG_shock = 0.0;
-    private ForceSeuil seuil_ui = null;
-    private Chrono seuil_chrono_x = new Chrono();
-    private Chrono seuil_chrono_y = new Chrono();
-    private ForceSeuil seuil_last_x = null;
-    private ForceSeuil seuil_last_y = null;
-
-    private boolean customMarkerList_Received = false;
-    private ArrayList<CustomMarkerData> customMarkerList = null;
-
-    private String parcoursTypeName = null;
-
-    private MOVING_t mov_t = MOVING_t.STP;
-    private MOVING_t mov_t_last = MOVING_t.UNKNOW;
-    private Chrono mov_chrono = new Chrono();
-    private Chrono mov_t_last_chrono = new Chrono();
-
-    private long parcour_id = 0;
-    private long driver_id = 0;
-    private long cotation_update_at = 0;
-    private long forces_update_at = 0;
-    private long alertX_add_at = 0;
-    private long alertY_add_at = 0;
-    private long alertPos_add_at = 0;
-    private long try_send_eca_at  = 0;
-    private boolean button_stop = false;
-
-    private List<Location> locations = new ArrayList<Location>();
-
-    private List<Pair<Long,Integer>> ui_timers = new ArrayList<>(); // Long: timestamp, Integer: timer id
-
-    private Chrono chronoRide = new Chrono();
-    private String chronoRideTxt = "";
-
-    private Chrono chrono_ready_to_start = Chrono.newInstance();
 
     public AppManager(Context ctx, AppManagerListener listener) {
         super(null);
@@ -227,6 +188,9 @@ public class AppManager extends ThreadDefault
     /// UI
     /// ============================================================================================
 
+    private Chrono chronoRide = Chrono.newInstance();
+    private String chronoRideTxt = "";
+
     private STATUS_t first_init(){
         button_stop = false;
         mov_t_last = MOVING_t.UNKNOW;
@@ -276,6 +240,8 @@ public class AppManager extends ThreadDefault
     /// Driver ID
     /// ============================================================================================
 
+    private long driver_id = 0;
+
     public long get_driver_id(){ return driver_id; };
 
     public void set_driver_id( long driver_id ){ this.driver_id = driver_id; }
@@ -283,6 +249,9 @@ public class AppManager extends ThreadDefault
     /// ============================================================================================
     /// UI Timers
     /// ============================================================================================
+
+    // Timers list -> Long: timestamp, Integer: timer id
+    private List<Pair<Long,Integer>> ui_timers = new ArrayList<>();
 
     /// Add timer to timer list
     public void add_ui_timer(long secs, int timer_id){
@@ -382,6 +351,8 @@ public class AppManager extends ThreadDefault
     /// ============================================================================================
     /// .EPC
     /// ============================================================================================
+
+    private ReaderEPCFile readerEPCFile = new ReaderEPCFile();
 
     // Downloading .EPC files if is needed
     private boolean download_epc() throws InterruptedException {
@@ -552,6 +523,9 @@ public class AppManager extends ThreadDefault
     /// .ECA
     /// ============================================================================================
 
+    private FilesSender fileSender = null;
+    private long try_send_eca_at  = 0;
+
     /// Uploading .ECA file if is needed
     private boolean upload_eca( boolean now ){
         boolean ret = false;
@@ -615,6 +589,9 @@ public class AppManager extends ThreadDefault
     /// ============================================================================================
     /// .POS (Map markers)
     /// ============================================================================================
+
+    private boolean customMarkerList_Received = false;
+    private ArrayList<CustomMarkerData> customMarkerList = null;
 
     // Set list of map markers
     public void setCustomMarkerDataList(ArrayList<CustomMarkerData> list){
@@ -707,6 +684,8 @@ public class AppManager extends ThreadDefault
     /// PARCOURS TYPE
     /// ============================================================================================
 
+    private String parcoursTypeName = null;
+
     // Set current parcours is a parcours type,
     // if parcoursName is null, do not set this parcours is a parcours type
     public void set_parcours_type(@Nullable  String parcoursName ){
@@ -784,10 +763,26 @@ public class AppManager extends ThreadDefault
             }
         }
     }
-
+    
     /// ============================================================================================
     /// CALCUL
     /// ============================================================================================
+
+    private MOVING_t mov_t = MOVING_t.STP;
+    private MOVING_t mov_t_last = MOVING_t.UNKNOW;
+    private long alertX_add_at = 0;
+    private long alertY_add_at = 0;
+    private long alertPos_add_at = 0;
+    private Chrono mov_chrono = new Chrono();
+    private Chrono mov_t_last_chrono = new Chrono();
+    private ForceSeuil seuil_ui = null;
+    private Chrono seuil_chrono_x = new Chrono();
+    private Chrono seuil_chrono_y = new Chrono();
+    private ForceSeuil seuil_last_x = null;
+    private ForceSeuil seuil_last_y = null;
+    private double XmG = 0.0;
+    private double YmG_smooth = 0.0;
+    private double YmG_shock = 0.0;
 
     private void calc_movements(){
         this.mov_t = MOVING_t.UNKNOW;
@@ -946,8 +941,11 @@ public class AppManager extends ThreadDefault
             if( !alertX && !alertY ){
                 // If elapsed time > 2 seconds
                 if( System.currentTimeMillis() - alertPos_add_at >= 2000  ) {
-                    database.addECA( parcour_id, ECALine.newInstance( loc.get(0), loc.get(1) ) );
-                    alertPos_add_at = System.currentTimeMillis();
+// A TESTER
+//                    if( loc.get(0).distanceTo(loc.get(1)) > 10 ) {
+                        database.addECA(parcour_id, ECALine.newInstance(loc.get(0), loc.get(1)));
+                        alertPos_add_at = System.currentTimeMillis();
+//                    }
                 }
             }
 
@@ -973,6 +971,9 @@ public class AppManager extends ThreadDefault
     /// ============================================================================================
     /// CALCUL COTATION
     /// ============================================================================================
+
+    private long cotation_update_at = 0;
+    private long forces_update_at = 0;
 
     // Calculate note of the current parcours
     private void calc_parcour_cotation() {
@@ -1252,6 +1253,10 @@ public class AppManager extends ThreadDefault
     /// PARCOUR
     /// ============================================================================================
 
+    private Chrono chrono_ready_to_start = Chrono.newInstance();
+    private long parcour_id = 0;
+    private boolean button_stop = false;
+
     public void setStopped(){ button_stop = true; }
 
     private STATUS_t on_stopped(){
@@ -1351,11 +1356,20 @@ public class AppManager extends ThreadDefault
     /// LOCATIONS
     /// ============================================================================================
 
+    private List<Location> locations = new ArrayList<Location>();
+
     public void setLocation( Location location ) {
         if( location != null )
         {
+// A TESTER
+//            if( !locations.isEmpty() ){
+//                if( locations.get(0).distanceTo( location ) < 10 ){
+//                    locations.remove(0);
+//                }
+//            }
             this.locations.add(0, location);
             while (this.locations.size() > 10) this.locations.remove(this.locations.size() - 1);
+
 
             switchON( true );
         }
@@ -1364,6 +1378,8 @@ public class AppManager extends ThreadDefault
     /// ============================================================================================
     /// DEBUG
     /// ============================================================================================
+
+    private String log = "";
 
     private void setLog( String txt ){
         log = txt;
