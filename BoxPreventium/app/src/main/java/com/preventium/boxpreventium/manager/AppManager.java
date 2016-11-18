@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.location.Location;
 import android.preference.Preference;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v4.util.Pair;
 import android.util.Log;
@@ -16,6 +17,7 @@ import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.MOVING_t;
 import com.preventium.boxpreventium.enums.SCORE_t;
+import com.preventium.boxpreventium.enums.SPEED_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
 import com.preventium.boxpreventium.location.CustomMarkerData;
 import com.preventium.boxpreventium.module.HandlerBox;
@@ -41,7 +43,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
-
 
 /**
  * Created by Franck on 23/09/2016.
@@ -71,6 +72,7 @@ public class AppManager extends ThreadDefault
         void onNoteChanged( int note_par, LEVEL_t level_par, LEVEL_t level_5_days );
         void onScoreChanged(SCORE_t type, LEVEL_t level);
         void onShock();
+        void onRecommendedSpeedChanged(SPEED_t speed_t, int kmh, LEVEL_t level, boolean valid);
     }
 
     /// ============================================================================================
@@ -217,6 +219,7 @@ public class AppManager extends ThreadDefault
         alertY_add_at = 0;
         alertPos_add_at = 0;
         try_send_eca_at  = 0;
+        recommended_speed_update_at = 0;
         return STATUS_t.PAR_STOPPED;
     }
 
@@ -1049,6 +1052,10 @@ public class AppManager extends ThreadDefault
                     float V = get_cotation_force(DataDOBJ.VIRAGES,parcour_id,600);
                     float M = (A+F+V) > 0 ? (A+F+V)/3 : 0;
 
+addLog( "Cotation A: " + A );
+addLog( "Cotation F: " + F );
+addLog( "Cotation V: " + V );
+addLog( "Cotation M: " + M );
                     // Update note for "Accelerations"
                     LEVEL_t level;
                     if( A >= 16f ) level = LEVEL_t.LEVEL_1;
@@ -1089,7 +1096,7 @@ public class AppManager extends ThreadDefault
     /// Get force cotation (A,F,V)per parcours (per all parcours if parcour_id <= 0 )
     /// between timespamp
     private float get_cotation_force( String type, long parcour_id, long begin, long end ){
-        float ret = 0f;
+        float ret = 20f;
 
         if( !DataDOBJ.ACCELERATIONS.equals(type)
                 && !DataDOBJ.FREINAGES.equals(type)
@@ -1194,7 +1201,6 @@ public class AppManager extends ThreadDefault
             }
             StatsLastDriving.set_distance( ctx, database.get_distance(parcour_id) );
             StatsLastDriving.set_times( ctx, (long) chronoRide.getSeconds());
-
         }
 
         // CALCUL INTERMEDIARE PAR SEUIL
@@ -1231,6 +1237,72 @@ public class AppManager extends ThreadDefault
         cal.set(Calendar.MINUTE, 0); // set minutes to zero
         cal.set(Calendar.SECOND, 0); //set seconds to zero
         return cal.getTimeInMillis();
+    }
+
+    /// ============================================================================================
+    /// CALCUL RECOMMENDED SPEED
+    /// ============================================================================================
+
+    private long recommended_speed_update_at = 0;
+    private float speed_H = 0f;
+    private float speed_V = 0f;
+    private float speed_max = 0f;
+
+    /// Calculate recommended speed
+    private void calc_recommended_speed() {
+
+        // Calculate recommended val and get speed maximum since XX secondes
+        if( recommended_speed_update_at + (5*60*1000) < System.currentTimeMillis()) {
+            if (readerEPCFile != null) {
+                // Get the horizontal maximum speed since
+                speed_H = database.speed_avg(parcour_id, 10 * 60,
+                        readerEPCFile.getForceSeuil(0).IDAlert, // IDAlert +X1
+                        readerEPCFile.getForceSeuil(1).IDAlert, // IDAlert +X2
+                        readerEPCFile.getForceSeuil(5).IDAlert, // IDAlert -X1
+                        readerEPCFile.getForceSeuil(6).IDAlert  // IDAlert -X2
+                );
+                // Get the vertical maximum speed since
+                speed_V = database.speed_avg(parcour_id, 5 * 60,
+                        readerEPCFile.getForceSeuil(10).IDAlert,    // IDAlert +Y1
+                        readerEPCFile.getForceSeuil(11).IDAlert,    // IDAlert +Y2
+                        readerEPCFile.getForceSeuil(15).IDAlert,    // IDAlert -Y1
+                        readerEPCFile.getForceSeuil(16).IDAlert     // IDAlert -Y2
+                );
+                // Get the average speed
+                speed_max = database.speed_max(parcour_id, 5 * 60);
+                // Set calculate at
+                recommended_speed_update_at = System.currentTimeMillis();
+            }
+        }
+
+        // IUpdate the UI
+        if( listener != null ) {
+            // Get the horizontal level
+            LEVEL_t level_H = LEVEL_t.LEVEL_UNKNOW;
+            if( speed_H > 0f ) {
+                if (speed_max < speed_H) level_H = LEVEL_t.LEVEL_1;
+                else if (speed_max < speed_H * 1.1) level_H = LEVEL_t.LEVEL_2;
+                else if (speed_max < speed_H * 1.2) level_H = LEVEL_t.LEVEL_3;
+                else if (speed_max < speed_H * 1.35) level_H = LEVEL_t.LEVEL_4;
+                else level_H = LEVEL_t.LEVEL_5;
+            }
+            // Get the vertical level
+            LEVEL_t level_V = LEVEL_t.LEVEL_UNKNOW;
+            if( speed_V > 0f ) {
+                if (speed_max < speed_V) level_V = LEVEL_t.LEVEL_1;
+                else if (speed_max < speed_V * 1.1) level_V = LEVEL_t.LEVEL_2;
+                else if (speed_max < speed_V * 1.2) level_V = LEVEL_t.LEVEL_3;
+                else if (speed_max < speed_V * 1.35) level_V = LEVEL_t.LEVEL_4;
+                else level_V = LEVEL_t.LEVEL_5;
+            }
+            float speed_observed = ( locations.isEmpty() ) ? 0f : locations.get(0).getSpeed();
+            // Send results to UI
+            listener.onRecommendedSpeedChanged( SPEED_t.IN_STRAIGHT_LINE, (int)(speed_H*MS_TO_KMH),
+                    level_H, speed_H <= speed_observed);
+            listener.onRecommendedSpeedChanged( SPEED_t.IN_CORNERS, (int)(speed_V*MS_TO_KMH),
+                    level_V, speed_V <= speed_observed);
+        }
+
     }
 
     /// ============================================================================================
@@ -1291,6 +1363,7 @@ public class AppManager extends ThreadDefault
                 alertX_add_at = 0;
                 alertY_add_at = 0;
                 alertPos_add_at = 0;
+                recommended_speed_update_at = 0;
                 readerEPCFile.loadFromApp(ctx);
 
                 addLog("START PARCOURS");
@@ -1305,6 +1378,8 @@ public class AppManager extends ThreadDefault
                     listener.onScoreChanged(SCORE_t.BRAKING,LEVEL_t.LEVEL_1);
                     listener.onScoreChanged(SCORE_t.CORNERING,LEVEL_t.LEVEL_1);
                     listener.onScoreChanged(SCORE_t.AVERAGE,LEVEL_t.LEVEL_1);
+                    listener.onRecommendedSpeedChanged(SPEED_t.IN_STRAIGHT_LINE,0,LEVEL_t.LEVEL_UNKNOW,true);
+                    listener.onRecommendedSpeedChanged(SPEED_t.IN_CORNERS,0,LEVEL_t.LEVEL_UNKNOW,true);
                     listener.onStatusChanged(ret);
                 }
             }
@@ -1349,6 +1424,7 @@ public class AppManager extends ThreadDefault
         calc_parcour_cotation();
         calc_cotation_forces();
         check_shock();
+        //calc_recommended_speed();
 
         // Checking if car is in pause
         if (mov_t_last == MOVING_t.STP

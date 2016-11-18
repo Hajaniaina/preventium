@@ -15,6 +15,7 @@ import android.util.Log;
 
 import com.github.mikephil.charting.utils.FileUtils;
 import com.github.mikephil.charting.utils.Utils;
+import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.utils.BytesUtils;
 import com.preventium.boxpreventium.utils.ComonUtils;
@@ -291,6 +292,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         //output.write( new byte[]{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00} );// Vehicule ID
                         output.write( ByteBuffer.allocate(8).putLong(driver_id).array() ); // Driver ID
                         line = new ECALine();
+                        boolean all_points = DataCFG.get_SEND_ALL_GPS_POINTS(ctx);
                         while ( !cursor.isAfterLast() ) {
                             if( parcour_id
                                     == cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID)) )
@@ -317,7 +319,7 @@ public class DBHelper extends SQLiteOpenHelper {
 //                                    e.printStackTrace();
 //                                }
 
-                                output.write( line.toData() );
+                                if( all_points || line.alertID != 254 ) output.write( line.toData() );
                                 cursor.moveToNext();
                             }
                             else
@@ -384,15 +386,73 @@ public class DBHelper extends SQLiteOpenHelper {
                 "SELECT SUM( " + COLUMN_ECA_DISTANCE +
                         " ) FROM " + TABLE_ECA +
                         " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id, null );
-        if( cursor != null && cursor.moveToFirst() ) {
-            ret = cursor.getLong(0);
+        if( cursor != null ){
+            if( cursor.moveToFirst() ) ret = cursor.getLong(0);
             cursor.close();
         }
         db.close();
         return ret;
     }
 
+    /// Get speed max by parcours, by events type, since X seconds
+    public float speed_max(long parcour_id, long secs, int... alertID){
+        float ret = 0f;
+        SQLiteDatabase db = this.getReadableDatabase();
+        long begin = System.currentTimeMillis() - (secs*1000);
+        String request =
+                "SELECT MAX( " + COLUMN_ECA_SPEED + " )" +
+                " FROM " + TABLE_ECA +
+                " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
+                " AND " + COLUMN_ECA_TIME + " >= " + begin ;
+                if( alertID != null && alertID.length > 0 ){
+                    if( alertID.length > 1 ) {
+                        request += " AND " +  COLUMN_ECA_ALERTID + "IN (" + alertID[0];
+                        for( int i = 1; i < alertID.length; i++ ) request += ", " + alertID[i];
+                        request += " )";
+                    } else {
+                        request += " AND " + COLUMN_ECA_ALERTID + " = " + alertID[0];
+                    }
+                }
+        request += " ;";
 
+        Cursor cursor = db.rawQuery(request, null );
+        if( cursor != null ){
+            if( cursor.moveToFirst() ) ret = cursor.getFloat(0);
+            cursor.close();
+        }
+        db.close();
+        return ret;
+    }
+
+    /// Get speed average by parcours, by events type, since X seconds
+    public float speed_avg(long parcour_id, long secs, int... alertID){
+        float ret = 0f;
+        SQLiteDatabase db = this.getReadableDatabase();
+        long begin = System.currentTimeMillis() - (secs*1000);
+        String request =
+                "SELECT AVG( " + COLUMN_ECA_SPEED + " )" +
+                        " FROM " + TABLE_ECA +
+                        " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
+                        " AND " + COLUMN_ECA_TIME + " >= " + begin ;
+        if( alertID != null && alertID.length > 0 ){
+            if( alertID.length > 1 ) {
+                request += " AND " +  COLUMN_ECA_ALERTID + "IN (" + alertID[0];
+                for( int i = 1; i < alertID.length; i++ ) request += ", " + alertID[i];
+                request += " )";
+            } else {
+                request += " AND " + COLUMN_ECA_ALERTID + " = " + alertID[0];
+            }
+        }
+        request += " ;";
+
+        Cursor cursor = db.rawQuery(request, null );
+        if( cursor != null ){
+            if( cursor.moveToFirst() ) ret = cursor.getFloat(0);
+            cursor.close();
+        }
+        db.close();
+        return ret;
+    }
 
     /// ============================================================================================
     /// DRIVER ID
