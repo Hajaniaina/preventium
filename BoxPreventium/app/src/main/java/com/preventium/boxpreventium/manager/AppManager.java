@@ -3,9 +3,7 @@ package com.preventium.boxpreventium.manager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.location.Location;
-import android.preference.Preference;
 import android.preference.PreferenceManager;
-import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v4.util.Pair;
 import android.util.Log;
@@ -111,11 +109,12 @@ public class AppManager extends ThreadDefault
         }
     }
 
+
     @Override
     public void myRun() throws InterruptedException {
         super.myRun();
-
         setLog( "AppManager begin..." );
+        modules.setActive( true );
         database.clear_obselete_data();
         download_cfg();
         download_epc();
@@ -124,7 +123,6 @@ public class AppManager extends ThreadDefault
         upload_eca(true);
 
         while( isRunning() ) {
-
             check_internet_is_active();
 
             modules.setActive( true );
@@ -168,7 +166,8 @@ public class AppManager extends ThreadDefault
     @Override
     public void onDeviceState(String device_mac, boolean connected) {
         addLog( device_mac + " is connected: " + connected );
-        database.addCEP( locations.get(0), device_mac, connected );
+        Location location = get_last_location();
+        database.addCEP( location, device_mac, connected );
     }
 
     @Override
@@ -827,14 +826,8 @@ public class AppManager extends ThreadDefault
         this.XmG = 0f;
         boolean rightRoad = false;
 
-        if (locations.size() > 0) {
-            if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
-                locations.clear();
-            }
-        }
-
-        if( locations.size() >= 3 ) {
-            List<Location> list = this.locations.subList(0,3);
+        List<Location> list = get_location_list(3);
+        if( list != null && list.size() >= 3 ){
             rightRoad = isRightRoad( list.get(0), list.get(1), list.get(2) );
             boolean acceleration = true;
             boolean freinage = true;
@@ -859,8 +852,8 @@ public class AppManager extends ThreadDefault
             // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
             // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
             // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
-            this.XmG = ((locations.get(0).getSpeed() - locations.get(1).getSpeed())
-                    / (9.81 * ((locations.get(0).getTime() - locations.get(1).getTime()) * 0.001)))
+            this.XmG = ((list.get(0).getSpeed() - list.get(1).getSpeed())
+                    / (9.81 * ((list.get(0).getTime() - list.get(1).getTime()) * 0.001)))
                     * 1000.0;
         }
 
@@ -936,9 +929,8 @@ public class AppManager extends ThreadDefault
     }
 
     private void calc_eca(){
-        if( locations.size() > 3 ) {
-
-            List<Location> loc = locations.subList(0,2);
+        List<Location> loc = get_location_list(2);
+        if( loc != null && loc.size() >= 2 ) {
 
             boolean alertX = false;
             boolean alertY = false;
@@ -946,7 +938,7 @@ public class AppManager extends ThreadDefault
             // Read the runtime value force
             ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
             ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(YmG_smooth);
-
+if( seuil_y != null ) Log.d("AA","SEUIL Y: " + seuil_y.toString() );
             // Compare the runtime X value force with the prevent X value force, and add alert to ECA database
             if( seuil_x != null ) {
                 if( !seuil_x.equals(seuil_last_x) ) seuil_chrono_x.start();
@@ -980,10 +972,10 @@ public class AppManager extends ThreadDefault
                 // If elapsed time > 2 seconds
                 if( System.currentTimeMillis() - alertPos_add_at >= 2000  ) {
 // A TESTER
-//                    if( loc.get(0).distanceTo(loc.get(1)) > 10 ) {
+                    if( loc.get(0).distanceTo(loc.get(1)) > 10 ) {
                         if( _tracking ) database.addECA(parcour_id, ECALine.newInstance(loc.get(0), loc.get(1)));
                         alertPos_add_at = System.currentTimeMillis();
-//                    }
+                    }
                 }
             }
 
@@ -994,6 +986,7 @@ public class AppManager extends ThreadDefault
                 else  alertX = false;
             }
             if( alertX ) seuil = seuil_x; else if( alertY ) seuil = seuil_y;
+if( seuil != null ) Log.d("AA","SEUIL: " + seuil.toString() );
             if( seuil != null ) {
                 if (seuil_ui == null || !seuil_ui.equals(seuil)) {
                     if (listener != null) listener.onForceChanged(seuil.type, seuil.level);
@@ -1278,7 +1271,8 @@ addLog("NB_TOTAL: " + nb_total);
     private void calc_recommended_speed() {
 
         // Calculate recommended val and get speed maximum since XX secondes
-        if( recommended_speed_update_at + (5*60*1000) < System.currentTimeMillis()) {
+        //if( recommended_speed_update_at + (5*60*1000) < System.currentTimeMillis()) {
+        if( recommended_speed_update_at + (30*1000) < System.currentTimeMillis()) {
             if (readerEPCFile != null) {
 addLog("calc_recommended_speed");
                 // Get the horizontal maximum speed since
@@ -1301,8 +1295,7 @@ addLog("calc_recommended_speed");
                 recommended_speed_update_at = System.currentTimeMillis();
             }
         }
-
-        // IUpdate the UI
+        // Update the UI
         if( listener != null ) {
             // Get the horizontal level
             LEVEL_t level_H = LEVEL_t.LEVEL_UNKNOW;
@@ -1322,7 +1315,8 @@ addLog("calc_recommended_speed");
                 else if (speed_max < speed_V * 1.35) level_V = LEVEL_t.LEVEL_4;
                 else level_V = LEVEL_t.LEVEL_5;
             }
-            float speed_observed = ( locations.isEmpty() ) ? 0f : locations.get(0).getSpeed();
+            Location location = get_last_location();
+            float speed_observed = ( location != null ) ?  location.getSpeed() : 0f;
             // Send results to UI
             listener.onRecommendedSpeedChanged( SPEED_t.IN_STRAIGHT_LINE, (int)(speed_H*MS_TO_KMH),
                     level_H, speed_H <= speed_observed);
@@ -1376,9 +1370,10 @@ addLog("calc_recommended_speed");
         button_stop = false;
 
         // Checking if ready to start a new parcours
-        boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 0
+        boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 1
                 && mov_t_last != MOVING_t.STP
-                && mov_t_last != MOVING_t.UNKNOW /*&& engine_t == ENGINE_t.ON*/);
+                && mov_t_last != MOVING_t.UNKNOW
+                /*&& engine_t == ENGINE_t.ON*/);
 
         if ( !ready_to_started ) {
             chrono_ready_to_start.stop();
@@ -1439,6 +1434,13 @@ addLog("calc_recommended_speed");
                 && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_RESUME) {
             ret = STATUS_t.PAR_RESUME;
             if (listener != null) listener.onStatusChanged(ret);
+
+            // ADD ECA Line when resuming
+            if( _tracking ) {
+                Location loc = get_last_location();
+                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_RESUME, loc, null));
+            }
+
             addLog("RESUME PARCOURS");
             clear_force_ui();
         }
@@ -1459,8 +1461,16 @@ addLog("calc_recommended_speed");
         if (mov_t_last == MOVING_t.STP
                 && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE) {
             ret = STATUS_t.PAR_PAUSING;
+
+            // ADD ECA Line when pausing
+            if( _tracking ) {
+                Location loc = get_last_location();
+                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_PAUSE, loc, null));
+            }
+
             if (listener != null) listener.onStatusChanged(ret);
             addLog("PAUSE PARCOURS");
+
             clear_force_ui();
         }
 
@@ -1476,18 +1486,49 @@ addLog("calc_recommended_speed");
     public void setLocation( Location location ) {
         if( location != null )
         {
-// A TESTER
-//            if( !locations.isEmpty() ){
-//                if( locations.get(0).distanceTo( location ) < 10 ){
-//                    locations.remove(0);
-//                }
-//            }
-            this.locations.add(0, location);
-            while (this.locations.size() > 10) this.locations.remove(this.locations.size() - 1);
-
+            synchronized ( this ) {
+                // Clear locations list
+                if (locations.size() > 0) {
+                    if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
+                        locations.clear();
+                    }
+                }
+                // Add new location
+                if( !locations.isEmpty() ){
+                    if( locations.get(0).distanceTo( location ) < 10 ){
+                        locations.remove(0);
+                    }
+                }
+                this.locations.add(0, location);
+                // Limit list size
+                while (this.locations.size() > 10) this.locations.remove(this.locations.size() - 1);
+            }
 
             switchON( true );
         }
+    }
+
+    private synchronized List<Location> get_location_list(int length){
+
+        List<Location> list = null;
+
+        // Clear locations list
+        if (locations.size() > 0) {
+            if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
+                locations.clear();
+            }
+        }
+        // Get sublist
+        if( locations.size() >= length ) {
+            list = this.locations.subList(0,length);
+        }
+        return list;
+    }
+
+    private synchronized Location get_last_location(){
+        Location ret = null;
+        if (locations.size() > 0) ret = locations.get(0);
+        return ret;
     }
 
     /// ============================================================================================

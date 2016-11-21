@@ -29,11 +29,15 @@ public class ECALine {
     public Location location = null;
     public float distance = 0f;
 
+    public static final int ID_POSITION = 254;
+    public static final int ID_PAUSE = 254;
+    public static final int ID_RESUME = 254;
+
     public ECALine(){};
 
     public static ECALine newInstance(@NonNull Location location, @Nullable Location prev_location ) {
         ECALine ret = new ECALine();
-        ret.alertID = 254;
+        ret.alertID = ID_POSITION;
         ret.location = location;
         ret.distance = ( prev_location == null ) ? 0f : location.distanceTo( prev_location );
         return ret;

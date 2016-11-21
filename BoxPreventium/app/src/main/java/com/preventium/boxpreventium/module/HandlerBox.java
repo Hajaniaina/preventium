@@ -263,13 +263,25 @@ public class HandlerBox extends ThreadDefault
 
         discoverBox.stop();
 
-        for( int i = mBoxList.size()-1; i >= 0; i-- ) {
-            if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
-                if( listener != null ) listener.onDeviceState( mBoxList.get(i).getMacAddr(), false );
-                if( DEBUG ) Log.d(TAG,"LOST " + mBoxList.get(i).getMacAddr() );
-                mBoxList.remove(i);
-            } else {
-                mBoxList.get(i).close();
+        // DISCONNECT ALL DEVICE
+        while( nb > 0 ) {
+            for (int i = mBoxList.size() - 1; i >= 0; i--) {
+                if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
+                    if (listener != null)
+                        listener.onDeviceState(mBoxList.get(i).getMacAddr(), false);
+                    if (DEBUG) Log.d(TAG, "LOST " + mBoxList.get(i).getMacAddr());
+                    mBoxList.remove(i);
+                } else {
+                    mBoxList.get(i).close();
+                }
+            }
+            nb = mBoxList.size();
+            if( nb > 0 ) sleep(200);
+            // NUMBER OF CONNECTED DEVICE CHANGED
+            if( nb != mBoxList.size() ) {
+                nb = mBoxList.size();
+                if( listener != null ) listener.onNumberOfBox( nb );
+                if( DEBUG ) Log.d(TAG,"Number of connected device changed: " + nb );
             }
         }
     }

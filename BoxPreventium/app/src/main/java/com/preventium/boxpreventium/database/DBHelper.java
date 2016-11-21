@@ -11,6 +11,7 @@ import android.location.Location;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.github.mikephil.charting.utils.FileUtils;
@@ -433,7 +434,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         " AND " + COLUMN_ECA_TIME + " >= " + begin ;
         if( alertID != null && alertID.length > 0 ){
             if( alertID.length > 1 ) {
-                request += " AND " +  COLUMN_ECA_ALERTID + "IN (" + alertID[0];
+                request += " AND " +  COLUMN_ECA_ALERTID + " IN (" + alertID[0];
                 for( int i = 1; i < alertID.length; i++ ) request += ", " + alertID[i];
                 request += " )";
             } else {
@@ -509,13 +510,19 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String COLUMN_CEP_STATUS = "status";
 
     /// Add an Preventium Box event (Connected/Disconnected)
-    public boolean addCEP(@NonNull Location location, @NonNull String device_mac, boolean connected ) {
+    public boolean addCEP(@Nullable Location location, @NonNull String device_mac, boolean connected ) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put(COLUMN_CEP_TIME, location.getTime() );
+        if( location != null ){
+            contentValues.put(COLUMN_CEP_TIME, location.getTime() );
+            contentValues.put(COLUMN_CEP_LONG_POS, location.getLongitude() );
+            contentValues.put(COLUMN_CEP_LAT_POS, location.getLatitude() );
+        } else {
+            contentValues.put(COLUMN_CEP_TIME, System.currentTimeMillis() );
+            contentValues.put(COLUMN_CEP_LONG_POS, 0f );
+            contentValues.put(COLUMN_CEP_LAT_POS, 0f );
+        }
         contentValues.put(COLUMN_CEP_MAC, device_mac );
-        contentValues.put(COLUMN_CEP_LONG_POS, location.getLongitude() );
-        contentValues.put(COLUMN_CEP_LAT_POS, location.getLatitude() );
         contentValues.put(COLUMN_CEP_STATUS, (connected ? 1 : 0) );
         db.insert(TABLE_CEP, null, contentValues);
         return true;
