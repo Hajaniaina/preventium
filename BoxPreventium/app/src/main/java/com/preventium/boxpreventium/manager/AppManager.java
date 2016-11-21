@@ -31,6 +31,7 @@ import com.preventium.boxpreventium.server.DOBJ.DataDOBJ;
 import com.preventium.boxpreventium.server.DOBJ.ReaderDOBJFile;
 import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ComonUtils;
+import com.preventium.boxpreventium.utils.Connectivity;
 import com.preventium.boxpreventium.utils.ThreadDefault;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPClientIO;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
@@ -54,7 +55,7 @@ public class AppManager extends ThreadDefault
     private final static String TAG = "AppManager";
     private final static boolean DEBUG = true;
     private static final float MS_TO_KMH = 3.6f;
-    private static final int SECS_TO_SET_PARCOURS_START = 10;
+    private static final int SECS_TO_SET_PARCOURS_START = 5;
     private static final int SECS_TO_SET_PARCOURS_PAUSE = 240; // 4 minutes = 4 * 60 secs = 240 secs
     private static final int SECS_TO_SET_PARCOURS_RESUME = 10;
     private static final int SECS_TO_SET_PARCOURS_STOPPED = 25200; // 7 hours = 7 * 3600 secs = 25200 secs
@@ -73,6 +74,7 @@ public class AppManager extends ThreadDefault
         void onScoreChanged(SCORE_t type, LEVEL_t level);
         void onShock();
         void onRecommendedSpeedChanged(SPEED_t speed_t, int kmh, LEVEL_t level, boolean valid);
+        void onInternetConnectionChanged();
     }
 
     /// ============================================================================================
@@ -84,7 +86,6 @@ public class AppManager extends ThreadDefault
     private AppManagerListener listener = null;
     private HandlerBox modules = null;
     private DBHelper database = null;
-
 
     public AppManager(Context ctx, AppManagerListener listener) {
         super(null);
@@ -123,6 +124,9 @@ public class AppManager extends ThreadDefault
         upload_eca(true);
 
         while( isRunning() ) {
+
+            check_internet_is_active();
+
             modules.setActive( true );
             sleep(500);
             database.clear_obselete_data();
@@ -195,6 +199,7 @@ public class AppManager extends ThreadDefault
 
     private STATUS_t first_init(){
         button_stop = false;
+        internet_active = true;
         mov_t_last = MOVING_t.UNKNOW;
         mov_t = MOVING_t.UNKNOW;
         engine_t = ENGINE_t.UNKNOW;
@@ -285,6 +290,20 @@ public class AppManager extends ThreadDefault
     }
 
     /// ============================================================================================
+    /// INTERNET CONNECTION
+    /// ============================================================================================
+
+    private boolean internet_active = true;
+
+    private void check_internet_is_active(){
+        boolean active = Connectivity.isConnected(ctx);
+        if( active != internet_active ) {
+            internet_active = active;
+            if( listener != null ) listener.onInternetConnectionChanged();
+        }
+    }
+
+    /// ============================================================================================
     /// .CFG
     /// ============================================================================================
 
@@ -303,7 +322,9 @@ public class AppManager extends ThreadDefault
             if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
 
             // Trying to connect to FTP server...
-            if( ftp.ftpConnect(config, 5000) ) {
+            if( !ftp.ftpConnect(config, 5000) ) {
+                check_internet_is_active();
+            } else {
 
                 // Checking if .CFG file is in FTP server ?
                 String srcFileName = ComonUtils.getIMEInumber(ctx) + ".CFG";
@@ -372,7 +393,9 @@ public class AppManager extends ThreadDefault
             if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
 
             // Trying to connect to FTP server...
-            if( ftp.ftpConnect(config, 5000) ) {
+            if( !ftp.ftpConnect(config, 5000) ) {
+                check_internet_is_active();
+            } else {
 
                 // Changing working directory if needed
                 boolean change_directory = true;
@@ -463,7 +486,9 @@ public class AppManager extends ThreadDefault
             if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
 
             // Trying to connect to FTP server...
-            if( ftp.ftpConnect(config, 5000) ) {
+            if( !ftp.ftpConnect(config, 5000) ) {
+                check_internet_is_active();
+            } else {
 
                 // Changing working directory if needed
                 boolean change_directory = true;
@@ -1255,6 +1280,7 @@ addLog("NB_TOTAL: " + nb_total);
         // Calculate recommended val and get speed maximum since XX secondes
         if( recommended_speed_update_at + (5*60*1000) < System.currentTimeMillis()) {
             if (readerEPCFile != null) {
+addLog("calc_recommended_speed");
                 // Get the horizontal maximum speed since
                 speed_H = database.speed_avg(parcour_id, 10 * 60,
                         readerEPCFile.getForceSeuil(0).IDAlert, // IDAlert +X1
@@ -1427,7 +1453,7 @@ addLog("NB_TOTAL: " + nb_total);
         calc_parcour_cotation();
         calc_cotation_forces();
         check_shock();
-        //calc_recommended_speed();
+        calc_recommended_speed();
 
         // Checking if car is in pause
         if (mov_t_last == MOVING_t.STP
