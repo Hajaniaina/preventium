@@ -1398,6 +1398,8 @@ addLog("NB_TOTAL: " + nb_total);
         {
 
             chronoRide.stop();
+            StatsLastDriving.set_times(ctx, (long) chronoRide.getSeconds());
+            StatsLastDriving.set_distance(ctx,database.get_distance(parcour_id));
             upload_cep();
             upload_custom_markers();
             upload_parcours_type();
