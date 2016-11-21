@@ -268,37 +268,37 @@ public class StatsLastDriving {
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
         // Accelerations
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,ACCELERATIONS,VERT),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,ACCELERATIONS,VERT),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.VERT) );
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,ACCELERATIONS,BLEU),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,ACCELERATIONS,BLEU),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.BLEU) );
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,ACCELERATIONS,JAUNE),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,ACCELERATIONS,JAUNE),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.JAUNE) );
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,ACCELERATIONS,ORANGE),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,ACCELERATIONS,ORANGE),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ORANGE) );
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,ACCELERATIONS,ROUGE),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,ACCELERATIONS,ROUGE),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.ACCELERATIONS,DataDOBJ.ROUGE) );
         // Freinages
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,FREINAGES,VERT),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,FREINAGES,VERT),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.FREINAGES,DataDOBJ.VERT) );
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,FREINAGES,BLEU),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,FREINAGES,BLEU),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.FREINAGES,DataDOBJ.BLEU) );
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,FREINAGES,JAUNE),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,FREINAGES,JAUNE),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.FREINAGES,DataDOBJ.JAUNE) );
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,FREINAGES,ORANGE),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,FREINAGES,ORANGE),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.FREINAGES,DataDOBJ.ORANGE) );
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,FREINAGES,ROUGE),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,FREINAGES,ROUGE),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.FREINAGES,DataDOBJ.ROUGE) );
         // Virages
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,VIRAGES,VERT),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,VIRAGES,VERT),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.VIRAGES,DataDOBJ.VERT) );
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,VIRAGES,BLEU),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,VIRAGES,BLEU),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.VIRAGES,DataDOBJ.BLEU) );
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,VIRAGES,JAUNE),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,VIRAGES,JAUNE),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.VIRAGES,DataDOBJ.JAUNE) );
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,VIRAGES,ORANGE),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,VIRAGES,ORANGE),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.VIRAGES,DataDOBJ.ORANGE) );
-        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_RES,VIRAGES,ROUGE),
+        editor.putInt( String.format(Locale.getDefault(),KEY_PREF_OBJ,VIRAGES,ROUGE),
                 DataDOBJ.get_objectif(ctx,DataDOBJ.VIRAGES,DataDOBJ.ROUGE) );
 
         editor.apply();
@@ -476,6 +476,5 @@ public class StatsLastDriving {
             editor.apply();
         }
     }
-
 
 }

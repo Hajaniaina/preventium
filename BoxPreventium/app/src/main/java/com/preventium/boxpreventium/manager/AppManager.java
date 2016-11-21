@@ -995,7 +995,7 @@ public class AppManager extends ThreadDefault
             // If elapsed time > 5 minutes
             if( cotation_update_at + (5*60*1000) < System.currentTimeMillis()){
                 if( readerEPCFile != null ){
-
+addLog( "calc_parcour_cotation" );
                     cotation_update_at = System.currentTimeMillis();
                     float cotation_A = get_cotation_force(DataDOBJ.ACCELERATIONS,parcour_id);
                     float cotation_F = get_cotation_force(DataDOBJ.FREINAGES,parcour_id);
@@ -1044,7 +1044,7 @@ public class AppManager extends ThreadDefault
             // If elapsed time > 5 minutes
             if( forces_update_at + (5*60*1000) < System.currentTimeMillis()){
                 if( readerEPCFile != null ){
-
+addLog( "calc_cotation_forces" );
                     // Calcul force note: 10 minutes = 600 seondes
                     forces_update_at = System.currentTimeMillis();
                     float A = get_cotation_force(DataDOBJ.ACCELERATIONS,parcour_id,600);
@@ -1145,6 +1145,7 @@ addLog( "Cotation M: " + M );
             nb_rouge += database.countNbEvent(readerEPCFile.getForceSeuil(19).IDAlert, parcour_id, begin, end);
         }
         int nb_total = nb_vert + nb_bleu + nb_jaune + nb_orange + nb_rouge;
+addLog("NB_TOTAL: " + nb_total);
 
         // VALEUR DU PARCOURS (Par seuil, en pourcentage)
         int evt_vert = ( nb_vert > 0 ) ? nb_vert * 100 / nb_total : 0;
@@ -1211,15 +1212,15 @@ addLog( "Cotation M: " + M );
 
         // CALCUL MOYENNE POUR CETTE FORCE
         int tmp = (calc_vert+(calc_jaune+calc_orange+calc_rouge));
-        ret = ( tmp <= 0 ) ? 0f : tmp*coeff_general;
+        ret = tmp*coeff_general;
 
         return ret;
     }
 
     // Get force cotation by parcours, or all parcours (parcours_id = -1), in the last X seconds
     private float get_cotation_force( String type, long parcour_id, long secs  ){
-        long begin = System.currentTimeMillis() - (secs*1000);
-        long end = System.currentTimeMillis() + 10000;
+        long end = System.currentTimeMillis();
+        long begin = end - (secs*1000);
         return get_cotation_force(type, parcour_id, begin, end);
     }
 

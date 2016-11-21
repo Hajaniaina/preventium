@@ -116,10 +116,8 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public void clear_obselete_data(){
-
         long end = startOfDays(System.currentTimeMillis());
         long begin = end - (5 * 24 * 3600 * 1000);
-
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_ECA,COLUMN_ECA_TIME + " < " + begin,null);
         db.delete(TABLE_CEP,COLUMN_CEP_TIME + " < " + begin,null);
@@ -167,7 +165,6 @@ public class DBHelper extends SQLiteOpenHelper {
                 COLUMN_ECA_PARCOUR_ID + " = " + parcour_id + " AND ";
         request +=
                 COLUMN_ECA_TIME + " BETWEEN " + begin + " AND " + end + ";";
-
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor =  db.rawQuery( request, null );
         if( cursor != null && cursor.moveToFirst() ) {
