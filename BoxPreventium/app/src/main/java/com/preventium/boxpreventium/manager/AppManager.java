@@ -54,7 +54,7 @@ public class AppManager extends ThreadDefault
     private final static boolean DEBUG = true;
     private static final float MS_TO_KMH = 3.6f;
     private static final int SECS_TO_SET_PARCOURS_START = 5;
-    private static final int SECS_TO_SET_PARCOURS_PAUSE = 240; // 4 minutes = 4 * 60 secs = 240 secs
+    private static final int SECS_TO_SET_PARCOURS_PAUSE = 20; // 4 minutes = 4 * 60 secs = 240 secs
     private static final int SECS_TO_SET_PARCOURS_RESUME = 10;
     private static final int SECS_TO_SET_PARCOURS_STOPPED = 25200; // 7 hours = 7 * 3600 secs = 25200 secs
 
@@ -565,7 +565,7 @@ public class AppManager extends ThreadDefault
             database.add_driver(parcour_id,driver_id);
 
             // Trying to send file
-            fileSender.startThread();
+            //fileSender.startThread();
             try_send_eca_at = System.currentTimeMillis();
             ret = true;
         }
@@ -1388,7 +1388,7 @@ addLog("calc_recommended_speed");
         button_stop = false;
 
         // Checking if ready to start a new parcours
-        boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 1
+        boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 0
                 && mov_t_last != MOVING_t.STP
                 && mov_t_last != MOVING_t.UNKNOW
                 /*&& engine_t == ENGINE_t.ON*/);
