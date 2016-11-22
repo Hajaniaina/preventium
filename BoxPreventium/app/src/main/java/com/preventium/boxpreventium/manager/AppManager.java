@@ -929,6 +929,7 @@ public class AppManager extends ThreadDefault
     }
 
     private void calc_eca(){
+
         List<Location> loc = get_location_list(2);
         if( loc != null && loc.size() >= 2 ) {
 
@@ -938,8 +939,9 @@ public class AppManager extends ThreadDefault
             // Read the runtime value force
             ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
             ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(YmG_smooth);
-if( seuil_y != null ) Log.d("AA","SEUIL Y: " + seuil_y.toString() );
+
             // Compare the runtime X value force with the prevent X value force, and add alert to ECA database
+
             if( seuil_x != null ) {
                 if( !seuil_x.equals(seuil_last_x) ) seuil_chrono_x.start();
                 if( seuil_chrono_x.getSeconds() >= seuil_x.TPS ) {
@@ -952,10 +954,11 @@ if( seuil_y != null ) Log.d("AA","SEUIL Y: " + seuil_y.toString() );
                     alertX = true;
                 }
             }
+            seuil_last_x = seuil_x;
 
             // Compare the runtime Y value force with the prevent Y value force, and add alert to ECA database
             if( seuil_y != null ) {
-                if( !seuil_y.equals(seuil_last_y) ) seuil_chrono_y.start();
+                if( !seuil_y.equals(seuil_last_y) )seuil_chrono_y.start();
                 if( seuil_chrono_y.getSeconds() >= seuil_y.TPS ) {
                     seuil_chrono_y.start();
                     // If elapsed time > 2 seconds
@@ -966,6 +969,7 @@ if( seuil_y != null ) Log.d("AA","SEUIL Y: " + seuil_y.toString() );
                     alertY = true;
                 }
             }
+            seuil_last_y = seuil_y;
 
             // Add location to ECA database
             if( !alertX && !alertY ){
@@ -979,6 +983,12 @@ if( seuil_y != null ) Log.d("AA","SEUIL Y: " + seuil_y.toString() );
                 }
             }
 
+
+
+if( alertX )Log.d("AA","ALERT X" );
+else if( alertY )Log.d("AA","ALERT Y" );
+else Log.d("AA","NO ALERT" );
+
             // Update ui interface
             ForceSeuil seuil = null;
             if( alertX && alertY ) {
@@ -986,16 +996,22 @@ if( seuil_y != null ) Log.d("AA","SEUIL Y: " + seuil_y.toString() );
                 else  alertX = false;
             }
             if( alertX ) seuil = seuil_x; else if( alertY ) seuil = seuil_y;
-if( seuil != null ) Log.d("AA","SEUIL: " + seuil.toString() );
+
+
             if( seuil != null ) {
                 if (seuil_ui == null || !seuil_ui.equals(seuil)) {
                     if (listener != null) listener.onForceChanged(seuil.type, seuil.level);
                     seuil_ui = seuil;
                 }
             } else {
+//                if( seuil_last_x == null && seuil_last_y == null && seuil_ui != null
+//                        && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3 ){
+//                    seuil_ui = null;
+//                    if( listener != null ) listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
+//                }
+
                 clear_force_ui();
             }
-
         }
     }
 
@@ -1011,7 +1027,8 @@ if( seuil != null ) Log.d("AA","SEUIL: " + seuil.toString() );
 
         if( listener != null ){
             // If elapsed time > 5 minutes
-            if( cotation_update_at + (5*60*1000) < System.currentTimeMillis()){
+            //if( cotation_update_at + (5*60*1000) < System.currentTimeMillis()){
+            if( cotation_update_at + (30*1000) < System.currentTimeMillis()){
                 if( readerEPCFile != null ){
 addLog( "calc_parcour_cotation" );
                     cotation_update_at = System.currentTimeMillis();
@@ -1060,6 +1077,7 @@ addLog( "calc_parcour_cotation" );
 
         if( listener != null ){
             // If elapsed time > 5 minutes
+            //if( forces_update_at + (5*60*1000) < System.currentTimeMillis()){
             if( forces_update_at + (5*60*1000) < System.currentTimeMillis()){
                 if( readerEPCFile != null ){
 addLog( "calc_cotation_forces" );
@@ -1417,7 +1435,6 @@ addLog("calc_recommended_speed");
                 ( mov_t_last == MOVING_t.STP
                         && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED ) )
         {
-
             chronoRide.stop();
             StatsLastDriving.set_times(ctx, (long) chronoRide.getSeconds());
             StatsLastDriving.set_distance(ctx,database.get_distance(parcour_id));

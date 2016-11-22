@@ -197,13 +197,6 @@ public class HandlerBox extends ThreadDefault
             if( change ) {
                 if( listener != null ) listener.onForceChanged( curr_smooth_mG, curr_shock_mG );
             }
-            //Log.d(TAG,"Force changed: " + last_force_mG + " mG -> " + curr_force_mG + " mG." );
-//            if( last_smooth_mG != curr_smooth_mG ) {
-//                last_smooth_mG = curr_smooth_mG;
-//                if( listener != null )
-//                    listener.onForceChanged( curr_smooth_mG );
-//                if( DEBUG ) Log.d(TAG,"Force changed: " + last_smooth_mG + " mG.");
-//            }
 
             // Calibration 'g' on constant speed
             if( calibrate_1 ) {

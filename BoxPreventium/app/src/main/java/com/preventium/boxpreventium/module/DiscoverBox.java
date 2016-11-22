@@ -17,7 +17,7 @@ import java.util.Locale;
 public class DiscoverBox implements ScannerCallback {
 
     private static final String TAG = "DiscoverBox";
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     public interface DiscoverBoxNotify {
         void onScanChanged(boolean scanning, ArrayList<BluetoothDevice> devices);
