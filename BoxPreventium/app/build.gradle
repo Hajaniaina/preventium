@@ -31,4 +31,6 @@ dependencies {
     compile 'com.github.jakob-grabner:Circle-Progress-View:v1.2.9.1'
     compile 'com.github.firetrap:permissionHelper:1.0.1'
     compile('com.github.KingsMentor:MobileVisionBarcodeScanner:v1.2') { transitive = true; }
+    compile 'com.vanniktech:vntnumberpickerpreference:1.0.0'
+    compile 'com.pavelsikun:material-seekbar-preference:2.3.0+'
 }

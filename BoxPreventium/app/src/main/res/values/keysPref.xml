@@ -30,8 +30,13 @@
     <string name="phone_select_sms_sos">phone_select_sms_sos</string>
     <string name="phone_select_sms_shock">phone_select_sms_shock</string>
     <string name="phone_select_sms_pause">phone_select_sms_pause</string>
+    <string name="phone_select_sms_pause_timeout">phone_select_sms_pause_timeout</string>
     <string name="phone_select_sms_tracking">phone_select_sms_tracking</string>
     <string name="phone_select_sms_qr">phone_select_sms_qr</string>
+    <string name="phone_select_sms_qr_timeout">phone_select_sms_qr_timeout</string>
     <string name="phone_select_voice">phone_select_voice</string>
+
+    <string name="qr_select_mode">qr_select_mode</string>
+
 
 </resources>

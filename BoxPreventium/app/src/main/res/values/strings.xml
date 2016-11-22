@@ -46,6 +46,7 @@
     <string name="number_string">Number</string>
     <string name="call_string">Call</string>
     <string name="unknown_string">Unknown</string>
+    <string name="disabled_string">Disabled</string>
     <string name="permissions_string">Permissions</string>
     <string name="permissions_retry_string">Retry</string>
     <string name="start_marker_string">Start</string>
@@ -53,6 +54,8 @@
     <string name="distance_string">Distance</string>
     <string name="shock_string">Shock</string>
 
+    <string name="front_only_string">Front only</string>
+    <string name="front_back_string">Front and Back</string>
     <string name="not_used_string">Not used</string>
     <string name="marker_tittle_invalid_string">Invalid name</string>
     <string name="new_marker_string">Marker name</string>
@@ -90,6 +93,18 @@
     <string name="start_time_string">Start time</string>
     <string name="time_elapsed_string">Time elapsed</string>
 
+    <string name="pref_title_phone_string">SMS &amp; Voice calls</string>
+    <string name="pref_title_sms_sos_string">SMS SOS</string>
+    <string name="pref_title_sms_shock_string">SMS Shocks</string>
+    <string name="pref_title_sms_pause_string">SMS Long pause</string>
+    <string name="pref_title_sms_tracking_string">SMS Tracking On/Off</string>
+    <string name="pref_title_sms_qr_string">SMS QR code</string>
+    <string name="pref_title_voice_call_string">Voice calls</string>
+    <string name="pref_trigger_time_string">Trigger timeout</string>
+
+    <string name="pref_header_qr_scan_string">QR Scan</string>
+    <string name="pref_title_qr_mode_string">Vehicle scan mode</string>
+
     <string-array name="marker_perimeters">
         <item>50m</item>
         <item>100m</item>
@@ -124,27 +139,18 @@
         <item>-1</item>
     </string-array>
 
-    <!-- Data & Sync -->
+    <!-- QR -->
 
-    <string name="pref_header_data_sync">Data &amp; sync</string>
-    <string name="pref_title_sync_frequency">Sync frequency</string>
-
-    <string-array name="pref_sync_frequency_titles">
-        <item>15 minutes</item>
-        <item>30 minutes</item>
-        <item>1 hour</item>
-        <item>3 hours</item>
-        <item>6 hours</item>
-        <item>Never</item>
+    <string-array name="pref_qr_mode_titles">
+        <item>@string/disabled_string</item>
+        <item>@string/front_only_string</item>
+        <item>@string/front_back_string</item>
     </string-array>
 
-    <string-array name="pref_sync_frequency_values">
-        <item>15</item>
-        <item>30</item>
-        <item>60</item>
-        <item>180</item>
-        <item>360</item>
-        <item>-1</item>
+    <string-array name="pref_qr_mode_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
     </string-array>
 
     <string name="pref_title_system_sync_settings">System sync settings</string>
@@ -160,13 +166,6 @@
     <string name="action_settings">Settings</string>
 
     <!-- Phone -->
-    <string name="pref_title_phone">Phone numbers</string>
-    <string name="pref_title_sms_sos">SMS SOS</string>
-    <string name="pref_title_sms_shock">SMS Shocks</string>
-    <string name="pref_title_sms_pause">SMS Long pause</string>
-    <string name="pref_title_sms_tracking">SMS Tracking On/Off</string>
-    <string name="pref_title_sms_qr">SMS QR code</string>
-    <string name="pref_title_voice_call">Voice calls</string>
 
     <string-array name="pref_phone_numbers_titles">
         <item>@string/not_used_string</item>

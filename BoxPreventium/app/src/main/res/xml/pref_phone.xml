@@ -1,13 +1,14 @@
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+                  xmlns:sample="http://schemas.android.com/apk/res-auto">
 
     <!-- NOTE: ListPreference's summary should be set to its value by the activity code. -->
 
     <PreferenceCategory
-        android:title="@string/pref_title_sms_sos">
+        android:title="@string/pref_title_sms_sos_string">
 
         <ListPreference
             android:key="@string/phone_select_sms_sos"
-            android:title="@string/pref_title_sms_sos"
+            android:title="@string/number_string"
             android:entries="@array/pref_phone_numbers_titles"
             android:entryValues="@array/pref_phone_numbers_values"
             android:defaultValue="1"
@@ -18,69 +19,102 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="@string/pref_title_sms_shock">
+        android:title="@string/pref_title_sms_shock_string">
 
-    <ListPreference
-        android:key="@string/phone_select_sms_shock"
-        android:title="@string/pref_title_sms_shock"
-        android:entries="@array/pref_phone_numbers_titles"
-        android:entryValues="@array/pref_phone_numbers_values"
-        android:defaultValue="1"
-        android:negativeButtonText="@null"
-        android:positiveButtonText="@null">
-    </ListPreference>
+        <ListPreference
+            android:key="@string/phone_select_sms_shock"
+            android:title="@string/number_string"
+            android:entries="@array/pref_phone_numbers_titles"
+            android:entryValues="@array/pref_phone_numbers_values"
+            android:defaultValue="1"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null">
+        </ListPreference>
 
     </PreferenceCategory>
 
-    <ListPreference
-        android:key="@string/phone_select_sms_pause"
-        android:title="@string/pref_title_sms_pause"
-        android:entries="@array/pref_phone_numbers_titles"
-        android:entryValues="@array/pref_phone_numbers_values"
-        android:defaultValue="1"
-        android:negativeButtonText="@null"
-        android:positiveButtonText="@null">
-    </ListPreference>
+    <PreferenceCategory
+        android:title="@string/pref_title_sms_pause_string">
 
-    <ListPreference
-        android:key="@string/phone_select_sms_tracking"
-        android:title="@string/pref_title_sms_tracking"
-        android:entries="@array/pref_phone_numbers_titles"
-        android:entryValues="@array/pref_phone_numbers_values"
-        android:defaultValue="1"
-        android:negativeButtonText="@null"
-        android:positiveButtonText="@null">
-    </ListPreference>
+        <ListPreference
+            android:key="@string/phone_select_sms_pause"
+            android:title="@string/number_string"
+            android:entries="@array/pref_phone_numbers_titles"
+            android:entryValues="@array/pref_phone_numbers_values"
+            android:defaultValue="1"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null">
+        </ListPreference>
 
-    <ListPreference
-        android:key="@string/phone_select_sms_qr"
-        android:title="@string/pref_title_sms_qr"
-        android:entries="@array/pref_phone_numbers_titles"
-        android:entryValues="@array/pref_phone_numbers_values"
-        android:defaultValue="1"
-        android:negativeButtonText="@null"
-        android:positiveButtonText="@null">
-    </ListPreference>
+        <com.pavelsikun.seekbarpreference.SeekBarPreference
+            android:key="@string/phone_select_sms_pause_timeout"
+            android:title="@string/pref_trigger_time_string"
+            android:summary=""
+            android:enabled="true"
+            android:defaultValue="10"
+            sample:msbp_minValue="5"
+            sample:msbp_maxValue="60"
+            sample:msbp_interval="1"
+            sample:msbp_measurementUnit="min"
+            sample:msbp_dialogEnabled="true"/>
 
-    <ListPreference
-        android:key="@string/phone_select_voice"
-        android:title="@string/pref_title_voice_call"
-        android:entries="@array/pref_phone_numbers_titles"
-        android:entryValues="@array/pref_phone_numbers_values"
-        android:defaultValue="1"
-        android:negativeButtonText="@null"
-        android:positiveButtonText="@null">
-    </ListPreference>
+    </PreferenceCategory>
 
-    <!--
-    <MultiSelectListPreference
-        android:title="Test"
-        android:key="phone_test"
-        android:summary="Test"
-        android:entries="@array/pref_sync_frequency_titles"
-        android:entryValues="@array/pref_sync_frequency_values"
-        android:defaultValue="@array/pref_sync_frequency_titles"
-        />
-    -->
+    <PreferenceCategory
+        android:title="@string/pref_title_sms_tracking_string">
 
-    </PreferenceScreen>
+        <ListPreference
+            android:key="@string/phone_select_sms_tracking"
+            android:title="@string/number_string"
+            android:entries="@array/pref_phone_numbers_titles"
+            android:entryValues="@array/pref_phone_numbers_values"
+            android:defaultValue="1"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null">
+        </ListPreference>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_title_sms_qr_string">
+
+        <ListPreference
+            android:key="@string/phone_select_sms_qr"
+            android:title="@string/number_string"
+            android:entries="@array/pref_phone_numbers_titles"
+            android:entryValues="@array/pref_phone_numbers_values"
+            android:defaultValue="1"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null">
+        </ListPreference>
+
+        <com.pavelsikun.seekbarpreference.SeekBarPreference
+            android:key="@string/phone_select_sms_qr_timeout"
+            android:title="@string/pref_trigger_time_string"
+            android:summary=""
+            android:enabled="true"
+            android:defaultValue="5"
+            sample:msbp_minValue="1"
+            sample:msbp_maxValue="30"
+            sample:msbp_interval="1"
+            sample:msbp_measurementUnit="min"
+            sample:msbp_dialogEnabled="true"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_title_voice_call_string">
+
+        <ListPreference
+            android:key="@string/phone_select_voice"
+            android:title="@string/number_string"
+            android:entries="@array/pref_phone_numbers_titles"
+            android:entryValues="@array/pref_phone_numbers_values"
+            android:defaultValue="1"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null">
+        </ListPreference>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

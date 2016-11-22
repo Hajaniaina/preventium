@@ -1,21 +1,12 @@
 package com.preventium.boxpreventium.gui;
 
-import android.annotation.TargetApi;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.res.Configuration;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceScreen;
-import android.support.v4.app.NavUtils;
-import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.app.ActionBar;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
@@ -49,7 +40,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
                 // Set the summary to reflect the new value.
                 preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
-
             }
             else if (preference instanceof RingtonePreference) {
 
@@ -95,15 +85,17 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      *
      * @see #sBindPreferenceSummaryToValueListener
      */
-    private static void bindPreferenceSummaryToValue (Preference preference) {
+    private static void bindPreferenceSummaryToValue(Preference preference) {
 
         // Set the listener to watch for value changes
         preference.setOnPreferenceChangeListener(sBindPreferenceSummaryToValueListener);
 
-        // Trigger the listener immediately with the preference's current value
-        sBindPreferenceSummaryToValueListener.onPreferenceChange(preference, PreferenceManager
-                        .getDefaultSharedPreferences(preference.getContext())
-                        .getString(preference.getKey(), ""));
+        try {
+
+            // Trigger the listener immediately with the preference's current value
+            sBindPreferenceSummaryToValueListener.onPreferenceChange(preference, PreferenceManager.getDefaultSharedPreferences(preference.getContext()).getString(preference.getKey(), ""));
+        }
+        catch (Exception ex) {}
     }
 
     @Override
@@ -115,14 +107,28 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
         if (actionBar != null) {
 
-            actionBar.setDisplayHomeAsUpEnabled(false);
+           actionBar.setDisplayHomeAsUpEnabled(true);
         }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected (MenuItem item) {
+
+        int id = item.getItemId();
+
+        if (id == android.R.id.home) {
+
+            finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
     public boolean onIsMultiPane() {
 
-        return true;
+        return false;
     }
 
     @Override
@@ -204,16 +210,16 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
     /**********************************************************************************************/
 
-    public static class DataSyncPreferenceFragment extends PreferenceFragment {
+    public static class QrScanPreferenceFragment extends PreferenceFragment {
 
         @Override
         public void onCreate (Bundle savedInstanceState) {
 
             super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_data_sync);
+            addPreferencesFromResource(R.xml.pref_qr_scan);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference("sync_frequency"));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.qr_select_mode)));
         }
 
         @Override
@@ -246,8 +252,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_sos)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_shock)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_pause)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_pause_timeout)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_tracking)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr_timeout)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_voice)));
         }
 

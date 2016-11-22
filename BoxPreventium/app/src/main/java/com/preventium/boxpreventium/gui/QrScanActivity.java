@@ -30,6 +30,10 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
     public static final String SCAN_VEHICLE_FRONT    = "FRONT";
     public static final String SCAN_VEHICLE_BACK     = "BACK";
 
+    public static final String SCAN_MODE_VEHICLE_DISABLED   = "0";
+    public static final String SCAN_MODE_VEHICLE_FRONT      = "1";
+    public static final String SCAN_MODE_VEHICLE_FRONT_BACK = "2";
+
     private Intent returnIntent;
     private AppColor appColor;
     private BarcodeCapture barcodeCapture;

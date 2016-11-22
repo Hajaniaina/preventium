@@ -15,15 +15,15 @@
     </header>
 
     <header
-        android:fragment="com.preventium.boxpreventium.gui.SettingsActivity$DataSyncPreferenceFragment"
-        android:icon="@drawable/ic_sync_black_24dp"
-        android:title="@string/pref_header_data_sync">
+        android:fragment="com.preventium.boxpreventium.gui.SettingsActivity$QrScanPreferenceFragment"
+        android:icon="@drawable/ic_qrcode_pref"
+        android:title="@string/pref_header_qr_scan_string">
     </header>
 
     <header
         android:fragment="com.preventium.boxpreventium.gui.SettingsActivity$PhonePreferenceFragment"
         android:icon="@drawable/ic_phone_black_24p"
-        android:title="@string/pref_title_phone">
+        android:title="@string/pref_title_phone_string">
     </header>
 
 </preference-headers>
