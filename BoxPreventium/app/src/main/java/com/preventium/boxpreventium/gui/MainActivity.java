@@ -661,6 +661,26 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
+    public void onInternetConnectionChanged() {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                if (Connectivity.isConnected(getApplicationContext())) {
+
+                    progress.hide();
+                }
+                else {
+
+                    progress.setMessage(getString(R.string.network_alert_string));
+                }
+            }
+        });
+    }
+
+    @Override
     public void onDebugLog (final String txt) {
 
         runOnUiThread(new Runnable() {
