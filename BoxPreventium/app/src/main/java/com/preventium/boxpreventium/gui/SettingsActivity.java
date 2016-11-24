@@ -1,6 +1,7 @@
 package com.preventium.boxpreventium.gui;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
@@ -17,10 +18,6 @@ import java.util.List;
 
 public class SettingsActivity extends AppCompatPreferenceActivity {
 
-    /**
-     * A preference value change listener that updates the preference's summary
-     * to reflect its new value.
-     */
     private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = new Preference.OnPreferenceChangeListener() {
 
         @Override
@@ -30,17 +27,13 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
             if (preference instanceof ListPreference) {
 
-                // For list preferences, look up the correct display value in
-                // the preference's 'entries' list.
                 ListPreference listPreference = (ListPreference) preference;
                 int index = listPreference.findIndexOfValue(stringValue);
 
-                // Set the summary to reflect the new value.
                 preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
             }
             else {
 
-                // For all other preferences, set the summary to the value's simple string representation.
                 preference.setSummary(stringValue);
             }
 
@@ -48,23 +41,12 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         }
     };
 
-    /**
-     * Binds a preference's summary to its value. More specifically, when the
-     * preference's value is changed, its summary (line of text below the
-     * preference title) is updated to reflect the value. The summary is also
-     * immediately updated upon calling this method. The exact display format is
-     * dependent on the type of preference.
-     *
-     * @see #sBindPreferenceSummaryToValueListener
-     */
     private static void bindPreferenceSummaryToValue(Preference preference) {
 
-        // Set the listener to watch for value changes
         preference.setOnPreferenceChangeListener(sBindPreferenceSummaryToValueListener);
 
         try {
 
-            // Trigger the listener immediately with the preference's current value
             sBindPreferenceSummaryToValueListener.onPreferenceChange(preference, PreferenceManager.getDefaultSharedPreferences(preference.getContext()).getString(preference.getKey(), ""));
         }
         catch (Exception ex) {}
@@ -109,10 +91,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         loadHeadersFromResource(R.xml.pref_headers, target);
     }
 
-    /**
-     * This method stops fragment injection in malicious applications.
-     * Make sure to deny any unknown fragments here.
-     */
     protected boolean isValidFragment (String fragmentName) {
 
         return true;
@@ -282,6 +260,17 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
             addPreferencesFromResource(R.xml.pref_phone);
             setHasOptionsMenu(true);
+
+            Preference pref = findPreference(getString(R.string.phone_number_1));
+
+            /*
+            String[] numberList = new String[5];
+            numberList[0] = sharedPref.getString(getString(R.string.phone_number_1), "");
+            numberList[1] = sharedPref.getString(getString(R.string.phone_number_2), "");
+            numberList[2] = sharedPref.getString(getString(R.string.phone_number_3), "");
+            numberList[3] = sharedPref.getString(getString(R.string.phone_number_4), "");
+            numberList[4] = sharedPref.getString(getString(R.string.phone_number_5), "");
+            */
 
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_voice)));
         }
