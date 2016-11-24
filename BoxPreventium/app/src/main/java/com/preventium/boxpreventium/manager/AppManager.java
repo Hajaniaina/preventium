@@ -127,6 +127,7 @@ public class AppManager extends ThreadDefault
             check_internet_is_active();
             update_tracking_status();
 
+
             modules.setActive( true );
             sleep(500);
             database.clear_obselete_data();
@@ -465,6 +466,23 @@ public class AppManager extends ThreadDefault
             if( isRunning() && !ready ) sleep(1000);
         }
 
+        return ready;
+    }
+
+    // Load EPC file
+    private boolean loading_epc() throws InterruptedException {
+        boolean ready = false;
+        while( isRunning() && !ready ) {
+            ready = readerEPCFile.loadFromApp(ctx);
+            if (!ready) {
+                List<Integer> available = DataEPC.getAppEpcExist(ctx);
+                for (Integer i : available) {
+                    ready = readerEPCFile.loadFromApp(ctx, i);
+                    if (ready) break;
+                }
+            }
+            if( !ready ) download_epc();
+        }
         return ready;
     }
 
@@ -1381,7 +1399,7 @@ addLog("calc_recommended_speed");
 
     public void setStopped(){ button_stop = true; }
 
-    private STATUS_t on_stopped(){
+    private STATUS_t on_stopped() throws InterruptedException {
         STATUS_t ret = STATUS_t.PAR_STOPPED;
 
         // Clear UI
@@ -1399,15 +1417,23 @@ addLog("calc_recommended_speed");
         } else {
             if ( !chrono_ready_to_start.isStarted() ) chrono_ready_to_start.start();
             if ( chrono_ready_to_start.getSeconds() > SECS_TO_SET_PARCOURS_START ) {
+                loading_epc();
                 cotation_update_at = 0;
                 forces_update_at = 0;
                 alertX_add_at = 0;
                 alertY_add_at = 0;
                 alertPos_add_at = 0;
                 recommended_speed_update_at = 0;
-                readerEPCFile.loadFromApp(ctx);
+
+                //readerEPCFile.loadFromApp(ctx);
 
                 addLog("START PARCOURS");
+                // ADD ECA Line when started
+                if( _tracking ) {
+                    Location loc = get_last_location();
+                    database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_BEGIN, loc, null));
+                }
+
                 parcour_id = System.currentTimeMillis();
                 StatsLastDriving.startDriving(ctx,parcour_id);
                 chronoRide.start();
@@ -1436,6 +1462,13 @@ addLog("calc_recommended_speed");
                 ( mov_t_last == MOVING_t.STP
                         && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED ) )
         {
+
+            // ADD ECA Line when stopped
+            if( _tracking ) {
+                Location loc = get_last_location();
+                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_END, loc, null));
+            }
+
             chronoRide.stop();
             StatsLastDriving.set_times(ctx, (long) chronoRide.getSeconds());
             StatsLastDriving.set_distance(ctx,database.get_distance(parcour_id));
