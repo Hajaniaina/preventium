@@ -125,6 +125,7 @@ public class AppManager extends ThreadDefault
 
         while( isRunning() ) {
             check_internet_is_active();
+            update_tracking_status();
 
             modules.setActive( true );
             sleep(500);
@@ -798,9 +799,11 @@ public class AppManager extends ThreadDefault
 
     private boolean _tracking = true;
 
-    public void setTracking( boolean enabled ){ _tracking = enabled; }
-
-    public boolean getTracking(){ return _tracking; }
+    private void update_tracking_status(){
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String key = ctx.getResources().getString(R.string.tracking_activated);
+        _tracking = sp.getBoolean(key,true);
+    }
 
     /// ============================================================================================
     /// CALCUL
@@ -1011,123 +1014,6 @@ public class AppManager extends ThreadDefault
         } else {
             alertUI_add_at = System.currentTimeMillis();
         }
-
-
-
-//        if( seuil_ui != null || seuil != null ) {
-//            boolean compare
-//                    = ( seuil_ui != null ) ?
-//                    seuil_ui.equals(seuil) : seuil.equals(seuil_ui);
-
-
-//            ForceSeuil seuil = null;
-//            if( alertX && alertY ) {
-//                if( seuil_x.level.getValue() > seuil_y.level.getValue() ) alertY = false;
-//                else  alertX = false;
-//            }
-//            if( alertX ) seuil = seuil_x; else if( alertY ) seuil = seuil_y;
-//
-//
-//            if( seuil != null ) {
-//                if (seuil_ui == null || !seuil_ui.equals(seuil)) {
-//                    if (listener != null) listener.onForceChanged(seuil.type, seuil.level);
-//                    seuil_ui = seuil;
-//                }
-//            } else {
-//                if( seuil_last_x == null && seuil_last_y == null && seuil_ui != null
-//                        && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3 ){
-//                    seuil_ui = null;
-//                    if( listener != null ) listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
-//                }
-//
-//                //clear_force_ui();
-//            }
-
-
-//        List<Location> loc = get_location_list(2);
-//        if( loc != null && loc.size() >= 2 ) {
-//
-//            boolean alertX = false;
-//            boolean alertY = false;
-//
-//            // Read the runtime value force
-//            ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
-//            ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(YmG_smooth);
-//
-//Log.d("AAA",YmG_smooth + "A");
-//            // Compare the runtime X value force with the prevent X value force, and add alert to ECA database
-//
-//            if( seuil_x != null ) {
-//                if( !seuil_x.equals(seuil_last_x) ) seuil_chrono_x.start();
-//                if( seuil_chrono_x.getSeconds() >= seuil_x.TPS ) {
-//                    seuil_chrono_x.start();
-//                    // If elapsed time > 2 seconds
-//                    if( System.currentTimeMillis() - alertX_add_at >= 2000 ) {
-//                        if( _tracking ) database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc.get(0), null));
-//                        alertX_add_at = System.currentTimeMillis();
-//                    }
-//                    alertX = true;
-//                }
-//            }
-//            seuil_last_x = seuil_x;
-//
-//            // Compare the runtime Y value force with the prevent Y value force, and add alert to ECA database
-//            if( seuil_y != null ) {
-//                if( !seuil_y.equals(seuil_last_y) )seuil_chrono_y.start();
-//                if( seuil_chrono_y.getSeconds() >= seuil_y.TPS ) {
-//                    seuil_chrono_y.start();
-//                    // If elapsed time > 2 seconds
-//                    if( System.currentTimeMillis() - alertY_add_at >= 2000 ) {
-//                        if( _tracking ) database.addECA( parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc.get(0), null ) );
-//                        alertY_add_at = System.currentTimeMillis();
-//                    }
-//                    alertY = true;
-//                }
-//            }
-//            seuil_last_y = seuil_y;
-//
-//            // Add location to ECA database
-//            if( !alertX && !alertY ){
-//                // If elapsed time > 2 seconds
-//                if( System.currentTimeMillis() - alertPos_add_at >= 2000  ) {
-//// A TESTER
-//                    if( loc.get(0).distanceTo(loc.get(1)) > 10 ) {
-//                        if( _tracking ) database.addECA(parcour_id, ECALine.newInstance(loc.get(0), loc.get(1)));
-//                        alertPos_add_at = System.currentTimeMillis();
-//                    }
-//                }
-//            }
-//
-//
-//
-//if( alertX )Log.d("AA","ALERT X" );
-//else if( alertY )Log.d("AA","ALERT Y" );
-//else Log.d("AA","NO ALERT" );
-//
-//            // Update ui interface
-//            ForceSeuil seuil = null;
-//            if( alertX && alertY ) {
-//                if( seuil_x.level.getValue() > seuil_y.level.getValue() ) alertY = false;
-//                else  alertX = false;
-//            }
-//            if( alertX ) seuil = seuil_x; else if( alertY ) seuil = seuil_y;
-//
-//
-//            if( seuil != null ) {
-//                if (seuil_ui == null || !seuil_ui.equals(seuil)) {
-//                    if (listener != null) listener.onForceChanged(seuil.type, seuil.level);
-//                    seuil_ui = seuil;
-//                }
-//            } else {
-//                if( seuil_last_x == null && seuil_last_y == null && seuil_ui != null
-//                        && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3 ){
-//                    seuil_ui = null;
-//                    if( listener != null ) listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
-//                }
-//
-//                //clear_force_ui();
-//            }
-//        }
     }
 
     /// ============================================================================================
