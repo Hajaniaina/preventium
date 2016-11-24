@@ -66,6 +66,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.preventium.boxpreventium.manager.AppManager;
+import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
 
@@ -481,7 +482,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (trackingActivated != appManager.getTracking()) {
 
-                            appManager.setTracking(trackingActivated);
+                            // appManager.setTracking(trackingActivated);
                         }
 
                         if (mapReady) {
@@ -1178,7 +1179,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     sendSms(getPhoneNumber(R.string.phone_select_sms_tracking), getString(R.string.tracking_enabled_string));
                 }
 
-                appManager.setTracking(trackingActivated);
+                // appManager.setTracking(trackingActivated);
 
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putBoolean(getString(R.string.tracking_activated), trackingActivated);
@@ -1377,24 +1378,26 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     protected void showEpcSelectDialog() {
 
+        List<Integer> epcExistList = DataEPC.getAppEpcExist(this);
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.select_epc_string));
 
-        final CharSequence[] callLsit = new CharSequence[5];
+        final String[] epcList = new String[5];
 
-        for (int i = 0; i < callLsit.length; i++) {
+        for (int i = 0; i < epcList.length; i++) {
 
-            callLsit[i] = "EPC " + String.valueOf(i + 1);
+            epcList[i] = "EPC " + String.valueOf(i + 1);
         }
 
-        selectedEpcFile = sharedPref.getInt(getString(R.string.epc_selected), 0);
+        selectedEpcFile = sharedPref.getInt(getString(R.string.epc_selected), 1);
 
-        builder.setSingleChoiceItems(callLsit, selectedEpcFile, new DialogInterface.OnClickListener() {
+        builder.setSingleChoiceItems(epcList, selectedEpcFile, new DialogInterface.OnClickListener() {
 
             @Override
             public void onClick (DialogInterface dialog, int which) {
 
-                selectedEpcFile = which;
+                selectedEpcFile = which + 1;
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putInt(getString(R.string.epc_selected), selectedEpcFile);
                 editor.apply();
