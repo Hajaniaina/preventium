@@ -156,11 +156,14 @@
                 CircleProgressView:cpv_barColor="@color/colorAppGrey"
                 CircleProgressView:cpv_rimColor="#00000000"
                 CircleProgressView:cpv_fillColor="#a0ffffff"
-                CircleProgressView:cpv_outerContourColor="@color/material_grey400"
+                CircleProgressView:cpv_outerContourColor="@color/material_grey500"
                 CircleProgressView:cpv_innerContourColor="@color/material_grey400"
                 CircleProgressView:cpv_rimWidth="@dimen/speed_rim_width"
                 CircleProgressView:cpv_seekMode="false"
-                CircleProgressView:cpv_showUnit="false"
+                CircleProgressView:cpv_showUnit="true"
+                CircleProgressView:cpv_unit="@string/straights_caps_string"
+                CircleProgressView:cpv_unitPosition="bottom"
+                CircleProgressView:cpv_unitSize="10sp"
                 CircleProgressView:cpv_spinColor="@color/colorAppGrey"
                 CircleProgressView:cpv_autoTextSize="false"
                 CircleProgressView:cpv_textSize="@dimen/speed_text_size"
@@ -180,11 +183,14 @@
                 CircleProgressView:cpv_barColor="@color/colorAppGrey"
                 CircleProgressView:cpv_rimColor="#00000000"
                 CircleProgressView:cpv_fillColor="#a0ffffff"
-                CircleProgressView:cpv_outerContourColor="@color/material_grey400"
+                CircleProgressView:cpv_outerContourColor="@color/material_grey500"
                 CircleProgressView:cpv_innerContourColor="@color/material_grey400"
                 CircleProgressView:cpv_rimWidth="@dimen/speed_rim_width"
                 CircleProgressView:cpv_seekMode="false"
-                CircleProgressView:cpv_showUnit="false"
+                CircleProgressView:cpv_showUnit="true"
+                CircleProgressView:cpv_unit="@string/corners_caps_string"
+                CircleProgressView:cpv_unitPosition="bottom"
+                CircleProgressView:cpv_unitSize="10sp"
                 CircleProgressView:cpv_spinColor="@color/colorAppGrey"
                 CircleProgressView:cpv_autoTextSize="false"
                 CircleProgressView:cpv_textSize="@dimen/speed_text_size"
@@ -204,7 +210,7 @@
                 CircleProgressView:cpv_barColor="@color/colorAppGrey"
                 CircleProgressView:cpv_rimColor="#00000000"
                 CircleProgressView:cpv_fillColor="#a0ffffff"
-                CircleProgressView:cpv_outerContourColor="@color/material_grey400"
+                CircleProgressView:cpv_outerContourColor="@color/material_grey500"
                 CircleProgressView:cpv_innerContourColor="@color/material_grey400"
                 CircleProgressView:cpv_rimWidth="@dimen/speed_rim_width"
                 CircleProgressView:cpv_seekMode="false"
@@ -282,8 +288,8 @@
                     android:layout_marginTop="@dimen/buttons_margin_top1"
                     android:src="@drawable/ic_info"
                     fab:fab_size="@dimen/fb_button_size"
-                    fab:fab_colorNormal="@color/colorAppBlue"
-                    fab:fab_colorPressed="@color/colorAppRed"
+                    fab:fab_colorNormal="@color/colorAppGreen"
+                    fab:fab_colorPressed="@color/colorAppOrange"
                     fab:fab_colorRipple="#ff5252"
                     fab:fab_shadowColor="#444"/>
 
@@ -294,8 +300,8 @@
                     android:layout_marginTop="@dimen/buttons_margin_top2"
                     android:src="@drawable/ic_phone"
                     fab:fab_size="@dimen/fb_button_size"
-                    fab:fab_colorNormal="@color/colorAppBlue"
-                    fab:fab_colorPressed="@color/colorAppRed"
+                    fab:fab_colorNormal="@color/colorAppGreen"
+                    fab:fab_colorPressed="@color/colorAppOrange"
                     fab:fab_colorRipple="#ff5252"
                     fab:fab_shadowColor="#444"/>
 
@@ -306,20 +312,20 @@
                     android:layout_marginTop="@dimen/buttons_margin_top2"
                     android:src="@drawable/ic_qrcode"
                     fab:fab_size="@dimen/fb_button_size"
-                    fab:fab_colorNormal="@color/colorAppBlue"
-                    fab:fab_colorPressed="@color/colorAppRed"
+                    fab:fab_colorNormal="@color/colorAppGreen"
+                    fab:fab_colorPressed="@color/colorAppOrange"
                     fab:fab_colorRipple="#ff5252"
                     fab:fab_shadowColor="#444"/>
 
                 <com.github.clans.fab.FloatingActionButton
-                    android:id="@+id/button_settings"
+                    android:id="@+id/button_epc_settings"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/buttons_margin_top2"
                     android:src="@drawable/ic_settings"
                     fab:fab_size="@dimen/fb_button_size"
-                    fab:fab_colorNormal="@color/colorAppBlue"
-                    fab:fab_colorPressed="@color/colorAppRed"
+                    fab:fab_colorNormal="@color/colorAppGreen"
+                    fab:fab_colorPressed="@color/colorAppOrange"
                     fab:fab_colorRipple="#ff5252"
                     fab:fab_shadowColor="#444"/>
 
@@ -356,12 +362,12 @@
                 fab:menu_openDirection="up"
                 fab:menu_icon="@drawable/fab_add"
                 fab:menu_colorNormal="@color/colorAppGreen"
-                fab:menu_colorPressed="@color/colorAppYellow"
+                fab:menu_colorPressed="@color/colorAppOrange"
                 fab:menu_colorRipple="#ffee58"
                 fab:menu_shadowColor="#444">
 
                 <com.github.clans.fab.FloatingActionButton
-                    android:id="@+id/menu_button1"
+                    android:id="@+id/menu_button_sos"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@drawable/ic_sos"
@@ -370,28 +376,28 @@
                     fab:fab_colorPressed="@color/colorAppGreen"
                     fab:fab_colorRipple="#ffee58"
                     fab:fab_shadowColor="#444"
-                    fab:fab_label="S.O.S."/>
+                    fab:fab_label=""/>
 
                 <com.github.clans.fab.FloatingActionButton
-                    android:id="@+id/menu_button2"
+                    android:id="@+id/menu_button_tracking"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/ic_stop"
+                    android:src="@drawable/ic_location"
                     fab:fab_size="@dimen/fb_button_size"
                     fab:fab_colorNormal="@color/colorAppGreen"
-                    fab:fab_colorPressed="@color/colorAppYellow"
+                    fab:fab_colorPressed="@color/colorAppOrange"
                     fab:fab_colorRipple="#ffee58"
                     fab:fab_shadowColor="#444"
-                    fab:fab_label="               "/>
+                    fab:fab_label=""/>
 
                 <com.github.clans.fab.FloatingActionButton
-                    android:id="@+id/menu_button3"
+                    android:id="@+id/menu_button_settings"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/fab_add"
+                    android:src="@drawable/ic_lock"
                     fab:fab_size="@dimen/fb_button_size"
                     fab:fab_colorNormal="@color/colorAppGreen"
-                    fab:fab_colorPressed="@color/colorAppYellow"
+                    fab:fab_colorPressed="@color/colorAppOrange"
                     fab:fab_colorRipple="#ffee58"
                     fab:fab_shadowColor="#444"
                     fab:fab_label=""/>

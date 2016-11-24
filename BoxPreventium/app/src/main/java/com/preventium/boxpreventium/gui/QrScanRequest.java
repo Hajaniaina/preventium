@@ -7,17 +7,25 @@ public class QrScanRequest implements Parcelable {
 
     public static final int REQUEST_PENDING   = 0;
     public static final int REQUEST_COMPLETED = 1;
+    public static final int REQUEST_ON_START  = 0;
+    public static final int REQUEST_ON_STOP   = 1;
 
     public long driverId = 0;
+
     public boolean driverIdEnabled = true;
-    public boolean vehicleFrontEnabled = true;
-    public boolean vehicleBackEnabled = true;
+    public boolean vehicleFrontOnStartEnabled = true;
+    public boolean vehicleBackOnStartEnabled = true;
+    public boolean vehicleFrontOnStopEnabled = true;
+    public boolean vehicleBackOnStopEnabled = true;
 
     public int driverIdReq = REQUEST_PENDING;
     public int vehicleFrontReq = REQUEST_PENDING;
     public int vehicleBackReq = REQUEST_PENDING;
 
-    public QrScanRequest () {}
+    public QrScanRequest() {
+
+
+    }
 
     public void resetVehicleReq() {
 
@@ -32,21 +40,33 @@ public class QrScanRequest implements Parcelable {
         vehicleBackReq = REQUEST_PENDING;
     }
 
-    public boolean isVehicleReqPending() {
+    public boolean isVehicleReqPending (int reqTime) {
 
         boolean pending = false;
+        boolean reqFrontEn = true, reqBackEn = true;
 
-        if (vehicleFrontEnabled) {
+        if (reqTime == REQUEST_ON_START) {
 
-            if (vehicleFrontReq == QrScanRequest.REQUEST_PENDING) {
+            reqFrontEn = vehicleFrontOnStartEnabled;
+            reqBackEn = vehicleBackOnStartEnabled;
+        }
+        else if (reqTime == REQUEST_ON_STOP) {
+
+            reqFrontEn = vehicleFrontOnStopEnabled;
+            reqBackEn = vehicleBackOnStopEnabled;
+        }
+
+        if (reqFrontEn) {
+
+            if (vehicleFrontReq != REQUEST_COMPLETED) {
 
                 pending = true;
             }
         }
 
-        if (vehicleBackEnabled) {
+        if (reqBackEn) {
 
-            if (vehicleBackReq == QrScanRequest.REQUEST_PENDING) {
+            if (vehicleBackReq != REQUEST_COMPLETED) {
 
                 pending = true;
             }
@@ -55,29 +75,41 @@ public class QrScanRequest implements Parcelable {
         return pending;
     }
 
-    public boolean isAnyReqPending() {
+    public boolean isAnyReqPending (int reqTime) {
 
         boolean pending = false;
+        boolean reqFrontEn = true, reqBackEn = true;
+
+        if (reqTime == REQUEST_ON_START) {
+
+            reqFrontEn = vehicleFrontOnStartEnabled;
+            reqBackEn = vehicleBackOnStartEnabled;
+        }
+        else if (reqTime == REQUEST_ON_STOP) {
+
+            reqFrontEn = vehicleFrontOnStopEnabled;
+            reqBackEn = vehicleBackOnStopEnabled;
+        }
 
         if (driverIdEnabled) {
 
-            if (driverIdReq == QrScanRequest.REQUEST_PENDING) {
+            if (driverIdReq != REQUEST_COMPLETED) {
 
                 pending = true;
             }
         }
 
-        if (vehicleFrontEnabled) {
+        if (reqFrontEn) {
 
-            if (vehicleFrontReq == QrScanRequest.REQUEST_PENDING) {
+            if (vehicleFrontReq != REQUEST_COMPLETED) {
 
                 pending = true;
             }
         }
 
-        if (vehicleBackEnabled) {
+        if (reqBackEn) {
 
-            if (vehicleBackReq == QrScanRequest.REQUEST_PENDING) {
+            if (vehicleBackReq != REQUEST_COMPLETED) {
 
                 pending = true;
             }
@@ -88,7 +120,6 @@ public class QrScanRequest implements Parcelable {
 
     @Override
     public int describeContents() {
-
         return 0;
     }
 
@@ -96,8 +127,10 @@ public class QrScanRequest implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeLong(this.driverId);
         dest.writeByte(this.driverIdEnabled ? (byte) 1 : (byte) 0);
-        dest.writeByte(this.vehicleFrontEnabled ? (byte) 1 : (byte) 0);
-        dest.writeByte(this.vehicleBackEnabled ? (byte) 1 : (byte) 0);
+        dest.writeByte(this.vehicleFrontOnStartEnabled ? (byte) 1 : (byte) 0);
+        dest.writeByte(this.vehicleBackOnStartEnabled ? (byte) 1 : (byte) 0);
+        dest.writeByte(this.vehicleFrontOnStopEnabled ? (byte) 1 : (byte) 0);
+        dest.writeByte(this.vehicleBackOnStopEnabled ? (byte) 1 : (byte) 0);
         dest.writeInt(this.driverIdReq);
         dest.writeInt(this.vehicleFrontReq);
         dest.writeInt(this.vehicleBackReq);
@@ -106,14 +139,16 @@ public class QrScanRequest implements Parcelable {
     protected QrScanRequest(Parcel in) {
         this.driverId = in.readLong();
         this.driverIdEnabled = in.readByte() != 0;
-        this.vehicleFrontEnabled = in.readByte() != 0;
-        this.vehicleBackEnabled = in.readByte() != 0;
+        this.vehicleFrontOnStartEnabled = in.readByte() != 0;
+        this.vehicleBackOnStartEnabled = in.readByte() != 0;
+        this.vehicleFrontOnStopEnabled = in.readByte() != 0;
+        this.vehicleBackOnStopEnabled = in.readByte() != 0;
         this.driverIdReq = in.readInt();
         this.vehicleFrontReq = in.readInt();
         this.vehicleBackReq = in.readInt();
     }
 
-    public static final Creator<QrScanRequest> CREATOR = new Creator<QrScanRequest>() {
+    public static final Parcelable.Creator<QrScanRequest> CREATOR = new Parcelable.Creator<QrScanRequest>() {
         @Override
         public QrScanRequest createFromParcel(Parcel source) {
             return new QrScanRequest(source);

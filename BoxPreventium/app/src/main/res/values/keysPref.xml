@@ -1,8 +1,8 @@
 <resources>
 
-    <!-- Selected EPC file, values: 1, 2, 3, 4 ou 5, default: 1-->
+    <!-- Selected EPC file, values: 0, 1, 2, 3 ou 4, default: 0-->
     <string name="epc_selected">epc_selected</string>
-    <integer name="epc_selected_def">1</integer>
+    <integer name="epc_selected_def">0</integer>
 
     <!-- Trigger shock, value minimum: 1000mG, default: 1000 mG -->
     <string name="shock_trigger_mG">shock_trigger_mG</string>
@@ -35,8 +35,10 @@
     <string name="phone_select_sms_qr">phone_select_sms_qr</string>
     <string name="phone_select_sms_qr_timeout">phone_select_sms_qr_timeout</string>
     <string name="phone_select_voice">phone_select_voice</string>
-
-    <string name="qr_select_mode">qr_select_mode</string>
+    <string name="qr_select_start_mode">qr_select_start_mode</string>
+    <string name="qr_select_stop_mode">qr_select_stop_mode</string>
+    <string name="tracking_activated">tracking_activated</string>
+    <string name="pin_code_key">pin_code_key</string>
 
 
 </resources>

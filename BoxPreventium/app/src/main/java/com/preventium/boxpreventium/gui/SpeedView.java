@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.view.MotionEvent;
 import android.view.View;
 
 import com.preventium.boxpreventium.R;
@@ -63,6 +64,24 @@ public class SpeedView implements Parcelable {
             view.setValue(100);
             view.setTextMode(TextMode.TEXT);
             view.setText("0");
+
+            view.setOnClickListener(new View.OnClickListener() {
+
+                @Override
+                public void onClick (View v) {
+
+                    CircleProgressView tempView = (CircleProgressView) v;
+
+                    if (tempView.isUnitVisible()) {
+
+                        tempView.setUnitVisible(false);
+                    }
+                    else {
+
+                        tempView.setUnitVisible(true);
+                    }
+                }
+            });
         }
 
         // viewMap.get(SPEED_t.MAX_LIMIT).setVisibility(View.GONE);

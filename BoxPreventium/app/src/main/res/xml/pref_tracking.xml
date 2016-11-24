@@ -2,10 +2,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory
-        android:title="@string/pref_title_voice_call_string">
+        android:title="@string/sms_notifications_string">
 
         <ListPreference
-            android:key="@string/phone_select_voice"
+            android:key="@string/phone_select_sms_tracking"
             android:title="@string/number_string"
             android:entries="@array/pref_phone_numbers_titles"
             android:entryValues="@array/pref_phone_numbers_values"

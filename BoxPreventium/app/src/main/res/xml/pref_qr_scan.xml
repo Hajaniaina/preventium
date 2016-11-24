@@ -1,23 +1,57 @@
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:sample="http://schemas.android.com/apk/res-auto">
 
-    <!-- NOTE: Hide buttons to simplify the UI. Users can touch outside the dialog to dismiss it. -->
-    <!-- NOTE: ListPreference's summary should be set to its value by the activity code. -->
+    <PreferenceCategory
+        android:title="@string/pref_title_qr_mode_string">
 
-    <ListPreference
-        android:key="@string/qr_select_mode"
-        android:title="@string/pref_title_qr_mode_string"
-        android:entries="@array/pref_qr_mode_titles"
-        android:entryValues="@array/pref_qr_mode_values"
-        android:defaultValue="1"
-        android:negativeButtonText="@null"
-        android:positiveButtonText="@null">
-    </ListPreference>
+        <ListPreference
+            android:key="@string/qr_select_start_mode"
+            android:title="@string/on_departure_string"
+            android:entries="@array/pref_qr_mode_titles"
+            android:entryValues="@array/pref_qr_mode_values"
+            android:defaultValue="1"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null">
+        </ListPreference>
 
-   <!-- This preference simply launches an intent when selected. Use this UI sparingly, per design guidelines. -->
-    <!--
-    <Preference android:title="@string/pref_title_system_sync_settings">
-        <intent android:action="android.settings.SYNC_SETTINGS" />
-    </Preference>
-    -->
+        <ListPreference
+            android:key="@string/qr_select_stop_mode"
+            android:title="@string/on_arrival_string"
+            android:entries="@array/pref_qr_mode_titles"
+            android:entryValues="@array/pref_qr_mode_values"
+            android:defaultValue="2"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null">
+        </ListPreference>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/sms_notifications_string">
+
+        <ListPreference
+            android:key="@string/phone_select_sms_qr"
+            android:title="@string/phone_number_string"
+            android:entries="@array/pref_phone_numbers_titles"
+            android:entryValues="@array/pref_phone_numbers_values"
+            android:defaultValue="1"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null">
+        </ListPreference>
+
+        <com.pavelsikun.seekbarpreference.SeekBarPreference
+            android:key="@string/phone_select_sms_qr_timeout"
+            android:title="@string/pref_trigger_time_string"
+            android:summary=""
+            android:enabled="true"
+            android:defaultValue="5"
+            sample:msbp_minValue="1"
+            sample:msbp_maxValue="30"
+            sample:msbp_interval="1"
+            sample:msbp_measurementUnit="min"
+            sample:msbp_dialogEnabled="true"/>
+
+    </PreferenceCategory>
 
 </PreferenceScreen>

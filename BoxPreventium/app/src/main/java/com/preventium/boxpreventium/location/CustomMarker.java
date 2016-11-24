@@ -40,7 +40,7 @@ public class CustomMarker {
     public static final int MARKER_RANDOM  = 10;
 
     public static final int MARKER_START  = 11;
-    public static final int MARKER_FINISH = 12;
+    public static final int MARKER_STOP = 12;
     public static final int MARKER_INFO   = 13;
     public static final int MARKER_DANGER = 14;
 
@@ -108,7 +108,7 @@ public class CustomMarker {
                 bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
                 break;
 
-            case MARKER_FINISH:
+            case MARKER_STOP:
                 editable = false;
                 bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
                 break;
@@ -233,7 +233,7 @@ public class CustomMarker {
 
         if (title != null && title.length() > 0) {
 
-            title = title;
+            this.title = title;
             opt.title(title);
 
             if (marker != null) {

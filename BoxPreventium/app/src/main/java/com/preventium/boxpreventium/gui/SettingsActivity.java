@@ -1,18 +1,15 @@
 package com.preventium.boxpreventium.gui;
 
 import android.content.Intent;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Bundle;
+import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.support.v7.app.ActionBar;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
-import android.preference.RingtonePreference;
-import android.text.TextUtils;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.preventium.boxpreventium.R;
 
@@ -40,31 +37,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
                 // Set the summary to reflect the new value.
                 preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
-            }
-            else if (preference instanceof RingtonePreference) {
-
-                // For ringtone preferences, look up the correct display value using RingtoneManager.
-                if (TextUtils.isEmpty(stringValue)) {
-
-                    // Empty values correspond to 'silent' (no ringtone).
-                    preference.setSummary(R.string.pref_ringtone_silent);
-                }
-                else {
-
-                    Ringtone ringtone = RingtoneManager.getRingtone(preference.getContext(), Uri.parse(stringValue));
-
-                    if (ringtone == null) {
-
-                        // Clear the summary if there was a lookup error.
-                        preference.setSummary(null);
-                    }
-                    else {
-
-                        // Set the summary to reflect the new ringtone display name.
-                        String name = ringtone.getTitle(preference.getContext());
-                        preference.setSummary(name);
-                    }
-                }
             }
             else {
 
@@ -148,20 +120,20 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
     /**********************************************************************************************/
 
-    public static class GeneralPreferenceFragment extends PreferenceFragment {
+    public static class RoutePreferenceFragment extends PreferenceFragment {
 
         @Override
         public void onCreate (Bundle savedInstanceState) {
 
             super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_general);
+            addPreferencesFromResource(R.xml.pref_route);
             setHasOptionsMenu(true);
 
-            // Bind the summaries of EditText/List/Dialog/Ringtone preferences
-            // to their values. When their values change, their summaries are
-            // updated to reflect the new value, per the Android Design guidelines.
-            bindPreferenceSummaryToValue(findPreference("example_text"));
-            bindPreferenceSummaryToValue(findPreference("example_list"));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_pause)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_pause_timeout)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pause_trigger_time)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.stop_trigger_time)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.recommended_speed_time)));
         }
 
         @Override
@@ -181,16 +153,75 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
     /**********************************************************************************************/
 
-    public static class NotificationPreferenceFragment extends PreferenceFragment {
+    public static class SosPreferenceFragment extends PreferenceFragment {
 
         @Override
         public void onCreate (Bundle savedInstanceState) {
 
             super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_notification);
+            addPreferencesFromResource(R.xml.pref_sos);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference("notifications_new_message_ringtone"));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_sos)));
+        }
+
+        @Override
+        public boolean onOptionsItemSelected (MenuItem item) {
+
+            int id = item.getItemId();
+
+            if (id == android.R.id.home) {
+
+                startActivity(new Intent(getActivity(), SettingsActivity.class));
+                return true;
+            }
+
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
+    /**********************************************************************************************/
+
+    public static class ShocksPreferenceFragment extends PreferenceFragment {
+
+        @Override
+        public void onCreate (Bundle savedInstanceState) {
+
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.pref_shocks);
+            setHasOptionsMenu(true);
+
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_shock)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.shock_trigger_mG)));
+        }
+
+        @Override
+        public boolean onOptionsItemSelected (MenuItem item) {
+
+            int id = item.getItemId();
+
+            if (id == android.R.id.home) {
+
+                startActivity(new Intent(getActivity(), SettingsActivity.class));
+                return true;
+            }
+
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
+    /**********************************************************************************************/
+
+    public static class TrackingPreferenceFragment extends PreferenceFragment {
+
+        @Override
+        public void onCreate (Bundle savedInstanceState) {
+
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.pref_tracking);
+            setHasOptionsMenu(true);
+
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_tracking)));
         }
 
         @Override
@@ -219,7 +250,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_qr_scan);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.qr_select_mode)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.qr_select_start_mode)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.qr_select_stop_mode)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr_timeout)));
         }
 
         @Override
@@ -249,14 +283,55 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_phone);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_sos)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_shock)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_pause)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_pause_timeout)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_tracking)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr_timeout)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_voice)));
+        }
+
+        @Override
+        public boolean onOptionsItemSelected (MenuItem item) {
+
+            int id = item.getItemId();
+
+            if (id == android.R.id.home) {
+
+                startActivity(new Intent(getActivity(), SettingsActivity.class));
+                return true;
+            }
+
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
+    /**********************************************************************************************/
+
+    public static class PinCodePreferenceFragment extends PreferenceFragment {
+
+        @Override
+        public void onCreate (Bundle savedInstanceState) {
+
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.pref_pin_code);
+            setHasOptionsMenu(true);
+
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pin_code_key)));
+
+            EditTextPreference pinCodeEdit = (EditTextPreference) findPreference(getString(R.string.pin_code_key));
+            pinCodeEdit.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+
+                @Override
+                public boolean onPreferenceChange (Preference preference, Object newValue) {
+
+                    if (newValue.toString().length() == 4) {
+
+                        preference.setSummary(newValue.toString());
+                        return true;
+                    }
+                    else {
+
+                        Toast.makeText(getActivity(), getString(R.string.pin_short_string), Toast.LENGTH_LONG).show();
+                        return false;
+                    }
+                }
+            });
         }
 
         @Override

@@ -112,6 +112,16 @@ public class MarkerManager {
         return false;
     }
 
+    public boolean remove (Marker marker) {
+
+        if (remove(getMarker(marker))) {
+
+            return true;
+        }
+
+        return false;
+    }
+
     public ArrayList<CustomMarkerData> getUserMarkersData() {
 
         ArrayList<CustomMarkerData> markersDataList = new ArrayList<CustomMarkerData>();

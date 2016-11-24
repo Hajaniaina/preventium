@@ -2,9 +2,7 @@ package com.preventium.boxpreventium.gui;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.CountDownTimer;
-import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -60,12 +58,17 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
         checkBoxVehicleFront = (CheckBox) findViewById(R.id.checkbox_vehicle_front);
         checkBoxVehicleBack = (CheckBox) findViewById(R.id.checkbox_vehicle_back);
 
-        if (!qrRequest.vehicleFrontEnabled) {
+        if (!qrRequest.driverIdEnabled) {
+
+            checkBoxDriverId.setVisibility(View.GONE);
+        }
+
+        if (!qrRequest.vehicleFrontOnStartEnabled) {
 
             checkBoxVehicleFront.setVisibility(View.GONE);
         }
 
-        if (!qrRequest.vehicleBackEnabled) {
+        if (!qrRequest.vehicleBackOnStartEnabled) {
 
             checkBoxVehicleBack.setVisibility(View.GONE);
         }
@@ -73,10 +76,12 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
         scannedOnce = false;
         updateCheckBoxes();
 
+        /*
         if (qrRequest.driverIdReq == QrScanRequest.REQUEST_COMPLETED) {
 
             checkBoxDriverId.setTextColor(appColor.getColor(AppColor.GREY));
         }
+        */
 
         barcodeCapture = (BarcodeCapture) getSupportFragmentManager().findFragmentById(R.id.qr_scanner);
         barcodeCapture.setTouchAsCallback(false);
@@ -150,7 +155,7 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
 
                     if (code.contains(SCAN_VEHICLE_FRONT)) {
 
-                        if (qrRequest.vehicleFrontEnabled) {
+                        if (qrRequest.vehicleFrontOnStartEnabled) {
 
                             if (qrRequest.vehicleFrontReq == QrScanRequest.REQUEST_PENDING) {
 
@@ -161,7 +166,7 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
                     }
                     else if (code.contains(SCAN_VEHICLE_BACK)) {
 
-                        if (qrRequest.vehicleBackEnabled) {
+                        if (qrRequest.vehicleBackOnStartEnabled) {
 
                             if (qrRequest.vehicleBackReq == QrScanRequest.REQUEST_PENDING) {
 
@@ -266,7 +271,7 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
             checkBoxDriverId.setTextColor(appColor.getColor(AppColor.GREEN));
         }
 
-        if (qrRequest.vehicleFrontEnabled) {
+        if (qrRequest.vehicleFrontOnStartEnabled) {
 
             if (qrRequest.vehicleFrontReq == QrScanRequest.REQUEST_PENDING) {
 
@@ -280,7 +285,7 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
             }
         }
 
-        if (qrRequest.vehicleBackEnabled) {
+        if (qrRequest.vehicleBackOnStartEnabled) {
 
             if (qrRequest.vehicleBackReq == QrScanRequest.REQUEST_PENDING) {
 

@@ -1,10 +1,12 @@
 package com.preventium.boxpreventium.gui;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -20,13 +22,10 @@ import com.preventium.boxpreventium.R;
 public class PinLockActivity extends AppCompatActivity {
 
     public static final String TAG = "PinLockActivity";
-    public static final String DEFAULT_PIN_CODE = "0000";
 
     private PinLockView mPinLockView;
-    private ImageView lockImageView;
-    private String pinCode = DEFAULT_PIN_CODE;
     private Intent settingsIntent;
-    private AppColor appColor;
+    private String pinCode;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -37,12 +36,13 @@ public class PinLockActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_pinlock);
 
-        appColor = new AppColor(this);
         settingsIntent = new Intent(PinLockActivity.this, SettingsActivity.class);
-        lockImageView = (ImageView) findViewById(R.id.lock_image);
         mPinLockView = (PinLockView) findViewById(R.id.pin_lock_view);
         IndicatorDots mIndicatorDots = (IndicatorDots) findViewById(R.id.indicator_dots);
         mPinLockView.attachIndicatorDots(mIndicatorDots);
+
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        pinCode = sharedPref.getString(getString(R.string.pin_code_key), "1234");
 
         PinLockListener mPinLockListener = new PinLockListener() {
 
@@ -57,9 +57,11 @@ public class PinLockActivity extends AppCompatActivity {
                 else {
 
                     mPinLockView.resetPinLockView();
-                    lockImageView.setColorFilter(Color.RED);
 
-                    Snackbar.make(getCurrentFocus(), getString(R.string.pin_error_string) + ": " + pin, Snackbar.LENGTH_LONG).setAction("Action", null).show();
+                    if (getCurrentFocus() != null) {
+
+                        Snackbar.make(getCurrentFocus(), getString(R.string.pin_invalid_string), Snackbar.LENGTH_LONG).setAction("Action", null).show();
+                    }
                 }
             }
 
@@ -71,10 +73,5 @@ public class PinLockActivity extends AppCompatActivity {
         };
 
         mPinLockView.setPinLockListener(mPinLockListener);
-    }
-
-    public void setPinCode (String strPin) {
-
-        pinCode = strPin;
     }
 }

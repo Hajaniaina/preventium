@@ -44,19 +44,37 @@
     <string name="brakes_string">Braking</string>
     <string name="corners_string">Corners</string>
     <string name="number_string">Number</string>
+    <string name="pause_string">Pause</string>
     <string name="call_string">Call</string>
     <string name="unknown_string">Unknown</string>
+    <string name="enable_string">Enable</string>
+    <string name="enabled_string">Enabled</string>
+    <string name="disable_string">Disable</string>
     <string name="disabled_string">Disabled</string>
     <string name="permissions_string">Permissions</string>
     <string name="permissions_retry_string">Retry</string>
-    <string name="start_marker_string">Start</string>
+    <string name="start_string">Start</string>
+    <string name="stop_string">Stop</string>
     <string name="finish_marker_string">Finish</string>
+    <string name="action_settings">Settings</string>
     <string name="distance_string">Distance</string>
+    <string name="route_string">Route</string>  <!-- Parcours -->
+    <string name="speed_string">Speed</string>
     <string name="shock_string">Shock</string>
-
+    <string name="shocks_string">Shocks</string>
+    <string name="tracking_string">Tracking</string>
+    <string name="corners_caps_string">CORNERS</string>
+    <string name="straights_caps_string">STRAIGHT</string>
+    <string name="phone_number_string">Phone number</string>
+    <string name="sms_notifications_string">SMS Notifications</string>
+    <string name="on_departure_string">On departure</string>
+    <string name="on_arrival_string">On arrival</string>
     <string name="front_only_string">Front only</string>
     <string name="front_back_string">Front and Back</string>
     <string name="not_used_string">Not used</string>
+    <string name="avg_speed_time_string">Time for avg speed calculation</string>
+    <string name="send_sms_after_pause_string">Send notification after pause more than</string>
+    <string name="shock_trigger_string">Shock trigger force</string>
     <string name="marker_tittle_invalid_string">Invalid name</string>
     <string name="new_marker_string">Marker name</string>
     <string name="marker_edit_string">Edit marker</string>
@@ -64,9 +82,10 @@
     <string name="marker_snippet_string">Tap here to edit this marker</string>
     <string name="validate_marker_create_string">Create a marker at this location?</string>
     <string name="validate_marker_delete_string">Delete this marker?</string>
-    <string name="make_call_string">Call a predefined number</string>
     <string name="make_call_confirma_string">Make a voice call?</string>
-    <string name="pin_error_string">Wrong PIN</string>
+    <string name="pin_code_string">PIN code</string>
+    <string name="pin_short_string">Should be 4 digits</string>
+    <string name="pin_invalid_string">Invalid PIN code</string>
     <string name="end_day_confirm_string">Have you finished your work day?</string>
     <string name="permissions_enable_string">This application need all permissions to be enabled</string>
     <string name="location_settings_string">Location settings</string>
@@ -76,8 +95,10 @@
     <string name="force_permissions_string">To continue please activate all permissions in the settings menu</string>
     <string name="network_alert_string">No active internet connection. Make sure that 3G/4G is activated</string>
     <string name="enable_tracking_string">Enable tracking</string>
+    <string name="tracking_enabled_string">Tracking enabled</string>
     <string name="disable_tracking_string">Disable tracking</string>
-    <string name="progress_loading_string">Loading...</string>
+    <string name="tracking_disabled_string">Tracking disabled</string>
+    <string name="progress_loading_string">Loading…</string>
     <string name="progress_map_string">Loading Google Maps</string>
     <string name="progress_location_string">Waiting for GPS data</string>
     <string name="progress_cfg_string">Downloading CFG data</string>
@@ -92,18 +113,22 @@
     <string name="send_sos_string">Sending SOS in</string>
     <string name="start_time_string">Start time</string>
     <string name="time_elapsed_string">Time elapsed</string>
+    <string name="select_epc_string">Select EPC file</string>
+    <string name="voice_calls_string">Voice calls</string>
+    <string name="title_activity_info">InfoActivity</string>
 
-    <string name="pref_title_phone_string">SMS &amp; Voice calls</string>
     <string name="pref_title_sms_sos_string">SMS SOS</string>
     <string name="pref_title_sms_shock_string">SMS Shocks</string>
-    <string name="pref_title_sms_pause_string">SMS Long pause</string>
     <string name="pref_title_sms_tracking_string">SMS Tracking On/Off</string>
     <string name="pref_title_sms_qr_string">SMS QR code</string>
     <string name="pref_title_voice_call_string">Voice calls</string>
     <string name="pref_trigger_time_string">Trigger timeout</string>
-
     <string name="pref_header_qr_scan_string">QR Scan</string>
     <string name="pref_title_qr_mode_string">Vehicle scan mode</string>
+
+    <string name="sms_sos_msg_string">SOS</string>
+    <string name="sms_shock_msg_string">SHOCK</string>
+    <string name="sms_qr_msg_string">QR CODE NOT SCANNED</string>
 
     <string-array name="marker_perimeters">
         <item>50m</item>
@@ -117,30 +142,6 @@
         <item>DANGER</item>
     </string-array>
 
-    <!-- Strings related to Settings -->
-    <!-- General settings -->
-
-    <string name="pref_header_general">General</string>
-    <string name="pref_title_social_recommendations">Enable social recommendations</string>
-    <string name="pref_description_social_recommendations">Recommendations for people to contact based on your message history</string>
-    <string name="pref_title_display_name">Display name</string>
-    <string name="pref_default_display_name">John Smith</string>
-    <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
-
-    <string-array name="pref_example_list_titles">
-        <item>Always</item>
-        <item>When possible</item>
-        <item>Never</item>
-    </string-array>
-
-    <string-array name="pref_example_list_values">
-        <item>1</item>
-        <item>0</item>
-        <item>-1</item>
-    </string-array>
-
-    <!-- QR -->
-
     <string-array name="pref_qr_mode_titles">
         <item>@string/disabled_string</item>
         <item>@string/front_only_string</item>
@@ -152,20 +153,6 @@
         <item>1</item>
         <item>2</item>
     </string-array>
-
-    <string name="pref_title_system_sync_settings">System sync settings</string>
-
-    <!-- Notifications -->
-
-    <string name="pref_header_notifications">Notifications</string>
-    <string name="pref_title_new_message_notifications">New message notifications</string>
-    <string name="pref_title_ringtone">Ringtone</string>
-    <string name="pref_ringtone_silent">Silent</string>
-    <string name="pref_title_vibrate">Vibrate</string>
-    <string name="title_activity_info">InfoActivity</string>
-    <string name="action_settings">Settings</string>
-
-    <!-- Phone -->
 
     <string-array name="pref_phone_numbers_titles">
         <item>@string/not_used_string</item>
