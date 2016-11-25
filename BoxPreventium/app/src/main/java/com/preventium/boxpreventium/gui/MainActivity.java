@@ -851,17 +851,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                if (txt.isEmpty()) {
+                if (debugView != null) {
 
-                    debugView.setVisibility(View.INVISIBLE);
+                    if (txt.isEmpty()) {
 
+                        debugView.setVisibility(View.INVISIBLE);
+                    }
+                    else {
+
+                        debugView.setVisibility(View.VISIBLE);
+                    }
+
+                    debugView.setText(txt);
                 }
-                else {
-
-                    debugView.setVisibility(View.VISIBLE);
-                }
-
-                debugView.setText(txt);
             }
         });
     }
@@ -931,8 +933,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             menuButtonTracking.setColorPressed(appColor.getColor(AppColor.GREEN));
         }
 
-        debugView = (TextView) findViewById(R.id.debug_view);
-        debugView.setVisibility(View.GONE);
+        // debugView = (TextView) findViewById(R.id.debug_view);
+        // debugView.setVisibility(View.GONE);
 
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
 
@@ -1900,28 +1902,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onClick (View view) {
-
-                /*
-                if (globalStatus != STATUS_t.PAR_STARTED) {
-
-                    onStatusChanged(STATUS_t.PAR_STARTED);
-                }
-                else {
-
-                    onStatusChanged(STATUS_t.PAR_PAUSING);
-
-                    new CountDownTimer(30000, 30000) {
-
-                        public void onTick (long millisUntilFinished) {}
-
-                        public void onFinish() {
-
-                            onStatusChanged(STATUS_t.PAR_STOPPED);
-                        }
-
-                    }.start();
-                }
-                */
 
                 startActivity(new Intent(MainActivity.this, PinLockActivity.class));
                 optMenu.close(true);
