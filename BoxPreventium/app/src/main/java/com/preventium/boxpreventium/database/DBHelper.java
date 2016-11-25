@@ -549,7 +549,7 @@ public class DBHelper extends SQLiteOpenHelper {
             Cursor cursor = db.rawQuery("SELECT * from " + TABLE_CEP + ";", null);
             if (cursor != null) {
                 if (cursor.moveToFirst()) {
-                    String filename = String.format(Locale.getDefault(), "%s_%s.ECA",
+                    String filename = String.format(Locale.getDefault(), "%s_%s.CEP",
                             ComonUtils.getIMEInumber(ctx), Long.toString(parcour_id));
                     File file = new File(folder.getAbsolutePath(), filename);
                     try {
@@ -610,6 +610,8 @@ public class DBHelper extends SQLiteOpenHelper {
                                 line[i] = (byte) status;
 
                                 output.write(line);
+
+                                cursor.moveToNext();
                             }
                             output.flush();
                             output.close();

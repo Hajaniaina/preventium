@@ -116,12 +116,14 @@ public class AppManager extends ThreadDefault
     public void myRun() throws InterruptedException {
         super.myRun();
         setLog( "AppManager begin..." );
-        modules.setActive( true );
+
         database.clear_obselete_data();
         download_cfg();
         download_epc();
         download_dobj();
+        modules.setActive( true );
         STATUS_t status = first_init();
+
         upload_eca(true);
 
         while( isRunning() ) {
@@ -275,13 +277,14 @@ public class AppManager extends ThreadDefault
     public void clear_ui_timer(){ ui_timers.clear(); }
 
     /// Listening timeout
-    private void listen_timers(STATUS_t status){
+    synchronized private void listen_timers(STATUS_t status){
         long timestamp = System.currentTimeMillis();
         if( !ui_timers.isEmpty() ) {
             Pair<Long, Integer> timer;
             long timeout_at;
             int timer_id;
-            for (int i = ui_timers.size() - 1; i > 0; i--) {
+            for (int i = ui_timers.size() - 1; i > 1; i--) {
+Log.d("AAA","TIMER index" + i );
                 timer = ui_timers.get(i);
                 timeout_at = timer.first;
                 timer_id = timer.second;
@@ -319,7 +322,8 @@ public class AppManager extends ThreadDefault
 
         File folder = new File(ctx.getFilesDir(), "");
         ReaderCFGFile reader = new ReaderCFGFile();
-        FTPConfig config = new FTPConfig("ftp.ikalogic.com","ikalogic","Tecteca1",21);
+        //FTPConfig config = new FTPConfig("ftp.ikalogic.com","ikalogic","Tecteca1",21);
+        FTPConfig config = new FTPConfig("www.preventium.fr","box.preventium","Box*16/64/prev",21);
         FTPClientIO ftp = new FTPClientIO();
 
         while ( isRunning() && !cfg  ){
@@ -600,7 +604,6 @@ public class AppManager extends ThreadDefault
 
     /// Create .CEP file (Connections Events of Preventium's devices) and uploading to the server.
     private void upload_cep(){
-
         if( isRunning() ) {
             if (listener != null) listener.onStatusChanged(STATUS_t.SETTING_CEP);
 
@@ -617,7 +620,6 @@ public class AppManager extends ThreadDefault
                         return name.toUpperCase().endsWith(".CEP");
                     }
                 });
-
                 if (listOfFiles != null && listOfFiles.length > 0) {
                     FTPConfig config = DataCFG.getFptConfig(ctx);
                     FTPClientIO ftp = new FTPClientIO();
@@ -657,22 +659,20 @@ public class AppManager extends ThreadDefault
 
     // Create .POS files (Position of map markers) and uploading to the server.
     private void upload_custom_markers() throws InterruptedException {
+
         if( isRunning() ) {
             if (listener != null) {
-
                 customMarkerList_Received = false;
                 customMarkerList = null;
                 listener.onCustomMarkerDataListGet();
                 Chrono chrono = Chrono.newInstance();
                 chrono.start();
-                while (chrono.getSeconds() < 5 && !customMarkerList_Received) {
+                while (isRunning() && chrono.getSeconds() < 10 && !customMarkerList_Received) {
                     sleep(500);
                 }
                 listener.onStatusChanged(STATUS_t.SETTING_MARKERS);
-
                 if (customMarkerList_Received) {
                     if (parcour_id > 0 && customMarkerList != null && customMarkerList.size() > 0) {
-
                         // CREATE FILE
                         File folder = new File(ctx.getFilesDir(), "POS");
                         // Create folder if not exist
@@ -718,7 +718,6 @@ public class AppManager extends ThreadDefault
                             return name.toUpperCase().endsWith(".POS");
                         }
                     });
-
                     if (listOfFiles != null && listOfFiles.length > 0) {
                         FTPConfig config = DataCFG.getFptConfig(ctx);
                         FTPClientIO ftp = new FTPClientIO();
@@ -1517,9 +1516,12 @@ Log.d("AAA","button_stop = " + button_stop + " delay = " + delay );
             if (listener != null) listener.onStatusChanged(ret);
             addLog("STOP PARCOURS");
             clear_force_ui();
+
             upload_cep();
             upload_custom_markers();
             upload_parcours_type();
+            parcour_id = -1;
+
 
         }
         // Or checking if car re-moving
@@ -1554,6 +1556,7 @@ Log.d("AAA","button_stop = " + button_stop + " delay = " + delay );
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
         String key = ctx.getResources().getString(R.string.pause_trigger_time);
         long delay = sp.getInt(key,4) * 60 * 1000;
+delay = 5;
         // Checking if car is in pause
         if ( /*mov_t_last == MOVING_t.STP
                 && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE */
@@ -1612,16 +1615,9 @@ Log.d("AAA","button_stop = " + button_stop + " delay = " + delay );
         List<Location> list = null;
 
         // Clear locations list
-//        if (locations.size() > 0) {
-//            if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
-//                locations.clear();
-//            }
-//        }
-        if (locations.size() > 1) {
-            if (System.currentTimeMillis() - locations.get(1).getTime() > 15000) {
-                Location temp = locations.get(0);
+        if (locations.size() > 0) {
+            if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
                 locations.clear();
-                locations.add(temp);
             }
         }
         // Get sublist
@@ -1648,9 +1644,9 @@ Log.d("AAA","button_stop = " + button_stop + " delay = " + delay );
     }
 
     private void addLog( String txt ){
-        if( !log.isEmpty() ) log += System.getProperty("line.separator");
-        log += txt;
-        if( listener != null ) listener.onDebugLog( log );
+//        if( !log.isEmpty() ) log += System.getProperty("line.separator");
+//        log += txt;
+//        if( listener != null ) listener.onDebugLog( log );
     }
 
 }
