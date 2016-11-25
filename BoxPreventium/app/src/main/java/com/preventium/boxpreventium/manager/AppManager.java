@@ -255,7 +255,7 @@ public class AppManager extends ThreadDefault
 
     private long driver_id = 0;
 
-    public long get_driver_id(){ return driver_id; };
+    public long get_driver_id(){ return driver_id; }
 
     public void set_driver_id( long driver_id ){ this.driver_id = driver_id; }
 
@@ -769,7 +769,7 @@ Log.d("AAA","TIMER index" + i );
                 editor.apply();
                 parcoursTypeName = sp.getString(key,"");
             }
-            
+
             listener.onStatusChanged(STATUS_t.SETTING_PARCOUR_TYPE);
 
             if( parcoursTypeName != null ){
@@ -1050,7 +1050,7 @@ Log.d("AAA","TIMER index" + i );
                 alertUI_add_at = System.currentTimeMillis();
                 seuil_ui = seuil;
             }
-            else if( alertUI_add_at + 2000 < System.currentTimeMillis() ) {
+            else if( alertUI_add_at + 1000 < System.currentTimeMillis() ) {
                 if( listener != null ) listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW);
                 alertUI_add_at = System.currentTimeMillis();
                 seuil_ui = null;
@@ -1122,25 +1122,26 @@ addLog( "calc_parcour_cotation" );
         if( listener != null ){
             // If elapsed time > 5 minutes
             //if( forces_update_at + (5*60*1000) < System.currentTimeMillis()){
-            if( forces_update_at + (5*60*1000) < System.currentTimeMillis()){
+            if( forces_update_at + (2*60*1000) < System.currentTimeMillis()){
                 if( readerEPCFile != null ){
 
                     SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
                     String key = ctx.getResources().getString(R.string.recommended_speed_time);
-                    long delay = sp.getInt(key,10) * 60 * 1000;
+                    long delay_sec = sp.getInt(key,10) * 60;
 
 addLog( "calc_cotation_forces" );
                     // Calcul force note: 10 minutes = 600 seondes
                     forces_update_at = System.currentTimeMillis();
-                    float A = get_cotation_force(DataDOBJ.ACCELERATIONS,parcour_id,delay);
-                    float F = get_cotation_force(DataDOBJ.FREINAGES,parcour_id,delay);
-                    float V = get_cotation_force(DataDOBJ.VIRAGES,parcour_id,delay);
+                    float A = get_cotation_force(DataDOBJ.ACCELERATIONS,parcour_id,delay_sec);
+                    float F = get_cotation_force(DataDOBJ.FREINAGES,parcour_id,delay_sec);
+                    float V = get_cotation_force(DataDOBJ.VIRAGES,parcour_id,delay_sec);
                     float M = (A+F+V) > 0 ? (A+F+V)/3 : 0;
 
 addLog( "Cotation A: " + A );
 addLog( "Cotation F: " + F );
 addLog( "Cotation V: " + V );
 addLog( "Cotation M: " + M );
+Log.d("CALC","Cotation A: " + A + " F: " + F + " V: " + V + " M: " + M );
                     // Update note for "Accelerations"
                     LEVEL_t level;
                     if( A >= 16f ) level = LEVEL_t.LEVEL_1;
@@ -1338,33 +1339,33 @@ addLog( "Cotation M: " + M );
 
         // Calculate recommended val and get speed maximum since XX secondes
         //if( recommended_speed_update_at + (5*60*1000) < System.currentTimeMillis()) {
-
-        if( recommended_speed_update_at + (5*60*1000) < System.currentTimeMillis()) {
+        if( recommended_speed_update_at + (2*30*1000) < System.currentTimeMillis()) {
             if (readerEPCFile != null) {
 
                 SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
                 String key = ctx.getResources().getString(R.string.recommended_speed_time);
-                long delay = sp.getInt(key,10) * 60 * 1000;
+                long delay_sec = sp.getInt(key,10) * 60;
 
 addLog("calc_recommended_speed");
                 // Get the horizontal maximum speed since
-                speed_H = database.speed_avg(parcour_id, delay, 40f,
+                speed_H = database.speed_max(parcour_id, delay_sec,
                         readerEPCFile.getForceSeuil(0).IDAlert, // IDAlert +X1
                         readerEPCFile.getForceSeuil(1).IDAlert, // IDAlert +X2
                         readerEPCFile.getForceSeuil(5).IDAlert, // IDAlert -X1
                         readerEPCFile.getForceSeuil(6).IDAlert  // IDAlert -X2
                 );
                 // Get the vertical maximum speed since
-                speed_V = database.speed_avg(parcour_id, delay, 40f,
+                speed_V = database.speed_max(parcour_id, delay_sec,
                         readerEPCFile.getForceSeuil(10).IDAlert,    // IDAlert +Y1
                         readerEPCFile.getForceSeuil(11).IDAlert,    // IDAlert +Y2
                         readerEPCFile.getForceSeuil(15).IDAlert,    // IDAlert -Y1
                         readerEPCFile.getForceSeuil(16).IDAlert     // IDAlert -Y2
                 );
-                // Get the average speed
-                speed_max = database.speed_max(parcour_id, delay);
+                // Get the max speed
+                speed_max = database.speed_max(parcour_id, delay_sec);
                 // Set calculate at
                 recommended_speed_update_at = System.currentTimeMillis();
+Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " speed_max: " + speed_max);
             }
         }
         // Update the UI
