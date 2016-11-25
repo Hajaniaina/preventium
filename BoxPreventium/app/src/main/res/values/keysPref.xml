@@ -25,6 +25,9 @@
     <string name="phone_number_4">numero_4</string>
     <string name="phone_number_5">numero_5</string>
 
+    <!-- Parcours type -->
+    <string name="parcours_type_enabled">parcours_type_enabled</string>
+
     <!-- ////////////////////////////////////////////////////////////////////// -->
 
     <string name="phone_select_sms_sos">phone_select_sms_sos</string>
