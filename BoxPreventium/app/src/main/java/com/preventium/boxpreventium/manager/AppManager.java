@@ -66,7 +66,6 @@ public class AppManager extends ThreadDefault
         void onDebugLog(String txt);
         void onStatusChanged(STATUS_t status);
         void onCustomMarkerDataListGet();
-        void onParcoursTypeGet();
         void onUiTimeout(int timer_id, STATUS_t status);
 
         void onNoteChanged( int note_par, LEVEL_t level_par, LEVEL_t level_5_days );
@@ -762,13 +761,15 @@ Log.d("AAA","TIMER index" + i );
         if( listener != null ){
 
             parcoursTypeName = null;
-            listener.onParcoursTypeGet();
-            Chrono chrono = Chrono.newInstance();
-            chrono.start();
-            while( chrono.getSeconds() < 60 && parcoursTypeName == null ){
-                sleep(500);
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+            String key = ctx.getResources().getString(R.string.parcours_type_enabled);
+            if( sp.getBoolean(key,false) ){
+                SharedPreferences.Editor editor = sp.edit();
+                editor.putBoolean(key,false);
+                editor.apply();
+                parcoursTypeName = sp.getString(key,"");
             }
-
+            
             listener.onStatusChanged(STATUS_t.SETTING_PARCOUR_TYPE);
 
             if( parcoursTypeName != null ){
@@ -1494,7 +1495,7 @@ addLog("calc_recommended_speed");
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
         String key = ctx.getResources().getString(R.string.stop_trigger_time);
         long delay = sp.getInt(key,10) * 60 * 1000;
-Log.d("AAA","button_stop = " + button_stop + " delay = " + delay );
+
         // Checking if car is stopped
         if ( button_stop ||
                 ( /*mov_t_last == MOVING_t.STP
@@ -1556,7 +1557,7 @@ Log.d("AAA","button_stop = " + button_stop + " delay = " + delay );
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
         String key = ctx.getResources().getString(R.string.pause_trigger_time);
         long delay = sp.getInt(key,4) * 60 * 1000;
-delay = 5;
+
         // Checking if car is in pause
         if ( /*mov_t_last == MOVING_t.STP
                 && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE */
