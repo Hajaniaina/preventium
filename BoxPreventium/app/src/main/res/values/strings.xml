@@ -36,6 +36,7 @@
     <string name="create_string">Create</string>
     <string name="activate_string">Activate</string>
     <string name="delete_string">Delete</string>
+    <string name="empty_string">Empty</string>
     <string name="yes_string">Yes</string>
     <string name="no_string">No</string>
     <string name="cancel_string">Cancel</string>
@@ -102,9 +103,9 @@
     <string name="progress_loading_string">Loading…</string>
     <string name="progress_map_string">Loading Google Maps</string>
     <string name="progress_location_string">Waiting for GPS data</string>
-    <string name="progress_cfg_string">Downloading CFG data for IMEI:</string>
-    <string name="progress_epc_string">Downloading EPC data for IMEI:</string>
-    <string name="progress_obj_string">Downloading OBJ datafor IMEI:</string>
+    <string name="progress_cfg_string">Downloading CFG data for IMEI: </string>
+    <string name="progress_epc_string">Downloading EPC data for IMEI: </string>
+    <string name="progress_obj_string">Downloading OBJ datafor IMEI: </string>
     <string name="progress_send_string">Sendind route data to the server</string>
     <string name="progress_ready_string">Ready</string>
     <string name="scan_qr_ok_string">Code OK</string>
@@ -132,6 +133,7 @@
     <string name="sms_sos_msg_string">SOS</string>
     <string name="sms_shock_msg_string">SHOCK</string>
     <string name="sms_qr_msg_string">QR CODE NOT SCANNED</string>
+    <string name="sms_pause_msg_string">PAUSE TOO LONG</string>
 
     <string-array name="marker_perimeters">
         <item>50m</item>

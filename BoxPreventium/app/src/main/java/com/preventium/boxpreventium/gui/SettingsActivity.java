@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.pavelsikun.seekbarpreference.SeekBarPreference;
 import com.preventium.boxpreventium.R;
 
 import java.util.List;
@@ -99,6 +100,43 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         return true;
     }
 
+    private static void updatePhoneNumbersList (PreferenceFragment fragment, int key) {
+
+        SharedPreferences sharedPref = fragment.getPreferenceScreen().getSharedPreferences();
+        String[] realNumbers = new String[5];
+
+        realNumbers[0] = sharedPref.getString(fragment.getString(R.string.phone_number_1), "");
+        realNumbers[1] = sharedPref.getString(fragment.getString(R.string.phone_number_2), "");
+        realNumbers[2] = sharedPref.getString(fragment.getString(R.string.phone_number_3), "");
+        realNumbers[3] = sharedPref.getString(fragment.getString(R.string.phone_number_4), "");
+        realNumbers[4] = sharedPref.getString(fragment.getString(R.string.phone_number_5), "");
+
+        ListPreference listPref = (ListPreference) fragment.findPreference(fragment.getString(key));
+        CharSequence[] numbers = listPref.getEntries();
+
+        for (int i = 0; i <= 5; i++) {
+
+            if (i > 0) {
+
+                if (realNumbers[i - 1].isEmpty()) {
+
+                    String str = numbers[i].toString();
+                    str += " [" + fragment.getString(R.string.empty_string) + "]";
+                    numbers[i] = str;
+                }
+                else {
+
+                    String str = numbers[i].toString();
+                    str += " [" + realNumbers[i - 1] + "]";
+                    numbers[i] = str;
+                }
+            }
+        }
+
+        listPref.setEntries(numbers);
+        listPref.setSummary(listPref.getEntry());
+    }
+
     /**********************************************************************************************/
 
     public static class RoutePreferenceFragment extends PreferenceFragment {
@@ -115,12 +153,29 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pause_trigger_time)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.stop_trigger_time)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.recommended_speed_time)));
+
+            updatePhoneNumbersList(this, R.string.phone_select_sms_pause);
+
+            final SeekBarPreference pauseTimeoutPref = (SeekBarPreference) findPreference(getString(R.string.pause_trigger_time));
+            final SeekBarPreference stopTimeoutPref = (SeekBarPreference) findPreference(getString(R.string.stop_trigger_time));
+
+            int stopTimeoutCurrent = stopTimeoutPref.getCurrentValue();
+            int stopTimeoutMin = (pauseTimeoutPref.getCurrentValue() + 1);
+
+            stopTimeoutPref.setMinValue(stopTimeoutMin);
+
+            if (stopTimeoutCurrent < stopTimeoutMin) {
+
+                stopTimeoutPref.setCurrentValue(stopTimeoutMin);
+            }
         }
 
         @Override
         public boolean onOptionsItemSelected (MenuItem item) {
 
             int id = item.getItemId();
+
+            Log.d(TAG, item.getTitle().toString());
 
             if (id == android.R.id.home) {
 
@@ -144,6 +199,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             setHasOptionsMenu(true);
 
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_sos)));
+            updatePhoneNumbersList(this, R.string.phone_select_sms_sos);
         }
 
         @Override
@@ -174,6 +230,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_shock)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.shock_trigger_mG)));
+
+            updatePhoneNumbersList(this, R.string.phone_select_sms_shock);
         }
 
         @Override
@@ -203,6 +261,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             setHasOptionsMenu(true);
 
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_tracking)));
+            updatePhoneNumbersList(this, R.string.phone_select_sms_tracking);
         }
 
         @Override
@@ -235,6 +294,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference(getString(R.string.qr_select_stop_mode)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr_timeout)));
+
+            updatePhoneNumbersList(this, R.string.phone_select_sms_qr);
         }
 
         @Override
@@ -265,6 +326,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             setHasOptionsMenu(true);
 
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_voice)));
+            updatePhoneNumbersList(this, R.string.phone_select_voice);
         }
 
         @Override
