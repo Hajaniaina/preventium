@@ -67,6 +67,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.preventium.boxpreventium.manager.AppManager;
+import com.preventium.boxpreventium.manager.StatsLastDriving;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
@@ -118,7 +119,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private ProgressDialog progress;
     private boolean toggle = false;
     private SupportMapFragment mapFrag;
-    private int mapType = GoogleMap.MAP_TYPE_NORMAL;
     List<Polyline> mapPolylineList = new ArrayList<Polyline>();
     private Marker startMarker = null, stopMarker = null;
     private boolean initDone = false;
@@ -433,7 +433,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                             if (Connectivity.isConnected(getApplicationContext())) {
 
-                                progress.setMessage(getString(R.string.progress_cfg_string));
+                                progress.setMessage((getString(R.string.progress_cfg_string) + StatsLastDriving.getIMEI(MainActivity.this)));
                             }
                             else {
 
@@ -448,7 +448,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (progress != null) {
 
                             progress.show();
-                            progress.setMessage(getString(R.string.progress_epc_string));
+                            progress.setMessage((getString(R.string.progress_epc_string) + StatsLastDriving.getIMEI(MainActivity.this)));
                         }
 
                         break;
@@ -458,7 +458,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (progress != null) {
 
                             progress.show();
-                            progress.setMessage(getString(R.string.progress_obj_string));
+                            progress.setMessage((getString(R.string.progress_obj_string) + StatsLastDriving.getIMEI(MainActivity.this)));
+                        }
+
+                        break;
+
+                    case SETTING_CEP:
+                    case SETTING_MARKERS:
+                    case SETTING_PARCOUR_TYPE:
+
+                        if (progress != null) {
+
+                            progress.show();
+                            progress.setMessage((getString(R.string.progress_send_string)));
                         }
 
                         break;

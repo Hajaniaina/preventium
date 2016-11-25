@@ -71,12 +71,12 @@
     <string name="pref_title_sms_tracking_string">SMS Tracking On/Off</string>
     <string name="pref_trigger_time_string">Délai de déclenchement</string>
     <string name="pref_title_voice_call_string">Appels</string>
-    <string name="progress_cfg_string">Téléchargement de données CFG</string>
-    <string name="progress_epc_string">Téléchargement de données EPC</string>
+    <string name="progress_cfg_string">Téléchargement de données CFG pour IMEI:</string>
+    <string name="progress_epc_string">Téléchargement de données EPC pour IMEI:</string>
     <string name="progress_loading_string">Chargement…</string>
     <string name="progress_location_string">En attente de données GPS</string>
     <string name="progress_map_string">Chargement de GoogleMaps</string>
-    <string name="progress_obj_string">Téléchargement des données OBJ</string>
+    <string name="progress_obj_string">Téléchargement des données OBJ pour IMEI:</string>
     <string name="qr_rationale_string">Vous avez un ou plusieurs QR codes à scanner</string>
     <string name="progress_ready_string">Prêt</string>
     <string name="quit_scan">Quitter</string>
