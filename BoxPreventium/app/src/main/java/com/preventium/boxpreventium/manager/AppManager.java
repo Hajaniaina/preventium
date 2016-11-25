@@ -775,15 +775,13 @@ public class AppManager extends ThreadDefault
             if( parcoursTypeName != null ){
                 if( parcour_id > 0 && !parcoursTypeName.isEmpty() ){
 
-
-
                     // CREATE FILE
                     File folder = new File(ctx.getFilesDir(), "PT");
                     // Create folder if not exist
                     if (!folder.exists())
                         if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
                     if( folder.exists() ) {
-                        String filename = String.format(Locale.getDefault(), "%s_%s.PT",
+                        String filename = String.format(Locale.getDefault(), "%s_%d.PT",
                                 ComonUtils.getIMEInumber(ctx), parcour_id);
                         File file = new File(folder.getAbsolutePath(), filename );
                         try {
@@ -1015,6 +1013,8 @@ public class AppManager extends ThreadDefault
         }
         seuil_last_y = seuil_y;
 
+//if( seuil_y != null ) Log.d("CALC","seuil_y " + seuil_y.toString() );
+//Log.d("CALC","Alert Y: " + alertY + " YmG_smooth:  " + YmG_smooth);
         // Add location to ECA database
         if( _tracking &&
                 alertX == LEVEL_t.LEVEL_UNKNOW
@@ -1459,7 +1459,7 @@ addLog("calc_recommended_speed");
                 alertY_add_at = 0;
                 alertPos_add_at = 0;
                 recommended_speed_update_at = 0;
-
+                parcour_id = System.currentTimeMillis();
                 //readerEPCFile.loadFromApp(ctx);
 
                 addLog("START PARCOURS");
@@ -1469,7 +1469,7 @@ addLog("calc_recommended_speed");
                     database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_BEGIN, loc, null));
                 }
 
-                parcour_id = System.currentTimeMillis();
+
                 StatsLastDriving.startDriving(ctx,parcour_id);
                 chronoRide.start();
                 ret = STATUS_t.PAR_STARTED;
@@ -1494,8 +1494,8 @@ addLog("calc_recommended_speed");
 
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
         String key = ctx.getResources().getString(R.string.stop_trigger_time);
-        long delay = sp.getInt(key,4) * 60 * 1000;
-
+        long delay = sp.getInt(key,10) * 60 * 1000;
+Log.d("AAA","button_stop = " + button_stop + " delay = " + delay );
         // Checking if car is stopped
         if ( button_stop ||
                 ( /*mov_t_last == MOVING_t.STP
@@ -1612,9 +1612,16 @@ addLog("calc_recommended_speed");
         List<Location> list = null;
 
         // Clear locations list
-        if (locations.size() > 0) {
-            if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
+//        if (locations.size() > 0) {
+//            if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
+//                locations.clear();
+//            }
+//        }
+        if (locations.size() > 1) {
+            if (System.currentTimeMillis() - locations.get(1).getTime() > 15000) {
+                Location temp = locations.get(0);
                 locations.clear();
+                locations.add(temp);
             }
         }
         // Get sublist

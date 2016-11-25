@@ -194,16 +194,25 @@ public class DBHelper extends SQLiteOpenHelper {
     public boolean addECA( long parcour_id, ECALine line ) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put(COLUMN_ECA_TIME, line.location.getTime());
+
         contentValues.put(COLUMN_ECA_PARCOUR_ID, parcour_id);
         contentValues.put(COLUMN_ECA_FILE_ID, -1);
         contentValues.put(COLUMN_ECA_ALERTID, line.alertID);
         contentValues.put(COLUMN_ECA_PADDIND, line.padding);
-        contentValues.put(COLUMN_ECA_LONG_POS, line.location.getLongitude());
-        contentValues.put(COLUMN_ECA_LAT_POS, line.location.getLatitude());
+        if (line.location != null) {
+            contentValues.put(COLUMN_ECA_TIME, line.location.getTime());
+            contentValues.put(COLUMN_ECA_LONG_POS, line.location.getLongitude());
+            contentValues.put(COLUMN_ECA_LAT_POS, line.location.getLatitude());
+            contentValues.put(COLUMN_ECA_SPEED, line.location.getSpeed());
+        }else{
+            contentValues.put(COLUMN_ECA_TIME, System.currentTimeMillis());
+            contentValues.put(COLUMN_ECA_LONG_POS, 0f);
+            contentValues.put(COLUMN_ECA_LAT_POS, 0f);
+            contentValues.put(COLUMN_ECA_SPEED, 0f);
+        }
         contentValues.put(COLUMN_ECA_LONG_POS_ORIENTATION, line.long_pos_orientation);
         contentValues.put(COLUMN_ECA_LAT_POS_ORIENTATION, line.lat_pos_orientation);
-        contentValues.put(COLUMN_ECA_SPEED, line.location.getSpeed());
+
         contentValues.put(COLUMN_ECA_DISTANCE, line.distance);
         db.insert(TABLE_ECA, null, contentValues);
         return true;
@@ -246,7 +255,7 @@ public class DBHelper extends SQLiteOpenHelper {
         if( cursor.moveToFirst() ){
             SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = sp.edit();
-            long parcour_id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID));
+            long parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID));
             int counter = get_eca_counter(ctx,parcour_id) + 1;
             editor.putLong( KEY_LAST_eca_time, time );
             editor.putLong(KEY_LAST_eca_parcour,parcour_id);
@@ -274,12 +283,12 @@ public class DBHelper extends SQLiteOpenHelper {
                             " ORDER BY " + COLUMN_ECA_TIME + " ;", null);
             if ( cursor.moveToFirst() ) {
                 ECALine line = null;
-                long parcour_id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID));
+                long parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID));
                 long cnt = get_eca_counter(ctx,parcour_id) + 1;
                 long time = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_TIME));
                 long driver_id = get_driver_id(parcour_id, time);
                 String filename = String.format(Locale.getDefault(),"%s_%s_%04d.ECA",
-                        ComonUtils.getIMEInumber(ctx), parcour_id, cnt );
+                        ComonUtils.getIMEInumber(ctx), Long.toString(parcour_id), cnt );
                 File file = new File(folder.getAbsolutePath(), filename );
                 try {
                     if( file.createNewFile() ){
@@ -293,7 +302,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         boolean all_points = DataCFG.get_SEND_ALL_GPS_POINTS(ctx);
                         while ( !cursor.isAfterLast() ) {
                             if( parcour_id
-                                    == cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID)) )
+                                    == cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID)) )
                             {
                                 line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
                                 line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
@@ -541,7 +550,7 @@ public class DBHelper extends SQLiteOpenHelper {
             if (cursor != null) {
                 if (cursor.moveToFirst()) {
                     String filename = String.format(Locale.getDefault(), "%s_%s.ECA",
-                            ComonUtils.getIMEInumber(ctx), parcour_id);
+                            ComonUtils.getIMEInumber(ctx), Long.toString(parcour_id));
                     File file = new File(folder.getAbsolutePath(), filename);
                     try {
                         if (file.createNewFile()) {

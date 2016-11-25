@@ -57,14 +57,14 @@ public class FilesSender extends ThreadDefault {
         // CREATE ECA FILE
         long last_time = DBHelper.get_last_eca_time_send(_ctx);
         long last_time_temp = db.create_eca_file( _ctx, last_time );
-
+Log.d("AAA","last_time " + last_time + " last_time_temp " + last_time_temp );
         if( last_time_temp > last_time ){
 
             // SENDING FILE
             boolean success = false;
             File folder = new File(_ctx.getFilesDir(), "ECA");
             File[] listOfFiles = folder.listFiles();
-            if( listOfFiles != null && listOfFiles.length == 1 ){
+            if( listOfFiles != null && listOfFiles.length > 0 ){
                 FTPConfig config = DataCFG.getFptConfig(_ctx);
                 FTPClientIO ftp = new FTPClientIO();
                 if( config != null && ftp.ftpConnect(config, 5000) ) {
@@ -80,7 +80,7 @@ public class FilesSender extends ThreadDefault {
                     ftp.ftpDisconnect();
                 }
             }
-
+Log.d("AAA","success: " + success );
             // UPDATE LAST SENDING INFO
             if( success )
                 Log.d(TAG,"update_last_send: " + db.update_last_send( _ctx, last_time_temp ) );
