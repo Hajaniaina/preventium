@@ -56,7 +56,7 @@ public class AppManager extends ThreadDefault
     private static final float MS_TO_KMH = 3.6f;
     private static final int SECS_TO_SET_PARCOURS_START = 5;
     private static final int SECS_TO_SET_PARCOURS_PAUSE = 20; // 4 minutes = 4 * 60 secs = 240 secs
-    private static final int SECS_TO_SET_PARCOURS_RESUME = 10;
+    private static final int SECS_TO_SET_PARCOURS_RESUME = SECS_TO_SET_PARCOURS_START;
     private static final int SECS_TO_SET_PARCOURS_STOPPED = 25200; // 7 hours = 7 * 3600 secs = 25200 secs
 
     public interface AppManagerListener {
@@ -587,7 +587,7 @@ public class AppManager extends ThreadDefault
             database.add_driver(parcour_id,driver_id);
 
             // Trying to send file
-            //fileSender.startThread();
+            fileSender.startThread();
             try_send_eca_at = System.currentTimeMillis();
             ret = true;
         }
@@ -600,38 +600,45 @@ public class AppManager extends ThreadDefault
 
     /// Create .CEP file (Connections Events of Preventium's devices) and uploading to the server.
     private void upload_cep(){
-        if( parcour_id > 0 ) {
-            database.create_cep_file(parcour_id);
-            database.clear_cep_data();
-        }
 
-        // UPLOAD .CEP FILES
-        File folder = new File(ctx.getFilesDir(), "CEP");
-        if ( folder.exists() ){
-            File[] listOfFiles = folder.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    return name.toUpperCase().endsWith(".CEP");
-                }
-            });
+        if( isRunning() ) {
+            if (listener != null) listener.onStatusChanged(STATUS_t.SETTING_CEP);
 
-            if( listOfFiles != null && listOfFiles.length > 0 ){
-                FTPConfig config = DataCFG.getFptConfig(ctx);
-                FTPClientIO ftp = new FTPClientIO();
-                if( config != null && ftp.ftpConnect(config, 5000) ) {
-                    boolean change_directory = true;
-                    if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                        change_directory = ftp.makeDirectory(config.getWorkDirectory());
-                    if (!change_directory) {
-                        Log.w(TAG, "Error while trying to change working directory!");
-                    } else {
-                        for ( File file : listOfFiles ) {
-                            if( ftp.ftpUpload(file.getAbsolutePath(),file.getName()) ){
-                                file.delete();
+            if (parcour_id > 0) {
+                database.create_cep_file(parcour_id);
+                database.clear_cep_data();
+            }
+
+            // UPLOAD .CEP FILES
+            File folder = new File(ctx.getFilesDir(), "CEP");
+            if (folder.exists()) {
+                File[] listOfFiles = folder.listFiles(new FilenameFilter() {
+                    public boolean accept(File dir, String name) {
+                        return name.toUpperCase().endsWith(".CEP");
+                    }
+                });
+
+                if (listOfFiles != null && listOfFiles.length > 0) {
+                    FTPConfig config = DataCFG.getFptConfig(ctx);
+                    FTPClientIO ftp = new FTPClientIO();
+                    if (config != null && ftp.ftpConnect(config, 5000)) {
+                        boolean change_directory = true;
+                        if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                            change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                        if (!change_directory) {
+                            Log.w(TAG, "Error while trying to change working directory!");
+                        } else {
+                            for (File file : listOfFiles) {
+                                if (ftp.ftpUpload(file.getAbsolutePath(), file.getName())) {
+                                    file.delete();
+                                }
                             }
                         }
                     }
                 }
             }
+
+            if (listener != null) listener.onStatusChanged(STATUS_t.PAR_STOPPED);
         }
     }
 
@@ -650,81 +657,89 @@ public class AppManager extends ThreadDefault
 
     // Create .POS files (Position of map markers) and uploading to the server.
     private void upload_custom_markers() throws InterruptedException {
+        if( isRunning() ) {
+            if (listener != null) {
 
-        if( listener != null ){
-            customMarkerList_Received = false;
-            customMarkerList = null;
-            listener.onCustomMarkerDataListGet();
-            Chrono chrono = Chrono.newInstance();
-            chrono.start();
-            while( chrono.getSeconds() < 5 && !customMarkerList_Received ){
-                sleep(500);
-            }
-            if( customMarkerList_Received ){
-                if( parcour_id > 0 && customMarkerList != null && customMarkerList.size() > 0 ){
-                    // CREATE FILE
-                    File folder = new File(ctx.getFilesDir(), "POS");
-                    // Create folder if not exist
-                    if (!folder.exists())
-                        if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
-                    if( folder.exists() ) {
-                        String filename = String.format(Locale.getDefault(),"%s_%s.POS",
-                                ComonUtils.getIMEInumber(ctx), parcour_id );
-                        File file = new File(folder.getAbsolutePath(), filename );
-                        try {
-                            if( file.createNewFile() ){
-                                FileWriter fileWriter = new FileWriter(file);
-                                String line = "";
-                                for ( CustomMarkerData mk : customMarkerList ) {
-                                    line = String.format(Locale.getDefault(),
-                                            "%f;%f;%d;%d;%d;%s;\n",
-                                            mk.position.longitude,
-                                            mk.position.latitude,
-                                            mk.type,
-                                            (mk.alert ? 1 : 0),
-                                            mk.perimeter,
-                                            mk.title);
-                                    fileWriter.write( line );
+                customMarkerList_Received = false;
+                customMarkerList = null;
+                listener.onCustomMarkerDataListGet();
+                Chrono chrono = Chrono.newInstance();
+                chrono.start();
+                while (chrono.getSeconds() < 5 && !customMarkerList_Received) {
+                    sleep(500);
+                }
+                listener.onStatusChanged(STATUS_t.SETTING_MARKERS);
+
+                if (customMarkerList_Received) {
+                    if (parcour_id > 0 && customMarkerList != null && customMarkerList.size() > 0) {
+
+                        // CREATE FILE
+                        File folder = new File(ctx.getFilesDir(), "POS");
+                        // Create folder if not exist
+                        if (!folder.exists())
+                            if (!folder.mkdirs())
+                                Log.w(TAG, "Error while trying to create new folder!");
+                        if (folder.exists()) {
+                            String filename = String.format(Locale.getDefault(), "%s_%s.POS",
+                                    ComonUtils.getIMEInumber(ctx), parcour_id);
+                            File file = new File(folder.getAbsolutePath(), filename);
+                            try {
+                                if (file.createNewFile()) {
+                                    FileWriter fileWriter = new FileWriter(file);
+                                    String line = "";
+                                    for (CustomMarkerData mk : customMarkerList) {
+                                        line = String.format(Locale.getDefault(),
+                                                "%f;%f;%d;%d;%d;%s;\n",
+                                                mk.position.longitude,
+                                                mk.position.latitude,
+                                                mk.type,
+                                                (mk.alert ? 1 : 0),
+                                                mk.perimeter,
+                                                mk.title);
+                                        fileWriter.write(line);
+                                    }
+                                    fileWriter.flush();
+                                    fileWriter.close();
+                                } else {
+                                    Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
                                 }
-                                fileWriter.flush();
-                                fileWriter.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+
+                // UPLOAD .POS FILES
+                File folder = new File(ctx.getFilesDir(), "POS");
+                if (folder.exists()) {
+                    File[] listOfFiles = folder.listFiles(new FilenameFilter() {
+                        public boolean accept(File dir, String name) {
+                            return name.toUpperCase().endsWith(".POS");
+                        }
+                    });
+
+                    if (listOfFiles != null && listOfFiles.length > 0) {
+                        FTPConfig config = DataCFG.getFptConfig(ctx);
+                        FTPClientIO ftp = new FTPClientIO();
+                        if (config != null && ftp.ftpConnect(config, 5000)) {
+                            boolean change_directory = true;
+                            if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                                change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                            if (!change_directory) {
+                                Log.w(TAG, "Error while trying to change working directory!");
                             } else {
-                                Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }
-
-            // UPLOAD .POS FILES
-            File folder = new File(ctx.getFilesDir(), "POS");
-            if ( folder.exists() ){
-                File[] listOfFiles = folder.listFiles(new FilenameFilter() {
-                    public boolean accept(File dir, String name) {
-                        return name.toUpperCase().endsWith(".POS");
-                    }
-                });
-
-                if( listOfFiles != null && listOfFiles.length > 0 ){
-                    FTPConfig config = DataCFG.getFptConfig(ctx);
-                    FTPClientIO ftp = new FTPClientIO();
-                    if( config != null && ftp.ftpConnect(config, 5000) ) {
-                        boolean change_directory = true;
-                        if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                            change_directory = ftp.makeDirectory(config.getWorkDirectory());
-                        if (!change_directory) {
-                            Log.w(TAG, "Error while trying to change working directory!");
-                        } else {
-                            for ( File file : listOfFiles ) {
-                                if( ftp.ftpUpload(file.getAbsolutePath(),file.getName()) ){
-                                    file.delete();
+                                for (File file : listOfFiles) {
+                                    if (ftp.ftpUpload(file.getAbsolutePath(), file.getName())) {
+                                        file.delete();
+                                    }
                                 }
                             }
                         }
                     }
                 }
+
+                listener.onStatusChanged(STATUS_t.PAR_STOPPED);
             }
         }
     }
@@ -746,6 +761,7 @@ public class AppManager extends ThreadDefault
     private void upload_parcours_type() throws InterruptedException {
 
         if( listener != null ){
+
             parcoursTypeName = null;
             listener.onParcoursTypeGet();
             Chrono chrono = Chrono.newInstance();
@@ -753,8 +769,14 @@ public class AppManager extends ThreadDefault
             while( chrono.getSeconds() < 60 && parcoursTypeName == null ){
                 sleep(500);
             }
+
+            listener.onStatusChanged(STATUS_t.SETTING_PARCOUR_TYPE);
+
             if( parcoursTypeName != null ){
                 if( parcour_id > 0 && !parcoursTypeName.isEmpty() ){
+
+
+
                     // CREATE FILE
                     File folder = new File(ctx.getFilesDir(), "PT");
                     // Create folder if not exist
@@ -810,6 +832,8 @@ public class AppManager extends ThreadDefault
                     }
                 }
             }
+
+            listener.onStatusChanged(STATUS_t.PAR_STOPPED);
         }
     }
 
@@ -1489,13 +1513,14 @@ addLog("calc_recommended_speed");
             chronoRide.stop();
             StatsLastDriving.set_times(ctx, (long) chronoRide.getSeconds());
             StatsLastDriving.set_distance(ctx,database.get_distance(parcour_id));
-            upload_cep();
-            upload_custom_markers();
-            upload_parcours_type();
             ret = STATUS_t.PAR_STOPPED;
             if (listener != null) listener.onStatusChanged(ret);
             addLog("STOP PARCOURS");
             clear_force_ui();
+            upload_cep();
+            upload_custom_markers();
+            upload_parcours_type();
+
         }
         // Or checking if car re-moving
         else if (mov_t_last != MOVING_t.STP

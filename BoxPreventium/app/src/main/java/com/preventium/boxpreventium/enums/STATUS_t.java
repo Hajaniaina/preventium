@@ -13,11 +13,13 @@ public enum STATUS_t {
     GETTING_CFG(0),
     GETTING_EPC(1),
     GETTING_DOBJ(2),
-    PAR_STOPPED(3),
-    PAR_STARTED(4),
-    PAR_PAUSING(5),
-    PAR_RESUME(6);
-
+    PAR_STARTED(3),
+    PAR_PAUSING(4),
+    PAR_RESUME(5),
+    PAR_STOPPED(6),
+    SETTING_CEP(7),
+    SETTING_MARKERS(8),
+    SETTING_PARCOUR_TYPE(9);
 
     private int value;
     private static Map<Integer, STATUS_t> map = new HashMap<>();
