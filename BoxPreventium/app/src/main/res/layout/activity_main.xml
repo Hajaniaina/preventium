@@ -442,6 +442,7 @@
     </LinearLayout>
 
     <!-- DEBUG -->
+    <!--
     <LinearLayout android:id="@+id/debug_layout"
         android:orientation="vertical"
         android:layout_width="match_parent"
@@ -474,6 +475,7 @@
         </ScrollView>
 
     </LinearLayout>
+    -->
 
 </RelativeLayout>
 
