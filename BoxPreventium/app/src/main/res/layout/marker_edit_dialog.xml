@@ -42,7 +42,7 @@
         android:layout_height="0dp"
         android:layout_marginTop="12dp"
         android:layout_marginLeft="30dp"
-        android:text="Alarm" />
+        android:text="@string/alarm_string" />
 
     <Spinner
         android:id="@+id/marker_perimeter_spinner"

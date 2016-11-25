@@ -113,12 +113,12 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
             if (refLocation.distanceTo(currLocation) >= UPDATE_DISTANCE_METERS) {
 
-                Log.d(TAG, "Position Update");
+                // Log.d(TAG, "Position Update");
                 posListener.onPositionUpdate(refLocation, currLocation);
                 refLocation = currLocation;
             }
 
-            Log.d(TAG, "Raw Position Update");
+            // Log.d(TAG, "Raw Position Update");
             posListener.onRawPositionUpdate(currLocation);
         }
 

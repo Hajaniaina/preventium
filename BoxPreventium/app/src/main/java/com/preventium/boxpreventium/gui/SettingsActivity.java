@@ -9,6 +9,7 @@ import android.preference.Preference;
 import android.support.v7.app.ActionBar;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Toast;
 
@@ -17,6 +18,8 @@ import com.preventium.boxpreventium.R;
 import java.util.List;
 
 public class SettingsActivity extends AppCompatPreferenceActivity {
+
+    private static final String TAG = "SettingsActivity";
 
     private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = new Preference.OnPreferenceChangeListener() {
 
@@ -260,17 +263,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
             addPreferencesFromResource(R.xml.pref_phone);
             setHasOptionsMenu(true);
-
-            Preference pref = findPreference(getString(R.string.phone_number_1));
-
-            /*
-            String[] numberList = new String[5];
-            numberList[0] = sharedPref.getString(getString(R.string.phone_number_1), "");
-            numberList[1] = sharedPref.getString(getString(R.string.phone_number_2), "");
-            numberList[2] = sharedPref.getString(getString(R.string.phone_number_3), "");
-            numberList[3] = sharedPref.getString(getString(R.string.phone_number_4), "");
-            numberList[4] = sharedPref.getString(getString(R.string.phone_number_5), "");
-            */
 
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_voice)));
         }

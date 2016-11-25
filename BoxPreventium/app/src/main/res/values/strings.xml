@@ -31,6 +31,7 @@
     <string name="number_3_string">Number 3</string>
     <string name="number_4_string">Number 4</string>
     <string name="number_5_string">Number 5</string>
+    <string name="alarm_string">Alarm</string>
     <string name="network_string">Network</string>
     <string name="create_string">Create</string>
     <string name="activate_string">Activate</string>
@@ -114,6 +115,7 @@
     <string name="start_time_string">Start time</string>
     <string name="time_elapsed_string">Time elapsed</string>
     <string name="select_epc_string">Select EPC file</string>
+    <string name="epc_missing_string">No EPC files available</string>
     <string name="voice_calls_string">Voice calls</string>
     <string name="title_activity_info">InfoActivity</string>
 
