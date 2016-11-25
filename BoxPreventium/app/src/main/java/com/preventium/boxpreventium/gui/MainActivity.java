@@ -162,8 +162,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             requestPermissions();
         }
-
-        startActivity(new Intent(MainActivity.this, SettingsActivity.class));
     }
 
     @Override
@@ -489,7 +487,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (qrRequest.isAnyReqPending(QrScanRequest.REQUEST_ON_START)) {
 
-                            appManager.add_ui_timer((qrSmsTimeout / 2), QR_CHECK_ON_START_TMR);
+                            appManager.add_ui_timer(120, QR_CHECK_ON_START_TMR);
                         }
 
                         trackingActivated = sharedPref.getBoolean(getString(R.string.tracking_activated), true);
@@ -561,7 +559,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                             updateQRPrefs();
                             qrRequest.resetVehicleReq();
-                            appManager.add_ui_timer((qrSmsTimeout / 2), QR_CHECK_ON_END_TMR);
+                            appManager.add_ui_timer(180, QR_CHECK_ON_END_TMR);
                         }
 
                         if (stopMarker == null) {
@@ -597,7 +595,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                 drawAttention(5);
                                 showQrRequestAlert();
 
-                                appManager.add_ui_timer((qrSmsTimeout / 2), QR_SEND_ON_START_SMS_TMR);
+                                appManager.add_ui_timer(qrSmsTimeout, QR_SEND_ON_START_SMS_TMR);
                             }
                         }
                         else {
@@ -635,7 +633,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             drawAttention(5);
                             showQrRequestAlert();
 
-                            appManager.add_ui_timer((qrSmsTimeout / 2), QR_SEND_ON_END_SMS_TMR);
+                            appManager.add_ui_timer(qrSmsTimeout, QR_SEND_ON_END_SMS_TMR);
                         }
                         else {
 
@@ -751,19 +749,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void run() {
 
                 appManager.setCustomMarkerDataList(markerManager.getUserMarkersData());
-            }
-        });
-    }
-
-    @Override
-    public void onParcoursTypeGet() {
-
-        runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-
-                appManager.set_parcours_type(null);
             }
         });
     }
@@ -1938,8 +1923,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 }
                 */
 
-                Intent pinLockIntent = new Intent(MainActivity.this, PinLockActivity.class);
-                startActivity(pinLockIntent);
+                startActivity(new Intent(MainActivity.this, PinLockActivity.class));
                 optMenu.close(true);
             }
         });

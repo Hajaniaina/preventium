@@ -27,6 +27,7 @@
 
     <!-- Parcours type -->
     <string name="parcours_type_enabled">parcours_type_enabled</string>
+    <string name="parcours_type_name">parcours_type_name</string>
 
     <!-- ////////////////////////////////////////////////////////////////////// -->
 

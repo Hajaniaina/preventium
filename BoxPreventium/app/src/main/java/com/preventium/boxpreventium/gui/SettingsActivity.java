@@ -153,6 +153,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pause_trigger_time)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.stop_trigger_time)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.recommended_speed_time)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.parcours_type_name)));
 
             updatePhoneNumbersList(this, R.string.phone_select_sms_pause);
 

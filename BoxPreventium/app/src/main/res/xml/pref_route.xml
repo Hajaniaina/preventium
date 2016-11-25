@@ -80,4 +80,20 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="@string/template_route_string">
+
+        <SwitchPreference
+            android:key="@string/parcours_type_enabled"
+            android:defaultValue="false"
+            android:title="@string/template_route_title_string" />
+
+        <EditTextPreference
+            android:key="@string/parcours_type_name"
+            android:dependency="@string/parcours_type_enabled"
+            android:defaultValue="@string/template_route_name_string"
+            android:title="@string/template_route_name_string" />
+
+    </PreferenceCategory>
+
 </PreferenceScreen>
