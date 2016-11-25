@@ -39,7 +39,6 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -89,6 +88,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int QR_SEND_ON_START_SMS_TMR = 2;
     private static final int QR_SEND_ON_END_SMS_TMR   = 3;
     private static final int QR_RESTART_REQ_TMR       = 4;
+    private static final int PAUSE_NOTIFICATION_TMR   = 5;
 
     private PositionManager posManager;
     private MarkerManager markerManager;
@@ -129,8 +129,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private SharedPreferences sharedPref;
     private PermissionHelper.PermissionBuilder permissionRequest;
     private QrScanRequest qrRequest;
-    private boolean parcourActive = false;
-    private boolean parcourPause = false;
+    private boolean routeActive = false;
+    private boolean routeInPause = false;
     private STATUS_t globalStatus = STATUS_t.PAR_STOPPED;
     private int qrSmsTimeout = 0;
     private int selectedEpcFile = 0;
@@ -162,6 +162,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             requestPermissions();
         }
+
+        startActivity(new Intent(MainActivity.this, SettingsActivity.class));
     }
 
     @Override
@@ -477,8 +479,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     case PAR_STARTED:
 
-                        parcourActive = true;
-                        parcourPause = false;
+                        routeActive = true;
+                        routeInPause = false;
 
                         stopButton.setVisibility(View.GONE);
                         changeViewColorFilter(drivingTimeView, AppColor.GREEN);
@@ -507,8 +509,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     case PAR_RESUME:
 
-                        parcourActive = true;
-                        parcourPause = false;
+                        routeActive = true;
+                        routeInPause = false;
 
                         if (mapReady) {
 
@@ -522,7 +524,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     case PAR_PAUSING:
 
-                        parcourPause = true;
+                        routeInPause = true;
 
                         if (mapReady) {
 
@@ -534,6 +536,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         stopButton.setVisibility(View.VISIBLE);
                         changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
                         accForceView.hide(true);
+
+                        int pauseNotifTimeout = sharedPref.getInt(getString(R.string.phone_select_sms_pause_timeout), 0);
+
+                        if (pauseNotifTimeout > 0) {
+
+                            appManager.add_ui_timer(pauseNotifTimeout, PAUSE_NOTIFICATION_TMR);
+                        }
 
                         break;
 
@@ -548,7 +557,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             progress.hide();
                         }
 
-                        if (parcourActive) {
+                        if (routeActive) {
 
                             updateQRPrefs();
                             qrRequest.resetVehicleReq();
@@ -560,8 +569,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             stopMarker = markerManager.addMarker(getString(R.string.stop_string), lastPos, CustomMarker.MARKER_STOP);
                         }
 
-                        parcourActive = false;
-                        parcourPause = false;
+                        routeActive = false;
+                        routeInPause = false;
 
                         break;
                 }
@@ -581,7 +590,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     case QR_CHECK_ON_START_TMR:
 
-                        if (parcourActive) {
+                        if (routeActive) {
 
                             if (qrRequest.isAnyReqPending(QrScanRequest.REQUEST_ON_START)) {
 
@@ -602,7 +611,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     case QR_SEND_ON_START_SMS_TMR:
 
-                        if (parcourActive) {
+                        if (routeActive) {
 
                             if (qrRequest.isAnyReqPending(QrScanRequest.REQUEST_ON_START)) {
 
@@ -651,6 +660,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         updateQRPrefs();
                         qrRequest.resetAllReq();
                         appManager.clear_ui_timer();
+
+                        break;
+
+                    case PAUSE_NOTIFICATION_TMR:
+
+                        if (routeInPause) {
+
+                            sendSms(getPhoneNumber(R.string.phone_select_sms_pause), getString(R.string.sms_pause_msg_string));
+                        }
 
                         break;
                 }
@@ -708,7 +726,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                if (parcourActive && !parcourPause) {
+                if (routeActive && !routeInPause) {
 
                     if (type != FORCE_t.UNKNOW) {
 
@@ -1776,11 +1794,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 lastLocation = location;
                 appManager.setLocation(lastLocation);
 
-                if (parcourActive) {
+                if (routeActive) {
 
                     speedView.setSpeed(SPEED_t.MAX_LIMIT, LEVEL_t.LEVEL_UNKNOW, posManager.getInstantSpeed(), true);
 
-                    if (!parcourPause) {
+                    if (!routeInPause) {
 
                         googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
                         CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_MOVE).bearing(0).tilt(30).build();
@@ -1796,7 +1814,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onPositionUpdate (Location prevLoc, Location currLoc) {
 
-                if (parcourActive) {
+                if (routeActive) {
 
                     LatLng prevPos = new LatLng(prevLoc.getLatitude(), prevLoc.getLongitude());
                     LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());

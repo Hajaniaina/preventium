@@ -28,9 +28,9 @@
             android:summary=""
             android:enabled="true"
             android:defaultValue="420"
-            sample:msbp_minValue="10"
+            sample:msbp_minValue="4"
             sample:msbp_maxValue="420"
-            sample:msbp_interval="10"
+            sample:msbp_interval="1"
             sample:msbp_measurementUnit="min"
             sample:msbp_dialogEnabled="true"/>
 
