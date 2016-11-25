@@ -81,6 +81,7 @@ public class AppManager extends ThreadDefault
     /// ============================================================================================
 
     private ENGINE_t engine_t = ENGINE_t.UNKNOW;
+    private long engine_t_changed_at = 0;
     private Context ctx = null;
     private AppManagerListener listener = null;
     private HandlerBox modules = null;
@@ -186,8 +187,9 @@ public class AppManager extends ThreadDefault
     }
 
     @Override
-    public void onEngineStateChanged(ENGINE_t state) {
+    synchronized public void onEngineStateChanged(ENGINE_t state) {
         this.engine_t = state;
+        engine_t_changed_at = System.currentTimeMillis();
     }
 
     // PRIVATE
@@ -204,7 +206,7 @@ public class AppManager extends ThreadDefault
         internet_active = true;
         mov_t_last = MOVING_t.UNKNOW;
         mov_t = MOVING_t.UNKNOW;
-        engine_t = ENGINE_t.UNKNOW;
+        onEngineStateChanged(ENGINE_t.OFF);
         chronoRideTxt = "0:00";
         chronoRide = Chrono.newInstance();
         if( listener != null ){
@@ -279,7 +281,7 @@ public class AppManager extends ThreadDefault
             Pair<Long, Integer> timer;
             long timeout_at;
             int timer_id;
-            for (int i = ui_timers.size() - 1; i >= 0; i--) {
+            for (int i = ui_timers.size() - 1; i > 0; i--) {
                 timer = ui_timers.get(i);
                 timeout_at = timer.first;
                 timer_id = timer.second;
@@ -1046,8 +1048,7 @@ public class AppManager extends ThreadDefault
 
         if( listener != null ){
             // If elapsed time > 5 minutes
-            //if( cotation_update_at + (5*60*1000) < System.currentTimeMillis()){
-            if( cotation_update_at + (30*1000) < System.currentTimeMillis()){
+            if( cotation_update_at + (5*60*1000) < System.currentTimeMillis()){
                 if( readerEPCFile != null ){
 addLog( "calc_parcour_cotation" );
                     cotation_update_at = System.currentTimeMillis();
@@ -1099,12 +1100,17 @@ addLog( "calc_parcour_cotation" );
             //if( forces_update_at + (5*60*1000) < System.currentTimeMillis()){
             if( forces_update_at + (5*60*1000) < System.currentTimeMillis()){
                 if( readerEPCFile != null ){
+
+                    SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+                    String key = ctx.getResources().getString(R.string.recommended_speed_time);
+                    long delay = sp.getInt(key,10) * 60 * 1000;
+
 addLog( "calc_cotation_forces" );
                     // Calcul force note: 10 minutes = 600 seondes
                     forces_update_at = System.currentTimeMillis();
-                    float A = get_cotation_force(DataDOBJ.ACCELERATIONS,parcour_id,600);
-                    float F = get_cotation_force(DataDOBJ.FREINAGES,parcour_id,600);
-                    float V = get_cotation_force(DataDOBJ.VIRAGES,parcour_id,600);
+                    float A = get_cotation_force(DataDOBJ.ACCELERATIONS,parcour_id,delay);
+                    float F = get_cotation_force(DataDOBJ.FREINAGES,parcour_id,delay);
+                    float V = get_cotation_force(DataDOBJ.VIRAGES,parcour_id,delay);
                     float M = (A+F+V) > 0 ? (A+F+V)/3 : 0;
 
 addLog( "Cotation A: " + A );
@@ -1200,7 +1206,6 @@ addLog( "Cotation M: " + M );
             nb_rouge += database.countNbEvent(readerEPCFile.getForceSeuil(19).IDAlert, parcour_id, begin, end);
         }
         int nb_total = nb_vert + nb_bleu + nb_jaune + nb_orange + nb_rouge;
-addLog("NB_TOTAL: " + nb_total);
 
         // VALEUR DU PARCOURS (Par seuil, en pourcentage)
         int evt_vert = ( nb_vert > 0 ) ? nb_vert * 100 / nb_total : 0;
@@ -1309,25 +1314,31 @@ addLog("NB_TOTAL: " + nb_total);
 
         // Calculate recommended val and get speed maximum since XX secondes
         //if( recommended_speed_update_at + (5*60*1000) < System.currentTimeMillis()) {
-        if( recommended_speed_update_at + (30*1000) < System.currentTimeMillis()) {
+
+        if( recommended_speed_update_at + (5*60*1000) < System.currentTimeMillis()) {
             if (readerEPCFile != null) {
+
+                SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+                String key = ctx.getResources().getString(R.string.recommended_speed_time);
+                long delay = sp.getInt(key,10) * 60 * 1000;
+
 addLog("calc_recommended_speed");
                 // Get the horizontal maximum speed since
-                speed_H = database.speed_avg(parcour_id, 10 * 60,
+                speed_H = database.speed_avg(parcour_id, delay, 40f,
                         readerEPCFile.getForceSeuil(0).IDAlert, // IDAlert +X1
                         readerEPCFile.getForceSeuil(1).IDAlert, // IDAlert +X2
                         readerEPCFile.getForceSeuil(5).IDAlert, // IDAlert -X1
                         readerEPCFile.getForceSeuil(6).IDAlert  // IDAlert -X2
                 );
                 // Get the vertical maximum speed since
-                speed_V = database.speed_avg(parcour_id, 5 * 60,
+                speed_V = database.speed_avg(parcour_id, delay, 40f,
                         readerEPCFile.getForceSeuil(10).IDAlert,    // IDAlert +Y1
                         readerEPCFile.getForceSeuil(11).IDAlert,    // IDAlert +Y2
                         readerEPCFile.getForceSeuil(15).IDAlert,    // IDAlert -Y1
                         readerEPCFile.getForceSeuil(16).IDAlert     // IDAlert -Y2
                 );
                 // Get the average speed
-                speed_max = database.speed_max(parcour_id, 5 * 60);
+                speed_max = database.speed_max(parcour_id, delay);
                 // Set calculate at
                 recommended_speed_update_at = System.currentTimeMillis();
             }
@@ -1404,20 +1415,20 @@ addLog("calc_recommended_speed");
 
         // Clear UI
         clear_force_ui();
-        button_stop = false;
+
 
         // Checking if ready to start a new parcours
         boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 1
                 && mov_t_last != MOVING_t.STP
                 && mov_t_last != MOVING_t.UNKNOW
-                /*&& engine_t == ENGINE_t.ON*/);
-
+                && engine_t == ENGINE_t.ON);
         if ( !ready_to_started ) {
             chrono_ready_to_start.stop();
         } else {
             if ( !chrono_ready_to_start.isStarted() ) chrono_ready_to_start.start();
             if ( chrono_ready_to_start.getSeconds() > SECS_TO_SET_PARCOURS_START ) {
                 loading_epc();
+                button_stop = false;
                 cotation_update_at = 0;
                 forces_update_at = 0;
                 alertX_add_at = 0;
@@ -1457,10 +1468,16 @@ addLog("calc_recommended_speed");
     private STATUS_t on_paused() throws InterruptedException {
         STATUS_t ret = STATUS_t.PAR_PAUSING;
 
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String key = ctx.getResources().getString(R.string.stop_trigger_time);
+        long delay = sp.getInt(key,4) * 60 * 1000;
+
         // Checking if car is stopped
         if ( button_stop ||
-                ( mov_t_last == MOVING_t.STP
-                        && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED ) )
+                ( /*mov_t_last == MOVING_t.STP
+                        && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED*/
+                        engine_t_changed_at + delay < System.currentTimeMillis()
+                        && engine_t != ENGINE_t.ON) )
         {
 
             // ADD ECA Line when stopped
@@ -1482,7 +1499,8 @@ addLog("calc_recommended_speed");
         }
         // Or checking if car re-moving
         else if (mov_t_last != MOVING_t.STP
-                && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_RESUME) {
+                && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_RESUME
+                && engine_t == ENGINE_t.ON) {
             ret = STATUS_t.PAR_RESUME;
             if (listener != null) listener.onStatusChanged(ret);
 
@@ -1508,9 +1526,14 @@ addLog("calc_recommended_speed");
         check_shock();
         calc_recommended_speed();
 
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String key = ctx.getResources().getString(R.string.pause_trigger_time);
+        long delay = sp.getInt(key,4) * 60 * 1000;
         // Checking if car is in pause
-        if (mov_t_last == MOVING_t.STP
-                && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE) {
+        if ( /*mov_t_last == MOVING_t.STP
+                && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE */
+                engine_t != ENGINE_t.ON
+                    &&  engine_t_changed_at + delay < System.currentTimeMillis()) {
             ret = STATUS_t.PAR_PAUSING;
 
             // ADD ECA Line when pausing

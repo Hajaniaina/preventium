@@ -423,7 +423,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     /// Get speed average by parcours, by events type, since X seconds
-    public float speed_avg(long parcour_id, long secs, int... alertID){
+    public float speed_avg(long parcour_id, long secs, float speed_min, int... alertID){
         float ret = 0f;
         SQLiteDatabase db = this.getReadableDatabase();
         long begin = System.currentTimeMillis() - (secs*1000);
@@ -441,6 +441,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 request += " AND " + COLUMN_ECA_ALERTID + " = " + alertID[0];
             }
         }
+        request += " AND " + COLUMN_ECA_SPEED + " >= " + speed_min;
         request += " ;";
 
         Cursor cursor = db.rawQuery(request, null );
