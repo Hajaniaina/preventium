@@ -163,7 +163,7 @@
                 CircleProgressView:cpv_showUnit="true"
                 CircleProgressView:cpv_unit="@string/straights_caps_string"
                 CircleProgressView:cpv_unitPosition="bottom"
-                CircleProgressView:cpv_unitSize="10sp"
+                CircleProgressView:cpv_unitSize="9sp"
                 CircleProgressView:cpv_spinColor="@color/colorAppGrey"
                 CircleProgressView:cpv_autoTextSize="false"
                 CircleProgressView:cpv_textSize="@dimen/speed_text_size"

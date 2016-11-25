@@ -30,12 +30,12 @@ public class SpeedView implements Parcelable {
 
         init(activity);
 
-        levelMap.put(SPEED_t.IN_CORNERS, null);
         levelMap.put(SPEED_t.IN_STRAIGHT_LINE, null);
+        levelMap.put(SPEED_t.IN_CORNERS, null);
         levelMap.put(SPEED_t.MAX_LIMIT, null);
 
-        speedMap.put(SPEED_t.IN_CORNERS, 0);
         speedMap.put(SPEED_t.IN_STRAIGHT_LINE, 0);
+        speedMap.put(SPEED_t.IN_CORNERS, 0);
         speedMap.put(SPEED_t.MAX_LIMIT, 0);
     }
 

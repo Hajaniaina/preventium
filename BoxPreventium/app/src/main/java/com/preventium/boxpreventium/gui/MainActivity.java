@@ -39,6 +39,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -66,6 +67,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.preventium.boxpreventium.manager.AppManager;
+import com.preventium.boxpreventium.manager.StatsLastDriving;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
@@ -87,7 +89,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int QR_SEND_ON_START_SMS_TMR = 2;
     private static final int QR_SEND_ON_END_SMS_TMR   = 3;
     private static final int QR_RESTART_REQ_TMR       = 4;
-    private static final int QR_CHECK_REQ_TIMEOUT     = 60;
 
     private PositionManager posManager;
     private MarkerManager markerManager;
@@ -118,7 +119,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private ProgressDialog progress;
     private boolean toggle = false;
     private SupportMapFragment mapFrag;
-    private int mapType = GoogleMap.MAP_TYPE_NORMAL;
     List<Polyline> mapPolylineList = new ArrayList<Polyline>();
     private Marker startMarker = null, stopMarker = null;
     private boolean initDone = false;
@@ -433,7 +433,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                             if (Connectivity.isConnected(getApplicationContext())) {
 
-                                progress.setMessage(getString(R.string.progress_cfg_string));
+                                progress.setMessage((getString(R.string.progress_cfg_string) + StatsLastDriving.getIMEI(MainActivity.this)));
                             }
                             else {
 
@@ -448,7 +448,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (progress != null) {
 
                             progress.show();
-                            progress.setMessage(getString(R.string.progress_epc_string));
+                            progress.setMessage((getString(R.string.progress_epc_string) + StatsLastDriving.getIMEI(MainActivity.this)));
                         }
 
                         break;
@@ -458,7 +458,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (progress != null) {
 
                             progress.show();
-                            progress.setMessage(getString(R.string.progress_obj_string));
+                            progress.setMessage((getString(R.string.progress_obj_string) + StatsLastDriving.getIMEI(MainActivity.this)));
+                        }
+
+                        break;
+
+                    case SETTING_CEP:
+                    case SETTING_MARKERS:
+                    case SETTING_PARCOUR_TYPE:
+
+                        if (progress != null) {
+
+                            progress.show();
+                            progress.setMessage((getString(R.string.progress_send_string)));
                         }
 
                         break;
@@ -475,15 +487,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (qrRequest.isAnyReqPending(QrScanRequest.REQUEST_ON_START)) {
 
-                            appManager.add_ui_timer(QR_CHECK_REQ_TIMEOUT, QR_CHECK_ON_START_TMR);
+                            appManager.add_ui_timer((qrSmsTimeout / 2), QR_CHECK_ON_START_TMR);
                         }
 
                         trackingActivated = sharedPref.getBoolean(getString(R.string.tracking_activated), true);
-
-                        if (trackingActivated != appManager.getTracking()) {
-
-                            // appManager.setTracking(trackingActivated);
-                        }
 
                         if (mapReady) {
 
@@ -545,7 +552,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                             updateQRPrefs();
                             qrRequest.resetVehicleReq();
-                            appManager.add_ui_timer(QR_CHECK_REQ_TIMEOUT, QR_CHECK_ON_END_TMR);
+                            appManager.add_ui_timer((qrSmsTimeout / 2), QR_CHECK_ON_END_TMR);
                         }
 
                         if (stopMarker == null) {
@@ -581,7 +588,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                 drawAttention(5);
                                 showQrRequestAlert();
 
-                                appManager.add_ui_timer((qrSmsTimeout - QR_CHECK_REQ_TIMEOUT), QR_SEND_ON_START_SMS_TMR);
+                                appManager.add_ui_timer((qrSmsTimeout / 2), QR_SEND_ON_START_SMS_TMR);
                             }
                         }
                         else {
@@ -619,11 +626,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             drawAttention(5);
                             showQrRequestAlert();
 
-                            appManager.add_ui_timer((qrSmsTimeout - QR_CHECK_REQ_TIMEOUT), QR_SEND_ON_END_SMS_TMR);
+                            appManager.add_ui_timer((qrSmsTimeout / 2), QR_SEND_ON_END_SMS_TMR);
                         }
                         else {
 
-                            appManager.add_ui_timer(QR_CHECK_REQ_TIMEOUT, QR_RESTART_REQ_TMR);
+                            appManager.add_ui_timer((qrSmsTimeout / 2), QR_RESTART_REQ_TMR);
                         }
 
                         break;
@@ -635,7 +642,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             sendSms(getPhoneNumber(R.string.phone_select_sms_qr), getString(R.string.sms_qr_msg_string));
                         }
 
-                        appManager.add_ui_timer(QR_CHECK_REQ_TIMEOUT, QR_RESTART_REQ_TMR);
+                        appManager.add_ui_timer((qrSmsTimeout / 2), QR_RESTART_REQ_TMR);
 
                         break;
 
@@ -1179,8 +1186,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     sendSms(getPhoneNumber(R.string.phone_select_sms_tracking), getString(R.string.tracking_enabled_string));
                 }
 
-                // appManager.setTracking(trackingActivated);
-
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putBoolean(getString(R.string.tracking_activated), trackingActivated);
                 editor.apply();
@@ -1379,30 +1384,43 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     protected void showEpcSelectDialog() {
 
         List<Integer> epcExistList = DataEPC.getAppEpcExist(this);
+        final String[] epcStrList = new String[5];
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.select_epc_string));
 
-        final String[] epcList = new String[5];
+        if (epcExistList.size() > 0) {
 
-        for (int i = 0; i < epcList.length; i++) {
+            for (int i = 0; i < epcStrList.length; i++) {
 
-            epcList[i] = "EPC " + String.valueOf(i + 1);
-        }
-
-        selectedEpcFile = sharedPref.getInt(getString(R.string.epc_selected), 1);
-
-        builder.setSingleChoiceItems(epcList, selectedEpcFile, new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick (DialogInterface dialog, int which) {
-
-                selectedEpcFile = which + 1;
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putInt(getString(R.string.epc_selected), selectedEpcFile);
-                editor.apply();
+                epcStrList[i] = "EPC " + String.valueOf(i + 1);
             }
-        });
+
+            /*
+            for (int i = 0; i < epcExistList.size(); i++) {
+
+                int index = (epcExistList.get(i) - 1);
+            }
+            */
+
+            selectedEpcFile = sharedPref.getInt(getString(R.string.epc_selected), 1) - 1;
+
+            builder.setSingleChoiceItems(epcStrList, selectedEpcFile, new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick (DialogInterface dialog, int which) {
+
+                    selectedEpcFile = which + 1;
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putInt(getString(R.string.epc_selected), selectedEpcFile);
+                    editor.apply();
+                }
+            });
+        }
+        else {
+
+            builder.setMessage(getString(R.string.epc_missing_string));
+        }
 
         builder.setPositiveButton("OK", null);
         builder.show();
