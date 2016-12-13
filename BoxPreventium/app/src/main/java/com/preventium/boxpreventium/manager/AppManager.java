@@ -1111,7 +1111,7 @@ Log.d("CALC","CALCUL PARCOUR NOTE");
 
                     StatsLastDriving.set_note(ctx,cotation);
                     float speed_avg = database.speed_avg(parcour_id, System.currentTimeMillis(), 0f);
-                    StatsLastDriving.set_speed_avg(speed_avg);
+                    StatsLastDriving.set_speed_avg(ctx,speed_avg);
                     listener.onNoteChanged( (int)cotation, level_note, level_5_days );
                 }
             }
