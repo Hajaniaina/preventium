@@ -283,7 +283,7 @@ public class AppManager extends ThreadDefault
             long timeout_at;
             int timer_id;
             for (int i = ui_timers.size() - 1; i > 1; i--) {
-Log.d("AAA","TIMER index" + i );
+//Log.d("AAA","TIMER index" + i );
                 timer = ui_timers.get(i);
                 timeout_at = timer.first;
                 timer_id = timer.second;
@@ -332,7 +332,6 @@ Log.d("AAA","TIMER index" + i );
             if( !ftp.ftpConnect(config, 5000) ) {
                 check_internet_is_active();
             } else {
-
                 // Checking if .CFG file is in FTP server ?
                 String srcFileName = ComonUtils.getIMEInumber(ctx) + ".CFG";
                 String srcAckName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
@@ -407,12 +406,11 @@ Log.d("AAA","TIMER index" + i );
                 // Changing working directory if needed
                 boolean change_directory = true;
                 if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                    change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                    change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
 
                 if( !change_directory ) {
                     Log.w(TAG, "Error while trying to change working directory!");
                 } else {
-
                     boolean epc;
                     boolean exist_server_epc = false;
                     boolean exist_server_ack = false;
@@ -517,7 +515,7 @@ Log.d("AAA","TIMER index" + i );
                 // Changing working directory if needed
                 boolean change_directory = true;
                 if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                    change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                    change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
 
                 if( !change_directory ) {
                     Log.w(TAG, "Error while trying to change working directory!");
@@ -625,7 +623,7 @@ Log.d("AAA","TIMER index" + i );
                     if (config != null && ftp.ftpConnect(config, 5000)) {
                         boolean change_directory = true;
                         if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                            change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                            change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
                         if (!change_directory) {
                             Log.w(TAG, "Error while trying to change working directory!");
                         } else {
@@ -723,7 +721,7 @@ Log.d("AAA","TIMER index" + i );
                         if (config != null && ftp.ftpConnect(config, 5000)) {
                             boolean change_directory = true;
                             if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                                change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                                change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
                             if (!change_directory) {
                                 Log.w(TAG, "Error while trying to change working directory!");
                             } else {
@@ -817,7 +815,7 @@ Log.d("AAA","TIMER index" + i );
                     if( config != null && ftp.ftpConnect(config, 5000) ) {
                         boolean change_directory = true;
                         if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                            change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                            change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
                         if (!change_directory) {
                             Log.w(TAG, "Error while trying to change working directory!");
                         } else {

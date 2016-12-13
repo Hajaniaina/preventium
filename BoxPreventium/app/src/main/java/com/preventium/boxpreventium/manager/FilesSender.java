@@ -70,7 +70,7 @@ Log.d("AAA","last_time " + last_time + " last_time_temp " + last_time_temp );
                 if( config != null && ftp.ftpConnect(config, 5000) ) {
                     boolean change_directory = true;
                     if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                        change_directory = ftp.makeDirectory(config.getWorkDirectory());
+                        change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
                     if (!change_directory) {
                         Log.w(TAG, "Error while trying to change working directory!");
                     } else {
