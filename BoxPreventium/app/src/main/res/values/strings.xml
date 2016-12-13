@@ -65,7 +65,7 @@
     <string name="shock_string">Shock</string>
     <string name="shocks_string">Shocks</string>
     <string name="tracking_string">Tracking</string>
-    <string name="corners_caps_string">CORNERS</string>
+    <string name="corners_caps_string">CORNER</string>
     <string name="straights_caps_string">STRAIGHT</string>
     <string name="phone_number_string">Phone number</string>
     <string name="sms_notifications_string">SMS Notifications</string>

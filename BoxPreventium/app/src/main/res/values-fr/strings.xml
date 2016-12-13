@@ -16,7 +16,7 @@
     <string name="call_string">Appel</string>
     <string name="empty_string">Vide</string>
     <string name="cancel_string">Annuler</string>
-    <string name="corners_caps_string">VIRAGES</string>
+    <string name="corners_caps_string">VIRAGE</string>
     <string name="corners_string">Virages</string>
     <string name="create_string">Créer</string>
     <string name="delete_string">Supprimer</string>
@@ -98,7 +98,7 @@
     <string name="sms_sos_msg_string">SOS</string>
     <string name="speed_string">Vitesse</string>
     <string name="start_string">Début</string>
-    <string name="start_time_string">Heure de départ</string>
+    <string name="start_time_string">Départ</string>
     <string name="stop_string">Arrêt</string>
     <string name="straights_caps_string">LIGNE DROITE</string>
     <string name="time_elapsed_string">Temps écoulé</string>
@@ -107,7 +107,7 @@
     <string name="tracking_string">Tracking</string>
     <string name="unknown_device">Périphérique inconnu</string>
     <string name="unknown_string">Inconnu</string>
-    <string name="validate_marker_create_string">Créer un marqueur à cete position?</string>
+    <string name="validate_marker_create_string">Créer un marqueur à cette position?</string>
     <string name="validate_marker_delete_string">Supprimer ce marqueur?</string>
     <string name="voice_calls_string">Appels</string>
     <string name="yes_string">Oui</string>
