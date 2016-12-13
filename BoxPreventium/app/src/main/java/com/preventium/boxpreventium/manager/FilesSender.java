@@ -76,7 +76,6 @@ Log.d("AAA","last_time " + last_time + " last_time_temp " + last_time_temp );
                     } else {
                         success = ftp.ftpUpload(listOfFiles[0].getAbsolutePath(),listOfFiles[0].getName());
                     }
-
                     ftp.ftpDisconnect();
                 }
             }

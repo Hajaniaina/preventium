@@ -1109,6 +1109,7 @@ Log.d("CALC","CALCUL PARCOUR NOTE");
                     else if( cotation >= 6f ) level_5_days = LEVEL_t.LEVEL_4;
                     else level_5_days = LEVEL_t.LEVEL_5;
 
+                    StatsLastDriving.set_note(ctx,cotation);
                     listener.onNoteChanged( (int)cotation, level_note, level_5_days );
                 }
             }
