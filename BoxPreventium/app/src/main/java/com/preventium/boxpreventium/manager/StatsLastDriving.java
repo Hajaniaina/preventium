@@ -29,6 +29,7 @@ public class StatsLastDriving {
     private final static String KEY_PREF_RES = "result_%s_%s";
     private final static String KEY_PREF_ST = "startAt";
     private final static String KEY_PREF_NOTE = "note";
+    private final static String KEY_PREF_SPEED = "speed";
     private final static String KEY_PREF_T = "time";
     private final static String KEY_PREF_D = "distance";
 
@@ -152,6 +153,11 @@ public class StatsLastDriving {
         return sp.getFloat(KEY_PREF_NOTE,0f);
     }
 
+    public static float get_speed_avg(Context ctx) {
+        SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
+        return sp.getFloat(KEY_PREF_SPEED,0f);
+    }
+
     public static long get_distance(Context ctx) {
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
         return sp.getLong(KEY_PREF_D,0);
@@ -174,6 +180,13 @@ public class StatsLastDriving {
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
         editor.putFloat(KEY_PREF_NOTE,note);
+        editor.apply();
+    }
+
+    public static void set_speed_avg(Context ctx, float speed_avg) {
+        SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putFloat(KEY_PREF_SPEED,speed_avg);
         editor.apply();
     }
 

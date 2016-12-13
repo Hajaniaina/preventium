@@ -1110,6 +1110,8 @@ Log.d("CALC","CALCUL PARCOUR NOTE");
                     else level_5_days = LEVEL_t.LEVEL_5;
 
                     StatsLastDriving.set_note(ctx,cotation);
+                    float speed_avg = database.speed_avg(parcour_id, System.currentTimeMillis(), 0f);
+                    StatsLastDriving.set_speed_avg(speed_avg);
                     listener.onNoteChanged( (int)cotation, level_note, level_5_days );
                 }
             }
@@ -1369,6 +1371,7 @@ Log.d("CALC","COEFF " + coeff_general +" vert: " + coeff_vert + " bleu " + coeff
 
 addLog("calc_recommended_speed");
                 // Get the horizontal maximum speed since
+
                 speed_H = database.speed_max(parcour_id, delay_sec,
                         readerEPCFile.getForceSeuil(0).IDAlert, // IDAlert +X1
                         readerEPCFile.getForceSeuil(1).IDAlert, // IDAlert +X2
