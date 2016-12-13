@@ -37,6 +37,8 @@ public class SpeedView implements Parcelable {
         speedMap.put(SPEED_t.IN_STRAIGHT_LINE, 0);
         speedMap.put(SPEED_t.IN_CORNERS, 0);
         speedMap.put(SPEED_t.MAX_LIMIT, 0);
+
+        viewMap.get(SPEED_t.MAX_LIMIT).setVisibility(View.GONE);
     }
 
     protected SpeedView (Parcel in) {
