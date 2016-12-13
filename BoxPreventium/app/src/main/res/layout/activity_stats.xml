@@ -141,10 +141,9 @@
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:layout_gravity="bottom|end"
-        android:src="@drawable/fab_add"
+        android:src="@drawable/mr_ic_close_dark"
         fab:fab_colorNormal="@color/colorAppRed"
         fab:fab_colorPressed="#ff5252"
-        fab:fab_shadowColor="#444"
-        android:visibility="gone"/>
+        fab:fab_shadowColor="#444" />
 
 </android.support.design.widget.CoordinatorLayout>
