@@ -137,6 +137,7 @@ public class StatsActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
+                onBackPressed();
             }
         });
     }
@@ -215,6 +216,6 @@ public class StatsActivity extends AppCompatActivity {
         Calendar cal = Calendar.getInstance(Locale.getDefault());
         cal.setTimeInMillis(time);
 
-        return DateFormat.format("d MMM yyyy HH:mm:ss", cal).toString();
+        return DateFormat.format("d MMM HH:mm:ss", cal).toString();
     }
 }

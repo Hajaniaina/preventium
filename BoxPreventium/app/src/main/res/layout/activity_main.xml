@@ -291,7 +291,7 @@
                     fab:fab_colorNormal="@color/colorAppGreen"
                     fab:fab_colorPressed="@color/colorAppOrange"
                     fab:fab_colorRipple="#ff5252"
-                    fab:fab_shadowColor="#444"/>
+                    fab:fab_shadowColor="#444" />
 
                 <com.github.clans.fab.FloatingActionButton
                     android:id="@+id/button_call"
@@ -303,7 +303,7 @@
                     fab:fab_colorNormal="@color/colorAppGreen"
                     fab:fab_colorPressed="@color/colorAppOrange"
                     fab:fab_colorRipple="#ff5252"
-                    fab:fab_shadowColor="#444"/>
+                    fab:fab_shadowColor="#444" />
 
                 <com.github.clans.fab.FloatingActionButton
                     android:id="@+id/button_qrcode"
@@ -315,7 +315,7 @@
                     fab:fab_colorNormal="@color/colorAppGreen"
                     fab:fab_colorPressed="@color/colorAppOrange"
                     fab:fab_colorRipple="#ff5252"
-                    fab:fab_shadowColor="#444"/>
+                    fab:fab_shadowColor="#444" />
 
                 <com.github.clans.fab.FloatingActionButton
                     android:id="@+id/button_epc_settings"
@@ -327,7 +327,7 @@
                     fab:fab_colorNormal="@color/colorAppGreen"
                     fab:fab_colorPressed="@color/colorAppOrange"
                     fab:fab_colorRipple="#ff5252"
-                    fab:fab_shadowColor="#444"/>
+                    fab:fab_shadowColor="#444" />
 
             </LinearLayout>
 
@@ -424,8 +424,6 @@
                     android:height="@dimen/box_num_height"
                     android:gravity="center"
                     android:elevation="4dp"
-                    android:background="@android:drawable/dialog_holo_light_frame"
-                    android:backgroundTint="@color/colorAppRed"
                     android:textColor="#fafafa"
                     android:textSize="@dimen/box_num_text_size"
                     android:textStyle="bold"

@@ -46,13 +46,13 @@
     <dimen name="buttons_margin_top2">4dp</dimen>
 
     <dimen name="box_num_layout_width">58dp</dimen>
-    <dimen name="box_num_layout_margin_top">217dp</dimen>
-    <dimen name="box_num_layout_margin_start">296dp</dimen>
+    <dimen name="box_num_layout_margin_top">218dp</dimen>
+    <dimen name="box_num_layout_margin_start">334dp</dimen>
     <dimen name="box_num_layout_margin_bottom">0dp</dimen>
     <dimen name="box_num_layout_margin_end">0dp</dimen>
     <dimen name="box_num_margin_top">20dp</dimen>
     <dimen name="box_num_height">56dp</dimen>
-    <dimen name="box_num_text_size">22sp</dimen>
+    <dimen name="box_num_text_size">20sp</dimen>
 
     <dimen name="marker_delete_button_margin">120dp</dimen>
 

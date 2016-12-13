@@ -686,16 +686,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     if (nb > 1) {
 
-                        changeViewColorFilter(boxNumView, AppColor.GREEN);
+                        boxNumView.setTextColor(Color.GREEN);
                     }
                     else {
 
-                        changeViewColorFilter(boxNumView, AppColor.BLUE);
+                        boxNumView.setTextColor(Color.BLUE);
                     }
                 }
                 else {
 
-                    changeViewColorFilter(boxNumView, AppColor.RED);
+                    boxNumView.setTextColor(Color.RED);
                 }
 
                 boxNumView.setText(String.valueOf(nb));
