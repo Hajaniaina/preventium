@@ -146,7 +146,7 @@
             android:layout_marginStart="@dimen/speed_layout_margin_start">
 
             <at.grabner.circleprogress.CircleProgressView
-                android:id="@+id/speed1_view"
+                android:id="@+id/speed2_view"
                 android:layout_width="@dimen/speed_layout_width"
                 android:layout_height="@dimen/speed_layout_height"
                 android:layout_marginTop="@dimen/speed_margin_top1"
@@ -173,7 +173,7 @@
                 CircleProgressView:cpv_value="0" />
 
             <at.grabner.circleprogress.CircleProgressView
-                android:id="@+id/speed2_view"
+                android:id="@+id/speed1_view"
                 android:layout_width="@dimen/speed_layout_width"
                 android:layout_height="@dimen/speed_layout_height"
                 android:layout_marginTop="@dimen/speed_margin_top2"
