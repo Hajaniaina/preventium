@@ -3,6 +3,7 @@ package com.preventium.boxpreventium.manager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
@@ -234,11 +235,25 @@ public class AppManager extends ThreadDefault
     }
 
     private void change_driving_time() {
-        String txt = String.format(Locale.getDefault(),"%d:%02d",(int)chronoRide.getHours(),(int)chronoRide.getMinutes());
+        String txt = String.format(Locale.getDefault(),"%02d:%02d",0,0);
+        long ms = ( parcour_id > 0 )  ? System.currentTimeMillis() - parcour_id : 0;
+        if( ms > 0 ){
+            long h = ms/3600000;
+            long m = (ms%3600000) > 0 ? (ms%3600000)/60000 : 0;
+            txt = String.format(Locale.getDefault(),"%02d:%02d",h,m);
+            StatsLastDriving.set_times( ctx, (long) (ms * 0.001));
+        }
         if( !chronoRideTxt.equals(txt) ) {
             if( listener != null ) listener.onDrivingTimeChanged( txt );
             chronoRideTxt = txt;
         }
+
+
+//        String txt = String.format(Locale.getDefault(),"%d:%02d",(int)chronoRide.getHours(),(int)chronoRide.getMinutes());
+//        if( !chronoRideTxt.equals(txt) ) {
+//            if( listener != null ) listener.onDrivingTimeChanged( txt );
+//            chronoRideTxt = txt;
+//        }
     }
 
     private void clear_force_ui(){
@@ -1069,8 +1084,8 @@ public class AppManager extends ThreadDefault
     private void calc_parcour_cotation() {
 
         if( listener != null ){
-            // If elapsed time > 5 minutes
-            if( cotation_update_at + (5*60*1000) < System.currentTimeMillis()){
+            // If elapsed time > 10 minutes
+            if( cotation_update_at + (600*1000) < System.currentTimeMillis()){
                 if( readerEPCFile != null ){
 addLog( "calc_parcour_cotation" );
 Log.d("CALC","CALCUL PARCOUR NOTE");
@@ -1122,18 +1137,18 @@ Log.d("CALC","CALCUL PARCOUR NOTE");
     private void calc_cotation_forces() {
 
         if( listener != null ){
-            // If elapsed time > 5 minutes
-            //if( forces_update_at + (5*60*1000) < System.currentTimeMillis()){
-            if( forces_update_at + (2*60*1000) < System.currentTimeMillis()){
+            // If elapsed time > 10 minutes (10 minutes = 600 secondes, 5*60*1000)
+            if( forces_update_at + (600*1000) < System.currentTimeMillis()){
                 if( readerEPCFile != null ){
 
+                    // Period pour calucl: (utiliser les X derniere secondes)
                     SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
                     String key = ctx.getResources().getString(R.string.recommended_speed_time);
                     long delay_sec = sp.getInt(key,10) * 60;
 
 addLog( "calc_cotation_forces" );
 Log.d("CALC","CALCUL COTATION FORCE");
-                    // Calcul force note: 10 minutes = 600 seondes
+                    // Calcul force note:
                     forces_update_at = System.currentTimeMillis();
                     float A = get_cotation_force(DataDOBJ.ACCELERATIONS,parcour_id,delay_sec,false,false);
                     float F = get_cotation_force(DataDOBJ.FREINAGES,parcour_id,delay_sec,false,false);
@@ -1234,6 +1249,7 @@ Log.d("CALC","COEFF " + coeff_general +" vert: " + coeff_vert + " bleu " + coeff
             nb_vert = database.countNbEvent(readerEPCFile.getForceSeuil(10).IDAlert, parcour_id, begin, end);
             nb_bleu = database.countNbEvent(readerEPCFile.getForceSeuil(11).IDAlert, parcour_id, begin, end);
             nb_jaune = database.countNbEvent(readerEPCFile.getForceSeuil(12).IDAlert, parcour_id, begin, end);
+            nb_jaune = database.countNbEvent(readerEPCFile.getForceSeuil(12).IDAlert, parcour_id, begin, end);
             nb_orange = database.countNbEvent(readerEPCFile.getForceSeuil(13).IDAlert, parcour_id, begin, end);
             nb_rouge = database.countNbEvent(readerEPCFile.getForceSeuil(14).IDAlert, parcour_id, begin, end);
             nb_vert += database.countNbEvent(readerEPCFile.getForceSeuil(15).IDAlert, parcour_id, begin, end);
@@ -1304,7 +1320,7 @@ Log.d("CALC","COEFF " + coeff_general +" vert: " + coeff_vert + " bleu " + coeff
                 StatsLastDriving.set_resultat_V(ctx,LEVEL_t.LEVEL_5,evt_rouge);
             }
             StatsLastDriving.set_distance( ctx, database.get_distance(parcour_id) );
-            StatsLastDriving.set_times( ctx, (long) chronoRide.getSeconds());
+            //StatsLastDriving.set_times( ctx, (long) chronoRide.getSeconds());
         }
 
         // CALCUL INTERMEDIARE PAR SEUIL
@@ -1361,10 +1377,11 @@ Log.d("CALC","COEFF " + coeff_general +" vert: " + coeff_vert + " bleu " + coeff
     private void calc_recommended_speed() {
 
         // Calculate recommended val and get speed maximum since XX secondes
-        //if( recommended_speed_update_at + (5*60*1000) < System.currentTimeMillis()) {
-        if( recommended_speed_update_at + (2*30*1000) < System.currentTimeMillis()) {
+        // 10 minutes
+        if( recommended_speed_update_at + (600*1000) < System.currentTimeMillis()) {
             if (readerEPCFile != null) {
 
+                // Period pour calucl: (utiliser les X derniere secondes)
                 SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
                 String key = ctx.getResources().getString(R.string.recommended_speed_time);
                 long delay_sec = sp.getInt(key,10) * 60;
@@ -1484,8 +1501,11 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                 alertY_add_at = 0;
                 alertPos_add_at = 0;
                 recommended_speed_update_at = 0;
+
                 parcour_id = System.currentTimeMillis();
-                //readerEPCFile.loadFromApp(ctx);
+                if(System.currentTimeMillis() - database.get_last_timestamp() < 7*3600*1000 ){
+                    parcour_id = database.get_last_parcours_id();
+                }
 
                 addLog("START PARCOURS");
                 // ADD ECA Line when started
@@ -1493,7 +1513,6 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                     Location loc = get_last_location();
                     database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_BEGIN, loc, null));
                 }
-
 
                 StatsLastDriving.startDriving(ctx,parcour_id);
                 chronoRide.start();

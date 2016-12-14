@@ -374,9 +374,9 @@ public class DBHelper extends SQLiteOpenHelper {
         long ret = -1;
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor =  db.rawQuery(
-                "SELECT DISTINCT " + COLUMN_ECA_PARCOUR_ID +
+                "SELECT " + COLUMN_ECA_PARCOUR_ID +
                         " FROM " + TABLE_ECA +
-                        " ORDER BY DESC " + COLUMN_ECA_PARCOUR_ID +
+                        " ORDER BY " + COLUMN_ECA_PARCOUR_ID + " DESC " +
                         " LIMIT 1 ;", null );
         if( cursor != null && cursor.moveToFirst() ) {
             ret = cursor.getLong(0);
@@ -384,6 +384,26 @@ public class DBHelper extends SQLiteOpenHelper {
         }
         db.close();
         return ret;
+    }
+
+    public long get_last_timestamp(){
+        long timestamp = 0;
+        long last_parcour_id = get_last_parcours_id();
+        if( last_parcour_id > 0 ){
+            SQLiteDatabase db = this.getReadableDatabase();
+            Cursor cursor =  db.rawQuery(
+                    "SELECT " + COLUMN_ECA_TIME +
+                            " FROM " + TABLE_ECA +
+                            " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + last_parcour_id +
+                            " ORDER BY " + COLUMN_ECA_TIME + " DESC " +
+                            " LIMIT 1 ;", null );
+            if( cursor != null && cursor.moveToFirst() ) {
+                timestamp = cursor.getLong(0);
+                cursor.close();
+            }
+            db.close();
+        }
+        return timestamp;
     }
 
     public long get_distance(long parcour_id) {
