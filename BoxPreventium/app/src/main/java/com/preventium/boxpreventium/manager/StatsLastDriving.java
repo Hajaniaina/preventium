@@ -28,6 +28,7 @@ public class StatsLastDriving {
     private final static String KEY_PREF_OBJ = "objectif_%s_%s";
     private final static String KEY_PREF_RES = "result_%s_%s";
     private final static String KEY_PREF_ST = "startAt";
+    private final static String KEY_PREF_STOPPED = "stoppedAt";
     private final static String KEY_PREF_NOTE = "note";
     private final static String KEY_PREF_SPEED = "speed";
     private final static String KEY_PREF_T = "time";
@@ -148,6 +149,11 @@ public class StatsLastDriving {
         return sp.getLong(KEY_PREF_ST,0);
     }
 
+    public static long get_stopped_at(Context ctx){
+        SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
+        return sp.getLong(KEY_PREF_STOPPED,0);
+    }
+
     public static float get_note(Context ctx) {
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
         return sp.getFloat(KEY_PREF_NOTE,0f);
@@ -173,6 +179,13 @@ public class StatsLastDriving {
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
         editor.putLong(KEY_PREF_ST,timestamp);
+        editor.apply();
+    }
+
+    public static void set_stopped_at(Context ctx, long timestamp){
+        SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putLong(KEY_PREF_STOPPED,timestamp);
         editor.apply();
     }
 

@@ -1491,9 +1491,14 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                 alertPos_add_at = 0;
                 recommended_speed_update_at = 0;
 
-                parcour_id = System.currentTimeMillis();
+
                 if(System.currentTimeMillis() - database.get_last_timestamp() < 7*3600*1000 ){
                     parcour_id = database.get_last_parcours_id();
+                    if( StatsLastDriving.get_stopped_at(ctx) >= parcour_id ){
+                        parcour_id = System.currentTimeMillis();
+                    }
+                } else {
+                    parcour_id = System.currentTimeMillis();
                 }
 
                 addLog("START PARCOURS");
@@ -1535,6 +1540,8 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                         engine_t_changed_at + delay < System.currentTimeMillis()
                         && engine_t != ENGINE_t.ON) )
         {
+
+            if( button_stop ) StatsLastDriving.set_stopped_at(ctx,System.currentTimeMillis());
 
             // ADD ECA Line when stopped
             if( _tracking ) {
