@@ -1049,11 +1049,30 @@ public class AppManager extends ThreadDefault
 
         if( change ) {
             if( seuil != null ) {
-                if( listener != null )listener.onForceChanged(seuil.type, seuil.level);
-                alertUI_add_at = System.currentTimeMillis();
-                seuil_ui = seuil;
+
+                int t = 0;
+                if( seuil_ui != null ) {
+                    switch ( seuil_ui.level ) {
+                        case LEVEL_UNKNOW: t = 0; break;
+                        case LEVEL_1: t = 1000; break;
+                        case LEVEL_2: t = 2000; break;
+                        case LEVEL_3: t = 2000; break;
+                        case LEVEL_4: t = 3000; break;
+                        case LEVEL_5: t = 3000; break;
+                    }
+                }
+                if( seuil_ui == null
+                        || seuil.level.getValue() >= seuil_ui.level.getValue()
+                        || alertUI_add_at + t < System.currentTimeMillis() ){
+                    if( listener != null )listener.onForceChanged(seuil.type, seuil.level);
+                    alertUI_add_at = System.currentTimeMillis();
+                    seuil_ui = seuil;
+                }
+//                if( listener != null )listener.onForceChanged(seuil.type, seuil.level);
+//                alertUI_add_at = System.currentTimeMillis();
+//                seuil_ui = seuil;
             }
-            else if( alertUI_add_at + 1000 < System.currentTimeMillis() ) {
+            else if( alertUI_add_at + 3000 < System.currentTimeMillis() ) {
                 if( listener != null ) listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW);
                 alertUI_add_at = System.currentTimeMillis();
                 seuil_ui = null;
@@ -1471,7 +1490,6 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         // Clear UI
         clear_force_ui();
 
-
         // Checking if ready to start a new parcours
         boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 1
                 && mov_t_last != MOVING_t.STP
@@ -1490,7 +1508,6 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                 alertY_add_at = 0;
                 alertPos_add_at = 0;
                 recommended_speed_update_at = 0;
-
 
                 if(System.currentTimeMillis() - database.get_last_timestamp() < 7*3600*1000 ){
                     parcour_id = database.get_last_parcours_id();
