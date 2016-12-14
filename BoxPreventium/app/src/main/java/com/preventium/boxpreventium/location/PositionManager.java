@@ -27,7 +27,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     private static final int ACC_POS  = 1;
     private static final int ACC_NEG  = 2;
 
-    private static final float MS_TO_KMH = 3.6f;
+    public static final float MS_TO_KMH = 3.6f;
     private static final float MOVING_MIN_SPEED_KMH = 5.0f;
     private static final float UPDATE_DISTANCE_METERS = 15.0f;
 

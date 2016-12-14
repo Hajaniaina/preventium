@@ -118,4 +118,6 @@
     <string name="template_route_string">Parcours type</string>
     <string name="template_route_name_string">Nom du parcours</string>
     <string name="template_route_title_string">Le prochain parcours sera enregistré comme un parcours type</string>
+    <string name="avg_speed_string">Vitesse moyenne</string>
+    <string name="avg_score_string">Note moyenne</string>
 </resources>

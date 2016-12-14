@@ -11,6 +11,7 @@ import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.preventium.boxpreventium.enums.LEVEL_t;
+import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
 
 import android.support.v4.content.ContextCompat;
@@ -47,6 +48,8 @@ public class StatsActivity extends AppCompatActivity {
         TextView startTimeView = (TextView) findViewById(R.id.textview_start_time);
         TextView timeElapsedView = (TextView) findViewById(R.id.textview_time_elapsed);
         TextView distanceView = (TextView) findViewById(R.id.textview_distance);
+        TextView avgSpeedView = (TextView) findViewById(R.id.textview_avg_speed);
+        TextView avgScoreView = (TextView) findViewById(R.id.textview_avg_score);
 
         imeiView.setText("IMEI: " + StatsLastDriving.getIMEI(this));
 
@@ -77,6 +80,12 @@ public class StatsActivity extends AppCompatActivity {
         }
 
         distanceView.setText(distance);
+
+        float speed = StatsLastDriving.get_speed_avg(this) * PositionManager.MS_TO_KMH;
+        String avgSpeed = String.valueOf(speed) + " km/h";
+
+        avgSpeedView.setText(getString(R.string.avg_speed_string) + ": " + avgSpeed);
+        avgScoreView.setText(getString(R.string.avg_score_string) + ": " + String.valueOf(StatsLastDriving.get_note(this)));
 
         colors = new int[5];
 
@@ -119,12 +128,12 @@ public class StatsActivity extends AppCompatActivity {
             chart.setCenterTextSize(18f);
         }
 
-        chartArr[ACC_OBJ].setCenterText(accStr + " " + objStr);
-        chartArr[ACC_RES].setCenterText(accStr + " " + resStr);
-        chartArr[BRK_OBJ].setCenterText(brakeStr + " " + objStr);
-        chartArr[BRK_RES].setCenterText(brakeStr + " " + resStr);
-        chartArr[CRN_OBJ].setCenterText(cornerStr + " " + objStr);
-        chartArr[CRN_RES].setCenterText(cornerStr + " " + resStr);
+        chartArr[ACC_OBJ].setCenterText(accStr + System.getProperty("line.separator") + objStr);
+        chartArr[ACC_RES].setCenterText(accStr + System.getProperty("line.separator") + resStr);
+        chartArr[BRK_OBJ].setCenterText(brakeStr + System.getProperty("line.separator") + objStr);
+        chartArr[BRK_RES].setCenterText(brakeStr + System.getProperty("line.separator") + resStr);
+        chartArr[CRN_OBJ].setCenterText(cornerStr + System.getProperty("line.separator") + objStr);
+        chartArr[CRN_RES].setCenterText(cornerStr + System.getProperty("line.separator") + resStr);
 
         for (int i = 0; i < 6; i++) {
 

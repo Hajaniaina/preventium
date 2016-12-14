@@ -25,11 +25,11 @@
     <dimen name="force_layout_height">94dp</dimen>
     <dimen name="force_margin_top">0dp</dimen>
 
-    <dimen name="driving_score_layout_width">82dp</dimen>
-    <dimen name="driving_score_layout_height">82dp</dimen>
+    <dimen name="driving_score_layout_width">72dp</dimen>
+    <dimen name="driving_score_layout_height">72dp</dimen>
     <dimen name="driving_score_layout_margin_top">5dp</dimen>
     <dimen name="driving_score_layout_margin_start">6dp</dimen>
-    <dimen name="driving_score_text_size">38sp</dimen>
+    <dimen name="driving_score_text_size">34sp</dimen>
 
     <dimen name="fb_button_size">@dimen/fb_button_mini</dimen>
     <dimen name="fb_button_icon_size">32dp</dimen>
