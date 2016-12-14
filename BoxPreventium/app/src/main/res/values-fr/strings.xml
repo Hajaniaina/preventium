@@ -120,4 +120,41 @@
     <string name="template_route_title_string">Le prochain parcours sera enregistré comme un parcours type</string>
     <string name="avg_speed_string">Vitesse moyenne</string>
     <string name="avg_score_string">Note moyenne</string>
+    <string name="epc_selected">epc_selected</string>
+    <string name="parcours_type_name">parcours_type_name</string>
+    <string name="phone_select_sms_pause">phone_select_sms_pause</string>
+    <string name="phone_select_sms_qr">phone_select_sms_qr</string>
+    <string name="stop_trigger_time">stop_trigger_time</string>
+    <string name="title_activity_info">InfoActivity</string>
+    <string name="tracking_activated">tracking_activated</string>
+    <string name="tracking_disabled_string">Tracking disabled</string>
+    <string name="tracking_enabled_string">Tracking enabled</string>
+
+    <string-array name="marker_perimeters">
+        <item>50m</item>
+        <item>100m</item>
+        <item>300m</item>
+        <item>500m</item>
+    </string-array>
+
+    <string-array name="marker_types">
+        <item>INFO</item>
+        <item>DANGER</item>
+    </string-array>
+
+    <string-array name="pref_qr_mode_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+
+    <string-array name="pref_phone_numbers_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
 </resources>

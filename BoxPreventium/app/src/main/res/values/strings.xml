@@ -5,9 +5,9 @@
 
     <!-- (FRANCK) -->
 
-    <string name="search_and_select_device">Search and select device</string>
-    <string name="start_scan">Start scan</string>
-    <string name="stop_scan">Stop scan</string>
+    <string name="search_and_select_device" translatable="false">Search and select device</string>
+    <string name="start_scan" translatable="false">Start scan</string>
+    <string name="stop_scan" translatable="false">Stop scan</string>
     <string name="unknown_device">Unknown device</string>
     <string name="bluetooth_not_supported">The \"Bluetooth\" is not supported by the device</string>
     <string name="bluetooth_low_energy_not_supported">The \"Bluetooth Low Energy\" is not supported by the device</string>
@@ -77,7 +77,7 @@
     <string name="template_route_string">Template route</string>
     <string name="avg_speed_time_string">Time for avg speed calculation</string>
     <string name="send_sms_after_pause_string">Send notification after pause more than</string>
-    <string name="shock_trigger_string">Shock trigger force</string>
+    <string name="shock_trigger_string" translatable="false">Shock trigger force</string>
     <string name="marker_tittle_invalid_string">Invalid name</string>
     <string name="new_marker_string">Marker name</string>
     <string name="marker_edit_string">Edit marker</string>
@@ -137,7 +137,7 @@
 
     <string name="sms_sos_msg_string">SOS</string>
     <string name="sms_shock_msg_string">SHOCK</string>
-    <string name="sms_qr_msg_string">QR CODE NOT SCANNED</string>
+    <string name="sms_qr_msg_string" translatable="false">QR CODE NOT SCANNED</string>
     <string name="sms_pause_msg_string">PAUSE TOO LONG</string>
 
     <string-array name="marker_perimeters">
@@ -181,5 +181,7 @@
         <item>4</item>
         <item>5</item>
     </string-array>
+
+
 
 </resources>

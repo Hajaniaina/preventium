@@ -1509,6 +1509,7 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                 alertPos_add_at = 0;
                 recommended_speed_update_at = 0;
 
+
                 if(System.currentTimeMillis() - database.get_last_timestamp() < 7*3600*1000 ){
                     parcour_id = database.get_last_parcours_id();
                     if( StatsLastDriving.get_stopped_at(ctx) >= parcour_id ){
