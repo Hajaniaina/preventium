@@ -1541,6 +1541,14 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                         && engine_t != ENGINE_t.ON) )
         {
 
+            // Force calcul note
+            cotation_update_at = 0;
+            forces_update_at = 0;
+            recommended_speed_update_at = 0;
+            calc_parcour_cotation();
+            calc_cotation_forces();
+            calc_recommended_speed();
+
             if( button_stop ) StatsLastDriving.set_stopped_at(ctx,System.currentTimeMillis());
 
             // ADD ECA Line when stopped
