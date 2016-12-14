@@ -200,7 +200,6 @@ public class AppManager extends ThreadDefault
     /// UI
     /// ============================================================================================
 
-    private Chrono chronoRide = Chrono.newInstance();
     private String chronoRideTxt = "";
 
     private STATUS_t first_init(){
@@ -210,7 +209,6 @@ public class AppManager extends ThreadDefault
         mov_t = MOVING_t.UNKNOW;
         onEngineStateChanged(ENGINE_t.OFF);
         chronoRideTxt = "0:00";
-        chronoRide = Chrono.newInstance();
         if( listener != null ){
             // For update UI correctly
             listener.onDebugLog("");
@@ -247,13 +245,6 @@ public class AppManager extends ThreadDefault
             if( listener != null ) listener.onDrivingTimeChanged( txt );
             chronoRideTxt = txt;
         }
-
-
-//        String txt = String.format(Locale.getDefault(),"%d:%02d",(int)chronoRide.getHours(),(int)chronoRide.getMinutes());
-//        if( !chronoRideTxt.equals(txt) ) {
-//            if( listener != null ) listener.onDrivingTimeChanged( txt );
-//            chronoRideTxt = txt;
-//        }
     }
 
     private void clear_force_ui(){
@@ -298,7 +289,6 @@ public class AppManager extends ThreadDefault
             long timeout_at;
             int timer_id;
             for (int i = ui_timers.size() - 1; i > 1; i--) {
-//Log.d("AAA","TIMER index" + i );
                 timer = ui_timers.get(i);
                 timeout_at = timer.first;
                 timer_id = timer.second;
@@ -1320,7 +1310,6 @@ Log.d("CALC","COEFF " + coeff_general +" vert: " + coeff_vert + " bleu " + coeff
                 StatsLastDriving.set_resultat_V(ctx,LEVEL_t.LEVEL_5,evt_rouge);
             }
             StatsLastDriving.set_distance( ctx, database.get_distance(parcour_id) );
-            //StatsLastDriving.set_times( ctx, (long) chronoRide.getSeconds());
         }
 
         // CALCUL INTERMEDIARE PAR SEUIL
@@ -1515,7 +1504,6 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                 }
 
                 StatsLastDriving.startDriving(ctx,parcour_id);
-                chronoRide.start();
                 ret = STATUS_t.PAR_STARTED;
                 if (listener != null){
                     listener.onForceChanged(FORCE_t.UNKNOW,LEVEL_t.LEVEL_UNKNOW);
@@ -1554,8 +1542,6 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                 database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_END, loc, null));
             }
 
-            chronoRide.stop();
-            StatsLastDriving.set_times(ctx, (long) chronoRide.getSeconds());
             StatsLastDriving.set_distance(ctx,database.get_distance(parcour_id));
             ret = STATUS_t.PAR_STOPPED;
             if (listener != null) listener.onStatusChanged(ret);
