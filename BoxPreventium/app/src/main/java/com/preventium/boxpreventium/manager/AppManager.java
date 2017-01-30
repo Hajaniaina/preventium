@@ -44,6 +44,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by Franck on 23/09/2016.
@@ -1108,6 +1110,11 @@ Log.d("CALC","CALCUL PARCOUR NOTE");
                     float cotation = ((cotation_A + cotation_F + cotation_V)/3)
                             / ((coeff_A + coeff_F + coeff_V)/3);
 
+                    StatsLastDriving.set_note(ctx,SCORE_t.ACCELERATING,cotation_A);
+                    StatsLastDriving.set_note(ctx,SCORE_t.BRAKING,cotation_F);
+                    StatsLastDriving.set_note(ctx,SCORE_t.CORNERING,cotation_V);
+                    StatsLastDriving.set_note(ctx,SCORE_t.FINAL,cotation);
+
                     LEVEL_t level_note;
                     if( cotation >= 16f ) level_note = LEVEL_t.LEVEL_1;
                     else if( cotation >= 13f ) level_note = LEVEL_t.LEVEL_2;
@@ -1133,7 +1140,7 @@ Log.d("CALC","CALCUL PARCOUR NOTE");
                     else if( cotation >= 6f ) level_5_days = LEVEL_t.LEVEL_4;
                     else level_5_days = LEVEL_t.LEVEL_5;
 
-                    StatsLastDriving.set_note(ctx,cotation);
+//                    StatsLastDriving.set_note(ctx,cotation);
                     float speed_avg = database.speed_avg(parcour_id, System.currentTimeMillis(), 0f);
                     StatsLastDriving.set_speed_avg(ctx,speed_avg);
                     listener.onNoteChanged( (int)cotation, level_note, level_5_days );
@@ -1647,28 +1654,32 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
     /// LOCATIONS
     /// ============================================================================================
 
+    private final Lock lock = new ReentrantLock();
+
     private List<Location> locations = new ArrayList<Location>();
 
     public void setLocation( Location location ) {
         if( location != null )
         {
-            synchronized ( this ) {
-                // Clear locations list
-                if (locations.size() > 0) {
-                    if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
-                        locations.clear();
-                    }
+            lock.lock();
+
+            // Clear locations list
+            if (locations.size() > 0) {
+                if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
+                    locations.clear();
                 }
-                // Add new location
-                if( !locations.isEmpty() ){
-                    if( locations.get(0).distanceTo( location ) < 10 ){
-                        locations.remove(0);
-                    }
-                }
-                this.locations.add(0, location);
-                // Limit list size
-                while (this.locations.size() > 10) this.locations.remove(this.locations.size() - 1);
             }
+            // Add new location
+            if( !locations.isEmpty() ){
+                if( locations.get(0).distanceTo( location ) < 10 ){
+                    locations.remove(0);
+                }
+            }
+            this.locations.add(0, location);
+            // Limit list size
+            while (this.locations.size() > 10) this.locations.remove(this.locations.size() - 1);
+
+            lock.unlock();
 
             switchON( true );
         }
@@ -1677,6 +1688,8 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
     private synchronized List<Location> get_location_list(int length){
 
         List<Location> list = null;
+
+        lock.lock();
 
         // Clear locations list
         if (locations.size() > 0) {
@@ -1688,12 +1701,19 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         if( locations.size() >= length ) {
             list = this.locations.subList(0,length);
         }
+
+        lock.unlock();
+
         return list;
     }
 
     private synchronized Location get_last_location(){
         Location ret = null;
+        lock.lock();
+
         if (locations.size() > 0) ret = locations.get(0);
+
+        lock.unlock();
         return ret;
     }
 

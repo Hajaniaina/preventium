@@ -30,6 +30,9 @@ public class StatsLastDriving {
     private final static String KEY_PREF_ST = "startAt";
     private final static String KEY_PREF_STOPPED = "stoppedAt";
     private final static String KEY_PREF_NOTE = "note";
+    private final static String KEY_PREF_NOTE_A = "note_A";
+    private final static String KEY_PREF_NOTE_F = "note_F";
+    private final static String KEY_PREF_NOTE_V = "note_V";
     private final static String KEY_PREF_SPEED = "speed";
     private final static String KEY_PREF_T = "time";
     private final static String KEY_PREF_D = "distance";
@@ -154,9 +157,23 @@ public class StatsLastDriving {
         return sp.getLong(KEY_PREF_STOPPED,0);
     }
 
-    public static float get_note(Context ctx) {
+    public static float get_note(Context ctx, SCORE_t score_t) {
+        String key = "";
+        switch ( score_t ) {
+            case CORNERING:
+                key = KEY_PREF_NOTE_V; break;
+            case BRAKING:
+                key = KEY_PREF_NOTE_F; break;
+            case ACCELERATING:
+                key = KEY_PREF_NOTE_A; break;
+            case FINAL:
+                key = KEY_PREF_NOTE; break;
+            default:
+                return 0f;
+        }
+
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
-        return sp.getFloat(KEY_PREF_NOTE,0f);
+        return sp.getFloat(key,0f);
     }
 
     public static float get_speed_avg(Context ctx) {
@@ -189,10 +206,24 @@ public class StatsLastDriving {
         editor.apply();
     }
 
-    public static void set_note(Context ctx, float note){
+    public static void set_note(Context ctx, SCORE_t score_t, float note){
+        String key = KEY_PREF_NOTE;
+        switch ( score_t ) {
+            case CORNERING:
+               key = KEY_PREF_NOTE_V; break;
+            case BRAKING:
+                key = KEY_PREF_NOTE_F; break;
+            case ACCELERATING:
+                key = KEY_PREF_NOTE_A; break;
+            case FINAL:
+                key = KEY_PREF_NOTE; break;
+            default:
+                return;
+        }
+
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
-        editor.putFloat(KEY_PREF_NOTE,note);
+        editor.putFloat(key,note);
         editor.apply();
     }
 
