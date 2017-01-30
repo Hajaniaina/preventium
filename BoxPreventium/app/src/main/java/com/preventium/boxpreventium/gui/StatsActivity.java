@@ -81,7 +81,7 @@ public class StatsActivity extends AppCompatActivity {
 
         distanceView.setText(distance);
 
-        float speed = StatsLastDriving.get_speed_avg(this) * PositionManager.MS_TO_KMH;
+        float speed = StatsLastDriving.get_speed_avg(this) * PositionManager.MS_TO_KMPH;
         String avgSpeed = String.valueOf(speed) + " km/h";
 
         avgSpeedView.setText(getString(R.string.avg_speed_string) + ": " + avgSpeed);
@@ -192,7 +192,10 @@ public class StatsActivity extends AppCompatActivity {
 
         for (int k = 0; k < 5; k++) {
 
-            arrayList.add(new PieEntry(values[k], ""));
+            if (values[k] > 0) {                                                                    // REMOVE 0% RESULTS. TO BE TESTED
+
+                arrayList.add(new PieEntry(values[k], ""));
+            }
         }
 
         PieDataSet pieDataSet = new PieDataSet(arrayList, "");
