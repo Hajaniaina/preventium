@@ -1,5 +1,6 @@
 package com.preventium.boxpreventium.location;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -12,6 +13,7 @@ import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationAvailability;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -24,12 +26,16 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     private static final String TAG = "PositionManager";
 
     private static final int ACC_NONE = 0;
-    private static final int ACC_POS  = 1;
-    private static final int ACC_NEG  = 2;
+    private static final int ACC_POS = 1;
+    private static final int ACC_NEG = 2;
 
-    public static final float MS_TO_KMH = 3.6f;
-    private static final float MOVING_MIN_SPEED_KMH = 5.0f;
-    private static final float UPDATE_DISTANCE_METERS = 15.0f;
+    public static final float MS_TO_KMPH = 3.6f;
+    private static final float MOVING_MIN_SPEED_KMPH = 5.0f;
+
+    private static final float UPDATE_SPEED_MAX_MPS = (300.0f / MS_TO_KMPH);
+    private static final float UPDATE_DISTANCE_MIN_M = 15.0f;
+    private static final float UPDATE_DISTANCE_MAX_M = 1000.0f;
+    private static final float UPDATE_DELTA_T_MAX_MS = (30.0f * 1000);
 
     private Context context;
     private LocationRequest locationRequest;
@@ -46,23 +52,26 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
     public interface PositionListener {
 
-        public void onPositionUpdate (Location prevLoc, Location currLoc);
-        public void onRawPositionUpdate (Location location);
+        public void onPositionUpdate(Location prevLoc, Location currLoc);
+
+        public void onRawPositionUpdate(Location location);
     }
 
     public interface MovingStateListener {
 
         public void onStartMoving();
+
         public void onStopMoving();
     }
 
     public interface AccStateListener {
 
         public void onAccelerating();
+
         public void onDeAccelerating();
     }
 
-    public PositionManager (Activity activity) {
+    public PositionManager(Activity activity) {
 
         context = activity.getApplicationContext();
 
@@ -77,19 +86,19 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     }
 
     @Override
-    public void onConnectionSuspended (int i) {
+    public void onConnectionSuspended(int i) {
 
         Log.d(TAG, "Google API connection suspended");
     }
 
     @Override
-    public void onConnectionFailed (@NonNull ConnectionResult connectionResult) {
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
         Log.d(TAG, "Google API connection failed");
     }
 
     @Override
-    public void onConnected (Bundle bundle) {
+    public void onConnected(Bundle bundle) {
 
         locationRequest = new LocationRequest();
         locationRequest.setInterval(updateIntervalMs);
@@ -100,7 +109,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     }
 
     @Override
-    public void onLocationChanged (Location location) {
+    public void onLocationChanged(Location location) {
 
         if (refLocation == null) {
 
@@ -109,73 +118,44 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
         currLocation = location;
 
-        for (PositionListener posListener : posListeners) {
+        if ((currLocation.getTime() - refLocation.getTime()) > UPDATE_DELTA_T_MAX_MS) {
 
-            if (refLocation.distanceTo(currLocation) >= UPDATE_DISTANCE_METERS) {
-
-                // Log.d(TAG, "Position Update");
-                posListener.onPositionUpdate(refLocation, currLocation);
-                refLocation = currLocation;
-            }
-
-            // Log.d(TAG, "Raw Position Update");
-            posListener.onRawPositionUpdate(currLocation);
+            refLocation = currLocation;
         }
 
-        /*
-        boolean movingState = checkMovingState(5);
+        if (refLocation.distanceTo(currLocation) < UPDATE_DISTANCE_MAX_M) {
 
-        if (movingState) {
+            if ((currLocation.hasSpeed()) && (currLocation.getSpeed() < UPDATE_SPEED_MAX_MPS)) {
 
-            if (!moving) {
+                if (refLocation.distanceTo(currLocation) > UPDATE_DISTANCE_MIN_M) {
 
-                moving = true;
+                    for (PositionListener posListener : posListeners) {
 
-                for (MovingStateListener movListener : movListeners) {
+                        posListener.onPositionUpdate(refLocation, currLocation);
+                    }
 
-                    movListener.onStartMoving();
+                    refLocation = currLocation;
+                }
+
+                for (PositionListener posListener : posListeners) {
+
+                    posListener.onRawPositionUpdate(currLocation);
                 }
             }
         }
-        else {
+    }
 
-            if (moving) {
+    public boolean isGpsAvailable() {
 
-                moving = false;
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-                for (MovingStateListener movListener : movListeners) {
-
-                    movListener.onStopMoving();
-                }
-            }
+            Log.d(TAG, "GPS permissions fail");
+            return false;
         }
 
-        int accState = checkAccState(3);
-
-        if (accState == ACC_POS) {
-
-            for (AccStateListener accListener : accListeners) {
-
-                accListener.onAccelerating();
-            }
-        }
-        else if (accState == ACC_NEG) {
-
-            for (AccStateListener accListener : accListeners) {
-
-                accListener.onDeAccelerating();
-            }
-        }
-
-        boolean constSpeed = checkConstSpeed(5);
-
-        if (lastLocList.size() > 5) {
-
-            lastLocList.remove(0);
-        }
-
-        lastLocList.add(location);
-        */
+        LocationAvailability locationAvailability = LocationServices.FusedLocationApi.getLocationAvailability(googleApiClient);
+        return locationAvailability.isLocationAvailable();
     }
 
     public boolean isMoving() {
@@ -196,10 +176,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
             } else {
 
-                if (updateEnabled) {
-
-                    LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
-                }
+                LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
             }
         }
 
@@ -213,7 +190,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
     public int getInstantSpeed() {
 
-        float speed = (currLocation.getSpeed() * MS_TO_KMH);
+        float speed = (currLocation.getSpeed() * MS_TO_KMPH);
         return (int) speed;
     }
 
@@ -273,12 +250,12 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
             for (int i = 0; i < points; i++) {
 
-                avgSpeed += (lastLocList.get(i).getSpeed() * MS_TO_KMH);
+                avgSpeed += (lastLocList.get(i).getSpeed() * MS_TO_KMPH);
             }
 
             avgSpeed = (avgSpeed / (double) points);
 
-            if (avgSpeed >= MOVING_MIN_SPEED_KMH) {
+            if (avgSpeed >= MOVING_MIN_SPEED_KMPH) {
 
                 Log.d(TAG, "Start Moving. Speed: " + String.valueOf(avgSpeed) + " km/h");
                 movingState = true;
