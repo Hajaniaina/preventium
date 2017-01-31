@@ -11,12 +11,14 @@ import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.preventium.boxpreventium.enums.LEVEL_t;
+import com.preventium.boxpreventium.enums.SCORE_t;
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
 
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -85,7 +87,7 @@ public class StatsActivity extends AppCompatActivity {
         String avgSpeed = String.valueOf(speed) + " km/h";
 
         avgSpeedView.setText(getString(R.string.avg_speed_string) + ": " + avgSpeed);
-        avgScoreView.setText(getString(R.string.avg_score_string) + ": " + String.valueOf(StatsLastDriving.get_note(this)));
+        avgScoreView.setText(getString(R.string.avg_score_string) + ": " + String.valueOf(StatsLastDriving.get_note(this, SCORE_t.FINAL)));
 
         colors = new int[5];
 
@@ -125,15 +127,15 @@ public class StatsActivity extends AppCompatActivity {
             chart.setHoleRadius(58f);
             chart.setTransparentCircleAlpha(110);
             chart.setTransparentCircleRadius(61f);
-            chart.setCenterTextSize(18f);
+            chart.setCenterTextSize(16f);
         }
 
-        chartArr[ACC_OBJ].setCenterText(accStr + System.getProperty("line.separator") + objStr);
-        chartArr[ACC_RES].setCenterText(accStr + System.getProperty("line.separator") + resStr);
-        chartArr[BRK_OBJ].setCenterText(brakeStr + System.getProperty("line.separator") + objStr);
-        chartArr[BRK_RES].setCenterText(brakeStr + System.getProperty("line.separator") + resStr);
-        chartArr[CRN_OBJ].setCenterText(cornerStr + System.getProperty("line.separator") + objStr);
-        chartArr[CRN_RES].setCenterText(cornerStr + System.getProperty("line.separator") + resStr);
+        chartArr[ACC_OBJ].setCenterText(objStr + "\n" + accStr);
+        chartArr[ACC_RES].setCenterText(resStr + "\n" + accStr + ":" + "\n" + String.valueOf(StatsLastDriving.get_note(this, SCORE_t.ACCELERATING)));
+        chartArr[BRK_OBJ].setCenterText(objStr + "\n" + brakeStr);
+        chartArr[BRK_RES].setCenterText(resStr + "\n" + brakeStr + ":" + "\n" + String.valueOf(StatsLastDriving.get_note(this, SCORE_t.BRAKING)));
+        chartArr[CRN_OBJ].setCenterText(objStr + "\n" + cornerStr);
+        chartArr[CRN_RES].setCenterText(resStr + "\n" + cornerStr + ":" + "\n" + String.valueOf(StatsLastDriving.get_note(this, SCORE_t.CORNERING)));
 
         for (int i = 0; i < 6; i++) {
 
@@ -189,6 +191,7 @@ public class StatsActivity extends AppCompatActivity {
         }
 
         ArrayList<PieEntry> arrayList = new ArrayList<>();
+        boolean hide = true;
 
         for (int k = 0; k < 5; k++) {
 
@@ -196,22 +199,33 @@ public class StatsActivity extends AppCompatActivity {
 
                 arrayList.add(new PieEntry(values[k], ""));
             }
+            else {
+
+                hide = false;
+            }
         }
 
-        PieDataSet pieDataSet = new PieDataSet(arrayList, "");
+        if (hide) {
 
-        pieDataSet.setSliceSpace(3f);
-        pieDataSet.setSelectionShift(5f);
-        pieDataSet.setColors(colors);
+            chartArr[id].setCenterText("");
+        }
+        else {
 
-        PieData pieData = new PieData(pieDataSet);
+            PieDataSet pieDataSet = new PieDataSet(arrayList, "");
 
-        pieData.setValueFormatter(new PercentFormatter());
-        pieData.setValueTextSize(16f);
-        pieData.setValueTextColor(Color.WHITE);
+            pieDataSet.setSliceSpace(3f);
+            pieDataSet.setSelectionShift(5f);
+            pieDataSet.setColors(colors);
 
-        chartArr[id].setData(pieData);
-        chartArr[id].invalidate();
+            PieData pieData = new PieData(pieDataSet);
+
+            pieData.setValueFormatter(new PercentFormatter());
+            pieData.setValueTextSize(16f);
+            pieData.setValueTextColor(Color.WHITE);
+
+            chartArr[id].setData(pieData);
+            chartArr[id].invalidate();
+        }
     }
 
     public static String getTime (long tempsS) {

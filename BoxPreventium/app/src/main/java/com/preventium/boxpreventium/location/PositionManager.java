@@ -32,7 +32,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     public static final float MS_TO_KMPH = 3.6f;
     private static final float MOVING_MIN_SPEED_KMPH = 5.0f;
 
-    private static final float UPDATE_SPEED_MAX_MPS = (300.0f / MS_TO_KMPH);
+    private static final float UPDATE_SPEED_MAX_MPS = (200.0f / MS_TO_KMPH);
     private static final float UPDATE_DISTANCE_MIN_M = 15.0f;
     private static final float UPDATE_DISTANCE_MAX_M = 1000.0f;
     private static final float UPDATE_DELTA_T_MAX_MS = (30.0f * 1000);
@@ -125,7 +125,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
         if (refLocation.distanceTo(currLocation) < UPDATE_DISTANCE_MAX_M) {
 
-            if ((currLocation.hasSpeed()) && (currLocation.getSpeed() < UPDATE_SPEED_MAX_MPS)) {
+            if ((!currLocation.hasSpeed()) || (currLocation.getSpeed() < UPDATE_SPEED_MAX_MPS)) {
 
                 if (refLocation.distanceTo(currLocation) > UPDATE_DISTANCE_MIN_M) {
 
