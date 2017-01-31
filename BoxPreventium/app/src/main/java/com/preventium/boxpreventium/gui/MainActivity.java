@@ -869,6 +869,32 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
+    @Override
+    public void onCalibrateOnConstantSpeed() {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                markerManager.addMarker("Const speed calibration", lastPos, CustomMarker.MARKER_MAGENTA);
+            }
+        });
+    }
+
+    @Override
+    public void onCalibrateOnAcceleration() {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                markerManager.addMarker("Acceleration calibration", lastPos, CustomMarker.MARKER_CYAN);
+            }
+        });
+    }
+
     // --------------------------------------------------------------------------------------------//
 
     private void init (boolean firstLaunch) {
@@ -934,8 +960,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             menuButtonTracking.setColorPressed(appColor.getColor(AppColor.GREEN));
         }
 
-        // debugView = (TextView) findViewById(R.id.debug_view);
-        // debugView.setVisibility(View.GONE);
+        debugView = (TextView) findViewById(R.id.debug_view);
+        debugView.setVisibility(View.GONE);
 
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
 

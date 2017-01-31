@@ -40,7 +40,7 @@ public class CustomMarker {
     public static final int MARKER_RANDOM  = 10;
 
     public static final int MARKER_START  = 11;
-    public static final int MARKER_STOP = 12;
+    public static final int MARKER_STOP   = 12;
     public static final int MARKER_INFO   = 13;
     public static final int MARKER_DANGER = 14;
 
@@ -96,6 +96,7 @@ public class CustomMarker {
         }
 
         this.type = type;
+        editable = false;
 
         switch (type) {
 
@@ -104,21 +105,21 @@ public class CustomMarker {
                 break;
 
             case MARKER_START:
-                editable = false;
                 bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
                 break;
 
             case MARKER_STOP:
-                editable = false;
                 bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
                 break;
 
             case MARKER_INFO:
                 bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
+                editable = true;
                 break;
 
             case MARKER_DANGER:
                 bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);
+                editable = true;
                 break;
 
             default:
