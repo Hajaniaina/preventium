@@ -1741,9 +1741,9 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
     }
 
     private void addLog( String txt ){
-//        if( !log.isEmpty() ) log += System.getProperty("line.separator");
-//        log += txt;
-//        if( listener != null ) listener.onDebugLog( log );
+        if( !log.isEmpty() ) log += System.getProperty("line.separator");
+        log += txt;
+        if( listener != null ) listener.onDebugLog( log );
     }
 
 }
