@@ -76,6 +76,9 @@ public class AppManager extends ThreadDefault
         void onShock();
         void onRecommendedSpeedChanged(SPEED_t speed_t, int kmh, LEVEL_t level, boolean valid);
         void onInternetConnectionChanged();
+
+        void onCalibrateOnConstantSpeed();
+        void onCalibrateOnAcceleration();
     }
 
     /// ============================================================================================
@@ -194,6 +197,16 @@ public class AppManager extends ThreadDefault
     synchronized public void onEngineStateChanged(ENGINE_t state) {
         this.engine_t = state;
         engine_t_changed_at = System.currentTimeMillis();
+    }
+
+    @Override
+    public void onCalibrateOnConstantSpeed() {
+        if( listener != null ) listener.onCalibrateOnConstantSpeed();
+    }
+
+    @Override
+    public void onCalibrateOnAcceleration() {
+        if( listener != null ) listener.onCalibrateOnAcceleration();
     }
 
     // PRIVATE

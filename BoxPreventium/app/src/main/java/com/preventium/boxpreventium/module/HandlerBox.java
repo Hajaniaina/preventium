@@ -35,6 +35,8 @@ public class HandlerBox extends ThreadDefault
         void onNumberOfBox(int nb);
         void onForceChanged(double mG_smooth, double mG_shock);
         void onEngineStateChanged(ENGINE_t state);
+        void onCalibrateOnConstantSpeed();
+        void onCalibrateOnAcceleration();
     }
 
     private Context context = null;
@@ -204,6 +206,7 @@ public class HandlerBox extends ThreadDefault
                 for( int i = mBoxList.size()-1; i >= 0; i-- )
                     mBoxList.get(i).calibrate_if_constant_speed();
                 calibrate_1 = false;
+                if( listener != null ) listener.onCalibrateOnConstantSpeed();
             }
 
             // Calibration 'o' on acceleration
@@ -212,6 +215,7 @@ public class HandlerBox extends ThreadDefault
                 for( int i = mBoxList.size()-1; i >= 0; i-- )
                     mBoxList.get(i).calibrate_if_acceleration();
                 calibrate_2 = false;
+                if( listener != null ) listener.onCalibrateOnAcceleration();
             }
 
             // Battery info

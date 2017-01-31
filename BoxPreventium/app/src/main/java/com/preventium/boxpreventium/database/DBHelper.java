@@ -50,6 +50,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "DBHelper";
     private Context ctx = null;
+    private static final float MS_TO_KMH = 3.6f;
 
     /// ============================================================================================
     /// DATABASE
@@ -440,6 +441,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         request += " AND " + COLUMN_ECA_ALERTID + " = " + alertID[0];
                     }
                 }
+        request += " AND "  + COLUMN_ECA_SPEED  + " >= 0 AND " + COLUMN_ECA_SPEED + " <= " + 190/MS_TO_KMH;
         request += " ;";
 
         Cursor cursor = db.rawQuery(request, null );
@@ -470,7 +472,8 @@ public class DBHelper extends SQLiteOpenHelper {
                 request += " AND " + COLUMN_ECA_ALERTID + " = " + alertID[0];
             }
         }
-        request += " AND " + COLUMN_ECA_SPEED + " >= " + speed_min;
+        request += " AND " + COLUMN_ECA_SPEED + " >= " + speed_min ;
+        request += " AND " + COLUMN_ECA_SPEED + " <= " + 190/MS_TO_KMH;
         request += " ;";
 
         Cursor cursor = db.rawQuery(request, null );
@@ -654,120 +657,5 @@ public class DBHelper extends SQLiteOpenHelper {
         db.delete(TABLE_CEP,null,null);
         db.close();
     }
-
-//    public byte[] boxEventsData(){
-//
-//        byte[] ret = new byte[0];
-//
-//        SQLiteDatabase db = this.getReadableDatabase();
-//        Cursor cursor =  db.rawQuery( "SELECT * from " + TABLE_CEP + ";", null );
-//        if( cursor != null && cursor.moveToFirst() ) {
-//            byte[] line;
-//            byte[] b;
-//            String[] macAddressParts;
-//            int i;
-//
-//            int id;
-//            long time;
-//            float long_pos;
-//            float lat_pos;
-//            String mac;
-//            int status;
-//            while( !cursor.isAfterLast() ){
-//
-//                id = cursor.getInt( cursor.getColumnIndex(COLUMN_CEP_ID) );
-//                time = cursor.getLong( cursor.getColumnIndex(COLUMN_CEP_TIME) );
-//                long_pos = cursor.getFloat( cursor.getColumnIndex(COLUMN_CEP_LONG_POS) );
-//                lat_pos = cursor.getFloat( cursor.getColumnIndex(COLUMN_CEP_LAT_POS) );
-//                mac = cursor.getString( cursor.getColumnIndex(COLUMN_CEP_MAC) );
-//                status = cursor.getInt( cursor.getColumnIndex(COLUMN_CEP_STATUS) );
-//
-//                Log.d("CEP", String.format(Locale.getDefault(),
-//                        "id: %s; time: %s; long_pos: %s; lat_pos: %s; mac: %s; status: %s",
-//                        id, time, long_pos, lat_pos, mac, status ) );
-//                i = 0;
-//                line = new byte[21];
-//                line[i] = (byte)id;
-//
-//                Calendar aGMTCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-//                aGMTCalendar.setTimeInMillis( time );
-////                Log.d("AA","Time = " + time );
-////                Log.d("AA","DAY = " + aGMTCalendar.get(Calendar.DAY_OF_MONTH) );
-////                Log.d("AA","MONTH = " + aGMTCalendar.get(Calendar.MONTH) );
-////                Log.d("AA","YEAR = " + aGMTCalendar.get(Calendar.YEAR) );
-////                Log.d("AA","HOURS = " + aGMTCalendar.get(Calendar.HOUR) );
-////                Log.d("AA","MINUTES = " + aGMTCalendar.get(Calendar.MINUTE) );
-////                Log.d("AA","SECONDS = " + aGMTCalendar.get(Calendar.SECOND) );
-//                line[i++] = (byte)aGMTCalendar.get(Calendar.DAY_OF_MONTH);
-//                line[i++] = (byte)(aGMTCalendar.get(Calendar.MONTH)+1);
-//                line[i++] = (byte)(aGMTCalendar.get(Calendar.YEAR)&0xFF);
-//                line[i++] = (byte)aGMTCalendar.get(Calendar.HOUR);
-//                line[i++] = (byte)aGMTCalendar.get(Calendar.MINUTE);
-//                line[i++] = (byte)aGMTCalendar.get(Calendar.SECOND);
-//                b = ByteBuffer.allocate(4).putFloat(long_pos).array();
-//                line[i++] = b[0];
-//                line[i++] = b[1];
-//                line[i++] = b[2];
-//                line[i++] = b[3];
-//                b = ByteBuffer.allocate(4).putFloat(lat_pos).array();
-//                line[i++] = b[0];
-//                line[i++] = b[1];
-//                line[i++] = b[2];
-//                line[i++] = b[3];
-//                macAddressParts = mac.split(":");
-//                b = new byte[6];
-//                for(int m=0; m<6; m++){
-//                    Integer hex = Integer.parseInt(macAddressParts[m], 16);
-//                    b[m] = hex.byteValue();
-//                }
-//                line[i++] = b[0];
-//                line[i++] = b[1];
-//                line[i++] = b[2];
-//                line[i++] = b[3];
-//                line[i++] = b[4];
-//                line[i++] = b[5];
-//                line[i] = (byte)status;
-//
-//                ret = BytesUtils.concatenateByteArrays(ret,line);
-//
-//                cursor.moveToNext();
-//            }
-//        }
-//        return  ret;
-//    }
-
-//    public List<Long> get_parcours_id(){
-//        List<Long> ret = new ArrayList<Long>();
-//        SQLiteDatabase db = this.getReadableDatabase();
-//        Cursor cursor =  db.rawQuery( "SELECT DISTINCT " + COLUMN_ECA_PARCOUR_ID + " from " + TABLE_ECA + " ;", null );
-//        if( cursor != null && cursor.moveToFirst() ) {
-//            while ( !cursor.isAfterLast() ){
-//                ret.add( cursor.getLong(0) );
-//                cursor.moveToNext();
-//            }
-//        }
-//        return ret;
-//    }
-
-
-//    public static void set_eca_parcour_send(Context ctx, long parcours){
-//        SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
-//        SharedPreferences.Editor editor = sp.edit();
-//        editor.putLong( KEY_LAST_eca_parcour, parcours );
-//        editor.apply();
-//    }
-//    public static void set_eca_counter(Context ctx, int counter){
-//        SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
-//        SharedPreferences.Editor editor = sp.edit();
-//        editor.putInt( KEY_LAST_eca_counter, counter );
-//        editor.apply();
-//    }
-//    public static void set_last_eca_time_send(Context ctx, long time){
-//        SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
-//        SharedPreferences.Editor editor = sp.edit();
-//        editor.putLong( KEY_LAST_eca_time, time );
-//        editor.apply();
-//    }
-
 
 }
