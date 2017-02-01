@@ -960,8 +960,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             menuButtonTracking.setColorPressed(appColor.getColor(AppColor.GREEN));
         }
 
-        debugView = (TextView) findViewById(R.id.debug_view);
-        debugView.setVisibility(View.GONE);
+        // debugView = (TextView) findViewById(R.id.debug_view);
+        // debugView.setVisibility(View.GONE);
 
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
 
