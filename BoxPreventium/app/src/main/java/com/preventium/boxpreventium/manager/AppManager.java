@@ -885,6 +885,8 @@ public class AppManager extends ThreadDefault
     private double XmG = 0.0;
     private double YmG_smooth = 0.0;
     private double YmG_shock = 0.0;
+    private long calibrate_on_constant_speed_at = 0;
+    private long calibrate_on_acceleration = 0;
 
     private void calc_movements(){
         this.mov_t = MOVING_t.UNKNOW;
@@ -914,6 +916,8 @@ public class AppManager extends ThreadDefault
             else if (acceleration) mov_t = MOVING_t.ACC;
             else if (freinage) mov_t = MOVING_t.BRK;
             else mov_t = MOVING_t.NCS;
+
+//addLog( "Speed[ " + speed_min + "; " + speed_max + " ]" + mov_t + " " + rightRoad);
             // CALCULATE FORCE X
             // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
             // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
@@ -923,7 +927,7 @@ public class AppManager extends ThreadDefault
                     * 1000.0;
         }
 
-        if ( mov_t != mov_t_last)
+        if ( mov_t != mov_t_last )
         {
             mov_t_last_chrono.start();
             mov_chrono.start();
@@ -943,20 +947,30 @@ public class AppManager extends ThreadDefault
                         }
                         break;
                     case ACC:
-                        if (rightRoad) {
-                            mov_chrono.stop();
+                        if (rightRoad && mov_chrono.getSeconds() > 3 ) {
+                            mov_chrono.start();
                             addLog("Calibrate on acceleration");
                             modules.on_acceleration();
                         }
+//                        if (rightRoad) {
+//                            mov_chrono.stop();
+//                            addLog("Calibrate on acceleration");
+//                            modules.on_acceleration();
+//                        }
                         break;
                     case BRK:
                         break;
                     case CST:
-                        if (rightRoad) {
-                            mov_chrono.stop();
+                        if (rightRoad && mov_chrono.getSeconds() > 3 ) {
+                            mov_chrono.start();
                             addLog("Calibrate on constant speed");
                             modules.on_constant_speed();
                         }
+//                        if (rightRoad) {
+//                            mov_chrono.stop();
+//                            addLog("Calibrate on constant speed");
+//                            modules.on_constant_speed();
+//                        }
                         break;
                     case NCS:
                         break;
