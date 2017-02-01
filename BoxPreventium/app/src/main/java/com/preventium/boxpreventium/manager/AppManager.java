@@ -1725,7 +1725,7 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         }
         // Get sublist
         if( locations.size() >= length ) {
-            list = this.locations.subList(0,length);
+            list = new ArrayList<Location>( this.locations.subList(0,length) );
         }
 
         lock.unlock();
@@ -1737,7 +1737,7 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         Location ret = null;
         lock.lock();
 
-        if (locations.size() > 0) ret = locations.get(0);
+        if (locations.size() > 0) ret = new Location(locations.get(0));
 
         lock.unlock();
         return ret;
