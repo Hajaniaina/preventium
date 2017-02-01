@@ -896,8 +896,8 @@ public class AppManager extends ThreadDefault
             rightRoad = isRightRoad( list.get(0), list.get(1), list.get(2) );
             boolean acceleration = true;
             boolean freinage = true;
-            float speed_min = 0f;
-            float speed_max = 0f;
+            float speed_min = list.get(0).getSpeed();
+            float speed_max = list.get(0).getSpeed();
             for (int i = 0; i < list.size(); i++) {// i is more recent than (i+1)
                 // Calculate minimum and maximum value
                 if (list.get(i).getSpeed() < speed_min) speed_min = list.get(i).getSpeed();
@@ -908,6 +908,7 @@ public class AppManager extends ThreadDefault
                     if (list.get(i).getSpeed() > list.get(i + 1).getSpeed())freinage = false;
                 }
             }
+
             if (speed_max * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
             else if ((speed_max - speed_min) * MS_TO_KMH < 3f) mov_t = MOVING_t.CST;
             else if (acceleration) mov_t = MOVING_t.ACC;
