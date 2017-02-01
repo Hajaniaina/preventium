@@ -896,8 +896,8 @@ public class AppManager extends ThreadDefault
             rightRoad = isRightRoad( list.get(0), list.get(1), list.get(2) );
             boolean acceleration = true;
             boolean freinage = true;
-            float speed_min = 0f;
-            float speed_max = 0f;
+            float speed_min = list.get(0).getSpeed();
+            float speed_max = list.get(0).getSpeed();
             for (int i = 0; i < list.size(); i++) {// i is more recent than (i+1)
                 // Calculate minimum and maximum value
                 if (list.get(i).getSpeed() < speed_min) speed_min = list.get(i).getSpeed();
@@ -908,11 +908,14 @@ public class AppManager extends ThreadDefault
                     if (list.get(i).getSpeed() > list.get(i + 1).getSpeed())freinage = false;
                 }
             }
+
             if (speed_max * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
             else if ((speed_max - speed_min) * MS_TO_KMH < 3f) mov_t = MOVING_t.CST;
             else if (acceleration) mov_t = MOVING_t.ACC;
             else if (freinage) mov_t = MOVING_t.BRK;
             else mov_t = MOVING_t.NCS;
+
+//addLog( "Speed[ " + speed_min + "; " + speed_max + " ]" + mov_t + " " + rightRoad);
             // CALCULATE FORCE X
             // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
             // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
@@ -922,7 +925,7 @@ public class AppManager extends ThreadDefault
                     * 1000.0;
         }
 
-        if ( mov_t != mov_t_last)
+        if ( mov_t != mov_t_last )
         {
             mov_t_last_chrono.start();
             mov_chrono.start();
@@ -942,20 +945,30 @@ public class AppManager extends ThreadDefault
                         }
                         break;
                     case ACC:
-                        if (rightRoad) {
-                            mov_chrono.stop();
+                        if (rightRoad && mov_chrono.getSeconds() > 3 ) {
+                            mov_chrono.start();
                             addLog("Calibrate on acceleration");
                             modules.on_acceleration();
                         }
+//                        if (rightRoad) {
+//                            mov_chrono.stop();
+//                            addLog("Calibrate on acceleration");
+//                            modules.on_acceleration();
+//                        }
                         break;
                     case BRK:
                         break;
                     case CST:
-                        if (rightRoad) {
-                            mov_chrono.stop();
+                        if (rightRoad && mov_chrono.getSeconds() > 3 ) {
+                            mov_chrono.start();
                             addLog("Calibrate on constant speed");
                             modules.on_constant_speed();
                         }
+//                        if (rightRoad) {
+//                            mov_chrono.stop();
+//                            addLog("Calibrate on constant speed");
+//                            modules.on_constant_speed();
+//                        }
                         break;
                     case NCS:
                         break;
@@ -1712,7 +1725,7 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         }
         // Get sublist
         if( locations.size() >= length ) {
-            list = this.locations.subList(0,length);
+            list = new ArrayList<Location>( this.locations.subList(0,length) );
         }
 
         lock.unlock();
@@ -1724,7 +1737,7 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         Location ret = null;
         lock.lock();
 
-        if (locations.size() > 0) ret = locations.get(0);
+        if (locations.size() > 0) ret = new Location(locations.get(0));
 
         lock.unlock();
         return ret;
