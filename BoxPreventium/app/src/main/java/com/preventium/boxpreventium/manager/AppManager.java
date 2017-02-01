@@ -885,8 +885,6 @@ public class AppManager extends ThreadDefault
     private double XmG = 0.0;
     private double YmG_smooth = 0.0;
     private double YmG_shock = 0.0;
-    private long calibrate_on_constant_speed_at = 0;
-    private long calibrate_on_acceleration = 0;
 
     private void calc_movements(){
         this.mov_t = MOVING_t.UNKNOW;
