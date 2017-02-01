@@ -1701,7 +1701,7 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                     locations.remove(0);
                 }
             }
-            this.locations.add(0, location);
+            this.locations.add(0, new Location(location) );
             // Limit list size
             while (this.locations.size() > 10) this.locations.remove(this.locations.size() - 1);
 
