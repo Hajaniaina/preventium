@@ -915,6 +915,7 @@ public class AppManager extends ThreadDefault
             else if (freinage) mov_t = MOVING_t.BRK;
             else mov_t = MOVING_t.NCS;
 
+
 //addLog( "Speed[ " + speed_min + "; " + speed_max + " ]" + mov_t + " " + rightRoad);
             // CALCULATE FORCE X
             // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
@@ -945,7 +946,7 @@ public class AppManager extends ThreadDefault
                         }
                         break;
                     case ACC:
-                        if (rightRoad && mov_chrono.getSeconds() > 3 ) {
+                        if (rightRoad /*&& mov_chrono.getSeconds() > 3*/ ) {
                             mov_chrono.start();
                             addLog("Calibrate on acceleration");
                             modules.on_acceleration();
