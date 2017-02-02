@@ -1491,73 +1491,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             return;
         }
 
-        String SENT = "SMS_SENT";
-        String DELIVERED = "SMS_DELIVERED";
-
-        PendingIntent sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT), 0);
-        PendingIntent deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED), 0);
-
-        registerReceiver(new BroadcastReceiver() {
-
-            @Override
-            public void onReceive (Context arg0, Intent arg1) {
-
-                switch (getResultCode())
-                {
-                    case RESULT_OK:
-                        Snackbar.make(getCurrentFocus(), "SMS: sent", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
-                        break;
-
-                    case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                        Snackbar.make(getCurrentFocus(), "SMS: Generic failure", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
-                        break;
-
-                    case SmsManager.RESULT_ERROR_NO_SERVICE:
-                        Snackbar.make(getCurrentFocus(), "SMS: No service", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
-                        break;
-
-                    case SmsManager.RESULT_ERROR_NULL_PDU:
-                        Snackbar.make(getCurrentFocus(), "SMS: Null PDU", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
-                        break;
-
-                    case SmsManager.RESULT_ERROR_RADIO_OFF:
-                        Snackbar.make(getCurrentFocus(), "SMS: Radio off", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
-                        break;
-                }
-
-            }
-        }, new IntentFilter(SENT));
-
-        registerReceiver(new BroadcastReceiver() {
-
-            @Override
-            public void onReceive (Context arg0, Intent arg1) {
-
-                switch (getResultCode())
-                {
-                    case RESULT_OK:
-                        Snackbar.make(getCurrentFocus(), "SMS: delivered", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
-                        break;
-
-                    case RESULT_CANCELED:
-                        Snackbar.make(getCurrentFocus(), "SMS: not delivered", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
-                        break;
-                }
-
-            }
-
-        }, new IntentFilter(DELIVERED));
-
         String str = msg + " " + getSmsHeader();
         SmsManager sms = SmsManager.getDefault();
 
         try {
 
-            sms.sendTextMessage(phoneNumber, null, str, sentPI, deliveredPI);
+            sms.sendTextMessage(phoneNumber, null, str, null, null);
         }
         catch (Exception ex) {
 
-            Snackbar.make(getCurrentFocus(), "SMS Invalid phone number ", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
         }
     }
 

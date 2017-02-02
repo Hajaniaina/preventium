@@ -191,41 +191,26 @@ public class StatsActivity extends AppCompatActivity {
         }
 
         ArrayList<PieEntry> arrayList = new ArrayList<>();
-        boolean hide = true;
 
         for (int k = 0; k < 5; k++) {
 
-            if (values[k] > 0) {                                                                    // REMOVE 0% RESULTS. TO BE TESTED
-
-                arrayList.add(new PieEntry(values[k], ""));
-            }
-            else {
-
-                hide = false;
-            }
+            arrayList.add(new PieEntry(values[k], ""));
         }
 
-        if (hide) {
+        PieDataSet pieDataSet = new PieDataSet(arrayList, "");
 
-            chartArr[id].setCenterText("");
-        }
-        else {
+        pieDataSet.setSliceSpace(3f);
+        pieDataSet.setSelectionShift(5f);
+        pieDataSet.setColors(colors);
 
-            PieDataSet pieDataSet = new PieDataSet(arrayList, "");
+        PieData pieData = new PieData(pieDataSet);
 
-            pieDataSet.setSliceSpace(3f);
-            pieDataSet.setSelectionShift(5f);
-            pieDataSet.setColors(colors);
+        pieData.setValueFormatter(new PercentFormatter());
+        pieData.setValueTextSize(16f);
+        pieData.setValueTextColor(Color.WHITE);
 
-            PieData pieData = new PieData(pieDataSet);
-
-            pieData.setValueFormatter(new PercentFormatter());
-            pieData.setValueTextSize(16f);
-            pieData.setValueTextColor(Color.WHITE);
-
-            chartArr[id].setData(pieData);
-            chartArr[id].invalidate();
-        }
+        chartArr[id].setData(pieData);
+        chartArr[id].invalidate();
     }
 
     public static String getTime (long tempsS) {
