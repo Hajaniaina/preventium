@@ -939,34 +939,29 @@ public class AppManager extends ThreadDefault
                     case UNKNOW:
                         break;
                     case STP:
-                        if (mov_chrono.getSeconds() > 3) {
-                            mov_chrono.stop();
-                            addLog("Calibrate on constant speed (no moving)");
-                            modules.on_constant_speed();
-                        }
+//                        if (mov_chrono.getSeconds() > 3) {
+//                            mov_chrono.stop();
+//                            addLog("Calibrate on constant speed (no moving)");
+//                            modules.on_constant_speed();
+//                        }
                         break;
                     case ACC:
-                        if (rightRoad /*&& mov_chrono.getSeconds() > 3*/ ) {
-                            mov_chrono.start();
+                        if (rightRoad) {
+                            mov_chrono.stop();
                             addLog("Calibrate on acceleration");
                             modules.on_acceleration();
                         }
-//                        if (rightRoad) {
-//                            mov_chrono.stop();
-//                            addLog("Calibrate on acceleration");
-//                            modules.on_acceleration();
-//                        }
                         break;
                     case BRK:
-                        break;
-                    case CST:
-                        if (rightRoad && mov_chrono.getSeconds() > 3 ) {
-                            mov_chrono.start();
-                            addLog("Calibrate on constant speed");
+                        if (rightRoad) {
+                            mov_chrono.stop();
+                            addLog("Calibrate on braking");
                             modules.on_constant_speed();
                         }
-//                        if (rightRoad) {
-//                            mov_chrono.stop();
+                        break;
+                    case CST:
+//                        if (rightRoad && mov_chrono.getSeconds() > 3 ) {
+//                            mov_chrono.start();
 //                            addLog("Calibrate on constant speed");
 //                            modules.on_constant_speed();
 //                        }
