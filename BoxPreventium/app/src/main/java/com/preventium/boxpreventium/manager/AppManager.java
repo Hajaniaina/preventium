@@ -1523,7 +1523,8 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 1
                 && mov_t_last != MOVING_t.STP
                 && mov_t_last != MOVING_t.UNKNOW
-                && engine_t == ENGINE_t.ON);
+                && engine_t == ENGINE_t.ON
+        );
         if ( !ready_to_started ) {
             chrono_ready_to_start.stop();
         } else {
@@ -1538,15 +1539,40 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                 alertPos_add_at = 0;
                 recommended_speed_update_at = 0;
 
+                SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+                String key = ctx.getResources().getString(R.string.stop_trigger_time);
+                long delay = sp.getInt(key,10) * 60 * 1000;
 
-                if(System.currentTimeMillis() - database.get_last_timestamp() < 7*3600*1000 ){
-                    parcour_id = database.get_last_parcours_id();
-                    if( StatsLastDriving.get_stopped_at(ctx) >= parcour_id ){
-                        parcour_id = System.currentTimeMillis();
-                    }
-                } else {
+                parcour_id = database.get_last_parcours_id();
+                Log.d(TAG,"get_last_parcours_id =  " + parcour_id);
+                Log.d(TAG,"parcour_is_closed =  " + database.parcour_is_closed(parcour_id));
+                Log.d(TAG,"parcour_expired =  " + database.parcour_expired(parcour_id, delay));
+                if( parcour_id == -1
+                        || database.parcour_is_closed(parcour_id) )
+                {
+                    Log.d(TAG,"NEW PARCOUR");
                     parcour_id = System.currentTimeMillis();
                 }
+                else
+                {
+                    if( database.parcour_expired(parcour_id, delay) ){
+                        Log.d(TAG,"FORCE CLOSE AND NEW PARCOUR");
+                        database.close_last_parcour();
+                        parcour_id = System.currentTimeMillis();
+                    }
+                    else
+                    {
+                        Log.d(TAG,"RESUME PARCOUR");
+                    }
+                }
+//                if(System.currentTimeMillis() - database.get_last_timestamp() < delay ){
+//                    parcour_id = database.get_last_parcours_id();
+//                    if( StatsLastDriving.get_stopped_at(ctx) >= parcour_id ){
+//                        parcour_id = System.currentTimeMillis();
+//                    }
+//                } else {
+//                    parcour_id = System.currentTimeMillis();
+//                }
 
                 addLog("START PARCOURS");
                 // ADD ECA Line when started
@@ -1596,13 +1622,13 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
             calc_cotation_forces();
             calc_recommended_speed();
 
-            if( button_stop ) StatsLastDriving.set_stopped_at(ctx,System.currentTimeMillis());
+            database.close_last_parcour();
 
-            // ADD ECA Line when stopped
-            if( _tracking ) {
-                Location loc = get_last_location();
-                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_END, loc, null));
-            }
+//            // ADD ECA Line when stopped
+//            if( _tracking ) {
+//                Location loc = get_last_location();
+//                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_END, loc, null));
+//            }
 
             StatsLastDriving.set_distance(ctx,database.get_distance(parcour_id));
             ret = STATUS_t.PAR_STOPPED;

@@ -387,6 +387,83 @@ public class DBHelper extends SQLiteOpenHelper {
         return ret;
     }
 
+    public long close_last_parcour() {
+
+        long ret = get_last_parcours_id();
+        if( ret > 0 ) {
+            if( !parcour_is_closed(ret) ) {
+
+                // READ LAST LINE
+                SQLiteDatabase db = this.getReadableDatabase();
+                Cursor cursor =  db.rawQuery(
+                        "SELECT * FROM " + TABLE_ECA +
+                                " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + ret +
+                                " ORDER BY " + COLUMN_ECA_TIME + " DESC " +
+                                " LIMIT 1 ;", null );
+                if( cursor != null && cursor.moveToFirst()  ) {
+                    ECALine line = new ECALine();
+                    line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
+                    line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
+                    line.padding = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PADDIND));
+                    line.long_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LONG_POS_ORIENTATION));
+                    line.lat_pos_orientation = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_LAT_POS_ORIENTATION));
+                    line.distance = cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_DISTANCE));
+                    line.location = new Location("");
+                    line.location.setTime(cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_TIME)));
+                    line.location.setLongitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LONG_POS)));
+                    line.location.setLatitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LAT_POS)));
+                    line.location.setSpeed(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_SPEED)));
+                    cursor.close();
+                    db.close();
+
+                    // ADD ENDING LINE
+                    line.alertID = ECALine.ID_END;
+                    if( !addECA( ret, line ) ) { ret = -1; }
+                }
+            }
+        }
+        return ret;
+    }
+
+    public boolean parcour_is_closed(long parcour_id){
+        boolean ret = true;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor =  db.rawQuery(
+                "SELECT * FROM " + TABLE_ECA +
+                        " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
+                        " AND " + COLUMN_ECA_ALERTID + " = " + ECALine.ID_END +
+                        " LIMIT 1 ;", null );
+        if( cursor != null && cursor.moveToFirst()  ) {
+            ret = true;
+            cursor.close();
+        } else {
+            ret = false;
+        }
+
+        return ret;
+    }
+
+    public boolean parcour_expired(long parcour_id, long delay) {
+
+        boolean ret = false;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor =  db.rawQuery(
+                "SELECT * FROM " + TABLE_ECA +
+                        " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
+                        " ORDER BY " + COLUMN_ECA_TIME + " DESC " +
+                        " LIMIT 1 ;", null );
+        if( cursor != null && cursor.moveToFirst()  ) {
+            long time = cursor.getLong( cursor.getColumnIndex(COLUMN_ECA_TIME) );
+            if( System.currentTimeMillis() - time >= delay ) {
+                ret = true;
+            }
+            cursor.close();
+            db.close();
+        }
+
+        return ret;
+    }
+
     public long get_last_timestamp(){
         long timestamp = 0;
         long last_parcour_id = get_last_parcours_id();
