@@ -910,7 +910,7 @@ public class AppManager extends ThreadDefault
             }
 
             if (speed_max * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
-            else if ((speed_max - speed_min) * MS_TO_KMH < 3f) mov_t = MOVING_t.CST;
+            else if ((speed_max - speed_min) * MS_TO_KMH < 2f) mov_t = MOVING_t.CST;
             else if (acceleration) mov_t = MOVING_t.ACC;
             else if (freinage) mov_t = MOVING_t.BRK;
             else mov_t = MOVING_t.NCS;
