@@ -1709,6 +1709,9 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
     public void setLocation( Location location ) {
         if( location != null )
         {
+            // Importatnt, use systeme time
+            location.setTime( System.currentTimeMillis() );
+
             lock.lock();
 
             // Clear locations list
