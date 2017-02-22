@@ -406,6 +406,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 stopMarker = null;
             }
 
+            markerManager.remove(CustomMarker.MARKER_CYAN);
+            markerManager.remove(CustomMarker.MARKER_MAGENTA);
+
             return true;
         }
 
@@ -872,7 +875,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onCalibrateOnConstantSpeed() {
 
-        /*
         runOnUiThread(new Runnable() {
 
             @Override
@@ -881,13 +883,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 markerManager.addMarker("Const speed calibration", lastPos, CustomMarker.MARKER_MAGENTA);
             }
         });
-        */
     }
 
     @Override
     public void onCalibrateOnAcceleration() {
 
-        /*
         runOnUiThread(new Runnable() {
 
             @Override
@@ -896,7 +896,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 markerManager.addMarker("Acceleration calibration", lastPos, CustomMarker.MARKER_CYAN);
             }
         });
-        */
     }
 
     // --------------------------------------------------------------------------------------------//

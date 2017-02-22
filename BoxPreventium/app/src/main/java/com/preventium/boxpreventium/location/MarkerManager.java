@@ -95,6 +95,25 @@ public class MarkerManager {
         return marker;
     }
 
+    public boolean remove (int markerType)
+    {
+        boolean found = false;
+
+        if (markersList.size() > 0) {
+
+            for (CustomMarker customMarker : markersList) {
+
+                if (customMarker.getType() == markerType) {
+
+                    markersList.remove(customMarker);
+                    found = true;
+                }
+            }
+        }
+
+        return found;
+    }
+
     public boolean remove (CustomMarker marker) {
 
         if (markersList.size() > 0) {
