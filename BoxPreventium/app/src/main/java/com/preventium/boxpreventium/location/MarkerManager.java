@@ -8,6 +8,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class MarkerManager {
 
@@ -101,6 +102,18 @@ public class MarkerManager {
 
         if (markersList.size() > 0) {
 
+            for (Iterator<CustomMarker> iterator = markersList.iterator(); iterator.hasNext(); ) {
+
+                CustomMarker customMarker = iterator.next();
+
+                if (customMarker.getType() == markerType) {
+
+                    iterator.remove();
+                    found = true;
+                }
+            }
+
+            /*
             for (CustomMarker customMarker : markersList) {
 
                 if (customMarker.getType() == markerType) {
@@ -109,6 +122,7 @@ public class MarkerManager {
                     found = true;
                 }
             }
+            */
         }
 
         return found;
@@ -118,6 +132,18 @@ public class MarkerManager {
 
         if (markersList.size() > 0) {
 
+            for (Iterator<CustomMarker> iterator = markersList.iterator(); iterator.hasNext(); ) {
+
+                CustomMarker customMarker = iterator.next();
+
+                if (customMarker.equals(marker)) {
+
+                    iterator.remove();
+                    return true;
+                }
+            }
+
+            /*
             for (CustomMarker customMarker : markersList) {
 
                 if (customMarker.equals(marker)) {
@@ -126,6 +152,7 @@ public class MarkerManager {
                     return true;
                 }
             }
+            */
         }
 
         return false;
