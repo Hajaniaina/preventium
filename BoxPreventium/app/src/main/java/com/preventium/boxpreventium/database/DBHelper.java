@@ -216,6 +216,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
         contentValues.put(COLUMN_ECA_DISTANCE, line.distance);
         db.insert(TABLE_ECA, null, contentValues);
+        db.close();
         return true;
     }
 
@@ -419,6 +420,8 @@ public class DBHelper extends SQLiteOpenHelper {
                     // ADD ENDING LINE
                     line.alertID = ECALine.ID_END;
                     if( !addECA( ret, line ) ) { ret = -1; }
+                } else {
+                    db.close();
                 }
             }
         }
@@ -439,7 +442,7 @@ public class DBHelper extends SQLiteOpenHelper {
         } else {
             ret = false;
         }
-
+        db.close();
         return ret;
     }
 
@@ -458,9 +461,8 @@ public class DBHelper extends SQLiteOpenHelper {
                 ret = true;
             }
             cursor.close();
-            db.close();
         }
-
+        db.close();
         return ret;
     }
 
@@ -635,6 +637,7 @@ public class DBHelper extends SQLiteOpenHelper {
         contentValues.put(COLUMN_CEP_MAC, device_mac );
         contentValues.put(COLUMN_CEP_STATUS, (connected ? 1 : 0) );
         db.insert(TABLE_CEP, null, contentValues);
+        db.close();
         return true;
     }
 
