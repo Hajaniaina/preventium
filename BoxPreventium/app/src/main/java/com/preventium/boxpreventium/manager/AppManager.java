@@ -11,7 +11,7 @@ import android.support.v4.util.Pair;
 import android.util.Log;
 
 import com.preventium.boxpreventium.R;
-import com.preventium.boxpreventium.database.DBHelper;
+import com.preventium.boxpreventium.database.Database;
 import com.preventium.boxpreventium.enums.ENGINE_t;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
@@ -90,14 +90,14 @@ public class AppManager extends ThreadDefault
     private Context ctx = null;
     private AppManagerListener listener = null;
     private HandlerBox modules = null;
-    private DBHelper database = null;
+    private Database database = null;
 
     public AppManager(Context ctx, AppManagerListener listener) {
         super(null);
         this.ctx = ctx;
         this.listener = listener;
         this.modules = new HandlerBox(ctx,this);
-        this.database = new DBHelper(ctx);
+        this.database = new Database(ctx);
         this.fileSender = new FilesSender(ctx);
     }
 

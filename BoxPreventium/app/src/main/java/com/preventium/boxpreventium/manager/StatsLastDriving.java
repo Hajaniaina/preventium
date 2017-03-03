@@ -3,7 +3,6 @@ package com.preventium.boxpreventium.manager;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.preventium.boxpreventium.database.DBHelper;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.SCORE_t;
 import com.preventium.boxpreventium.server.DOBJ.DataDOBJ;

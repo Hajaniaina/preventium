@@ -4,127 +4,86 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
-import android.provider.MediaStore;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.github.mikephil.charting.utils.FileUtils;
-import com.github.mikephil.charting.utils.Utils;
 import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.ECA.ECALine;
-import com.preventium.boxpreventium.utils.BytesUtils;
 import com.preventium.boxpreventium.utils.ComonUtils;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.nio.ByteBuffer;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import static android.database.DatabaseUtils.queryNumEntries;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_ID;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_LAT_POS;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_LONG_POS;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_MAC;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_STATUS;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_TIME;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_DRIVER_ID;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_DRIVER_PARCOUR_ID;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_DRIVER_TIME;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_ALERTID;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_DISTANCE;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_FILE_ID;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_ID;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_LAT_POS;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_LAT_POS_ORIENTATION;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_LONG_POS;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_LONG_POS_ORIENTATION;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_PADDIND;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_PARCOUR_ID;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_SPEED;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_TIME;
+import static com.preventium.boxpreventium.database.DatabaseHelper.TABLE_CEP;
+import static com.preventium.boxpreventium.database.DatabaseHelper.TABLE_DRIVER;
+import static com.preventium.boxpreventium.database.DatabaseHelper.TABLE_ECA;
 
 /**
- * Created by Franck on 28/09/2016.
+ * Created by Franck on 02/03/2017.
  */
 
-public class DBHelper extends SQLiteOpenHelper {
+public class Database {
 
-    private static final String TAG = "DBHelper";
+    private static final String TAG = "Database";
+    private static float MS_TO_KMH = 3.6f;
     private Context ctx = null;
-    private static final float MS_TO_KMH = 3.6f;
 
-    /// ============================================================================================
-    /// DATABASE
-    /// ============================================================================================
-    private static final String DATABASE_NAME = "GPSData.db";
-
-    public DBHelper(Context context) {
-        super(context, DATABASE_NAME, null, 1);
+    public Database(Context context){
         ctx = context;
+        DatabaseManager.initializeInstance( new DatabaseHelper(context) );
     }
 
-    @Override
-    public void onCreate(SQLiteDatabase sqLiteDatabase) {
-        String TABLE_CREATE =
-                "CREATE TABLE " + TABLE_ECA + " (" +
-                COLUMN_ECA_ID + " INTEGER PRIMARY KEY, " +
-                COLUMN_ECA_PARCOUR_ID + " INTEGER, " +
-                COLUMN_ECA_FILE_ID + " INTEGER, " +
-                COLUMN_ECA_TIME + " INTEGER, " +
-                COLUMN_ECA_ALERTID + " INTEGER, " +
-                COLUMN_ECA_PADDIND + " INTEGER, " +
-                COLUMN_ECA_LONG_POS + " FLOAT, " +
-                COLUMN_ECA_LAT_POS + " FLOAT, " +
-                COLUMN_ECA_LONG_POS_ORIENTATION + " INTEGER, " +
-                COLUMN_ECA_LAT_POS_ORIENTATION + " INTEGER, " +
-                COLUMN_ECA_SPEED + " FLOAT, " +
-                COLUMN_ECA_DISTANCE + " FLOAT);" ;
-        sqLiteDatabase.execSQL(TABLE_CREATE);
+    /// ============================================================================================
+    /// CLEAR DATABASE
+    /// ============================================================================================
 
-        TABLE_CREATE =
-                "CREATE TABLE " + TABLE_CEP + " (" +
-                        COLUMN_CEP_ID + " INTEGER PRIMARY KEY, " +
-                        COLUMN_CEP_TIME + " INTEGER, " +
-                        COLUMN_CEP_MAC + " TEXT, " +
-                        COLUMN_CEP_LONG_POS + " FLOAT, " +
-                        COLUMN_CEP_LAT_POS + " FLOAT, " +
-                        COLUMN_CEP_STATUS + " INTEGER);";
-        sqLiteDatabase.execSQL(TABLE_CREATE);
-
-        TABLE_CREATE =
-                "CREATE TABLE " + TABLE_DRIVER + " (" +
-                        COLUMN_DRIVER_TIME+ " INTEGER PRIMARY KEY, " +
-                        COLUMN_DRIVER_ID + " INTEGER, " +
-                        COLUMN_DRIVER_PARCOUR_ID + " INTEGER );";
-        sqLiteDatabase.execSQL(TABLE_CREATE);
-    }
-
-    @Override
-    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-        String TABLE_DROP = "DROP TABLE IF EXISTS " + TABLE_ECA + ";";
-        sqLiteDatabase.execSQL(TABLE_DROP);
-        TABLE_DROP = "DROP TABLE IF EXISTS " + TABLE_CEP + ";";
-        sqLiteDatabase.execSQL(TABLE_DROP);
-        TABLE_DROP = "DROP TABLE IF EXISTS " + TABLE_DRIVER + ";";
-        sqLiteDatabase.execSQL(TABLE_DROP);
-        onCreate(sqLiteDatabase);
-    }
-
-    public void clear(){
-        SQLiteDatabase db = this.getWritableDatabase();
+    public void clear() {
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         db.delete(TABLE_ECA,null,null);
         db.delete(TABLE_CEP,null,null);
         db.delete(TABLE_DRIVER,null,null);
-        db.close();
+        DatabaseManager.getInstance().closeDatabase();
     }
 
-    public void clear_obselete_data(){
+    public void clear_obselete_data() {
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         long end = startOfDays(System.currentTimeMillis());
         long begin = end - (5 * 24 * 3600 * 1000);
-        SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_ECA,COLUMN_ECA_TIME + " < " + begin,null);
         db.delete(TABLE_CEP,COLUMN_CEP_TIME + " < " + begin,null);
         db.delete(TABLE_DRIVER,COLUMN_DRIVER_TIME + " < " + begin,null);
-        db.close();
+        DatabaseManager.getInstance().closeDatabase();
     }
 
     private long startOfDays(long timestamp){
@@ -140,48 +99,28 @@ public class DBHelper extends SQLiteOpenHelper {
     /// ECA
     /// ============================================================================================
 
-    /// Table and columns name
-    private static final String TABLE_ECA = "eca";
-    private static final String COLUMN_ECA_ID = "id";
-    private static final String COLUMN_ECA_PARCOUR_ID = "parcour_id";
-    private static final String COLUMN_ECA_FILE_ID = "file_id";
-    private static final String COLUMN_ECA_TIME = "time";
-    private static final String COLUMN_ECA_ALERTID = "alertid";
-    private static final String COLUMN_ECA_PADDIND = "padding";
-    private static final String COLUMN_ECA_LONG_POS = "long_pos";
-    private static final String COLUMN_ECA_LAT_POS = "lat_pos";
-    private static final String COLUMN_ECA_LONG_POS_ORIENTATION = "long_pos_orientation";
-    private static final String COLUMN_ECA_LAT_POS_ORIENTATION = "lat_pos_orientation";
-    private static final String COLUMN_ECA_SPEED = "speed";
-    private static final String COLUMN_ECA_DISTANCE = "distance";
-
     /// Get number of event by parcours, or all parcours (parcours_id = -1), by events type,
     /// between timespamp
     public int countNbEvent( int alertID, long parcour_id, long begin, long end  ){
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+
         int ret = 0;
-        String request =
-                "SELECT DISTINCT COUNT(" + COLUMN_ECA_ID + ") " +
-                "FROM " + TABLE_ECA + " WHERE " +
-                COLUMN_ECA_ALERTID + " = " + alertID + " AND ";
-        if( parcour_id > 0 ) request +=
-                COLUMN_ECA_PARCOUR_ID + " = " + parcour_id + " AND ";
-        request +=
-                COLUMN_ECA_TIME + " BETWEEN " + begin + " AND " + end + ";";
-        SQLiteDatabase db = this.getReadableDatabase();
+        String request = "SELECT DISTINCT COUNT(" + COLUMN_ECA_ID + ") " +
+                        "FROM " + TABLE_ECA + " WHERE " +
+                        COLUMN_ECA_ALERTID + " = " + alertID + " AND ";
+        if( parcour_id > 0 )
+            request += COLUMN_ECA_PARCOUR_ID + " = " + parcour_id + " AND ";
+
+        request += COLUMN_ECA_TIME + " BETWEEN " + begin + " AND " + end + ";";
+
         Cursor cursor =  db.rawQuery( request, null );
         if( cursor != null && cursor.moveToFirst() ) {
             ret = cursor.getInt(0);
             cursor.close();
         }
-        db.close();
-        return ret;
-    }
 
-    // Get number of event by parcours, or all parcours (parcours_id = -1), in the last X seconds
-    public int countNbEvent( int alertID, long parcour_id, long secs  ){
-        long begin = System.currentTimeMillis() - (secs*1000);
-        long end = System.currentTimeMillis() + 10000;
-        return countNbEvent(alertID, parcour_id, begin, end);
+        DatabaseManager.getInstance().closeDatabase();
+        return ret;
     }
 
     // Get number of event by parcours, or all parcours (parcours_id = -1);
@@ -193,7 +132,8 @@ public class DBHelper extends SQLiteOpenHelper {
 
     /// Add an ECA event for a parcours
     public boolean addECA( long parcour_id, ECALine line ) {
-        SQLiteDatabase db = this.getWritableDatabase();
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+
         ContentValues contentValues = new ContentValues();
 
         contentValues.put(COLUMN_ECA_PARCOUR_ID, parcour_id);
@@ -216,7 +156,9 @@ public class DBHelper extends SQLiteOpenHelper {
 
         contentValues.put(COLUMN_ECA_DISTANCE, line.distance);
         db.insert(TABLE_ECA, null, contentValues);
-        db.close();
+
+        DatabaseManager.getInstance().closeDatabase();
+
         return true;
     }
 
@@ -250,7 +192,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public boolean update_last_send(Context ctx, long time){
         boolean ret = false;
 
-        SQLiteDatabase db = this.getReadableDatabase();
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_ECA +
                 " WHERE " + COLUMN_ECA_TIME + " = " + time +
                 " ORDER BY " + COLUMN_ECA_ID + " LIMIT 1 ;", null);
@@ -266,7 +208,7 @@ public class DBHelper extends SQLiteOpenHelper {
             ret = true;
         }
         cursor.close();
-        db.close();
+        DatabaseManager.getInstance().closeDatabase();
         return ret;
     }
 
@@ -278,7 +220,7 @@ public class DBHelper extends SQLiteOpenHelper {
         if (!folder.exists())
             if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
         if( folder.exists() ) {
-            SQLiteDatabase db = this.getReadableDatabase();
+            SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
             Cursor cursor = db.rawQuery(
                     "SELECT * FROM " + TABLE_ECA +
                             " WHERE " + COLUMN_ECA_TIME + " > " + after_time +
@@ -318,15 +260,6 @@ public class DBHelper extends SQLiteOpenHelper {
                                 line.location.setLatitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LAT_POS)));
                                 line.location.setSpeed(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_SPEED)));
                                 ret_time = line.location.getTime();
-//                                try {
-//                                    PrintWriter printWriter = null;
-//                                    printWriter = new PrintWriter(new FileOutputStream(file.getAbsolutePath(), true));
-//                                    printWriter.write(line.toDataEncoded());
-//                                    printWriter.write(System.getProperty("line.separator"));
-//                                    printWriter.close();
-//                                } catch (FileNotFoundException e) {
-//                                    e.printStackTrace();
-//                                }
 
                                 if( all_points || line.alertID != 254 ) output.write( line.toData() );
                                 cursor.moveToNext();
@@ -347,7 +280,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
             }
             cursor.close();
-            db.close();
+            DatabaseManager.getInstance().closeDatabase();
         }
         return ret_time;
     }
@@ -374,7 +307,8 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public long get_last_parcours_id(){
         long ret = -1;
-        SQLiteDatabase db = this.getReadableDatabase();
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+
         Cursor cursor =  db.rawQuery(
                 "SELECT " + COLUMN_ECA_PARCOUR_ID +
                         " FROM " + TABLE_ECA +
@@ -384,7 +318,46 @@ public class DBHelper extends SQLiteOpenHelper {
             ret = cursor.getLong(0);
             cursor.close();
         }
-        db.close();
+
+        DatabaseManager.getInstance().closeDatabase();
+
+        return ret;
+    }
+
+    public boolean parcour_is_closed(long parcour_id){
+        boolean ret = true;
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+        Cursor cursor =  db.rawQuery(
+                "SELECT * FROM " + TABLE_ECA +
+                        " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
+                        " AND " + COLUMN_ECA_ALERTID + " = " + ECALine.ID_END +
+                        " LIMIT 1 ;", null );
+        if( cursor != null && cursor.moveToFirst()  ) {
+            ret = true;
+            cursor.close();
+        } else {
+            ret = false;
+        }
+        DatabaseManager.getInstance().closeDatabase();
+        return ret;
+    }
+
+    public boolean parcour_expired(long parcour_id, long delay) {
+        boolean ret = false;
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+        Cursor cursor =  db.rawQuery(
+                "SELECT * FROM " + TABLE_ECA +
+                        " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
+                        " ORDER BY " + COLUMN_ECA_TIME + " DESC " +
+                        " LIMIT 1 ;", null );
+        if( cursor != null && cursor.moveToFirst()  ) {
+            long time = cursor.getLong( cursor.getColumnIndex(COLUMN_ECA_TIME) );
+            if( System.currentTimeMillis() - time >= delay ) {
+                ret = true;
+            }
+            cursor.close();
+        }
+        DatabaseManager.getInstance().closeDatabase();
         return ret;
     }
 
@@ -395,7 +368,7 @@ public class DBHelper extends SQLiteOpenHelper {
             if( !parcour_is_closed(ret) ) {
 
                 // READ LAST LINE
-                SQLiteDatabase db = this.getReadableDatabase();
+                SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
                 Cursor cursor =  db.rawQuery(
                         "SELECT * FROM " + TABLE_ECA +
                                 " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + ret +
@@ -415,54 +388,14 @@ public class DBHelper extends SQLiteOpenHelper {
                     line.location.setLatitude(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_LAT_POS)));
                     line.location.setSpeed(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_SPEED)));
                     cursor.close();
-                    db.close();
 
                     // ADD ENDING LINE
                     line.alertID = ECALine.ID_END;
                     if( !addECA( ret, line ) ) { ret = -1; }
-                } else {
-                    db.close();
                 }
+                DatabaseManager.getInstance().closeDatabase();
             }
         }
-        return ret;
-    }
-
-    public boolean parcour_is_closed(long parcour_id){
-        boolean ret = true;
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor =  db.rawQuery(
-                "SELECT * FROM " + TABLE_ECA +
-                        " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
-                        " AND " + COLUMN_ECA_ALERTID + " = " + ECALine.ID_END +
-                        " LIMIT 1 ;", null );
-        if( cursor != null && cursor.moveToFirst()  ) {
-            ret = true;
-            cursor.close();
-        } else {
-            ret = false;
-        }
-        db.close();
-        return ret;
-    }
-
-    public boolean parcour_expired(long parcour_id, long delay) {
-
-        boolean ret = false;
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor =  db.rawQuery(
-                "SELECT * FROM " + TABLE_ECA +
-                        " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
-                        " ORDER BY " + COLUMN_ECA_TIME + " DESC " +
-                        " LIMIT 1 ;", null );
-        if( cursor != null && cursor.moveToFirst()  ) {
-            long time = cursor.getLong( cursor.getColumnIndex(COLUMN_ECA_TIME) );
-            if( System.currentTimeMillis() - time >= delay ) {
-                ret = true;
-            }
-            cursor.close();
-        }
-        db.close();
         return ret;
     }
 
@@ -470,7 +403,7 @@ public class DBHelper extends SQLiteOpenHelper {
         long timestamp = 0;
         long last_parcour_id = get_last_parcours_id();
         if( last_parcour_id > 0 ){
-            SQLiteDatabase db = this.getReadableDatabase();
+            SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
             Cursor cursor =  db.rawQuery(
                     "SELECT " + COLUMN_ECA_TIME +
                             " FROM " + TABLE_ECA +
@@ -482,13 +415,14 @@ public class DBHelper extends SQLiteOpenHelper {
                 cursor.close();
             }
             db.close();
+            DatabaseManager.getInstance().closeDatabase();
         }
         return timestamp;
     }
 
     public long get_distance(long parcour_id) {
         long ret = 0;
-        SQLiteDatabase db = this.getReadableDatabase();
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         Cursor cursor =  db.rawQuery(
                 "SELECT SUM( " + COLUMN_ECA_DISTANCE +
                         " ) FROM " + TABLE_ECA +
@@ -497,29 +431,29 @@ public class DBHelper extends SQLiteOpenHelper {
             if( cursor.moveToFirst() ) ret = cursor.getLong(0);
             cursor.close();
         }
-        db.close();
+        DatabaseManager.getInstance().closeDatabase();
         return ret;
     }
 
     /// Get speed max by parcours, by events type, since X seconds
     public float speed_max(long parcour_id, long secs, @Nullable int... alertID){
         float ret = 0f;
-        SQLiteDatabase db = this.getReadableDatabase();
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         long begin = System.currentTimeMillis() - (secs*1000);
         String request =
                 "SELECT MAX( " + COLUMN_ECA_SPEED + " )" +
-                " FROM " + TABLE_ECA +
-                " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
-                " AND " + COLUMN_ECA_TIME + " >= " + begin ;
-                if( alertID != null && alertID.length > 0 ){
-                    if( alertID.length > 1 ) {
-                        request += " AND " +  COLUMN_ECA_ALERTID + " IN (" + alertID[0];
-                        for( int i = 1; i < alertID.length; i++ ) request += ", " + alertID[i];
-                        request += " )";
-                    } else {
-                        request += " AND " + COLUMN_ECA_ALERTID + " = " + alertID[0];
-                    }
-                }
+                        " FROM " + TABLE_ECA +
+                        " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
+                        " AND " + COLUMN_ECA_TIME + " >= " + begin ;
+        if( alertID != null && alertID.length > 0 ){
+            if( alertID.length > 1 ) {
+                request += " AND " +  COLUMN_ECA_ALERTID + " IN (" + alertID[0];
+                for( int i = 1; i < alertID.length; i++ ) request += ", " + alertID[i];
+                request += " )";
+            } else {
+                request += " AND " + COLUMN_ECA_ALERTID + " = " + alertID[0];
+            }
+        }
         request += " AND "  + COLUMN_ECA_SPEED  + " >= 0 AND " + COLUMN_ECA_SPEED + " <= " + 190/MS_TO_KMH;
         request += " ;";
 
@@ -528,14 +462,15 @@ public class DBHelper extends SQLiteOpenHelper {
             if( cursor.moveToFirst() ) ret = cursor.getFloat(0);
             cursor.close();
         }
-        db.close();
+        DatabaseManager.getInstance().closeDatabase();
         return ret;
     }
 
     /// Get speed average by parcours, by events type, since X seconds
     public float speed_avg(long parcour_id, long secs, float speed_min, @Nullable int... alertID){
         float ret = 0f;
-        SQLiteDatabase db = this.getReadableDatabase();
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+
         long begin = System.currentTimeMillis() - (secs*1000);
         String request =
                 "SELECT AVG( " + COLUMN_ECA_SPEED + " )" +
@@ -560,7 +495,8 @@ public class DBHelper extends SQLiteOpenHelper {
             if( cursor.moveToFirst() ) ret = cursor.getFloat(0);
             cursor.close();
         }
-        db.close();
+
+        DatabaseManager.getInstance().closeDatabase();
         return ret;
     }
 
@@ -568,62 +504,47 @@ public class DBHelper extends SQLiteOpenHelper {
     /// DRIVER ID
     /// ============================================================================================
 
-    /// Table and columns name
-    private static final String TABLE_DRIVER = "eca_driver";
-    private static final String COLUMN_DRIVER_TIME = "time";
-    private static final String COLUMN_DRIVER_ID = "id";
-    private static final String COLUMN_DRIVER_PARCOUR_ID = "parcour_id";
-
-    /// Add an event who indicate when a driver ID change for a parcours
-    public boolean add_driver( long parcour_id, long driver_id){
-        long time = System.currentTimeMillis();
-        if( get_driver_id(parcour_id,time) == driver_id ) return true;
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(COLUMN_DRIVER_TIME, time );
-        contentValues.put(COLUMN_DRIVER_ID, driver_id );
-        contentValues.put(COLUMN_DRIVER_PARCOUR_ID, parcour_id);
-        long row = db.insert(TABLE_DRIVER, null, contentValues);
-        db.close();
-        return row >= 0;
-    }
-
     /// Get the driver ID for a parcours and for a time
     private long get_driver_id(long parcour_id, long time){
         long ret = 0;
-        SQLiteDatabase db = this.getReadableDatabase();
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         Cursor cursor =
                 db.rawQuery(
-                "SELECT " + COLUMN_DRIVER_ID +
-                " FROM " + TABLE_DRIVER +
-                " WHERE " + COLUMN_DRIVER_PARCOUR_ID + " = " + parcour_id +
-                " AND " + COLUMN_DRIVER_TIME + " >= " + time +
-                " ORDER BY " + COLUMN_DRIVER_TIME + " LIMIT 1 ;", null );
+                        "SELECT " + COLUMN_DRIVER_ID +
+                        " FROM " + TABLE_DRIVER +
+                        " WHERE " + COLUMN_DRIVER_PARCOUR_ID + " = " + parcour_id +
+                        " AND " + COLUMN_DRIVER_TIME + " >= " + time +
+                        " ORDER BY " + COLUMN_DRIVER_TIME + " LIMIT 1 ;", null );
 
         if( cursor != null && cursor.moveToFirst() ) {
             ret = cursor.getLong(0);
             cursor.close();
         }
-        db.close();
+        DatabaseManager.getInstance().closeDatabase();
         return ret;
+    }
+
+    /// Add an event who indicate when a driver ID change for a parcours
+    public boolean add_driver( long parcour_id, long driver_id){
+        long time = System.currentTimeMillis();
+        if( get_driver_id(parcour_id,time) == driver_id ) return true;
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COLUMN_DRIVER_TIME, time );
+        contentValues.put(COLUMN_DRIVER_ID, driver_id );
+        contentValues.put(COLUMN_DRIVER_PARCOUR_ID, parcour_id);
+        long row = db.insert(TABLE_DRIVER, null, contentValues);
+        DatabaseManager.getInstance().closeDatabase();
+        return row >= 0;
     }
 
     /// ============================================================================================
     /// CEP (Connections Events of Preventium's devices)
     /// ============================================================================================
 
-    /// Table and colums name
-    private static final String TABLE_CEP = "cep";
-    private static final String COLUMN_CEP_ID = "id";
-    private static final String COLUMN_CEP_TIME = "time";
-    private static final String COLUMN_CEP_MAC = "mac";
-    private static final String COLUMN_CEP_LONG_POS = "long_pos";
-    private static final String COLUMN_CEP_LAT_POS = "lat_pos";
-    private static final String COLUMN_CEP_STATUS = "status";
-
     /// Add an Preventium Box event (Connected/Disconnected)
     public boolean addCEP(@Nullable Location location, @NonNull String device_mac, boolean connected ) {
-        SQLiteDatabase db = this.getWritableDatabase();
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         ContentValues contentValues = new ContentValues();
         if( location != null ){
             contentValues.put(COLUMN_CEP_TIME, location.getTime() );
@@ -637,8 +558,15 @@ public class DBHelper extends SQLiteOpenHelper {
         contentValues.put(COLUMN_CEP_MAC, device_mac );
         contentValues.put(COLUMN_CEP_STATUS, (connected ? 1 : 0) );
         db.insert(TABLE_CEP, null, contentValues);
-        db.close();
+        DatabaseManager.getInstance().closeDatabase();
         return true;
+    }
+
+    /// Clear all CEP records
+    public void clear_cep_data() {
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+        db.delete(TABLE_CEP,null,null);
+        DatabaseManager.getInstance().closeDatabase();
     }
 
     /// Create CEP file
@@ -648,7 +576,7 @@ public class DBHelper extends SQLiteOpenHelper {
         if (!folder.exists())
             if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
         if (folder.exists()) {
-            SQLiteDatabase db = this.getReadableDatabase();
+            SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
             Cursor cursor = db.rawQuery("SELECT * from " + TABLE_CEP + ";", null);
             if (cursor != null) {
                 if (cursor.moveToFirst()) {
@@ -726,16 +654,8 @@ public class DBHelper extends SQLiteOpenHelper {
                     }
                     cursor.close();
                 }
-                db.close();
+                DatabaseManager.getInstance().closeDatabase();
             }
         }
     }
-
-    /// Clear all CEP records
-    public void clear_cep_data() {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_CEP,null,null);
-        db.close();
-    }
-
 }

@@ -1874,7 +1874,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onClick (View view) {
-
                 startActivity(new Intent(MainActivity.this, PinLockActivity.class));
                 optMenu.close(true);
             }
