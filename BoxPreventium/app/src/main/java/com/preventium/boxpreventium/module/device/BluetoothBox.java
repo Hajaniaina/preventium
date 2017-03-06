@@ -76,6 +76,16 @@ public class BluetoothBox
         }).start();
     }
 
+    public void calibrate_raz() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                io.command(CmdBox.newInstance(CMD_t.RAZ_CALIBRATION));
+            }
+        }).start();
+    }
+
+
     public CONNEXION_STATE_t getConnectionState(){ return state; }
 
     public String getMacAddr(){
@@ -169,5 +179,6 @@ public class BluetoothBox
         this.state = state;
         Log.d(TAG,"State changed: " + state );
     }
+
 
 }

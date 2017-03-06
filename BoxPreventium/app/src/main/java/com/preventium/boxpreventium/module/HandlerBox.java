@@ -37,6 +37,7 @@ public class HandlerBox extends ThreadDefault
         void onEngineStateChanged(ENGINE_t state);
         void onCalibrateOnConstantSpeed();
         void onCalibrateOnAcceleration();
+        void onCalibrateRAZ();
     }
 
     private Context context = null;
@@ -50,6 +51,7 @@ public class HandlerBox extends ThreadDefault
 
     private boolean calibrate_1 = false;
     private boolean calibrate_2 = false;
+    private boolean calibrate_3 = false;
 
     private double last_smooth_mG = 0.0, curr_smooth_mG = 0.0;
     private double last_shock_mG = 0.0, curr_shock_mG = 0.0;
@@ -123,6 +125,8 @@ public class HandlerBox extends ThreadDefault
     public void on_constant_speed(){ calibrate_1 = true; }
 
     public void on_acceleration(){ calibrate_2 = true; }
+
+    public void on_raz_calibration() { calibrate_3 = true; }
 
     @Override
     public void onScanChanged(boolean scanning, ArrayList<BluetoothDevice> devices) {
@@ -198,6 +202,15 @@ public class HandlerBox extends ThreadDefault
             }
             if( change ) {
                 if( listener != null ) listener.onForceChanged( curr_smooth_mG, curr_shock_mG );
+            }
+
+            // Calibration 'k': RAZ calibration
+            if( calibrate_3 ) {
+                if( DEBUG ) Log.d(TAG,"RAZ calibration");
+                for( int i = mBoxList.size()-1; i >= 0; i-- )
+                    mBoxList.get(i).calibrate_raz();
+                calibrate_3 = false;
+                if( listener != null ) listener.onCalibrateRAZ();
             }
 
             // Calibration 'g' on constant speed
