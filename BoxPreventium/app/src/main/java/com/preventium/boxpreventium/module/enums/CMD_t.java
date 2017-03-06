@@ -40,6 +40,8 @@ public enum CMD_t {
                 return "First calibration (measure of severity) {'g',0x67}";
             case SECOND_CALIBRATION :
                 return "Second calibration (measurement of the vehicle traveling direction) {'o',0x6F}";
+            case RAZ_CALIBRATION:
+                return "Reset calibration ('k')";
             default                 :
                 return "Unknow command";
         }
