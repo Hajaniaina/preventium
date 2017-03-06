@@ -79,6 +79,7 @@ public class AppManager extends ThreadDefault
 
         void onCalibrateOnConstantSpeed();
         void onCalibrateOnAcceleration();
+        void onCalibrateRAZ();
     }
 
     /// ============================================================================================
@@ -116,6 +117,13 @@ public class AppManager extends ThreadDefault
         }
     }
 
+    public void raz_calibration(){
+        if( modules != null ) {
+            if( modules.activate() ) {
+                modules.on_raz_calibration();
+            }
+        }
+    }
 
     @Override
     public void myRun() throws InterruptedException {
@@ -207,6 +215,11 @@ public class AppManager extends ThreadDefault
     @Override
     public void onCalibrateOnAcceleration() {
         if( listener != null ) listener.onCalibrateOnAcceleration();
+    }
+
+    @Override
+    public void onCalibrateRAZ() {
+        if( listener != null ) listener.onCalibrateRAZ();
     }
 
     // PRIVATE

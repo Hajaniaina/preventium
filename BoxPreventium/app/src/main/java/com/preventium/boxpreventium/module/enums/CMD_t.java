@@ -15,7 +15,8 @@ public enum CMD_t {
     START_MEASURING('s'),
     PAUSE_MEASURING('p'),
     FIRST_CALIBRATION('g'),
-    SECOND_CALIBRATION('o');
+    SECOND_CALIBRATION('o'),
+    RAZ_CALIBRATION('k');
 
     private int value;
     private static Map<Integer, CMD_t> map = new HashMap<>();
