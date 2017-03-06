@@ -217,6 +217,7 @@ public class AppManager extends ThreadDefault
 
     @Override
     public void onCalibrateRAZ() {
+        onForceChanged(0.0,0.0);
         if( listener != null ) listener.onCalibrateRAZ();
     }
 
