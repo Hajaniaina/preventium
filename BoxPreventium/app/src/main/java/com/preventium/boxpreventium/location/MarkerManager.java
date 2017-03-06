@@ -112,23 +112,14 @@ public class MarkerManager {
                     found = true;
                 }
             }
-
-            /*
-            for (CustomMarker customMarker : markersList) {
-
-                if (customMarker.getType() == markerType) {
-
-                    markersList.remove(customMarker);
-                    found = true;
-                }
-            }
-            */
         }
 
         return found;
     }
 
     public boolean remove (CustomMarker marker) {
+
+        boolean found = false;
 
         if (markersList.size() > 0) {
 
@@ -139,23 +130,12 @@ public class MarkerManager {
                 if (customMarker.equals(marker)) {
 
                     iterator.remove();
-                    return true;
+                    found = true;
                 }
             }
-
-            /*
-            for (CustomMarker customMarker : markersList) {
-
-                if (customMarker.equals(marker)) {
-
-                    markersList.remove(customMarker);
-                    return true;
-                }
-            }
-            */
         }
 
-        return false;
+        return found;
     }
 
     public boolean remove (Marker marker) {

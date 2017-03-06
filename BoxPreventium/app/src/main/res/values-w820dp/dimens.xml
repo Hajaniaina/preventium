@@ -42,6 +42,7 @@
     <dimen name="action_menu_padding_start">10dp</dimen>
     <dimen name="action_menu_padding_bottom">105dp</dimen>
     <dimen name="action_menu_padding_end">10dp</dimen>
+    <dimen name="action_menu_button_spacing">4dp</dimen>
 
     <dimen name="buttons_layout_margin_top">10dp</dimen>
     <dimen name="buttons_layout_margin_start">690dp</dimen>

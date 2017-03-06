@@ -14,6 +14,7 @@ import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.SCORE_t;
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
+import com.preventium.boxpreventium.utils.ComonUtils;
 
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -46,6 +47,7 @@ public class StatsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stats);
 
+        TextView appVerView = (TextView) findViewById(R.id.textview_app_ver);
         TextView imeiView = (TextView) findViewById(R.id.textview_imei);
         TextView startTimeView = (TextView) findViewById(R.id.textview_start_time);
         TextView timeElapsedView = (TextView) findViewById(R.id.textview_time_elapsed);
@@ -53,6 +55,7 @@ public class StatsActivity extends AppCompatActivity {
         TextView avgSpeedView = (TextView) findViewById(R.id.textview_avg_speed);
         TextView avgScoreView = (TextView) findViewById(R.id.textview_avg_score);
 
+        appVerView.setText("App Version: " + ComonUtils.getVersionName(this));
         imeiView.setText("IMEI: " + StatsLastDriving.getIMEI(this));
 
         long timestamp = StatsLastDriving.get_start_at(this);

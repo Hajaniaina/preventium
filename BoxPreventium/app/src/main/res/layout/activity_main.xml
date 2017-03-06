@@ -354,6 +354,7 @@
                 android:paddingStart="@dimen/action_menu_padding_start"
                 android:paddingBottom="@dimen/action_menu_padding_bottom"
                 android:paddingEnd="@dimen/action_menu_padding_end"
+                fab:menu_buttonSpacing="@dimen/action_menu_button_spacing"
                 fab:menu_fab_size="@dimen/fb_button_size"
                 fab:menu_labels_ellipsize="end"
                 fab:menu_labels_singleLine="false"
@@ -374,6 +375,18 @@
                     fab:fab_size="@dimen/fb_button_size"
                     fab:fab_colorNormal="@color/colorAppRed"
                     fab:fab_colorPressed="@color/colorAppGreen"
+                    fab:fab_colorRipple="#ffee58"
+                    fab:fab_shadowColor="#444"
+                    fab:fab_label=""/>
+
+                <com.github.clans.fab.FloatingActionButton
+                    android:id="@+id/menu_button_reset_calibration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/quantum_ic_refresh_white_24"
+                    fab:fab_size="@dimen/fb_button_size"
+                    fab:fab_colorNormal="@color/colorAppGreen"
+                    fab:fab_colorPressed="@color/colorAppOrange"
                     fab:fab_colorRipple="#ffee58"
                     fab:fab_shadowColor="#444"
                     fab:fab_label=""/>
