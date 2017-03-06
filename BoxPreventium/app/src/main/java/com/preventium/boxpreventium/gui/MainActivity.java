@@ -409,6 +409,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             markerManager.remove(CustomMarker.MARKER_CYAN);
             markerManager.remove(CustomMarker.MARKER_MAGENTA);
+            markerManager.remove(CustomMarker.MARKER_ORANGE);
 
             return true;
         }
@@ -895,6 +896,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void run() {
 
                 markerManager.addMarker("Acceleration calibration", lastPos, CustomMarker.MARKER_CYAN);
+            }
+        });
+    }
+
+    @Override
+    public void onCalibrateRAZ() {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                markerManager.addMarker("Reset calibration", lastPos, CustomMarker.MARKER_ORANGE);
             }
         });
     }
@@ -1867,6 +1881,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick(View view) {
 
+                appManager.raz_calibration();
             }
         });
 
