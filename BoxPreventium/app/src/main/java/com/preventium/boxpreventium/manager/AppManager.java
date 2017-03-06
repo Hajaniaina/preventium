@@ -119,9 +119,7 @@ public class AppManager extends ThreadDefault
 
     public void raz_calibration(){
         if( modules != null ) {
-            if( modules.activate() ) {
-                modules.on_raz_calibration();
-            }
+             modules.on_raz_calibration();
         }
     }
 
