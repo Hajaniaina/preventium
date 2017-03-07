@@ -31,7 +31,7 @@ public class ECALine {
 
     public static final int ID_BEGIN = 0;
     public static final int ID_PAUSE = 230;
-    public static final int ID_RESUME = 253;
+    public static final int ID_RESUME = 231;
     public static final int ID_POSITION = 254;
     public static final int ID_END = 255;
 
