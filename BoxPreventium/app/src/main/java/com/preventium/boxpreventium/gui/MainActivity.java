@@ -802,7 +802,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         public void onTick(long millisUntilFinished) {}
 
                         public void onFinish() {
-
+                            drawAttention(5);
                             shockDetected = false;
                             sendSms(getPhoneNumber(R.string.phone_select_sms_shock), getString(R.string.sms_shock_msg_string));
                         }
