@@ -1023,6 +1023,11 @@ public class AppManager extends ThreadDefault
         // Read the runtime value force
         ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
         ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(YmG_smooth);
+        if( loc == null || (loc.getSpeed() * MS_TO_KMH) < 20.0 ) {
+            seuil_x = null;
+            seuil_y = null;
+        }
+
         // Compare the runtime X value force with the prevent X value force, and add alert to ECA database
         if( seuil_x != null ) {
             alertX = seuil_x.level;
@@ -1717,6 +1722,7 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
     private final Lock lock = new ReentrantLock();
 
     private List<Location> locations = new ArrayList<Location>();
+    private boolean gps = false;
 
     public void setLocation( Location location ) {
         if( location != null )
@@ -1748,34 +1754,52 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         }
     }
 
+    public void setGpsStatus( boolean active ) {
+        lock.lock();
+        gps = active;
+        lock.unlock();
+    }
+
     private synchronized List<Location> get_location_list(int length){
 
         List<Location> list = null;
+        if( gps_is_ready() ) {
 
-        lock.lock();
+            lock.lock();
 
-        // Clear locations list
-        if (locations.size() > 0) {
-            if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
-                locations.clear();
+            // Clear locations list
+            if (locations.size() > 0) {
+                if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
+                    locations.clear();
+                }
             }
-        }
-        // Get sublist
-        if( locations.size() >= length ) {
-            list = new ArrayList<Location>( this.locations.subList(0,length) );
-        }
+            // Get sublist
+            if (locations.size() >= length) {
+                list = new ArrayList<Location>(this.locations.subList(0, length));
+            }
 
-        lock.unlock();
+            lock.unlock();
 
+        }
         return list;
     }
 
     private synchronized Location get_last_location(){
         Location ret = null;
+        if( gps_is_ready() ) {
+            lock.lock();
+
+            if (locations.size() > 0) ret = new Location(locations.get(0));
+
+            lock.unlock();
+        }
+        return ret;
+    }
+
+    private boolean gps_is_ready() {
+        boolean ret;
         lock.lock();
-
-        if (locations.size() > 0) ret = new Location(locations.get(0));
-
+        ret = gps;
         lock.unlock();
         return ret;
     }
