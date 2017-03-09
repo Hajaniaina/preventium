@@ -1805,6 +1805,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     drawMapLine(prevPos, currPos);
                 }
             }
+
+            @Override
+            public void onGpsStatusChange (boolean gpsFix) {
+
+
+            }
         });
     }
 
