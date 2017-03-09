@@ -1445,14 +1445,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             for (int i = 0; i < epcStrList.length; i++) {
 
                 epcStrList[i] = "EPC " + String.valueOf(i + 1);
-            }
 
-            /*
-            for (int i = 0; i < epcExistList.size(); i++) {
+                boolean exist = false;
 
-                int index = (epcExistList.get(i) - 1);
+                for (int k = 0; k < epcExistList.size(); k++) {
+
+                    if (i == (epcExistList.get(k) - 1)) {
+
+                        exist = true;
+                    }
+                }
+
+                if (!exist) {
+
+                    epcStrList[i] += " [" + getString(R.string.empty_string) + "]";
+                }
             }
-            */
 
             selectedEpcFile = sharedPref.getInt(getString(R.string.epc_selected), 1) - 1;
 
@@ -1796,6 +1804,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     drawMapLine(prevPos, currPos);
                 }
+            }
+
+            @Override
+            public void onGpsStatusChange (boolean gpsFix) {
+
+
             }
         });
     }

@@ -40,6 +40,11 @@ public class ModeManager {
                 public void onRawPositionUpdate (Location location) {
 
                 }
+
+                @Override
+                public void onGpsStatusChange (boolean gpsFix) {
+
+                }
             });
 
             posManager.setMovingListener(new PositionManager.MovingStateListener() {

@@ -4,7 +4,10 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.GpsSatellite;
+import android.location.GpsStatus;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -37,8 +40,13 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     private static final float UPDATE_DISTANCE_MAX_M = 1000.0f;
     private static final float UPDATE_DELTA_T_MAX_MS = (30.0f * 1000);
 
+    private static final float GPS_SNR_AVG_MIN = 10.0f;
+    private static final float GPS_SNR_TH = 15.0f;
+
     private Context context;
     private LocationRequest locationRequest;
+    private GpsStatus gpsStatus;
+    private LocationManager manager;
     private GoogleApiClient googleApiClient;
     private Location refLocation = null, currLocation;
     private long updateIntervalMs = 100;
@@ -53,21 +61,19 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     public interface PositionListener {
 
         public void onPositionUpdate(Location prevLoc, Location currLoc);
-
         public void onRawPositionUpdate(Location location);
+        public void onGpsStatusChange(boolean gpsFix);
     }
 
     public interface MovingStateListener {
 
         public void onStartMoving();
-
         public void onStopMoving();
     }
 
     public interface AccStateListener {
 
         public void onAccelerating();
-
         public void onDeAccelerating();
     }
 
@@ -81,24 +87,72 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
 
         lastLocList = new ArrayList<Location>();
 
+        manager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+
+        checkPermission();
+        manager.addGpsStatusListener(new GpsStatus.Listener() {
+
+            @Override
+            public void onGpsStatusChanged (int event) {
+
+                if (event == GpsStatus.GPS_EVENT_SATELLITE_STATUS)
+                {
+                    checkPermission();
+                    gpsStatus = manager.getGpsStatus(gpsStatus);
+
+                    int satNum = 0;
+                    float snrAvg = 0;
+                    boolean status = false;
+
+                    Iterable<GpsSatellite> satellites = gpsStatus.getSatellites();
+
+                    for (GpsSatellite satelite : satellites) {
+
+                        double snr = satelite.getSnr();
+
+                        if (satelite.getSnr() > GPS_SNR_AVG_MIN) {
+
+                            snrAvg += snr;
+                            satNum++;
+                        }
+                    }
+
+                    if (satNum > 0) {
+
+                        snrAvg /= satNum;
+
+                        if (snrAvg >= GPS_SNR_TH) {
+
+                            status = true;
+                        }
+                    }
+
+                    for (PositionListener posListener : posListeners) {
+
+                        posListener.onGpsStatusChange(status);
+                    }
+                }
+            }
+        });
+
         googleApiClient = new GoogleApiClient.Builder(context).addConnectionCallbacks(this).addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
         googleApiClient.connect();
     }
 
     @Override
-    public void onConnectionSuspended(int i) {
+    public void onConnectionSuspended (int i) {
 
         Log.d(TAG, "Google API connection suspended");
     }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+    public void onConnectionFailed (@NonNull ConnectionResult connectionResult) {
 
         Log.d(TAG, "Google API connection failed");
     }
 
     @Override
-    public void onConnected(Bundle bundle) {
+    public void onConnected (Bundle bundle) {
 
         locationRequest = new LocationRequest();
         locationRequest.setInterval(updateIntervalMs);
@@ -109,7 +163,7 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     }
 
     @Override
-    public void onLocationChanged(Location location) {
+    public void onLocationChanged (Location location) {
 
         if (refLocation == null) {
 
