@@ -1809,6 +1809,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onGpsStatusChange (boolean gpsFix) {
 
+                appManager.setGpsStatus( gpsFix );
 
             }
         });
