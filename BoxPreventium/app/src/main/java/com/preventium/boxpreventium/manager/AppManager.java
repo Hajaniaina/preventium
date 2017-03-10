@@ -143,7 +143,6 @@ public class AppManager extends ThreadDefault
             check_internet_is_active();
             update_tracking_status();
 
-
             modules.setActive( true );
             sleep(500);
             database.clear_obselete_data();
@@ -355,27 +354,32 @@ public class AppManager extends ThreadDefault
         FTPConfig config = new FTPConfig("www.preventium.fr","box.preventium","Box*16/64/prev",21);
         FTPClientIO ftp = new FTPClientIO();
 
-        while ( isRunning() ) {
+
+        do {
             // Trying to connect to FTP server...
             if( !ftp.ftpConnect(config, 5000) ) {
                 check_internet_is_active();
             } else {
-
-                do {
-                    exist_actif = false;
-                    if (!ftp.changeWorkingDirectory("/ACTIFS")) {
-                        Log.d(TAG, "Error while trying to change working directory to \"/ACTIFS\"");
-                    } else {
-                        // Checking if .ACTIVE file is in FTP server ?
-                        String srcFileName = ComonUtils.getIMEInumber(ctx);
-                        exist_actif = ftp.checkFileExists(srcFileName);
-                        if( !exist_actif ) {
-                            if( listener != null ) listener.onStatusChanged( STATUS_t.IMEI_INACTIF );
-                        }
+                exist_actif = false;
+                if (!ftp.changeWorkingDirectory("/ACTIFS")) {
+                    Log.d(TAG, "Error while trying to change working directory to \"/ACTIFS\"");
+                } else {
+                    // Checking if .ACTIVE file is in FTP server ?
+                    String srcFileName = ComonUtils.getIMEInumber(ctx);
+                    exist_actif = ftp.checkFileExists(srcFileName);
+                    if( !exist_actif ) {
+                    try {
+                        sleep(3000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                } while (!exist_actif && isRunning() );
+                        if( listener != null ) listener.onStatusChanged( STATUS_t.IMEI_INACTIF );
+                    }
+                }
             }
-        }
+
+        } while (!exist_actif && isRunning() );
+
 
         return exist_actif;
     }
