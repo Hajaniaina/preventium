@@ -4,6 +4,7 @@ package com.preventium.boxpreventium.manager;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.util.Log;
+import android.util.Pair;
 
 import com.preventium.boxpreventium.enums.ENGINE_t;
 import com.preventium.boxpreventium.module.DiscoverBox;
@@ -17,6 +18,7 @@ import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ThreadDefault;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import static java.lang.Thread.sleep;
 
@@ -31,16 +33,19 @@ public class BoxManager
     private final static boolean DEBUG = true;
     private final static String TAG = "BoxManager";
 
+
     private Context _ctx = null;
     private DiscoverBox _discover = null;
     private HandlerBox.NotifyListener _listener = null;
     private boolean _scanning = false;
     private ArrayList<BluetoothDevice> _proximityDevices = new ArrayList<BluetoothDevice>();
     private ArrayList<BluetoothBox> mBoxList = new ArrayList<BluetoothBox>();
-    private double last_smooth_mG;
-    private double curr_smooth_mG;
-    private double last_shock_mG;
-    private double curr_shock_mG;
+
+    private Pair<Double,Short> last_smooth; // mG, RAW
+    private Pair<Double,Short> curr_smooth; // mG, RAW
+    private Pair<Double,Short> last_shock; // mG, RAW
+    private Pair<Double,Short> curr_shock; // mG, RAW
+
     private ENGINE_t last_engine_t = ENGINE_t.UNKNOW;
     private Chrono chrono = Chrono.newInstance();
     private boolean calibrate_1 = false;
@@ -71,16 +76,16 @@ public class BoxManager
 
             disconnectAll();
 
-            curr_smooth_mG = 0.0;
-            last_smooth_mG = 0.0;
-            curr_shock_mG = 0.0;
-            last_shock_mG = 0.0;
+            curr_smooth = Pair.create(0.0, (short)0);
+            last_smooth = Pair.create(0.0, (short)0);
+            curr_shock = Pair.create(0.0, (short)0);
+            last_shock = Pair.create(0.0, (short)0);
             last_engine_t = ENGINE_t.UNKNOW;
 
             int nb = mBoxList.size();
             if( _listener != null ) {
                 _listener.onNumberOfBox( nb );
-                _listener.onForceChanged( last_smooth_mG, last_shock_mG );
+                _listener.onForceChanged( last_smooth, last_shock );
                 _listener.onEngineStateChanged( last_engine_t );
             }
 
@@ -144,8 +149,8 @@ public class BoxManager
     public void process() throws InterruptedException {
 
         int nb = mBoxList.size();
-        curr_smooth_mG = 0.0;
-        curr_shock_mG = 0.0;
+        curr_smooth = Pair.create(0.0, (short)0);
+        curr_shock = Pair.create(0.0, (short)0);
 
         for( int i = mBoxList.size()-1; i >= 0; i-- ) {
 
@@ -156,15 +161,15 @@ public class BoxManager
             } else {
                 SensorSmoothAccelerometerInfo smooth = mBoxList.get(i).getSmooth();
                 if( smooth != null ) {
-                    if( interval(0.0,smooth.value()) >= interval(0.0,curr_smooth_mG) ) {
-                        curr_smooth_mG = smooth.value();
+                    if( interval(0.0,smooth.value()) >= interval(0.0,curr_smooth.first) ) {
+                        curr_smooth = Pair.create(smooth.value(), smooth.value_raw());
                     }
                 }
 
                 SensorShockAccelerometerInfo shock = mBoxList.get(i).getShock();
                 if( shock != null ) {
-                    if( interval(0.0,shock.value()) >= interval(0.0,curr_shock_mG) ) {
-                        curr_shock_mG = shock.value();
+                    if( interval(0.0,shock.value()) >= interval(0.0,curr_shock.first) ) {
+                        curr_shock = Pair.create(shock.value(), shock.value_raw());
                     }
                 }
 
@@ -172,16 +177,16 @@ public class BoxManager
         }
 
         boolean change = false;
-        if( last_smooth_mG != curr_smooth_mG ) {
-            last_smooth_mG = curr_smooth_mG;
+        if( !Objects.equals(last_smooth, curr_smooth) ) {
+            last_smooth = Pair.create(curr_smooth.first,curr_smooth.second);
             change = true;
         }
-        if( last_shock_mG != curr_shock_mG ) {
-            last_shock_mG = curr_shock_mG;
+        if( !Objects.equals(last_shock, curr_shock) ) {
+            last_shock = Pair.create(curr_shock.first,curr_shock.second);
             change = true;
         }
         if( change ) {
-            if( _listener != null ) _listener.onForceChanged( curr_smooth_mG, curr_shock_mG );
+            if( _listener != null ) _listener.onForceChanged( curr_smooth, curr_shock );
         }
 
         // Calibration 'g' on constant speed

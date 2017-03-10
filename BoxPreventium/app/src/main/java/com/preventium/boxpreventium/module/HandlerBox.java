@@ -2,15 +2,12 @@ package com.preventium.boxpreventium.module;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.hardware.Sensor;
 import android.util.Log;
 import android.util.Pair;
 
 import com.preventium.boxpreventium.enums.ENGINE_t;
 import com.preventium.boxpreventium.module.device.BluetoothBox;
 import com.preventium.boxpreventium.module.enums.CONNEXION_STATE_t;
-import com.preventium.boxpreventium.enums.FORCE_t;
-import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.module.trames.BatteryInfo;
 import com.preventium.boxpreventium.module.trames.SensorShockAccelerometerInfo;
 import com.preventium.boxpreventium.module.trames.SensorSmoothAccelerometerInfo;
@@ -18,6 +15,7 @@ import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ThreadDefault;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * Created by Franck on 14/09/2016.
@@ -33,7 +31,7 @@ public class HandlerBox extends ThreadDefault
         void onScanState(boolean scanning);
         void onDeviceState( String device_mac, boolean connected );
         void onNumberOfBox(int nb);
-        void onForceChanged(double mG_smooth, double mG_shock);
+        void onForceChanged(Pair<Double,Short> mG_smooth, Pair<Double,Short> mG_shock);
         void onEngineStateChanged(ENGINE_t state);
         void onCalibrateOnConstantSpeed();
         void onCalibrateOnAcceleration();
@@ -53,8 +51,10 @@ public class HandlerBox extends ThreadDefault
     private boolean calibrate_2 = false;
     private boolean calibrate_3 = false;
 
-    private double last_smooth_mG = 0.0, curr_smooth_mG = 0.0;
-    private double last_shock_mG = 0.0, curr_shock_mG = 0.0;
+    private Pair<Double,Short> last_smooth; // mG, RAW
+    private Pair<Double,Short> curr_smooth; // mG, RAW
+    private Pair<Double,Short> last_shock; // mG, RAW
+    private Pair<Double,Short> curr_shock; // mG, RAW
     private ENGINE_t last_engine_t = ENGINE_t.UNKNOW;
 
     public HandlerBox(Context ctx, NotifyListener listener) {
@@ -144,18 +144,20 @@ public class HandlerBox extends ThreadDefault
         chrono.start();
         discoverBox.scan();
 
-        curr_smooth_mG = last_smooth_mG = 0.0;
-        curr_shock_mG = last_shock_mG = 0.0;
+        curr_smooth = Pair.create(0.0,(short)0);
+        last_smooth = Pair.create(0.0,(short)0);
+        curr_shock = Pair.create(0.0,(short)0);
+        last_shock = Pair.create(0.0,(short)0);
         last_engine_t = ENGINE_t.UNKNOW;
 
         int nb = mBoxList.size();
         if( listener != null ) {
             listener.onNumberOfBox( nb );
-            listener.onForceChanged( last_smooth_mG, last_shock_mG );
+            listener.onForceChanged( last_smooth, last_shock);
             listener.onEngineStateChanged( last_engine_t );
         }
 
-        double mG_shock;
+
         while( isRunning() ) {
 
             sleep(1000);
@@ -165,8 +167,8 @@ public class HandlerBox extends ThreadDefault
                 chrono.start(); // Restart chrono who indicate the elapsed time since the last scan
             }
 
-            curr_smooth_mG = 0.0;
-            curr_shock_mG = 0.0;
+            curr_smooth = Pair.create(0.0,(short)0);
+            curr_shock = Pair.create(0.0,(short)0);
             for( int i = mBoxList.size()-1; i >= 0; i-- ) {
 
                 if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
@@ -176,15 +178,15 @@ public class HandlerBox extends ThreadDefault
                 } else {
                     SensorSmoothAccelerometerInfo smooth = mBoxList.get(i).getSmooth();
                     if( smooth != null ) {
-                        if( interval(0.0,smooth.value()) >= interval(0.0,curr_smooth_mG) ) {
-                            curr_smooth_mG = smooth.value();
+                        if( interval(0.0,smooth.value()) >= interval(0.0,curr_smooth.first) ) {
+                            curr_smooth = Pair.create(smooth.value(),smooth.value_raw());
                         }
                     }
 
                     SensorShockAccelerometerInfo shock = mBoxList.get(i).getShock();
                     if( shock != null ) {
-                        if( interval(0.0,shock.value()) >= interval(0.0,curr_shock_mG) ) {
-                            curr_shock_mG = shock.value();
+                        if( interval(0.0,shock.value()) >= interval(0.0,curr_shock.first) ) {
+                            curr_shock = Pair.create(shock.value(),shock.value_raw());
                         }
                     }
 
@@ -192,16 +194,16 @@ public class HandlerBox extends ThreadDefault
             }
 
             boolean change = false;
-            if( last_smooth_mG != curr_smooth_mG ) {
-                last_smooth_mG = curr_smooth_mG;
+            if( !Objects.equals(last_smooth, curr_smooth) ) {
+                last_smooth = Pair.create(curr_smooth.first,curr_smooth.second);
                 change = true;
             }
-            if( last_shock_mG != curr_shock_mG ) {
-                last_shock_mG = curr_shock_mG;
+            if( !Objects.equals(last_shock, curr_shock) ) {
+                last_shock = Pair.create(curr_shock.first,curr_shock.second);
                 change = true;
             }
             if( change ) {
-                if( listener != null ) listener.onForceChanged( curr_smooth_mG, curr_shock_mG );
+                if( listener != null ) listener.onForceChanged( curr_smooth, curr_shock );
             }
 
             // Calibration 'k': RAZ calibration

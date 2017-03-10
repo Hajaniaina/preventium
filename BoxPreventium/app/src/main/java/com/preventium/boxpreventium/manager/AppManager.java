@@ -7,8 +7,8 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
-import android.support.v4.util.Pair;
 import android.util.Log;
+import android.util.Pair;
 
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.database.Database;
@@ -73,7 +73,7 @@ public class AppManager extends ThreadDefault
 
         void onNoteChanged( int note_par, LEVEL_t level_par, LEVEL_t level_5_days );
         void onScoreChanged(SCORE_t type, LEVEL_t level);
-        void onShock();
+        void onShock(double mG, short raw);
         void onRecommendedSpeedChanged(SPEED_t speed_t, int kmh, LEVEL_t level, boolean valid);
         void onInternetConnectionChanged();
 
@@ -194,9 +194,9 @@ public class AppManager extends ThreadDefault
     }
 
     @Override
-    synchronized public void onForceChanged(double mG_smooth, double mG_shock) {
-        this.YmG_smooth = mG_smooth;
-        this.YmG_shock = mG_shock;
+    public void onForceChanged(Pair<Double, Short> smooth, Pair<Double, Short> shock) {
+        this.smooth = smooth;
+        this.shock = shock;
     }
 
     @Override
@@ -217,7 +217,7 @@ public class AppManager extends ThreadDefault
 
     @Override
     public void onCalibrateRAZ() {
-        onForceChanged(0.0,0.0);
+        onForceChanged( Pair.create(0.0,(short)0),Pair.create(0.0,(short)0));
         if( listener != null ) listener.onCalibrateRAZ();
     }
 
@@ -895,22 +895,23 @@ public class AppManager extends ThreadDefault
     private ForceSeuil seuil_last_x = null;
     private ForceSeuil seuil_last_y = null;
     private double XmG = 0.0;
-    private double YmG_smooth = 0.0;
-    private double YmG_shock = 0.0;
+    Pair<Double,Short> smooth = Pair.create(0.0,(short)0);
+    Pair<Double,Short> shock = Pair.create(0.0,(short)0);
 
     private void calc_movements(){
         this.mov_t = MOVING_t.UNKNOW;
         this.XmG = 0f;
         boolean rightRoad = false;
 
-        List<Location> list = get_location_list(3);
+        List<Location> list = get_location_list(10);
         if( list != null && list.size() >= 3 ){
-            rightRoad = isRightRoad( list.get(0), list.get(1), list.get(2) );
+            int i = list.size()-1;
+            rightRoad = isRightRoad( list.get(i-2), list.get(i-1), list.get(i) );
             boolean acceleration = true;
             boolean freinage = true;
             float speed_min = list.get(0).getSpeed();
             float speed_max = list.get(0).getSpeed();
-            for (int i = 0; i < list.size(); i++) {// i is more recent than (i+1)
+            for (i = 0; i < list.size(); i++) {// i is more recent than (i+1)
                 // Calculate minimum and maximum value
                 if (list.get(i).getSpeed() < speed_min) speed_min = list.get(i).getSpeed();
                 if (list.get(i).getSpeed() > speed_max) speed_max = list.get(i).getSpeed();
@@ -920,6 +921,24 @@ public class AppManager extends ThreadDefault
                     if (list.get(i).getSpeed() > list.get(i + 1).getSpeed())freinage = false;
                 }
             }
+
+//        List<Location> list = get_location_list(3);
+//        if( list != null && list.size() >= 3 ){
+//            rightRoad = isRightRoad( list.get(0), list.get(1), list.get(2) );
+//            boolean acceleration = true;
+//            boolean freinage = true;
+//            float speed_min = list.get(0).getSpeed();
+//            float speed_max = list.get(0).getSpeed();
+//            for (int i = 0; i < list.size(); i++) {// i is more recent than (i+1)
+//                // Calculate minimum and maximum value
+//                if (list.get(i).getSpeed() < speed_min) speed_min = list.get(i).getSpeed();
+//                if (list.get(i).getSpeed() > speed_max) speed_max = list.get(i).getSpeed();
+//                // Checking acceleration and braking
+//                if (i < list.size() - 1) {
+//                    if (list.get(i).getSpeed() < list.get(i + 1).getSpeed())acceleration = false;
+//                    if (list.get(i).getSpeed() > list.get(i + 1).getSpeed())freinage = false;
+//                }
+//            }
 
             if (speed_max * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
             else if ((speed_max - speed_min) * MS_TO_KMH < 2f) mov_t = MOVING_t.CST;
@@ -1022,7 +1041,7 @@ public class AppManager extends ThreadDefault
         LEVEL_t alertY = LEVEL_t.LEVEL_UNKNOW;
         // Read the runtime value force
         ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
-        ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(YmG_smooth);
+        ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(smooth.first);
         if( loc == null || (loc.getSpeed() * MS_TO_KMH) < 20.0 ) {
             seuil_x = null;
             seuil_y = null;
@@ -1507,9 +1526,8 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
             int val = ctx.getResources().getInteger(R.integer.shock_trigger_mG_def);
             val = sp.getInt(key,val);
 
-            if( interval(0.0, XmG ) > val
-                    || interval(0.0, YmG_shock) > val ) {
-                listener.onShock();
+            if( interval(0.0, shock.first) > val ) {
+                listener.onShock( shock.first, shock.second );
             }
         }
     }
