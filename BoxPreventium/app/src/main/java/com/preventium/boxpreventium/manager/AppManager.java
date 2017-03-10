@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -129,6 +130,7 @@ public class AppManager extends ThreadDefault
         setLog( "AppManager begin..." );
 
         database.clear_obselete_data();
+        IMEI_is_actif();
         download_cfg();
         download_epc();
         download_dobj();
@@ -341,6 +343,42 @@ public class AppManager extends ThreadDefault
         }
     }
 
+    /// ============================================================================================
+    /// .CHECK IF ACTIF
+    /// ============================================================================================
+
+    private boolean IMEI_is_actif() {
+        boolean exist_actif = false;
+
+        if( listener != null ) listener.onStatusChanged( STATUS_t.CHECK_ACTIF );
+
+        FTPConfig config = new FTPConfig("www.preventium.fr","box.preventium","Box*16/64/prev",21);
+        FTPClientIO ftp = new FTPClientIO();
+
+        while ( isRunning() ) {
+            // Trying to connect to FTP server...
+            if( !ftp.ftpConnect(config, 5000) ) {
+                check_internet_is_active();
+            } else {
+
+                do {
+                    exist_actif = false;
+                    if (!ftp.changeWorkingDirectory("/ACTIFS")) {
+                        Log.d(TAG, "Error while trying to change working directory to \"/ACTIFS\"");
+                    } else {
+                        // Checking if .ACTIVE file is in FTP server ?
+                        String srcFileName = ComonUtils.getIMEInumber(ctx);
+                        exist_actif = ftp.checkFileExists(srcFileName);
+                        if( !exist_actif ) {
+                            if( listener != null ) listener.onStatusChanged( STATUS_t.IMEI_INACTIF );
+                        }
+                    }
+                } while (!exist_actif && isRunning() );
+            }
+        }
+
+        return exist_actif;
+    }
     /// ============================================================================================
     /// .CFG
     /// ============================================================================================
@@ -907,6 +945,7 @@ public class AppManager extends ThreadDefault
         List<Location> list = get_location_list(20,5000);
 
         if( list != null && list.size() >= 3 ){
+
             int i = list.size()-1;
             rightRoad = isRightRoad( list.get(i-2), list.get(i-1), list.get(i) );
             boolean acceleration = true;
@@ -923,6 +962,7 @@ public class AppManager extends ThreadDefault
                     if (list.get(i).getSpeed() > list.get(i + 1).getSpeed())freinage = false;
                 }
             }
+            //Log.d("AAAAAAAAAAAAAAAAA","SIZE: "+list.size()+ " ACC: " + acceleration + " BRK: " + freinage);
 
 //        List<Location> list = get_location_list(3);
 //        if( list != null && list.size() >= 3 ){
@@ -1562,9 +1602,11 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                 && mov_t_last != MOVING_t.UNKNOW
                 && engine_t == ENGINE_t.ON
         );
+
         if ( !ready_to_started ) {
             chrono_ready_to_start.stop();
         } else {
+
             if ( !chrono_ready_to_start.isStarted() ) chrono_ready_to_start.start();
             if ( chrono_ready_to_start.getSeconds() > SECS_TO_SET_PARCOURS_START ) {
                 loading_epc();
@@ -1820,7 +1862,7 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                     break;
             }
 
-            //Log.d("AAAA","Number of points over the last " + ms+ " ms seconds: " + i );
+//Log.d("AAAA","Number of points over the last " + ms+ " ms seconds: " + i );
             // Get sublist
             if (locations.size() >= i) {
                 list = new ArrayList<Location>(this.locations.subList(0, i));
