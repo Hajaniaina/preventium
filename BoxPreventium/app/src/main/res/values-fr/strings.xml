@@ -72,8 +72,10 @@
     <string name="pref_title_sms_tracking_string">SMS Tracking On/Off</string>
     <string name="pref_trigger_time_string">Délai de déclenchement</string>
     <string name="pref_title_voice_call_string">Appels</string>
-    <string name="progress_cfg_string">Téléchargement de données CFG pour IMEI:</string>
-    <string name="progress_epc_string">Téléchargement de données EPC pour IMEI:</string>
+    <string name="progress_check_imei_string">Vérification de l\'activation du IMEI: </string>
+    <string name="progress_inactive_imei_string">L’application rencontre un problème de connexion. Si ce n’est pas la première fois, merci de vous rapprocher de votre service formation ou de notre service commercial</string>
+    <string name="progress_cfg_string">Téléchargement de données CFG pour IMEI: </string>
+    <string name="progress_epc_string">Téléchargement de données EPC pour IMEI: </string>
     <string name="progress_loading_string">Chargement…</string>
     <string name="progress_location_string">En attente de données GPS</string>
     <string name="progress_map_string">Chargement de GoogleMaps</string>

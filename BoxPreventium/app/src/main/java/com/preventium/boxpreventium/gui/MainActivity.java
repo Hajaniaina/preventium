@@ -432,6 +432,27 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 switch (status) {
 
+                    case CHECK_ACTIF:
+
+                        if (progress != null) {
+
+                            progress.show();
+                            progress.setMessage(getString(R.string.progress_check_imei_string) + StatsLastDriving.getIMEI(MainActivity.this));
+                        }
+
+                        break;
+
+                    case IMEI_INACTIF:
+
+                        if (progress != null) {
+
+                            progress.show();
+                            progress.setProgressStyle(R.style.NegativeDialogStyle);
+                            progress.setMessage(getString(R.string.progress_inactive_imei_string));
+                        }
+
+                        break;
+
                     case GETTING_CFG:
 
                         if (progress != null) {
@@ -1816,7 +1837,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onGpsStatusChange (boolean gpsFix) {
 
                 appManager.setGpsStatus(gpsFix);
-
             }
         });
     }

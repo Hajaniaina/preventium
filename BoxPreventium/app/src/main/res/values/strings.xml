@@ -104,9 +104,11 @@
     <string name="progress_loading_string">Loading…</string>
     <string name="progress_map_string">Loading Google Maps</string>
     <string name="progress_location_string">Waiting for GPS data</string>
-    <string name="progress_cfg_string">Downloading CFG data for IMEI:</string>
-    <string name="progress_epc_string">Downloading EPC data for IMEI:</string>
-    <string name="progress_obj_string">Downloading OBJ datafor IMEI:</string>
+    <string name="progress_check_imei_string">Checking IMEI activation: </string>
+    <string name="progress_inactive_imei_string">Connection error. Please contact Preventium sales service</string>
+    <string name="progress_cfg_string">Downloading CFG data for IMEI: </string>
+    <string name="progress_epc_string">Downloading EPC data for IMEI: </string>
+    <string name="progress_obj_string">Downloading OBJ datafor IMEI: </string>
     <string name="progress_send_string">Sendind route data to the server</string>
     <string name="progress_ready_string">Ready</string>
     <string name="scan_qr_ok_string">Code OK</string>
