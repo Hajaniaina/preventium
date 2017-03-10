@@ -57,7 +57,7 @@ public class AppManager extends ThreadDefault
     private final static String TAG = "AppManager";
     private final static boolean DEBUG = true;
     private static final float MS_TO_KMH = 3.6f;
-    private static final int SECS_TO_SET_PARCOURS_START = 5;
+    private static final int SECS_TO_SET_PARCOURS_START = 3;
     private static final int SECS_TO_SET_PARCOURS_PAUSE = 20; // 4 minutes = 4 * 60 secs = 240 secs
     private static final int SECS_TO_SET_PARCOURS_RESUME = SECS_TO_SET_PARCOURS_START;
     private static final int SECS_TO_SET_PARCOURS_STOPPED = 25200; // 7 hours = 7 * 3600 secs = 25200 secs
@@ -899,11 +899,13 @@ public class AppManager extends ThreadDefault
     Pair<Double,Short> shock = Pair.create(0.0,(short)0);
 
     private void calc_movements(){
+
         this.mov_t = MOVING_t.UNKNOW;
         this.XmG = 0f;
         boolean rightRoad = false;
 
-        List<Location> list = get_location_list(10);
+        List<Location> list = get_location_list(20,5000);
+
         if( list != null && list.size() >= 3 ){
             int i = list.size()-1;
             rightRoad = isRightRoad( list.get(i-2), list.get(i-1), list.get(i) );
@@ -1743,28 +1745,24 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
     private boolean gps = false;
 
     public void setLocation( Location location ) {
-        if( location != null )
-        {
-            // Importatnt, use systeme time
+
+        // Clear obselete location and limit list size
+        clear_obselete_location();
+
+        if( location != null ) {
+
+            // Important, use systeme time
             location.setTime( System.currentTimeMillis() );
 
             lock.lock();
 
-            // Clear locations list
-            if (locations.size() > 0) {
-                if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
-                    locations.clear();
-                }
-            }
             // Add new location
-            if( !locations.isEmpty() ){
-                if( locations.get(0).distanceTo( location ) < 10 ){
+            if( !locations.isEmpty() ) {
+                if( locations.get(0).distanceTo( location ) < 5.0 ){
                     locations.remove(0);
                 }
             }
             this.locations.add(0, new Location(location) );
-            // Limit list size
-            while (this.locations.size() > 10) this.locations.remove(this.locations.size() - 1);
 
             lock.unlock();
 
@@ -1778,26 +1776,57 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         lock.unlock();
     }
 
+    private synchronized  void clear_obselete_location() {
+        clear_location(50,15000);
+    }
+
+    private synchronized void clear_location(int max, int ms) {
+
+        lock.lock();
+
+        long timeMS = System.currentTimeMillis() - ms;
+        int i;
+        for( i = 0; i < locations.size(); i++ ) {
+            if( i == max
+                    || locations.get(i).getTime() < timeMS )
+                break;
+        }
+
+        locations.subList(i, locations.size()).clear();
+
+        lock.unlock();
+
+    }
+
     private synchronized List<Location> get_location_list(int length){
+        return  get_location_list(length,5000);
+    }
+
+    private synchronized List<Location> get_location_list(int length, int ms){
+
+        // Clear obselete location and limit list size
+        clear_obselete_location();
 
         List<Location> list = null;
         if( gps_is_ready() ) {
 
             lock.lock();
 
-            // Clear locations list
-            if (locations.size() > 0) {
-                if (System.currentTimeMillis() - locations.get(0).getTime() > 15000) {
-                    locations.clear();
-                }
+            long timeMS = System.currentTimeMillis() - ms;
+            int i;
+            for( i = 0; i < locations.size(); i++ ) {
+                if( i == length
+                        || locations.get(i).getTime() < timeMS )
+                    break;
             }
+
+            //Log.d("AAAA","Number of points over the last " + ms+ " ms seconds: " + i );
             // Get sublist
-            if (locations.size() >= length) {
-                list = new ArrayList<Location>(this.locations.subList(0, length));
+            if (locations.size() >= i) {
+                list = new ArrayList<Location>(this.locations.subList(0, i));
             }
 
             lock.unlock();
-
         }
         return list;
     }
@@ -1819,6 +1848,7 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         lock.lock();
         ret = gps;
         lock.unlock();
+        ret = true;
         return ret;
     }
 
@@ -1833,9 +1863,9 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
     }
 
     private void addLog( String txt ){
-//        if( !log.isEmpty() ) log += System.getProperty("line.separator");
-//        log += txt;
-//        if( listener != null ) listener.onDebugLog( log );
+        if( !log.isEmpty() ) log += System.getProperty("line.separator");
+        log += txt;
+        if( listener != null ) listener.onDebugLog( log );
     }
 
 }
