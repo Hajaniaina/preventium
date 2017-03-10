@@ -410,6 +410,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             markerManager.remove(CustomMarker.MARKER_CYAN);
             markerManager.remove(CustomMarker.MARKER_MAGENTA);
             markerManager.remove(CustomMarker.MARKER_ORANGE);
+            markerManager.remove(CustomMarker.MARKER_ROSE);
 
             return true;
         }
@@ -786,7 +787,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onShock() {
+    public void onShock (final double mG, final short raw) {
 
         runOnUiThread(new Runnable() {
 
@@ -802,9 +803,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         public void onTick(long millisUntilFinished) {}
 
                         public void onFinish() {
+
                             drawAttention(5);
                             shockDetected = false;
-                            sendSms(getPhoneNumber(R.string.phone_select_sms_shock), getString(R.string.sms_shock_msg_string));
+
+                            String msg = getString(R.string.sms_shock_msg_string) + " " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")";
+                            sendSms(getPhoneNumber(R.string.phone_select_sms_shock), msg);
+
+                            markerManager.addMarker("Shock " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")", lastPos, CustomMarker.MARKER_ROSE);
                         }
 
                     }.start();
@@ -1809,7 +1815,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onGpsStatusChange (boolean gpsFix) {
 
-                appManager.setGpsStatus( gpsFix );
+                appManager.setGpsStatus(gpsFix);
 
             }
         });
