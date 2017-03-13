@@ -130,8 +130,9 @@ public class AppManager extends ThreadDefault
         setLog( "AppManager begin..." );
 
         database.clear_obselete_data();
-        IMEI_is_actif();
+
         download_cfg();
+        IMEI_is_actif();
         download_epc();
         download_dobj();
         modules.setActive( true );
@@ -351,9 +352,8 @@ public class AppManager extends ThreadDefault
 
         if( listener != null ) listener.onStatusChanged( STATUS_t.CHECK_ACTIF );
 
-        FTPConfig config = new FTPConfig("www.preventium.fr","box.preventium","Box*16/64/prev",21);
+        FTPConfig config = DataCFG.getFptConfig(ctx);
         FTPClientIO ftp = new FTPClientIO();
-
 
         do {
             // Trying to connect to FTP server...
