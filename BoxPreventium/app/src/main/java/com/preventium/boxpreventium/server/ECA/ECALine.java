@@ -62,9 +62,10 @@ public class ECALine {
         line[i++] = (byte)aGMTCalendar.get(Calendar.DAY_OF_MONTH);
         line[i++] = (byte)(aGMTCalendar.get(Calendar.MONTH)+1);
         line[i++] = (byte)(aGMTCalendar.get(Calendar.YEAR)&0xFF);
-        line[i++] = (byte)aGMTCalendar.get(Calendar.HOUR);
+        line[i++] = (byte)aGMTCalendar.get(Calendar.HOUR_OF_DAY);
         line[i++] = (byte)aGMTCalendar.get(Calendar.MINUTE);
         line[i++] = (byte)aGMTCalendar.get(Calendar.SECOND);
+
         // unsigned char alertID; //1 byte
         line[i++] = (byte)alertID;
         // unsigned char padding; //1 byte
