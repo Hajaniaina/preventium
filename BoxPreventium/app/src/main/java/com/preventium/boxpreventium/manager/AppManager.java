@@ -1152,18 +1152,17 @@ public class AppManager extends ThreadDefault
 //                && alertY == LEVEL_t.LEVEL_UNKNOW  ){
         if( _tracking ) {
 
-            List<Location> locations = get_location_list(2);
-            if (locations != null && locations.size() >= 2) {
-                // If elapsed time > 2 seconds
-//                if (System.currentTimeMillis() - alertPos_add_at >= 500) {
-                    if (lastLocSend == null || locations.get(0).distanceTo(lastLocSend) > 15.0f ) {
-                        database.addECA(parcour_id, ECALine.newInstance(locations.get(0), locations.get(1)));
-//                        alertPos_add_at = System.currentTimeMillis();
-                        lastLocSend = new Location(locations.get(0));
-                    }
-//                }
-            }
+            List<Location> locations = get_location_list(1);
+            if (locations != null && locations.size() >= 1) {
+                float min_meters = ( (locations.get(0).getSpeed()*MS_TO_KMH) < 70f ) ? 5f : 15f;
+                if( lastLocSend == null
+                        || locations.get(0).distanceTo(lastLocSend) > min_meters ) {
 
+                    if( lastLocSend == null ) lastLocSend = new Location(locations.get(0));
+                    database.addECA(parcour_id, ECALine.newInstance(locations.get(0), lastLocSend));
+                    lastLocSend = new Location(locations.get(0));
+                }
+            }
         }
 
         // Update ui interface
