@@ -24,7 +24,6 @@ public class QrScanRequest implements Parcelable {
 
     public QrScanRequest() {
 
-
     }
 
     public void resetVehicleReq() {
@@ -120,11 +119,13 @@ public class QrScanRequest implements Parcelable {
 
     @Override
     public int describeContents() {
+
         return 0;
     }
 
     @Override
-    public void writeToParcel(Parcel dest, int flags) {
+    public void writeToParcel (Parcel dest, int flags) {
+
         dest.writeLong(this.driverId);
         dest.writeByte(this.driverIdEnabled ? (byte) 1 : (byte) 0);
         dest.writeByte(this.vehicleFrontOnStartEnabled ? (byte) 1 : (byte) 0);
@@ -136,7 +137,8 @@ public class QrScanRequest implements Parcelable {
         dest.writeInt(this.vehicleBackReq);
     }
 
-    protected QrScanRequest(Parcel in) {
+    protected QrScanRequest (Parcel in) {
+
         this.driverId = in.readLong();
         this.driverIdEnabled = in.readByte() != 0;
         this.vehicleFrontOnStartEnabled = in.readByte() != 0;
@@ -149,13 +151,16 @@ public class QrScanRequest implements Parcelable {
     }
 
     public static final Parcelable.Creator<QrScanRequest> CREATOR = new Parcelable.Creator<QrScanRequest>() {
+
         @Override
-        public QrScanRequest createFromParcel(Parcel source) {
+        public QrScanRequest createFromParcel (Parcel source) {
+
             return new QrScanRequest(source);
         }
 
         @Override
-        public QrScanRequest[] newArray(int size) {
+        public QrScanRequest[] newArray (int size) {
+
             return new QrScanRequest[size];
         }
     };

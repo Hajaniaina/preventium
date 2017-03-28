@@ -6,6 +6,7 @@ import android.os.CountDownTimer;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.widget.CheckBox;
@@ -128,30 +129,7 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
 
                 String code = barcode.displayValue;
 
-                if (code.startsWith(SCAN_DRIVER_PREFIX)) {
-
-                    if (!scannedOnce) {
-
-                        scannedOnce = true;
-                        long driverId = parseDriverId(code.substring(code.lastIndexOf(":") + 1));
-
-                        if (driverId > 0) {
-
-                            if (qrRequest.driverIdReq == QrScanRequest.REQUEST_PENDING) {
-
-                                qrRequest.driverIdReq = QrScanRequest.REQUEST_COMPLETED;
-                            }
-
-                            qrRequest.driverId = driverId;
-                            showConfirmDialog(true);
-                        }
-                        else {
-
-                            showConfirmDialog(false);
-                        }
-                    }
-                }
-                else if (code.startsWith(SCAN_VEHICLE_PREFIX)) {
+                if (code.startsWith(SCAN_VEHICLE_PREFIX)) {
 
                     if (code.contains(SCAN_VEHICLE_FRONT)) {
 
@@ -182,7 +160,27 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
                 }
                 else {
 
-                    showConfirmDialog(false);
+                    if (!scannedOnce) {
+
+                        scannedOnce = true;
+                        String subStrings[] = code.split("/");
+                        long driverId = parseDriverId(subStrings[0]);
+
+                        if (driverId > 0) {
+
+                            if (qrRequest.driverIdReq == QrScanRequest.REQUEST_PENDING) {
+
+                                qrRequest.driverIdReq = QrScanRequest.REQUEST_COMPLETED;
+                            }
+
+                            qrRequest.driverId = driverId;
+                            showConfirmDialog(true);
+                        }
+                        else {
+
+                            showConfirmDialog(false);
+                        }
+                    }
                 }
 
                 updateCheckBoxes();

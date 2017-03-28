@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -40,6 +41,16 @@ public class PinLockActivity extends AppCompatActivity {
         mPinLockView = (PinLockView) findViewById(R.id.pin_lock_view);
         IndicatorDots mIndicatorDots = (IndicatorDots) findViewById(R.id.indicator_dots);
         mPinLockView.attachIndicatorDots(mIndicatorDots);
+        mPinLockView.setVerticalScrollBarEnabled(false);
+
+        mPinLockView.setOnTouchListener(new View.OnTouchListener() {
+
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+
+                return (motionEvent.getAction() == MotionEvent.ACTION_MOVE);
+            }
+        });
 
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         pinCode = sharedPref.getString(getString(R.string.pin_code_key), "1234");
