@@ -138,7 +138,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private int selectedEpcFile = 0;
     private boolean trackingActivated = true;
 
-    // --------------------------------------------------------------------------------------------//
+    // -------------------------------------------------------------------------------------------- //
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -296,7 +296,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    // --------------------------------------------------------------------------------------------//
+    // -------------------------------------------------------------------------------------------- //
 
     @Override
     public void onMapReady (GoogleMap googleMap) {
@@ -418,7 +418,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         return false;
     }
 
-    // --------------------------------------------------------------------------------------------//
+    // -------------------------------------------------------------------------------------------- //
 
     @Override
     public void onStatusChanged (final STATUS_t status) {
@@ -940,7 +940,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    // --------------------------------------------------------------------------------------------//
+    // -------------------------------------------------------------------------------------------- //
 
     private void init (boolean firstLaunch) {
 
@@ -1946,5 +1946,5 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    // --------------------------------------------------------------------------------------------//
+    // -------------------------------------------------------------------------------------------- //
 }

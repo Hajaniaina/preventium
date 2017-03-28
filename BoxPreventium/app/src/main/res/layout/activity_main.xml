@@ -361,7 +361,7 @@
                 fab:menu_animationDelayPerItem="0"
                 fab:menu_labels_position="left"
                 fab:menu_openDirection="up"
-                fab:menu_icon="@drawable/fab_add"
+                fab:menu_icon="@drawable/dots_vertical"
                 fab:menu_colorNormal="@color/colorAppGreen"
                 fab:menu_colorPressed="@color/colorAppOrange"
                 fab:menu_colorRipple="#ffee58"
