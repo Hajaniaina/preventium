@@ -13,12 +13,12 @@ public class PreventiumApplication extends Application {
         super.onCreate();
 
         AutoErrorReporter.get(this)
-                .setEmailAddresses("franck@ikalogic.com")
+                .setEmailAddresses("")
                 .setEmailSubject("Preventium Crash Report")
                 .start();
 
         BugShaker.get(this)
-                .setEmailAddresses("franck@ikalogic.com")
+                .setEmailAddresses("")
                 .setEmailSubjectLine("Preventium Feedback")
                 .setAlertDialogType(AlertDialogType.NATIVE)
                 .setLoggingEnabled(true)

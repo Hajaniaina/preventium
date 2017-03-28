@@ -130,8 +130,9 @@ public class AppManager extends ThreadDefault
         setLog( "AppManager begin..." );
 
         database.clear_obselete_data();
-        IMEI_is_actif();
+
         download_cfg();
+        IMEI_is_actif();
         download_epc();
         download_dobj();
         modules.setActive( true );
@@ -142,7 +143,6 @@ public class AppManager extends ThreadDefault
         while( isRunning() ) {
             check_internet_is_active();
             update_tracking_status();
-
 
             modules.setActive( true );
             sleep(500);
@@ -193,6 +193,7 @@ public class AppManager extends ThreadDefault
     public void onNumberOfBox(int nb) {
         if( DEBUG ) Log.d(TAG,"Number of preventium device connected changed: " + nb );
         if( listener != null ) listener.onNumberOfBoxChanged( nb );
+        if( nb <= 0 ) engine_t = ENGINE_t.OFF;
     }
 
     @Override
@@ -256,6 +257,7 @@ public class AppManager extends ThreadDefault
         alertX_add_at = 0;
         alertY_add_at = 0;
         alertPos_add_at = 0;
+        lastLocSend = null;
         try_send_eca_at  = 0;
         recommended_speed_update_at = 0;
         return STATUS_t.PAR_STOPPED;
@@ -300,24 +302,32 @@ public class AppManager extends ThreadDefault
 
     // Timers list -> Long: timestamp, Integer: timer id
     private List<Pair<Long,Integer>> ui_timers = new ArrayList<>();
+    private final Lock lock_timers = new ReentrantLock();
 
     /// Add timer to timer list
     public void add_ui_timer(long secs, int timer_id){
         long timestamp = System.currentTimeMillis() + (secs*1000);
+        lock_timers.lock();
         ui_timers.add( Pair.create(timestamp,timer_id) );
+        lock_timers.unlock();
     }
 
     /// Remove all timers
-    public void clear_ui_timer(){ ui_timers.clear(); }
+    public void clear_ui_timer(){
+        lock_timers.lock();
+        ui_timers.clear();
+        lock_timers.unlock();
+    }
 
     /// Listening timeout
     synchronized private void listen_timers(STATUS_t status){
         long timestamp = System.currentTimeMillis();
+        lock_timers.lock();
         if( !ui_timers.isEmpty() ) {
             Pair<Long, Integer> timer;
             long timeout_at;
             int timer_id;
-            for (int i = ui_timers.size() - 1; i > 1; i--) {
+            for (int i = ui_timers.size() - 1; i >= 0; i--) {
                 timer = ui_timers.get(i);
                 timeout_at = timer.first;
                 timer_id = timer.second;
@@ -327,6 +337,7 @@ public class AppManager extends ThreadDefault
                 }
             }
         }
+        lock_timers.unlock();
     }
 
     /// ============================================================================================
@@ -352,30 +363,34 @@ public class AppManager extends ThreadDefault
 
         if( listener != null ) listener.onStatusChanged( STATUS_t.CHECK_ACTIF );
 
-        FTPConfig config = new FTPConfig("www.preventium.fr","box.preventium","Box*16/64/prev",21);
+        FTPConfig config = DataCFG.getFptConfig(ctx);
         FTPClientIO ftp = new FTPClientIO();
 
-        while ( isRunning() ) {
+        do {
             // Trying to connect to FTP server...
             if( !ftp.ftpConnect(config, 5000) ) {
                 check_internet_is_active();
             } else {
-
-                do {
-                    exist_actif = false;
-                    if (!ftp.changeWorkingDirectory("/ACTIFS")) {
-                        Log.d(TAG, "Error while trying to change working directory to \"/ACTIFS\"");
-                    } else {
-                        // Checking if .ACTIVE file is in FTP server ?
-                        String srcFileName = ComonUtils.getIMEInumber(ctx);
-                        exist_actif = ftp.checkFileExists(srcFileName);
-                        if( !exist_actif ) {
-                            if( listener != null ) listener.onStatusChanged( STATUS_t.IMEI_INACTIF );
-                        }
+                exist_actif = false;
+                if (!ftp.changeWorkingDirectory("/ACTIFS")) {
+                    Log.d(TAG, "Error while trying to change working directory to \"/ACTIFS\"");
+                } else {
+                    // Checking if .ACTIVE file is in FTP server ?
+                    String srcFileName = ComonUtils.getIMEInumber(ctx);
+                    exist_actif = ftp.checkFileExists(srcFileName);
+                    if( !exist_actif ) {
+                    try {
+                        sleep(3000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                } while (!exist_actif && isRunning() );
+                        if( listener != null ) listener.onStatusChanged( STATUS_t.IMEI_INACTIF );
+                    }
+                }
             }
-        }
+
+        } while (!exist_actif && isRunning() );
+
 
         return exist_actif;
     }
@@ -924,6 +939,7 @@ public class AppManager extends ThreadDefault
     private long alertX_add_at = 0;
     private long alertY_add_at = 0;
     private long alertPos_add_at = 0;
+    private Location lastLocSend = null;
     private Chrono mov_chrono = new Chrono();
     private Chrono mov_t_last_chrono = new Chrono();
     private ForceSeuil seuil_ui = null;
@@ -942,11 +958,12 @@ public class AppManager extends ThreadDefault
         this.XmG = 0f;
         boolean rightRoad = false;
 
-        List<Location> list = get_location_list(20,5000);
-
+        List<Location> list = get_location_list(3,5000);
+//if( list != null ) Log.d("AAAA","sss" + list.size()); else Log.d("AAAA","sss null");
         if( list != null && list.size() >= 3 ){
 
             int i = list.size()-1;
+
             rightRoad = isRightRoad( list.get(i-2), list.get(i-1), list.get(i) );
             boolean acceleration = true;
             boolean freinage = true;
@@ -1095,43 +1112,55 @@ public class AppManager extends ThreadDefault
             if( !seuil_x.equals(seuil_last_x) ) seuil_chrono_x.start();
             if( seuil_chrono_x.getSeconds() >= seuil_x.TPS ) {
                 seuil_chrono_x.start();
-                // If elapsed time > 2 seconds
-                if( loc != null && System.currentTimeMillis() - alertX_add_at >= 2000 ) {
-                    if( _tracking ) database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc, null));
+//                // If elapsed time > 2 seconds
+//                if(System.currentTimeMillis() - alertX_add_at >= 500) {
+//                    if( _tracking ) database.addECA( parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc, null ) );
+//                    alertX_add_at = System.currentTimeMillis();
+//                }
+                if( _tracking ) {
+                    database.addECA(parcour_id, ECALine.newInstance(seuil_last_x.IDAlert, loc, null));
                     alertX_add_at = System.currentTimeMillis();
+                    lastLocSend = loc;
                 }
             }
         }
         seuil_last_x = seuil_x;
+
         // Compare the runtime Y value force with the prevent Y value force, and add alert to ECA database
         if( seuil_y != null ) {
             alertY = seuil_y.level;
             if( !seuil_y.equals(seuil_last_y) )seuil_chrono_y.start();
             if( seuil_chrono_y.getSeconds() >= seuil_y.TPS ) {
                 seuil_chrono_y.start();
-                // If elapsed time > 2 seconds
-                if( loc != null && System.currentTimeMillis() - alertY_add_at >= 2000 ) {
-                    if( _tracking ) database.addECA( parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc, null ) );
+//                // If elapsed time > 2 seconds
+//                if(System.currentTimeMillis() - alertY_add_at >= 500) {
+//                    //if( _tracking ) database.addECA( parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc, null ) );
+//                    alertY_add_at = System.currentTimeMillis();
+//                }
+                if( _tracking ) {
+                    database.addECA(parcour_id, ECALine.newInstance(seuil_last_y.IDAlert, loc, null));
                     alertY_add_at = System.currentTimeMillis();
+                    lastLocSend = loc;
                 }
             }
         }
         seuil_last_y = seuil_y;
 
-//if( seuil_y != null ) Log.d("CALC","seuil_y " + seuil_y.toString() );
-//Log.d("CALC","Alert Y: " + alertY + " YmG_smooth:  " + YmG_smooth);
         // Add location to ECA database
-        if( _tracking &&
-                alertX == LEVEL_t.LEVEL_UNKNOW
-                && alertY == LEVEL_t.LEVEL_UNKNOW  ){
-            List<Location> locations = get_location_list(2);
-            if( locations != null && locations.size() >= 2 ) {
-                // If elapsed time > 2 seconds
-                if (System.currentTimeMillis() - alertPos_add_at >= 2000) {
-                    if (locations.get(0).distanceTo(locations.get(1)) > 10) {
-                        database.addECA(parcour_id, ECALine.newInstance(locations.get(0), locations.get(1)));
-                        alertPos_add_at = System.currentTimeMillis();
-                    }
+//        if( _tracking &&
+//                alertX == LEVEL_t.LEVEL_UNKNOW
+//                && alertY == LEVEL_t.LEVEL_UNKNOW  ){
+        if( _tracking ) {
+
+            List<Location> locations = get_location_list(1);
+            if (locations != null && locations.size() >= 1) {
+                float min_meters = ( (locations.get(0).getSpeed()*MS_TO_KMH) < 70f ) ? 5f : 15f;
+                if( lastLocSend == null
+                        || locations.get(0).distanceTo(lastLocSend) > min_meters ) {
+
+                    if( lastLocSend == null ) lastLocSend = new Location(locations.get(0));
+                    database.addECA(parcour_id, ECALine.newInstance(locations.get(0), lastLocSend));
+                    lastLocSend = new Location(locations.get(0));
                 }
             }
         }
@@ -1616,6 +1645,7 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
                 alertX_add_at = 0;
                 alertY_add_at = 0;
                 alertPos_add_at = 0;
+                lastLocSend = null;
                 recommended_speed_update_at = 0;
 
                 SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
@@ -1799,11 +1829,6 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
             lock.lock();
 
             // Add new location
-            if( !locations.isEmpty() ) {
-                if( locations.get(0).distanceTo( location ) < 5.0 ){
-                    locations.remove(0);
-                }
-            }
             this.locations.add(0, new Location(location) );
 
             lock.unlock();

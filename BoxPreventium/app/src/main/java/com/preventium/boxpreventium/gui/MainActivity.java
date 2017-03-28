@@ -447,8 +447,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (progress != null) {
 
                             progress.show();
-                            progress.setProgressStyle(R.style.NegativeDialogStyle);
-                            progress.setMessage(getString(R.string.progress_inactive_imei_string));
+                            //progress.setProgressStyle(R.style.NegativeDialogStyle); // <-- CRASH
+                            progress.setMessage(getString(R.string.progress_inactive_imei_string) );
                         }
 
                         break;
