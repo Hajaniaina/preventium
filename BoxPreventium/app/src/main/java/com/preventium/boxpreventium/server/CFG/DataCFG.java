@@ -96,15 +96,15 @@ public class DataCFG {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
         SharedPreferences.Editor editor = sp.edit();
 
-        editor.putString( ctx.getResources().getString(R.string.phone_number_1),
+        editor.putString( ctx.getResources().getString(R.string.phone_number_1_key),
                 DataCFG.get_SMS_CALL(ctx,1) );
-        editor.putString( ctx.getResources().getString(R.string.phone_number_2),
+        editor.putString( ctx.getResources().getString(R.string.phone_number_2_key),
                 DataCFG.get_SMS_CALL(ctx,2) );
-        editor.putString( ctx.getResources().getString(R.string.phone_number_3),
+        editor.putString( ctx.getResources().getString(R.string.phone_number_3_key),
                 DataCFG.get_SMS_CALL(ctx,3) );
-        editor.putString( ctx.getResources().getString(R.string.phone_number_4),
+        editor.putString( ctx.getResources().getString(R.string.phone_number_4_key),
                 DataCFG.get_SMS_CALL(ctx,4) );
-        editor.putString( ctx.getResources().getString(R.string.phone_number_5),
+        editor.putString( ctx.getResources().getString(R.string.phone_number_5_key),
                 DataCFG.get_SMS_CALL(ctx,5) );
 
         editor.apply();

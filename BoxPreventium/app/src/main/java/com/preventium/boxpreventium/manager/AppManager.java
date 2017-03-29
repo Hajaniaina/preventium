@@ -842,7 +842,7 @@ public class AppManager extends ThreadDefault
 
             parcoursTypeName = null;
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-            String key = ctx.getResources().getString(R.string.parcours_type_enabled);
+            String key = ctx.getResources().getString(R.string.parcours_type_enabled_key);
             if( sp.getBoolean(key,false) ){
                 SharedPreferences.Editor editor = sp.edit();
                 editor.putBoolean(key,false);
@@ -923,7 +923,7 @@ public class AppManager extends ThreadDefault
 
     private void update_tracking_status(){
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-        String key = ctx.getResources().getString(R.string.tracking_activated);
+        String key = ctx.getResources().getString(R.string.tracking_activated_key);
         _tracking = sp.getBoolean(key,true);
     }
 
@@ -1436,7 +1436,7 @@ public class AppManager extends ThreadDefault
 
                 // Period pour calucl: (utiliser les X derniere secondes)
                 SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-                String key = ctx.getResources().getString(R.string.recommended_speed_time);
+                String key = ctx.getResources().getString(R.string.recommended_speed_time_key);
                 long delay_sec = sp.getInt(key,10) * 60;
 
                 // Get the horizontal maximum speed since
@@ -1498,7 +1498,7 @@ public class AppManager extends ThreadDefault
         if( listener != null ) {
 
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-            String key = ctx.getResources().getString(R.string.shock_trigger_mG);
+            String key = ctx.getResources().getString(R.string.shock_trigger_mG_key);
             int val = ctx.getResources().getInteger(R.integer.shock_trigger_mG_def);
             val = sp.getInt(key,val);
 
@@ -1554,7 +1554,7 @@ public class AppManager extends ThreadDefault
                 recommended_speed_update_at = 0;
 
                 SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-                String key = ctx.getResources().getString(R.string.stop_trigger_time);
+                String key = ctx.getResources().getString(R.string.stop_trigger_time_key);
                 long delay = sp.getInt(key,10) * 60 * 1000;
 
                 parcour_id = database.get_last_parcours_id();
@@ -1618,7 +1618,7 @@ public class AppManager extends ThreadDefault
         STATUS_t ret = STATUS_t.PAR_PAUSING;
 
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-        String key = ctx.getResources().getString(R.string.stop_trigger_time);
+        String key = ctx.getResources().getString(R.string.stop_trigger_time_key);
         long delay = sp.getInt(key,10) * 60 * 1000;
 
         // Checking if car is stopped
@@ -1688,7 +1688,7 @@ public class AppManager extends ThreadDefault
         update_recommended_speed();
 
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-        String key = ctx.getResources().getString(R.string.pause_trigger_time);
+        String key = ctx.getResources().getString(R.string.pause_trigger_time_key);
         long delay = sp.getInt(key,4) * 60 * 1000;
 
         // Checking if car is in pause

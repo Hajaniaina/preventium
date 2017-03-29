@@ -156,8 +156,8 @@ public class ReaderEPCFile {
     public boolean loadFromApp( Context ctx ) {
 
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-        String key = ctx.getResources().getString(R.string.epc_selected);
-        int val = ctx.getResources().getInteger(R.integer.epc_selected_def);
+        String key = ctx.getResources().getString(R.string.epc_selected_key);
+        int val = ctx.getResources().getInteger(R.integer.epc_selected_def_key);
         val = sp.getInt(key,val);
 
         return loadFromApp(ctx,val);
