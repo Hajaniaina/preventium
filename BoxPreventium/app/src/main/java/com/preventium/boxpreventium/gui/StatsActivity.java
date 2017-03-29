@@ -1,5 +1,6 @@
 package com.preventium.boxpreventium.gui;
 
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 
@@ -16,6 +17,7 @@ import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
 import com.preventium.boxpreventium.utils.ComonUtils;
 
+import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.format.DateFormat;
@@ -38,6 +40,7 @@ public class StatsActivity extends AppCompatActivity {
     private static final int CRN_OBJ = 4;
     private static final int CRN_RES = 5;
 
+    private SharedPreferences sharedPref;
     private PieChart[] chartArr;
     private int[] colors;
 
@@ -47,8 +50,12 @@ public class StatsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stats);
 
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+
         TextView appVerView = (TextView) findViewById(R.id.textview_app_ver);
         TextView imeiView = (TextView) findViewById(R.id.textview_imei);
+        TextView driverIdView = (TextView) findViewById(R.id.textview_driver_id);
+        TextView driverNameView = (TextView) findViewById(R.id.textview_driver_name);
         TextView startTimeView = (TextView) findViewById(R.id.textview_start_time);
         TextView timeElapsedView = (TextView) findViewById(R.id.textview_time_elapsed);
         TextView distanceView = (TextView) findViewById(R.id.textview_distance);
@@ -57,6 +64,12 @@ public class StatsActivity extends AppCompatActivity {
 
         appVerView.setText("App Version: " + ComonUtils.getVersionName(this));
         imeiView.setText("IMEI: " + StatsLastDriving.getIMEI(this));
+
+        long driverId = sharedPref.getLong(getString(R.string.driver_id_key), 0);
+        driverIdView.setText(getString(R.string.driver_id_string) + ": " + driverId);
+
+        String driverName = sharedPref.getString(getString(R.string.driver_name_key), "");
+        driverNameView.setText(getString(R.string.driver_name_string) + ": " + driverName);
 
         long timestamp = StatsLastDriving.get_start_at(this);
         String startTime = "00:00:00";
