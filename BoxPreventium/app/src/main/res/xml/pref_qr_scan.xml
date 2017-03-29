@@ -6,7 +6,7 @@
         android:title="@string/pref_title_qr_mode_string">
 
         <ListPreference
-            android:key="@string/qr_select_start_mode"
+            android:key="@string/qr_select_start_mode_key"
             android:title="@string/on_departure_string"
             android:entries="@array/pref_qr_mode_titles"
             android:entryValues="@array/pref_qr_mode_values"
@@ -16,7 +16,7 @@
         </ListPreference>
 
         <ListPreference
-            android:key="@string/qr_select_stop_mode"
+            android:key="@string/qr_select_stop_mode_key"
             android:title="@string/on_arrival_string"
             android:entries="@array/pref_qr_mode_titles"
             android:entryValues="@array/pref_qr_mode_values"
@@ -41,7 +41,7 @@
         </ListPreference>
 
         <com.pavelsikun.seekbarpreference.SeekBarPreference
-            android:key="@string/phone_select_sms_qr_timeout"
+            android:key="@string/phone_select_sms_qr_timeout_key"
             android:title="@string/pref_trigger_time_string"
             android:summary=""
             android:enabled="true"

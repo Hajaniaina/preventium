@@ -67,6 +67,9 @@
     <string name="tracking_string">Tracking</string>
     <string name="corners_caps_string">CORNER</string>
     <string name="straights_caps_string">STRAIGHT</string>
+    <string name="hello_string">Hello</string>
+    <string name="driver_id_string">Driver ID</string>
+    <string name="driver_name_string">Driver name</string>
     <string name="phone_number_string">Phone number</string>
     <string name="sms_notifications_string">SMS Notifications</string>
     <string name="on_departure_string">On departure</string>
@@ -183,7 +186,5 @@
         <item>4</item>
         <item>5</item>
     </string-array>
-
-
 
 </resources>

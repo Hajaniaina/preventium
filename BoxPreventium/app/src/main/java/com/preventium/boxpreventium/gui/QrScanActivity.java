@@ -2,7 +2,9 @@ package com.preventium.boxpreventium.gui;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.CountDownTimer;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -39,6 +41,7 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
     private boolean flashOn = false;
     private boolean scannedOnce = false;
     private QrScanRequest qrRequest;
+    private SharedPreferences sharedPref;
 
     private CheckBox checkBoxDriverId;
     private CheckBox checkBoxVehicleFront;
@@ -49,6 +52,8 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_qr_scan);
+
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 
         appColor = new AppColor(this);
         returnIntent = getIntent();
@@ -76,13 +81,6 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
 
         scannedOnce = false;
         updateCheckBoxes();
-
-        /*
-        if (qrRequest.driverIdReq == QrScanRequest.REQUEST_COMPLETED) {
-
-            checkBoxDriverId.setTextColor(appColor.getColor(AppColor.GREY));
-        }
-        */
 
         barcodeCapture = (BarcodeCapture) getSupportFragmentManager().findFragmentById(R.id.qr_scanner);
         barcodeCapture.setTouchAsCallback(false);
@@ -138,7 +136,7 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
                             if (qrRequest.vehicleFrontReq == QrScanRequest.REQUEST_PENDING) {
 
                                 qrRequest.vehicleFrontReq = QrScanRequest.REQUEST_COMPLETED;
-                                showConfirmDialog(true);
+                                showConfirmDialog(getString(R.string.scan_qr_ok_string), true);
                             }
                         }
                     }
@@ -149,13 +147,13 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
                             if (qrRequest.vehicleBackReq == QrScanRequest.REQUEST_PENDING) {
 
                                 qrRequest.vehicleBackReq = QrScanRequest.REQUEST_COMPLETED;
-                                showConfirmDialog(true);
+                                showConfirmDialog(getString(R.string.scan_qr_ok_string), true);
                             }
                         }
                     }
                     else {
 
-                        showConfirmDialog(false);
+                        showConfirmDialog(getString(R.string.scan_qr_error_string), false);
                     }
                 }
                 else {
@@ -163,8 +161,10 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
                     if (!scannedOnce) {
 
                         scannedOnce = true;
+
                         String subStrings[] = code.split("/");
                         long driverId = parseDriverId(subStrings[0]);
+                        String driverName = subStrings[1];
 
                         if (driverId > 0) {
 
@@ -174,11 +174,19 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
                             }
 
                             qrRequest.driverId = driverId;
-                            showConfirmDialog(true);
+
+                            SharedPreferences.Editor editor = sharedPref.edit();
+                            editor.putLong(getString(R.string.driver_id_key), driverId);
+                            editor.putString(getString(R.string.driver_name_key), driverName);
+                            editor.apply();
+
+                            String name[] = driverName.split(" ");
+                            String hello = getString(R.string.hello_string) + " " + name[0];
+                            showConfirmDialog(hello, true);
                         }
                         else {
 
-                            showConfirmDialog(false);
+                            showConfirmDialog(getString(R.string.scan_qr_error_string), false);
                         }
                     }
                 }
@@ -199,19 +207,16 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
     @Override
     public void onBitmapScanned (SparseArray<Barcode> sparseArray) {}
 
-    private void showConfirmDialog (boolean ok) {
+    private void showConfirmDialog (String msg, boolean ok) {
 
         int themeId;
-        String msg;
 
         if (ok) {
 
-            msg = getString(R.string.scan_qr_ok_string);
             themeId = R.style.PositiveDialogStyle;
         }
         else {
 
-            msg = getString(R.string.scan_qr_error_string);
             themeId = R.style.NegativeDialogStyle;
         }
 

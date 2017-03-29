@@ -5,7 +5,7 @@
         android:title="@string/pref_title_voice_call_string">
 
         <ListPreference
-            android:key="@string/phone_select_voice"
+            android:key="@string/phone_select_voice_key"
             android:title="@string/number_string"
             android:entries="@array/pref_phone_numbers_titles"
             android:entryValues="@array/pref_phone_numbers_values"

@@ -105,11 +105,11 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         SharedPreferences sharedPref = fragment.getPreferenceScreen().getSharedPreferences();
         String[] realNumbers = new String[5];
 
-        realNumbers[0] = sharedPref.getString(fragment.getString(R.string.phone_number_1), "");
-        realNumbers[1] = sharedPref.getString(fragment.getString(R.string.phone_number_2), "");
-        realNumbers[2] = sharedPref.getString(fragment.getString(R.string.phone_number_3), "");
-        realNumbers[3] = sharedPref.getString(fragment.getString(R.string.phone_number_4), "");
-        realNumbers[4] = sharedPref.getString(fragment.getString(R.string.phone_number_5), "");
+        realNumbers[0] = sharedPref.getString(fragment.getString(R.string.phone_number_1_key), "");
+        realNumbers[1] = sharedPref.getString(fragment.getString(R.string.phone_number_2_key), "");
+        realNumbers[2] = sharedPref.getString(fragment.getString(R.string.phone_number_3_key), "");
+        realNumbers[3] = sharedPref.getString(fragment.getString(R.string.phone_number_4_key), "");
+        realNumbers[4] = sharedPref.getString(fragment.getString(R.string.phone_number_5_key), "");
 
         ListPreference listPref = (ListPreference) fragment.findPreference(fragment.getString(key));
         CharSequence[] numbers = listPref.getEntries();
@@ -148,17 +148,17 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_route);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_pause)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_pause_timeout)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.pause_trigger_time)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.stop_trigger_time)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.recommended_speed_time)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.parcours_type_name)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_pause_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_pause_timeout_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pause_trigger_time_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.stop_trigger_time_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.recommended_speed_time_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.parcours_type_name_key)));
 
             updatePhoneNumbersList(this, R.string.phone_select_sms_pause);
 
-            final SeekBarPreference pauseTimeoutPref = (SeekBarPreference) findPreference(getString(R.string.pause_trigger_time));
-            final SeekBarPreference stopTimeoutPref = (SeekBarPreference) findPreference(getString(R.string.stop_trigger_time));
+            final SeekBarPreference pauseTimeoutPref = (SeekBarPreference) findPreference(getString(R.string.pause_trigger_time_key));
+            final SeekBarPreference stopTimeoutPref = (SeekBarPreference) findPreference(getString(R.string.stop_trigger_time_key));
 
             int stopTimeoutCurrent = stopTimeoutPref.getCurrentValue();
             int stopTimeoutMin = (pauseTimeoutPref.getCurrentValue() + 1);
@@ -199,8 +199,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_sos);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_sos)));
-            updatePhoneNumbersList(this, R.string.phone_select_sms_sos);
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_sos_key)));
+            updatePhoneNumbersList(this, R.string.phone_select_sms_sos_key);
         }
 
         @Override
@@ -229,10 +229,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_shocks);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_shock)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.shock_trigger_mG)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_shock_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.shock_trigger_mG_key)));
 
-            updatePhoneNumbersList(this, R.string.phone_select_sms_shock);
+            updatePhoneNumbersList(this, R.string.phone_select_sms_shock_key);
         }
 
         @Override
@@ -261,8 +261,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_tracking);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_tracking)));
-            updatePhoneNumbersList(this, R.string.phone_select_sms_tracking);
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_tracking_key)));
+            updatePhoneNumbersList(this, R.string.phone_select_sms_tracking_key);
         }
 
         @Override
@@ -291,10 +291,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_qr_scan);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.qr_select_start_mode)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.qr_select_stop_mode)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr_timeout)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.qr_select_start_mode_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.qr_select_stop_mode_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr_timeout_key)));
 
             updatePhoneNumbersList(this, R.string.phone_select_sms_qr);
         }
@@ -326,8 +326,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_phone);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_voice)));
-            updatePhoneNumbersList(this, R.string.phone_select_voice);
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_voice_key)));
+            updatePhoneNumbersList(this, R.string.phone_select_voice_key);
         }
 
         @Override
