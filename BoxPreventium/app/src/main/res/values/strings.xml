@@ -145,31 +145,31 @@
     <string name="sms_qr_msg_string" translatable="false">QR CODE NOT SCANNED</string>
     <string name="sms_pause_msg_string">PAUSE TOO LONG</string>
 
-    <string-array name="marker_perimeters">
+    <string-array name="marker_alert_radius" translatable="false">
         <item>50m</item>
         <item>100m</item>
         <item>300m</item>
         <item>500m</item>
     </string-array>
 
-    <string-array name="marker_types">
+    <string-array name="marker_types" translatable="false">
         <item>INFO</item>
         <item>DANGER</item>
     </string-array>
 
-    <string-array name="pref_qr_mode_titles">
+    <string-array name="pref_qr_mode_titles" translatable="false">
         <item>@string/disabled_string</item>
         <item>@string/front_only_string</item>
         <item>@string/front_back_string</item>
     </string-array>
 
-    <string-array name="pref_qr_mode_values">
+    <string-array name="pref_qr_mode_values" translatable="false">
         <item>0</item>
         <item>1</item>
         <item>2</item>
     </string-array>
 
-    <string-array name="pref_phone_numbers_titles">
+    <string-array name="pref_phone_numbers_titles" translatable="false">
         <item>@string/not_used_string</item>
         <item>@string/number_1_string</item>
         <item>@string/number_2_string</item>
@@ -178,7 +178,7 @@
         <item>@string/number_5_string</item>
     </string-array>
 
-    <string-array name="pref_phone_numbers_values">
+    <string-array name="pref_phone_numbers_values" translatable="false">
         <item>0</item>
         <item>1</item>
         <item>2</item>

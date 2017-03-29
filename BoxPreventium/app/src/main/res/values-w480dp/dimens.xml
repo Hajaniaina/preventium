@@ -15,7 +15,7 @@
     <dimen name="speed_layout_height">90dp</dimen>
     <dimen name="speed_margin_top1">4dp</dimen>
     <dimen name="speed_margin_top2">8dp</dimen>
-    <dimen name="speed_rim_width">6dp</dimen>
+    <dimen name="speed_rim_width">7dp</dimen>
     <dimen name="speed_text_size">36sp</dimen>
 
     <dimen name="force_layout_margin_top">0dp</dimen>

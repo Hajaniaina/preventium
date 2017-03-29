@@ -31,6 +31,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -505,8 +506,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         routeInPause = false;
 
                         stopButton.setVisibility(View.GONE);
-                        changeViewColorFilter(drivingTimeView, AppColor.GREEN);
-
                         updateQRPrefs();
 
                         if (qrRequest.isAnyReqPending(QrScanRequest.REQUEST_ON_START)) {
@@ -540,7 +539,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         }
 
                         stopButton.setVisibility(View.GONE);
-                        changeViewColorFilter(drivingTimeView, AppColor.GREEN);
 
                         break;
 
@@ -556,7 +554,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         }
 
                         stopButton.setVisibility(View.VISIBLE);
-                        changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
                         accForceView.hide(true);
 
                         int pauseNotifTimeout = sharedPref.getInt(getString(R.string.phone_select_sms_pause_timeout_key), 0);
@@ -571,7 +568,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     case PAR_STOPPED:
 
                         stopButton.setVisibility(View.GONE);
-                        changeViewColorFilter(drivingTimeView, AppColor.GREY);
 
                         if (progress != null) {
 
@@ -708,14 +704,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (nb > 0) {
 
-                    if (nb > 1) {
-
-                        boxNumView.setTextColor(Color.GREEN);
-                    }
-                    else {
-
-                        boxNumView.setTextColor(Color.BLUE);
-                    }
+                    boxNumView.setTextColor(Color.GRAY);
                 }
                 else {
 
@@ -955,7 +944,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         progress.setMessage(getString(R.string.progress_map_string));
         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progress.setIndeterminate(true);
-        // progress.setCancelable(false);
+        progress.setCancelable(false);
         progress.setProgressNumberFormat(null);
         progress.setProgressPercentFormat(null);
 
@@ -973,7 +962,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         backgroundView = (ImageView) findViewById(R.id.background_image);
         boxNumView = (TextView) findViewById(R.id.box_num_connected);
         drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
-        changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
 
         infoButton = (FloatingActionButton) findViewById(R.id.button_info);
         callButton = (FloatingActionButton) findViewById(R.id.button_call);
@@ -1283,11 +1271,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         builder.setPositiveButton("OK", null);
         builder.setNegativeButton(getString(R.string.cancel_string), null);
 
-        if (!creation) builder.setNeutralButton(getString(R.string.delete_string), null);
+        if (!creation) {
+
+            builder.setNeutralButton(getString(R.string.delete_string), null);
+        }
 
         final AlertDialog alertDlg = builder.create();
 
-        if (creation) alertDlg.setCancelable(false);
+        if (creation) {
+
+            alertDlg.setCancelable(false);
+        }
 
         alertDlg.setOnShowListener(new DialogInterface.OnShowListener() {
 
@@ -1297,8 +1291,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 EditText editTitle = (EditText) alertDlg.findViewById(R.id.marker_title);
                 CheckBox alarmCheckBox = (CheckBox) alertDlg.findViewById(R.id.marker_alarm_checkbox);
                 Spinner markerTypeSpinner = (Spinner) alertDlg.findViewById(R.id.marker_type_spinner);
-                final Spinner markerPerimeterSpinner = (Spinner) alertDlg.findViewById(R.id.marker_perimeter_spinner);
-                markerPerimeterSpinner.setVisibility(View.GONE);
+                final Spinner markerRadiusSpinner = (Spinner) alertDlg.findViewById(R.id.marker_radius_spinner);
+                markerRadiusSpinner.setVisibility(View.GONE);
+
+                String[] alertRadiusArray = getResources().getStringArray(R.array.marker_alert_radius);
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_spinner_item, alertRadiusArray);
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                markerRadiusSpinner.setAdapter(adapter);
 
                 final String titleBefore = customMarker.getTitle();
                 editTitle.setText(titleBefore);
@@ -1317,15 +1316,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     if (customMarker.isAlertEnabled()) {
 
                         alarmCheckBox.setChecked(true);
-                        markerPerimeterSpinner.setVisibility(View.VISIBLE);
+                        markerRadiusSpinner.setVisibility(View.VISIBLE);
                     }
                     else {
 
                         alarmCheckBox.setChecked(false);
-                        markerPerimeterSpinner.setVisibility(View.GONE);
+                        markerRadiusSpinner.setVisibility(View.GONE);
                     }
 
-                    markerPerimeterSpinner.setSelection(customMarker.getPerimeterId());
+                    markerRadiusSpinner.setSelection(customMarker.getAlertRaiusId());
+                    Log.d(TAG, "Spinner Selected Item: " + markerRadiusSpinner.getSelectedItem().toString()) ;
                 }
 
                 markerTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -1347,12 +1347,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     public void onNothingSelected (AdapterView<?> parent) {}
                 });
 
-                markerPerimeterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                markerRadiusSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
                     @Override
                     public void onItemSelected (AdapterView<?> parent, View view, int position, long id) {
 
-                        customMarker.setPerimeterById(position);
+                        customMarker.setAlertRadiusById(position);
                     }
 
                     @Override
@@ -1367,12 +1367,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (b) {
 
                             customMarker.enableAlert(true);
-                            markerPerimeterSpinner.setVisibility(View.VISIBLE);
+                            markerRadiusSpinner.setVisibility(View.VISIBLE);
                         }
                         else {
 
                             customMarker.enableAlert(false);
-                            markerPerimeterSpinner.setVisibility(View.GONE);
+                            markerRadiusSpinner.setVisibility(View.GONE);
                         }
                     }
                 });
@@ -1846,6 +1846,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 Intent intent = new Intent(MainActivity.this, StatsActivity.class);
                 startActivity(intent);
+                optMenu.close(true);
             }
         });
 
@@ -1909,7 +1910,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onClick (View view) {
 
                 sendSos();
-                optMenu.close(true);
             }
         });
 
@@ -1928,7 +1928,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onClick (View v) {
 
                 askTrackingConfirm();
-                optMenu.close(true);
             }
         });
 
@@ -1936,6 +1935,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onClick (View view) {
+
                 startActivity(new Intent(MainActivity.this, PinLockActivity.class));
                 optMenu.close(true);
             }

@@ -135,31 +135,4 @@
     <string name="tracking_disabled_string">Tracking disabled</string>
     <string name="tracking_enabled_string">Tracking enabled</string>
 
-    <string-array name="marker_perimeters">
-        <item>50m</item>
-        <item>100m</item>
-        <item>300m</item>
-        <item>500m</item>
-    </string-array>
-
-    <string-array name="marker_types">
-        <item>INFO</item>
-        <item>DANGER</item>
-    </string-array>
-
-    <string-array name="pref_qr_mode_values">
-        <item>0</item>
-        <item>1</item>
-        <item>2</item>
-    </string-array>
-
-    <string-array name="pref_phone_numbers_values">
-        <item>0</item>
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
-    </string-array>
-
 </resources>

@@ -160,7 +160,7 @@ public class MarkerManager {
 
                 markerData.alert = customMarker.isAlertEnabled();
                 markerData.position = customMarker.getPos();
-                markerData.perimeter = customMarker.getPerimeter();
+                markerData.perimeter = customMarker.getAlertRadius();
                 markerData.title = customMarker.getTitle();
                 markerData.type = customMarker.getType();
 

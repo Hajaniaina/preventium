@@ -51,17 +51,17 @@ public class CustomMarker {
     private LatLng pos = null;
     private String title = "";
     private boolean alert = false;
-    private int perimeterId = 0;
-    private int perimeterMeters = 0;
-    private int[] perimeterArr;
+    private int alertRaiusId = 0;
+    private int alertRadiusM = 0;
+    private int[] alertRadiusArr;
 
     CustomMarker() {
 
-        perimeterArr = new int[4];
-        perimeterArr[0] = 50;
-        perimeterArr[1] = 100;
-        perimeterArr[2] = 300;
-        perimeterArr[3] = 500;
+        alertRadiusArr = new int[4];
+        alertRadiusArr[0] = 50;
+        alertRadiusArr[1] = 100;
+        alertRadiusArr[2] = 300;
+        alertRadiusArr[3] = 500;
 
         opt = new MarkerOptions();
     }
@@ -82,6 +82,11 @@ public class CustomMarker {
         setType(type);
         marker = map.addMarker(opt);
         pos = opt.getPosition();
+
+        if (isAlertEnabled()) {
+
+
+        }
 
         return marker;
     }
@@ -148,30 +153,30 @@ public class CustomMarker {
         return type;
     }
 
-    public void setPerimeter (int meters) {
+    public void setAlertRadius (int meters) {
 
-        perimeterMeters = meters;
+        alertRadiusM = meters;
     }
 
-    public void setPerimeterById (int id) {
+    public void setAlertRadiusById (int id) {
 
         if (id > 3) {
 
             id = 3;
         }
 
-        perimeterId = id;
-        perimeterMeters = perimeterArr[id];
+        alertRaiusId = id;
+        alertRadiusM = alertRadiusArr[id];
     }
 
-    public int getPerimeter() {
+    public int getAlertRadius() {
 
-        return perimeterMeters;
+        return alertRadiusM;
     }
 
-    public int getPerimeterId() {
+    public int getAlertRaiusId() {
 
-        return perimeterId;
+        return alertRaiusId;
     }
 
     public void enableAlert (boolean enable) {

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
@@ -42,11 +43,11 @@
         android:layout_height="0dp"
         android:layout_marginTop="12dp"
         android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
         android:text="@string/alarm_string" />
 
     <Spinner
-        android:id="@+id/marker_perimeter_spinner"
-        android:entries="@array/marker_perimeters"
+        android:id="@+id/marker_radius_spinner"
         android:layout_weight="1"
         android:layout_height="0dp"
         android:layout_width="fill_parent"
@@ -54,5 +55,21 @@
         android:layout_marginBottom="12dp"
         android:layout_marginLeft="30dp"
         android:layout_marginRight="30dp" />
+
+    <com.gregacucnik.EditableSeekBar
+        android:id="@+id/esbExample"
+        android:layout_weight="1"
+        android:layout_height="0dp"
+        android:layout_width="fill_parent"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
+        app:esbSelectAllOnFocus="false"
+        app:esbEditTextFontSize='16sp'
+        app:esbTitle="Rayon (m)"
+        app:esbMin="50"
+        app:esbMax="1000"
+        app:esbValue="50" />
 
 </LinearLayout>
