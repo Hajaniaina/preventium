@@ -137,7 +137,6 @@ public class AppManager extends ThreadDefault
         download_dobj();
         modules.setActive( true );
         STATUS_t status = first_init();
-
         upload_eca(true);
 
         while( isRunning() ) {
@@ -1299,7 +1298,6 @@ Log.d("CALC","CALCUL COTATION FORCE");
                     float F = get_cotation_force(DataDOBJ.FREINAGES,parcour_id,delay_sec,false,false);
                     float V = get_cotation_force(DataDOBJ.VIRAGES,parcour_id,delay_sec,false,false);
                     float M = (A+F+V) > 0 ? (A+F+V)/3 : 0;
-
 addLog( "Cotation A: " + A );
 addLog( "Cotation F: " + F );
 addLog( "Cotation V: " + V );
@@ -1345,8 +1343,10 @@ Log.d("CALC","Cotation A: " + A + " F: " + F + " V: " + V + " M: " + M );
     /// Get force cotation (A,F,V)per parcours (per all parcours if parcour_id <= 0 )
     /// between timespamp
     private float get_cotation_force( String type, long parcour_id, long begin, long end, boolean coeff, boolean update_stats ){
+String tag = "GET COTATION FORCE " + type;
+
         float ret = 20f;
-        Log.d("CALC","get_cotation_force " + type);
+Log.d(tag,"get_cotation_force " + type);
         if( !DataDOBJ.ACCELERATIONS.equals(type)
                 && !DataDOBJ.FREINAGES.equals(type)
                 && !DataDOBJ.VIRAGES.equals(type) ) return ret;
@@ -1367,8 +1367,15 @@ Log.d("CALC","Cotation A: " + A + " F: " + F + " V: " + V + " M: " + M );
             coeff_orange = DataDOBJ.get_coefficient(ctx, type, DataDOBJ.ORANGE);
             coeff_rouge = DataDOBJ.get_coefficient(ctx, type, DataDOBJ.ROUGE);
         }
-Log.d("CALC","COEFF " + coeff_general +" vert: " + coeff_vert + " bleu " + coeff_bleu +
-        " jaune: " + coeff_jaune + " orange " + coeff_orange +" rouge: " + coeff_rouge );
+//// TEST
+//coeff_general = 1;
+//coeff_vert = 1;
+//coeff_bleu = 3;
+//coeff_jaune = 3;
+//coeff_orange = 4;
+//coeff_rouge = 5;
+Log.d(tag,"Coefficient:\nGeneral: " + coeff_general +"; vert: " + coeff_vert + "; bleu " + coeff_bleu +
+        "; jaune: " + coeff_jaune + "; orange " + coeff_orange +"; rouge: " + coeff_rouge );
         // OBJECTIFS FIXES AU CONDUCTEUR (in percent)
         int obj_vert = DataDOBJ.get_objectif(ctx,type,DataDOBJ.VERT);
         int obj_bleu = DataDOBJ.get_objectif(ctx,type,DataDOBJ.BLEU);
@@ -1390,6 +1397,7 @@ Log.d("CALC","COEFF " + coeff_general +" vert: " + coeff_vert + " bleu " + coeff
             nb_jaune = database.countNbEvent(readerEPCFile.getForceSeuil(7).IDAlert, parcour_id, begin, end);
             nb_orange = database.countNbEvent(readerEPCFile.getForceSeuil(8).IDAlert, parcour_id, begin, end);
             nb_rouge = database.countNbEvent(readerEPCFile.getForceSeuil(9).IDAlert, parcour_id, begin, end);
+
         } else {//if( DataDOBJ.VIRAGES.equals(type) ){
             nb_vert = database.countNbEvent(readerEPCFile.getForceSeuil(10).IDAlert, parcour_id, begin, end);
             nb_bleu = database.countNbEvent(readerEPCFile.getForceSeuil(11).IDAlert, parcour_id, begin, end);
@@ -1403,6 +1411,8 @@ Log.d("CALC","COEFF " + coeff_general +" vert: " + coeff_vert + " bleu " + coeff
             nb_orange += database.countNbEvent(readerEPCFile.getForceSeuil(18).IDAlert, parcour_id, begin, end);
             nb_rouge += database.countNbEvent(readerEPCFile.getForceSeuil(19).IDAlert, parcour_id, begin, end);
         }
+
+
         int nb_total = nb_vert + nb_bleu + nb_jaune + nb_orange + nb_rouge;
 
         // VALEUR DU PARCOURS (Par seuil, en pourcentage)
@@ -1411,14 +1421,8 @@ Log.d("CALC","COEFF " + coeff_general +" vert: " + coeff_vert + " bleu " + coeff
         int evt_jaune = ( nb_jaune > 0 ) ? nb_jaune * 100 / nb_total : 0;
         int evt_orange = ( nb_orange > 0 ) ? nb_orange * 100 / nb_total : 0;
         int evt_rouge = ( nb_rouge > 0 ) ? nb_rouge * 100 / nb_total : 0;
-        Log.d("CALC","OBJ " + " vert: " + obj_vert + " bleu " + obj_bleu +
-                " jaune: " + obj_jaune + " orange " + obj_orange +" rouge: " + obj_rouge );
-        Log.d("CALC","COUNT EVT " + nb_total + " nb_vert: " + nb_vert + " nb_bleu " + nb_bleu +
-                " nb_jaune: " + nb_jaune + " nb_orange " + nb_orange +" nb_rouge: " + nb_rouge );
-        Log.d("CALC","EVT " + " vert: " + evt_vert + " bleu " + evt_bleu +
-                " jaune: " + evt_jaune + " orange " + evt_orange +" rouge: " + evt_rouge );
 
-        // TEST
+//        // TEST
 //        if( DataDOBJ.ACCELERATIONS.equals(type) ){
 //            evt_vert = 46;
 //            evt_bleu = 21;
@@ -1439,6 +1443,12 @@ Log.d("CALC","COEFF " + coeff_general +" vert: " + coeff_vert + " bleu " + coeff
 //            evt_rouge = 6;
 //        }
 
+Log.d(tag,"Objectifs (%):\n" + "vert: " + obj_vert + "; bleu " + obj_bleu +
+        "; jaune: " + obj_jaune + "; orange " + obj_orange +"; rouge: " + obj_rouge );
+Log.d(tag,"Evenements (nb): " + nb_total + "\nnb_vert: " + nb_vert + "; nb_bleu " + nb_bleu +
+        "; nb_jaune: " + nb_jaune + "; nb_orange " + nb_orange +"; nb_rouge: " + nb_rouge );
+Log.d(tag,"Evènements (%):\n" + "vert: " + evt_vert + "; bleu " + evt_bleu +
+        "; jaune: " + evt_jaune + "; orange " + evt_orange +"; rouge: " + evt_rouge );
 
         /// UPDATE STATS OF THE LAST DRIVING
         if( update_stats && parcour_id == StatsLastDriving.get_start_at(ctx) ) {
@@ -1472,8 +1482,8 @@ Log.d("CALC","COEFF " + coeff_general +" vert: " + coeff_vert + " bleu " + coeff
         int calc_jaune = ( evt_jaune <= obj_jaune ) ? 0 : (obj_jaune-evt_jaune)*coeff_jaune;
         int calc_orange = ( evt_orange <= obj_orange ) ? 0 : (obj_orange-evt_orange)*coeff_orange;
         int calc_rouge = ( evt_rouge <= obj_rouge ) ? 0 : (obj_rouge-evt_rouge)*coeff_rouge;
-        Log.d("CALC","CALCUL INTERMEDIARE PAR SEUIL " + " vert: " + calc_vert +
-                " jaune: " + calc_jaune + " orange " + calc_orange +" rouge: " + calc_rouge );
+Log.d(tag,"Calcul intermediaire par seuil:\n" + "vert: " + calc_vert +
+                "; jaune: " + calc_jaune + "; orange " + calc_orange +"; rouge: " + calc_rouge );
         // CALCUL MOYENNE POUR CETTE FORCE
         int tmp = (calc_vert+(calc_jaune+calc_orange+calc_rouge));
         ret = tmp;
@@ -1481,7 +1491,7 @@ Log.d("CALC","COEFF " + coeff_general +" vert: " + coeff_vert + " bleu " + coeff
             ret = ( tmp <= 0f ) ? 0f : tmp*coeff_general;
         }
 //        ret = tmp*coeff_general;
-        Log.d("CALC","tmp: " + tmp + " ret: " + ret );
+Log.d(tag,"Moyenne pour cett famille de force:\ntmp =" + tmp + "; ret: " + ret );
         return ret;
     }
 
@@ -1682,7 +1692,6 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
 //                } else {
 //                    parcour_id = System.currentTimeMillis();
 //                }
-
                 addLog("START PARCOURS");
                 // ADD ECA Line when started
                 if( _tracking ) {
