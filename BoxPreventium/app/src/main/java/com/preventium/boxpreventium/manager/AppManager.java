@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.location.Location;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.Pair;
@@ -124,7 +125,8 @@ public class AppManager extends ThreadDefault
     @Override
     public void myRun() throws InterruptedException {
         super.myRun();
-        setLog( "AppManager begin..." );
+
+        setLog("");
 
         database.clear_obselete_data();
 
@@ -133,6 +135,8 @@ public class AppManager extends ThreadDefault
         download_epc();
         download_dobj();
         modules.setActive( true );
+
+        loading_epc();
         STATUS_t status = first_init();
         upload_eca(true);
 
@@ -144,7 +148,7 @@ public class AppManager extends ThreadDefault
             sleep(500);
             database.clear_obselete_data();
             upload_eca(false);
-            change_driving_time();
+            update_driving_time();
             calc_movements();
 
             switch ( status ) {
@@ -168,7 +172,6 @@ public class AppManager extends ThreadDefault
         }
         modules.setActive(false);
 
-        addLog( "AppManager end.");
     }
 
     // HANDLER BOX
@@ -239,39 +242,46 @@ public class AppManager extends ThreadDefault
         if( listener != null ){
             // For update UI correctly
             listener.onDebugLog("");
+            listener.onStatusChanged( STATUS_t.PAR_PAUSING );
+            listener.onStatusChanged( STATUS_t.PAR_STOPPED );
             listener.onDrivingTimeChanged(chronoRideTxt);
-            listener.onNoteChanged(20,LEVEL_t.LEVEL_UNKNOW,LEVEL_t.LEVEL_UNKNOW);
-            listener.onScoreChanged(SCORE_t.ACCELERATING,LEVEL_t.LEVEL_UNKNOW);
-            listener.onScoreChanged(SCORE_t.BRAKING,LEVEL_t.LEVEL_UNKNOW);
-            listener.onScoreChanged(SCORE_t.CORNERING,LEVEL_t.LEVEL_UNKNOW);
-            listener.onScoreChanged(SCORE_t.AVERAGE,LEVEL_t.LEVEL_UNKNOW);
-            listener.onStatusChanged( STATUS_t.PAR_PAUSING);
-            listener.onStatusChanged( STATUS_t.PAR_STOPPED);
+            listener.onNoteChanged(20,LEVEL_t.LEVEL_1,LEVEL_t.LEVEL_1);
+            listener.onScoreChanged(SCORE_t.ACCELERATING,LEVEL_t.LEVEL_1);
+            listener.onScoreChanged(SCORE_t.BRAKING,LEVEL_t.LEVEL_1);
+            listener.onScoreChanged(SCORE_t.CORNERING,LEVEL_t.LEVEL_1);
+            listener.onScoreChanged(SCORE_t.AVERAGE,LEVEL_t.LEVEL_1);
         }
-        parcour_id = 0;
-        note_parcour_update_at = 0;
-        note_forces_update_at = 0;
         alertX_add_at = 0;
         alertY_add_at = 0;
         alertPos_add_at = 0;
         lastLocSend = null;
         try_send_eca_at  = 0;
-        recommended_speed_update_at = 0;
+        parcour_id = get_current_parcours_id(true);
+        if( parcour_id > 0 ) {
+            update_parcour_note(true);
+            update_force_note(true);
+            update_recommended_speed(true);
+        }
+        parcour_id = 0;
+
         return STATUS_t.PAR_STOPPED;
     }
 
-    private void change_driving_time() {
-        String txt = String.format(Locale.getDefault(),"%02d:%02d",0,0);
-        long ms = ( parcour_id > 0 )  ? System.currentTimeMillis() - parcour_id : 0;
-        if( ms > 0 ){
-            long h = ms/3600000;
-            long m = (ms%3600000) > 0 ? (ms%3600000)/60000 : 0;
-            txt = String.format(Locale.getDefault(),"%02d:%02d",h,m);
-            StatsLastDriving.set_times( ctx, (long) (ms * 0.001));
-        }
-        if( !chronoRideTxt.equals(txt) ) {
-            if( listener != null ) listener.onDrivingTimeChanged( txt );
-            chronoRideTxt = txt;
+    private void update_driving_time() {
+        if( listener != null ) {
+            long id = get_current_parcours_id(false);
+            long ms = (id > 0) ? System.currentTimeMillis() - id : 0;
+            String txt = String.format(Locale.getDefault(), "%02d:%02d", 0, 0);
+            if (ms > 0) {
+                long h = ms / 3600000;
+                long m = (ms % 3600000) > 0 ? (ms % 3600000) / 60000 : 0;
+                txt = String.format(Locale.getDefault(), "%02d:%02d", h, m);
+                StatsLastDriving.set_times(ctx, (long) (ms * 0.001));
+            }
+            if( !chronoRideTxt.equals(txt) ) {
+                listener.onDrivingTimeChanged( txt );
+                chronoRideTxt = txt;
+            }
         }
     }
 
@@ -972,29 +982,10 @@ public class AppManager extends ThreadDefault
                 if (list.get(i).getSpeed() > speed_max) speed_max = list.get(i).getSpeed();
                 // Checking acceleration and braking
                 if (i < list.size() - 1) {
-                    if (list.get(i).getSpeed() < list.get(i + 1).getSpeed())acceleration = false;
-                    if (list.get(i).getSpeed() > list.get(i + 1).getSpeed())freinage = false;
+                    if (list.get(i).getSpeed() <= list.get(i + 1).getSpeed())acceleration = false;
+                    if (list.get(i).getSpeed() >= list.get(i + 1).getSpeed())freinage = false;
                 }
             }
-            //Log.d("AAAAAAAAAAAAAAAAA","SIZE: "+list.size()+ " ACC: " + acceleration + " BRK: " + freinage);
-
-//        List<Location> list = get_location_list(3);
-//        if( list != null && list.size() >= 3 ){
-//            rightRoad = isRightRoad( list.get(0), list.get(1), list.get(2) );
-//            boolean acceleration = true;
-//            boolean freinage = true;
-//            float speed_min = list.get(0).getSpeed();
-//            float speed_max = list.get(0).getSpeed();
-//            for (int i = 0; i < list.size(); i++) {// i is more recent than (i+1)
-//                // Calculate minimum and maximum value
-//                if (list.get(i).getSpeed() < speed_min) speed_min = list.get(i).getSpeed();
-//                if (list.get(i).getSpeed() > speed_max) speed_max = list.get(i).getSpeed();
-//                // Checking acceleration and braking
-//                if (i < list.size() - 1) {
-//                    if (list.get(i).getSpeed() < list.get(i + 1).getSpeed())acceleration = false;
-//                    if (list.get(i).getSpeed() > list.get(i + 1).getSpeed())freinage = false;
-//                }
-//            }
 
             if (speed_max * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
             else if ((speed_max - speed_min) * MS_TO_KMH < 2f) mov_t = MOVING_t.CST;
@@ -1002,15 +993,14 @@ public class AppManager extends ThreadDefault
             else if (freinage) mov_t = MOVING_t.BRK;
             else mov_t = MOVING_t.NCS;
 
-
-//addLog( "Speed[ " + speed_min + "; " + speed_max + " ]" + mov_t + " " + rightRoad);
             // CALCULATE FORCE X
             // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
             // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
             // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
-            this.XmG = ((list.get(0).getSpeed() - list.get(1).getSpeed())
-                    / (9.81 * ((list.get(0).getTime() - list.get(1).getTime()) * 0.001)))
-                    * 1000.0;
+//            this.XmG = ((list.get(0).getSpeed() - list.get(1).getSpeed())
+//                    / (9.81 * ((list.get(0).getTime() - list.get(1).getTime()) * 0.001)))
+//                    * 1000.0;
+            this.XmG = LocationsToXmG( list.get(0), list.get(1) );
         }
 
         if ( mov_t != mov_t_last )
@@ -1018,7 +1008,7 @@ public class AppManager extends ThreadDefault
             mov_t_last_chrono.start();
             mov_chrono.start();
             mov_t_last = mov_t;
-            addLog("Moving status changed: " + mov_t.toString());
+            //addLog("Moving status changed: " + mov_t.toString());
         }
         else {
             if ( mov_chrono.isStarted() ) {
@@ -1026,32 +1016,20 @@ public class AppManager extends ThreadDefault
                     case UNKNOW:
                         break;
                     case STP:
-//                        if (mov_chrono.getSeconds() > 3) {
-//                            mov_chrono.stop();
-//                            addLog("Calibrate on constant speed (no moving)");
-//                            modules.on_constant_speed();
-//                        }
                         break;
                     case ACC:
                         if (rightRoad) {
                             mov_chrono.stop();
-                            addLog("Calibrate on acceleration");
                             modules.on_acceleration();
                         }
                         break;
                     case BRK:
                         if (rightRoad) {
                             mov_chrono.stop();
-                            addLog("Calibrate on braking");
                             modules.on_constant_speed();
                         }
                         break;
                     case CST:
-//                        if (rightRoad && mov_chrono.getSeconds() > 3 ) {
-//                            mov_chrono.start();
-//                            addLog("Calibrate on constant speed");
-//                            modules.on_constant_speed();
-//                        }
                         break;
                     case NCS:
                         break;
@@ -1060,6 +1038,14 @@ public class AppManager extends ThreadDefault
         }
     }
 
+    private double LocationsToXmG( @NonNull Location l0, @NonNull Location l1 ) {
+        // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
+        // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+        // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+        return ((l0.getSpeed() - l1.getSpeed())
+                / (9.81 * ((l0.getTime() - l1.getTime()) * 0.001)))
+                * 1000.0;
+    }
     private boolean isRightRoad( Location location_1, Location location_2, Location location_3 ) {
         double Lat_rad_1 = location_1.getLatitude() * Math.PI / 180.0;
         double Lat_rad_2 = location_2.getLatitude() * Math.PI / 180.0;
@@ -1090,6 +1076,8 @@ public class AppManager extends ThreadDefault
     }
 
     synchronized private void calc_eca(){
+
+
 
         Location loc = get_last_location();
 
@@ -1193,6 +1181,7 @@ public class AppManager extends ThreadDefault
                         || seuil.level.getValue() >= seuil_ui.level.getValue()
                         || alertUI_add_at + t < System.currentTimeMillis() ){
                     if( listener != null )listener.onForceChanged(seuil.type, seuil.level);
+
                     alertUI_add_at = System.currentTimeMillis();
                     seuil_ui = seuil;
                 }
@@ -1263,48 +1252,54 @@ public class AppManager extends ThreadDefault
 //        float coeff_general = 1;
 //        int[] coeff_force = {1,1,1,1,1};
 //        int[] nb_evt = {8,5,1,0,0};
-
-        // CALCUL
-        int coeff_sum = coeff_force[0] + coeff_force[1] + coeff_force[2] + coeff_force[3] + coeff_force[4];
-        float coeff_percent = (float) (coeff_sum * 0.01);
-        float[] interm_1 = {
-                ( coeff_sum * coeff_force[0] ) / ( 100f * coeff_percent * coeff_general ),
-                ( coeff_sum * coeff_force[1] ) / ( 100f * coeff_percent * coeff_general ),
-                ( coeff_sum * coeff_force[2] ) / ( 100f * coeff_percent * coeff_general ),
-                ( coeff_sum * coeff_force[3] ) / ( 100f * coeff_percent * coeff_general ),
-                ( coeff_sum * coeff_force[4] ) / ( 100f * coeff_percent * coeff_general )
-        };
-
         int evt_sum = nb_evt[0] + nb_evt[1] + nb_evt[2] + nb_evt[3] + nb_evt[4];
-        float coeff_evt = (float) (evt_sum * 0.01);
-        float[] interm_2 = {
-                ( evt_sum * nb_evt[0] ) / ( 100f * coeff_evt * coeff_evt ),
-                ( evt_sum * nb_evt[1] ) / ( 100f * coeff_evt * coeff_evt ),
-                ( evt_sum * nb_evt[2] ) / ( 100f * coeff_evt * coeff_evt ),
-                ( evt_sum * nb_evt[3] ) / ( 100f * coeff_evt * coeff_evt ),
-                ( evt_sum * nb_evt[4] ) / ( 100f * coeff_evt * coeff_evt )
-        };
+        if( evt_sum <= 0 ) {
+            ret = 20f;
+        } else {
 
-        float[] interm_3 = {
-                interm_1[0] * interm_2[0],
-                interm_1[1] * interm_2[1],
-                interm_1[2] * interm_2[2],
-                interm_1[3] * interm_2[3],
-                interm_1[4] * interm_2[4]
-        };
+            // CALCUL
+            int coeff_sum = coeff_force[0] + coeff_force[1] + coeff_force[2] + coeff_force[3] + coeff_force[4];
+            float coeff_percent = (float) (coeff_sum * 0.01);
+            float[] interm_1 = {
+                    ( coeff_sum * coeff_force[0] ) / ( 100f * coeff_percent * coeff_general ),
+                    ( coeff_sum * coeff_force[1] ) / ( 100f * coeff_percent * coeff_general ),
+                    ( coeff_sum * coeff_force[2] ) / ( 100f * coeff_percent * coeff_general ),
+                    ( coeff_sum * coeff_force[3] ) / ( 100f * coeff_percent * coeff_general ),
+                    ( coeff_sum * coeff_force[4] ) / ( 100f * coeff_percent * coeff_general )
+            };
 
-        float interm_3_sum = interm_3[0] + interm_3[1] + interm_3[2] + interm_3[3] + interm_3[4];
+            float coeff_evt = (float) (evt_sum * 0.01);
+            float[] interm_2 = {
+                    (evt_sum * nb_evt[0]) / (100f * coeff_evt * coeff_evt),
+                    (evt_sum * nb_evt[1]) / (100f * coeff_evt * coeff_evt),
+                    (evt_sum * nb_evt[2]) / (100f * coeff_evt * coeff_evt),
+                    (evt_sum * nb_evt[3]) / (100f * coeff_evt * coeff_evt),
+                    (evt_sum * nb_evt[4]) / (100f * coeff_evt * coeff_evt)
+            };
 
-        float[] interm_4 = {
-                interm_3[0] / (interm_3_sum * 0.01f),
-                interm_3[1] / (interm_3_sum * 0.01f),
-                interm_3[2] / (interm_3_sum * 0.01f),
-                interm_3[3] / (interm_3_sum * 0.01f),
-                interm_3[4] / (interm_3_sum * 0.01f)
-        };
+            float[] interm_3 = {
+                    interm_1[0] * interm_2[0],
+                    interm_1[1] * interm_2[1],
+                    interm_1[2] * interm_2[2],
+                    interm_1[3] * interm_2[3],
+                    interm_1[4] * interm_2[4]
+            };
 
+            float interm_3_sum = interm_3[0] + interm_3[1] + interm_3[2] + interm_3[3] + interm_3[4];
 
-        ret = ( interm_4[0] + interm_4[1] - interm_4[2] - interm_4[3] - interm_4[4] ) * (1f/5f);
+            float[] interm_4 = {
+                    interm_3[0] / (interm_3_sum * 0.01f),
+                    interm_3[1] / (interm_3_sum * 0.01f),
+                    interm_3[2] / (interm_3_sum * 0.01f),
+                    interm_3[3] / (interm_3_sum * 0.01f),
+                    interm_3[4] / (interm_3_sum * 0.01f)
+            };
+
+            ret = (interm_4[0] + interm_4[1] - interm_4[2] - interm_4[3] - interm_4[4]) * (1f / 5f);
+
+            if (ret < 0f) ret = 0f;
+            if (ret > 20f) ret = 20f;
+        }
         return ret;
     }
 
@@ -1331,10 +1326,12 @@ public class AppManager extends ThreadDefault
         return calc_note( parcour_id, begin, end );
     }
 
-    private void update_parcour_note() {
+    private void update_parcour_note(boolean force) {
         // Every 5 minutes
-        if( note_parcour_update_at + (5 * 60 * 1000) < System.currentTimeMillis() )
+        if( force || note_parcour_update_at + (5 * 60 * 1000) < System.currentTimeMillis() )
         {
+            note_parcour_update_at = System.currentTimeMillis();
+
             float parcour_note = calc_note(parcour_id);
 
             LEVEL_t parcour_level = LEVEL_t.LEVEL_5;
@@ -1354,46 +1351,38 @@ public class AppManager extends ThreadDefault
             else if( last_5_days_note >= 6f ) last_5_days_level = LEVEL_t.LEVEL_4;
 
             StatsLastDriving.set_note(ctx,SCORE_t.FINAL,parcour_note);
-
+            Log.d(TAG,"Parcours " + parcour_id + " note: " + parcour_note );
             if( listener != null ) listener.onNoteChanged( (int)parcour_note, parcour_level, last_5_days_level );
         }
     }
 
-    private void update_force_note() {
+    private void update_force_note(boolean force) {
 
         // Every 1 minutes
-        if( note_forces_update_at + (60 * 1000) < System.currentTimeMillis() ) {
+        if( force || note_forces_update_at + (60 * 1000) < System.currentTimeMillis() ) {
+
+            note_forces_update_at = System.currentTimeMillis();
+
             float Note_A = calc_note_by_force_type(DataDOBJ.ACCELERATIONS, parcour_id);
-            LEVEL_t level_A = LEVEL_t.LEVEL_5;
-            if (Note_A >= 16f) level_A = LEVEL_t.LEVEL_1;
-            else if (Note_A >= 13f) level_A = LEVEL_t.LEVEL_2;
-            else if (Note_A >= 9f) level_A = LEVEL_t.LEVEL_3;
-            else if (Note_A >= 6f) level_A = LEVEL_t.LEVEL_4;
+            LEVEL_t level_A = note2level( Note_A );
 
             float Note_F = calc_note_by_force_type(DataDOBJ.FREINAGES, parcour_id);
-            LEVEL_t level_F = LEVEL_t.LEVEL_5;
-            if (Note_F >= 16f) level_F = LEVEL_t.LEVEL_1;
-            else if (Note_F >= 13f) level_F = LEVEL_t.LEVEL_2;
-            else if (Note_F >= 9f) level_F = LEVEL_t.LEVEL_3;
-            else if (Note_F >= 6f) level_F = LEVEL_t.LEVEL_4;
+            LEVEL_t level_F = note2level( Note_F );
 
             float Note_V = calc_note_by_force_type(DataDOBJ.VIRAGES, parcour_id);
-            LEVEL_t level_V = LEVEL_t.LEVEL_5;
-            if (Note_V >= 16f) level_V = LEVEL_t.LEVEL_1;
-            else if (Note_V >= 13f) level_V = LEVEL_t.LEVEL_2;
-            else if (Note_V >= 9f) level_V = LEVEL_t.LEVEL_3;
-            else if (Note_V >= 6f) level_V = LEVEL_t.LEVEL_4;
+            LEVEL_t level_V = note2level( Note_V );
 
             float Note_M = (Note_A + Note_F + Note_V) * (1f / 3f);
-            LEVEL_t level_M = LEVEL_t.LEVEL_5;
-            if (Note_M >= 16f) level_M = LEVEL_t.LEVEL_1;
-            else if (Note_M >= 13f) level_M = LEVEL_t.LEVEL_2;
-            else if (Note_M >= 9f) level_M = LEVEL_t.LEVEL_3;
-            else if (Note_M >= 6f) level_M = LEVEL_t.LEVEL_4;
+            LEVEL_t level_M = note2level( Note_M );
 
             StatsLastDriving.set_note(ctx,SCORE_t.ACCELERATING,Note_A);
             StatsLastDriving.set_note(ctx,SCORE_t.BRAKING,Note_F);
             StatsLastDriving.set_note(ctx,SCORE_t.CORNERING,Note_V);
+
+            Log.d(TAG,"Parcours " + parcour_id + " note A: " + Note_A );
+            Log.d(TAG,"Parcours " + parcour_id + " note F: " + Note_F );
+            Log.d(TAG,"Parcours " + parcour_id + " note V: " + Note_V );
+            Log.d(TAG,"Parcours " + parcour_id + " note M: " + Note_M );
 
             float speed_avg = database.speed_avg(parcour_id, System.currentTimeMillis(), 0f);
             StatsLastDriving.set_speed_avg(ctx,speed_avg);
@@ -1406,6 +1395,15 @@ public class AppManager extends ThreadDefault
             }
         }
 
+    }
+
+    private LEVEL_t note2level(float note) {
+        LEVEL_t level = LEVEL_t.LEVEL_5;
+        if (note >= 16f) level = LEVEL_t.LEVEL_1;
+        else if (note >= 13f) level = LEVEL_t.LEVEL_2;
+        else if (note >= 9f) level = LEVEL_t.LEVEL_3;
+        else if (note >= 6f) level = LEVEL_t.LEVEL_4;
+        return level;
     }
 
     private long startOfDays(long timestamp){
@@ -1427,11 +1425,11 @@ public class AppManager extends ThreadDefault
     private float speed_max = 0f;
 
     /// Calculate recommended speed
-    private void update_recommended_speed() {
+    private void update_recommended_speed(boolean force) {
 
         // Calculate recommended val and get speed maximum since XX secondes
         // 10 minutes
-        if( recommended_speed_update_at + (600*1000) < System.currentTimeMillis()) {
+        if( force || recommended_speed_update_at + (600*1000) < System.currentTimeMillis()) {
             if (readerEPCFile != null) {
 
                 // Period pour calucl: (utiliser les X derniere secondes)
@@ -1522,6 +1520,62 @@ public class AppManager extends ThreadDefault
     private long parcour_id = 0;
     private boolean button_stop = false;
 
+    public long get_current_parcours_id(boolean debug) {
+
+        long ret = -1;
+
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String key = ctx.getResources().getString(R.string.stop_trigger_time_key);
+        long delay = sp.getInt(key,10) * 60 * 1000;
+
+        ret = database.get_last_parcours_id();
+
+        if( ret == -1 ) {
+            if( debug ) Log.d(TAG, "Current parcours ID: empty. ");
+        } else if( database.parcour_is_closed(ret) ) {
+            if( debug ) Log.d(TAG, "Current parcours ID: " + ret + " is closed.");
+            ret = -1;
+        } else if( database.parcour_expired(ret,delay) ) {
+            if( debug ) Log.d(TAG, "Current parcours ID: " + ret + " expired.");
+            database.close_last_parcour();
+            ret = -1;
+        } else {
+            if( debug ) Log.d(TAG, "Current parcours ID: " + ret + "." );
+        }
+
+        return ret;
+    }
+
+    public void init_parcours_id() {
+        long id = get_current_parcours_id(true);
+        if( id > 0 )
+        {
+            parcour_id = id;
+            Log.d(TAG,"Initialize parcours ( Resume parcours " + parcour_id + " )" );
+            if( _tracking )
+            {
+                Log.d(TAG,"Add ECA to resume parcous.");
+                Location loc = get_last_location();
+                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_BEGIN, loc, null));
+            }
+        }
+        else
+        {
+            parcour_id = System.currentTimeMillis();
+            Log.d(TAG,"Initialize parcours: Create parcours " + parcour_id + " )" );
+            if( _tracking )
+            {
+                Log.d(TAG,"Add ECA to start parcous.");
+                Location loc = get_last_location();
+                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_BEGIN, loc, null));
+            }
+        }
+
+        update_parcour_note(true);
+        update_force_note(true);
+        update_recommended_speed(true);
+    }
+
     public void setStopped(){ button_stop = true; }
 
     private STATUS_t on_stopped() throws InterruptedException {
@@ -1553,58 +1607,13 @@ public class AppManager extends ThreadDefault
                 lastLocSend = null;
                 recommended_speed_update_at = 0;
 
-                SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-                String key = ctx.getResources().getString(R.string.stop_trigger_time_key);
-                long delay = sp.getInt(key,10) * 60 * 1000;
-
-                parcour_id = database.get_last_parcours_id();
-                Log.d(TAG,"get_last_parcours_id =  " + parcour_id);
-                Log.d(TAG,"parcour_is_closed =  " + database.parcour_is_closed(parcour_id));
-                Log.d(TAG,"parcour_expired =  " + database.parcour_expired(parcour_id, delay));
-                if( parcour_id == -1
-                        || database.parcour_is_closed(parcour_id) )
-                {
-                    Log.d(TAG,"NEW PARCOUR");
-                    parcour_id = System.currentTimeMillis();
-                }
-                else
-                {
-                    if( database.parcour_expired(parcour_id, delay) ){
-                        Log.d(TAG,"FORCE CLOSE AND NEW PARCOUR");
-                        database.close_last_parcour();
-                        parcour_id = System.currentTimeMillis();
-                    }
-                    else
-                    {
-                        Log.d(TAG,"RESUME PARCOUR");
-                    }
-                }
-//                if(System.currentTimeMillis() - database.get_last_timestamp() < delay ){
-//                    parcour_id = database.get_last_parcours_id();
-//                    if( StatsLastDriving.get_stopped_at(ctx) >= parcour_id ){
-//                        parcour_id = System.currentTimeMillis();
-//                    }
-//                } else {
-//                    parcour_id = System.currentTimeMillis();
-//                }
-
-
-                addLog("START PARCOURS");
-                // ADD ECA Line when started
-                if( _tracking ) {
-                    Location loc = get_last_location();
-                    database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_BEGIN, loc, null));
-                }
-
+                init_parcours_id();
                 StatsLastDriving.startDriving(ctx,parcour_id);
+
                 ret = STATUS_t.PAR_STARTED;
                 if (listener != null){
                     listener.onForceChanged(FORCE_t.UNKNOW,LEVEL_t.LEVEL_UNKNOW);
-                    listener.onNoteChanged(20,LEVEL_t.LEVEL_1, LEVEL_t.LEVEL_UNKNOW);
-                    listener.onScoreChanged(SCORE_t.ACCELERATING,LEVEL_t.LEVEL_1);
-                    listener.onScoreChanged(SCORE_t.BRAKING,LEVEL_t.LEVEL_1);
-                    listener.onScoreChanged(SCORE_t.CORNERING,LEVEL_t.LEVEL_1);
-                    listener.onScoreChanged(SCORE_t.AVERAGE,LEVEL_t.LEVEL_1);
+
                     listener.onRecommendedSpeedChanged(SPEED_t.IN_STRAIGHT_LINE,0,LEVEL_t.LEVEL_UNKNOW,true);
                     listener.onRecommendedSpeedChanged(SPEED_t.IN_CORNERS,0,LEVEL_t.LEVEL_UNKNOW,true);
                     listener.onStatusChanged(ret);
@@ -1630,20 +1639,17 @@ public class AppManager extends ThreadDefault
         {
 
             // Force calcul note
-            note_parcour_update_at = 0;
-            note_forces_update_at = 0;
-            recommended_speed_update_at = 0;
-            update_parcour_note();
-            update_force_note();
-            update_recommended_speed();
+            update_parcour_note(true);
+            update_force_note(true);
+            update_recommended_speed(true);
 
             database.close_last_parcour();
 
-//            // ADD ECA Line when stopped
-//            if( _tracking ) {
-//                Location loc = get_last_location();
-//                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_END, loc, null));
-//            }
+            // ADD ECA Line when stopped
+            if( _tracking ) {
+                Location loc = get_last_location();
+                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_END, loc, null));
+            }
 
             StatsLastDriving.set_distance(ctx,database.get_distance(parcour_id));
             ret = STATUS_t.PAR_STOPPED;
@@ -1682,10 +1688,10 @@ public class AppManager extends ThreadDefault
         STATUS_t ret = status;
 
         calc_eca();
-        update_parcour_note();
-        update_force_note();
+        update_parcour_note(false);
+        update_force_note(false);
         check_shock();
-        update_recommended_speed();
+        update_recommended_speed(false);
 
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
         String key = ctx.getResources().getString(R.string.pause_trigger_time_key);
@@ -1821,6 +1827,7 @@ public class AppManager extends ThreadDefault
         lock.lock();
         ret = gps;
         lock.unlock();
+        ret = true;
         return ret;
     }
 
