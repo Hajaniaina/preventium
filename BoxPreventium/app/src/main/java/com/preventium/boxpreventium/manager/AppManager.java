@@ -3,9 +3,7 @@ package com.preventium.boxpreventium.manager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.location.Location;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
-import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.Pair;
@@ -40,7 +38,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -238,6 +235,7 @@ public class AppManager extends ThreadDefault
         mov_t = MOVING_t.UNKNOW;
         onEngineStateChanged(ENGINE_t.OFF);
         chronoRideTxt = "0:00";
+
         if( listener != null ){
             // For update UI correctly
             listener.onDebugLog("");
@@ -251,8 +249,8 @@ public class AppManager extends ThreadDefault
             listener.onStatusChanged( STATUS_t.PAR_STOPPED);
         }
         parcour_id = 0;
-        cotation_update_at = 0;
-        forces_update_at = 0;
+        note_parcour_update_at = 0;
+        note_forces_update_at = 0;
         alertX_add_at = 0;
         alertY_add_at = 0;
         alertPos_add_at = 0;
@@ -1216,297 +1214,198 @@ public class AppManager extends ThreadDefault
     /// CALCUL COTATION
     /// ============================================================================================
 
-    private long cotation_update_at = 0;
-    private long forces_update_at = 0;
+    private long note_parcour_update_at = 0;
+    private long note_forces_update_at = 0;
 
-    // Calculate note of the current parcours
-    private void calc_parcour_cotation() {
-
-        if( listener != null ){
-            // If elapsed time > 10 minutes
-            if( cotation_update_at + (600*1000) < System.currentTimeMillis()){
-                if( readerEPCFile != null ){
-addLog( "calc_parcour_cotation" );
-Log.d("CALC","CALCUL PARCOUR NOTE");
-                    cotation_update_at = System.currentTimeMillis();
-                    float cotation_A = get_cotation_force(DataDOBJ.ACCELERATIONS,parcour_id,true,true);
-                    float cotation_F = get_cotation_force(DataDOBJ.FREINAGES,parcour_id,true,true);
-                    float cotation_V = get_cotation_force(DataDOBJ.VIRAGES,parcour_id,true,true);
-                    float coeff_A = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.ACCELERATIONS);
-                    float coeff_F = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.FREINAGES);
-                    float coeff_V = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.VIRAGES);
-                    float cotation = ((cotation_A + cotation_F + cotation_V)/3)
-                            / ((coeff_A + coeff_F + coeff_V)/3);
-
-                    StatsLastDriving.set_note(ctx,SCORE_t.ACCELERATING,cotation_A);
-                    StatsLastDriving.set_note(ctx,SCORE_t.BRAKING,cotation_F);
-                    StatsLastDriving.set_note(ctx,SCORE_t.CORNERING,cotation_V);
-                    StatsLastDriving.set_note(ctx,SCORE_t.FINAL,cotation);
-
-                    LEVEL_t level_note;
-                    if( cotation >= 16f ) level_note = LEVEL_t.LEVEL_1;
-                    else if( cotation >= 13f ) level_note = LEVEL_t.LEVEL_2;
-                    else if( cotation >= 9f ) level_note = LEVEL_t.LEVEL_3;
-                    else if( cotation >= 6f ) level_note = LEVEL_t.LEVEL_4;
-                    else level_note = LEVEL_t.LEVEL_5;
-
-                    long end = startOfDays(System.currentTimeMillis());
-                    long begin = end - (5 * 24 * 3600 * 1000);
-                    cotation_A = get_cotation_force(DataDOBJ.ACCELERATIONS,-1,begin,end,true,false);
-                    cotation_F = get_cotation_force(DataDOBJ.FREINAGES,-1,begin,end,true,false);
-                    cotation_V = get_cotation_force(DataDOBJ.VIRAGES,-1,begin,end,true,false);
-                    coeff_A = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.ACCELERATIONS);
-                    coeff_F = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.FREINAGES);
-                    coeff_V = DataDOBJ.get_coefficient_general(ctx,DataDOBJ.VIRAGES);
-                    cotation = ((cotation_A + cotation_F + cotation_V)/3)
-                            / ((coeff_A + coeff_F + coeff_V)/3);
-
-                    LEVEL_t level_5_days;
-                    if( cotation >= 16f ) level_5_days = LEVEL_t.LEVEL_1;
-                    else if( cotation >= 13f ) level_5_days = LEVEL_t.LEVEL_2;
-                    else if( cotation >= 9f ) level_5_days = LEVEL_t.LEVEL_3;
-                    else if( cotation >= 6f ) level_5_days = LEVEL_t.LEVEL_4;
-                    else level_5_days = LEVEL_t.LEVEL_5;
-
-//                    StatsLastDriving.set_note(ctx,cotation);
-                    float speed_avg = database.speed_avg(parcour_id, System.currentTimeMillis(), 0f);
-                    StatsLastDriving.set_speed_avg(ctx,speed_avg);
-                    listener.onNoteChanged( (int)cotation, level_note, level_5_days );
-                }
-            }
-        }
-    }
-
-    // Calculate note of the forces for the current parcours ( A, V, F and M )
-    private void calc_cotation_forces() {
-
-        if( listener != null ){
-            // If elapsed time > 10 minutes (10 minutes = 600 secondes, 5*60*1000)
-            if( forces_update_at + (600*1000) < System.currentTimeMillis()){
-                if( readerEPCFile != null ){
-
-                    // Period pour calucl: (utiliser les X derniere secondes)
-                    SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-                    String key = ctx.getResources().getString(R.string.recommended_speed_time);
-                    long delay_sec = sp.getInt(key,10) * 60;
-
-addLog( "calc_cotation_forces" );
-Log.d("CALC","CALCUL COTATION FORCE");
-                    // Calcul force note:
-                    forces_update_at = System.currentTimeMillis();
-                    float A = get_cotation_force(DataDOBJ.ACCELERATIONS,parcour_id,delay_sec,false,false);
-                    float F = get_cotation_force(DataDOBJ.FREINAGES,parcour_id,delay_sec,false,false);
-                    float V = get_cotation_force(DataDOBJ.VIRAGES,parcour_id,delay_sec,false,false);
-                    float M = (A+F+V) > 0 ? (A+F+V)/3 : 0;
-addLog( "Cotation A: " + A );
-addLog( "Cotation F: " + F );
-addLog( "Cotation V: " + V );
-addLog( "Cotation M: " + M );
-Log.d("CALC","Cotation A: " + A + " F: " + F + " V: " + V + " M: " + M );
-                    // Update note for "Accelerations"
-                    LEVEL_t level;
-                    if( A >= 16f ) level = LEVEL_t.LEVEL_1;
-                    else if( A >= 13f ) level = LEVEL_t.LEVEL_2;
-                    else if( A >= 9f ) level = LEVEL_t.LEVEL_3;
-                    else if( A >= 6f ) level = LEVEL_t.LEVEL_4;
-                    else level = LEVEL_t.LEVEL_5;
-                    listener.onScoreChanged( SCORE_t.ACCELERATING, level );
-
-                    // Update note for "Freinages"
-                    if( F >= 16f ) level = LEVEL_t.LEVEL_1;
-                    else if( F >= 13f ) level = LEVEL_t.LEVEL_2;
-                    else if( F >= 9f ) level = LEVEL_t.LEVEL_3;
-                    else if( F >= 6f ) level = LEVEL_t.LEVEL_4;
-                    else level = LEVEL_t.LEVEL_5;
-                    listener.onScoreChanged( SCORE_t.BRAKING, level );
-
-                    // Update note for "Virage"
-                    if( V >= 16f ) level = LEVEL_t.LEVEL_1;
-                    else if( V >= 13f ) level = LEVEL_t.LEVEL_2;
-                    else if( V >= 9f ) level = LEVEL_t.LEVEL_3;
-                    else if( V >= 6f ) level = LEVEL_t.LEVEL_4;
-                    else level = LEVEL_t.LEVEL_5;
-                    listener.onScoreChanged( SCORE_t.CORNERING, level );
-
-                    // Update force averages, "MOYENNE"
-                    if( M >= 16f ) level = LEVEL_t.LEVEL_1;
-                    else if( M >= 13f ) level = LEVEL_t.LEVEL_2;
-                    else if( M >= 9f ) level = LEVEL_t.LEVEL_3;
-                    else if( M >= 6f ) level = LEVEL_t.LEVEL_4;
-                    else level = LEVEL_t.LEVEL_5;
-                    listener.onScoreChanged( SCORE_t.AVERAGE, level );
-                }
-            }
-        }
-    }
-
-    /// Get force cotation (A,F,V)per parcours (per all parcours if parcour_id <= 0 )
-    /// between timespamp
-    private float get_cotation_force( String type, long parcour_id, long begin, long end, boolean coeff, boolean update_stats ){
-String tag = "GET COTATION FORCE " + type;
-
+    private float calc_note_by_force_type( String type, long parcour_id, long begin, long end ) {
         float ret = 20f;
-Log.d(tag,"get_cotation_force " + type);
         if( !DataDOBJ.ACCELERATIONS.equals(type)
                 && !DataDOBJ.FREINAGES.equals(type)
                 && !DataDOBJ.VIRAGES.equals(type) ) return ret;
 
-
         // COEFFICIENTS
-        float coeff_general = 1;
-        int coeff_vert = 1;
-        int coeff_bleu = 1;
-        int coeff_jaune = 1;
-        int coeff_orange = 1;
-        int coeff_rouge = 1;
-        if( coeff ) {
-            coeff_general = DataDOBJ.get_coefficient_general(ctx, type);
-            coeff_vert = DataDOBJ.get_coefficient(ctx, type, DataDOBJ.VERT);
-            coeff_bleu = DataDOBJ.get_coefficient(ctx, type, DataDOBJ.BLEU);
-            coeff_jaune = DataDOBJ.get_coefficient(ctx, type, DataDOBJ.JAUNE);
-            coeff_orange = DataDOBJ.get_coefficient(ctx, type, DataDOBJ.ORANGE);
-            coeff_rouge = DataDOBJ.get_coefficient(ctx, type, DataDOBJ.ROUGE);
-        }
-//// TEST
-//coeff_general = 1;
-//coeff_vert = 1;
-//coeff_bleu = 3;
-//coeff_jaune = 3;
-//coeff_orange = 4;
-//coeff_rouge = 5;
-Log.d(tag,"Coefficient:\nGeneral: " + coeff_general +"; vert: " + coeff_vert + "; bleu " + coeff_bleu +
-        "; jaune: " + coeff_jaune + "; orange " + coeff_orange +"; rouge: " + coeff_rouge );
-        // OBJECTIFS FIXES AU CONDUCTEUR (in percent)
-        int obj_vert = DataDOBJ.get_objectif(ctx,type,DataDOBJ.VERT);
-        int obj_bleu = DataDOBJ.get_objectif(ctx,type,DataDOBJ.BLEU);
-        int obj_jaune = DataDOBJ.get_objectif(ctx,type,DataDOBJ.JAUNE);
-        int obj_orange = DataDOBJ.get_objectif(ctx,type,DataDOBJ.ORANGE);
-        int obj_rouge = DataDOBJ.get_objectif(ctx,type,DataDOBJ.ROUGE);
+        float coeff_general = DataDOBJ.get_coefficient_general(ctx, type);
+        int[] coeff_force = {
+                DataDOBJ.get_coefficient(ctx, type, DataDOBJ.VERT),
+                DataDOBJ.get_coefficient(ctx, type, DataDOBJ.BLEU),
+                DataDOBJ.get_coefficient(ctx, type, DataDOBJ.JAUNE),
+                DataDOBJ.get_coefficient(ctx, type, DataDOBJ.ORANGE),
+                DataDOBJ.get_coefficient(ctx, type, DataDOBJ.ROUGE)
+        };
 
-        // VALEUR DU PARCOURS (Par seuil, en nombre d evenement)
-        int nb_vert, nb_bleu, nb_jaune, nb_orange, nb_rouge;
+        // NUNBER OF EVENEMENTS
+        int[] nb_evt = new int[5];
         if( DataDOBJ.ACCELERATIONS.equals(type) ){
-            nb_vert = database.countNbEvent(readerEPCFile.getForceSeuil(0).IDAlert, parcour_id, begin, end);
-            nb_bleu = database.countNbEvent(readerEPCFile.getForceSeuil(1).IDAlert, parcour_id, begin, end);
-            nb_jaune = database.countNbEvent(readerEPCFile.getForceSeuil(2).IDAlert, parcour_id, begin, end);
-            nb_orange = database.countNbEvent(readerEPCFile.getForceSeuil(3).IDAlert, parcour_id, begin, end);
-            nb_rouge = database.countNbEvent(readerEPCFile.getForceSeuil(4).IDAlert, parcour_id, begin, end);
+            nb_evt[0] = database.countNbEvent(readerEPCFile.getForceSeuil(0).IDAlert, parcour_id, begin, end);
+            nb_evt[1] = database.countNbEvent(readerEPCFile.getForceSeuil(1).IDAlert, parcour_id, begin, end);
+            nb_evt[2] = database.countNbEvent(readerEPCFile.getForceSeuil(2).IDAlert, parcour_id, begin, end);
+            nb_evt[3] = database.countNbEvent(readerEPCFile.getForceSeuil(3).IDAlert, parcour_id, begin, end);
+            nb_evt[4] = database.countNbEvent(readerEPCFile.getForceSeuil(4).IDAlert, parcour_id, begin, end);
         } else if( DataDOBJ.FREINAGES.equals(type) ){
-            nb_vert = database.countNbEvent(readerEPCFile.getForceSeuil(5).IDAlert, parcour_id, begin, end);
-            nb_bleu = database.countNbEvent(readerEPCFile.getForceSeuil(6).IDAlert, parcour_id, begin, end);
-            nb_jaune = database.countNbEvent(readerEPCFile.getForceSeuil(7).IDAlert, parcour_id, begin, end);
-            nb_orange = database.countNbEvent(readerEPCFile.getForceSeuil(8).IDAlert, parcour_id, begin, end);
-            nb_rouge = database.countNbEvent(readerEPCFile.getForceSeuil(9).IDAlert, parcour_id, begin, end);
-
+            nb_evt[0] = database.countNbEvent(readerEPCFile.getForceSeuil(5).IDAlert, parcour_id, begin, end);
+            nb_evt[1] = database.countNbEvent(readerEPCFile.getForceSeuil(6).IDAlert, parcour_id, begin, end);
+            nb_evt[2] = database.countNbEvent(readerEPCFile.getForceSeuil(7).IDAlert, parcour_id, begin, end);
+            nb_evt[3] = database.countNbEvent(readerEPCFile.getForceSeuil(8).IDAlert, parcour_id, begin, end);
+            nb_evt[4] = database.countNbEvent(readerEPCFile.getForceSeuil(9).IDAlert, parcour_id, begin, end);
         } else {//if( DataDOBJ.VIRAGES.equals(type) ){
-            nb_vert = database.countNbEvent(readerEPCFile.getForceSeuil(10).IDAlert, parcour_id, begin, end);
-            nb_bleu = database.countNbEvent(readerEPCFile.getForceSeuil(11).IDAlert, parcour_id, begin, end);
-            nb_jaune = database.countNbEvent(readerEPCFile.getForceSeuil(12).IDAlert, parcour_id, begin, end);
-            nb_jaune = database.countNbEvent(readerEPCFile.getForceSeuil(12).IDAlert, parcour_id, begin, end);
-            nb_orange = database.countNbEvent(readerEPCFile.getForceSeuil(13).IDAlert, parcour_id, begin, end);
-            nb_rouge = database.countNbEvent(readerEPCFile.getForceSeuil(14).IDAlert, parcour_id, begin, end);
-            nb_vert += database.countNbEvent(readerEPCFile.getForceSeuil(15).IDAlert, parcour_id, begin, end);
-            nb_bleu += database.countNbEvent(readerEPCFile.getForceSeuil(16).IDAlert, parcour_id, begin, end);
-            nb_jaune += database.countNbEvent(readerEPCFile.getForceSeuil(17).IDAlert, parcour_id, begin, end);
-            nb_orange += database.countNbEvent(readerEPCFile.getForceSeuil(18).IDAlert, parcour_id, begin, end);
-            nb_rouge += database.countNbEvent(readerEPCFile.getForceSeuil(19).IDAlert, parcour_id, begin, end);
+            nb_evt[0] = database.countNbEvent(readerEPCFile.getForceSeuil(10).IDAlert, parcour_id, begin, end)
+                    + database.countNbEvent(readerEPCFile.getForceSeuil(15).IDAlert, parcour_id, begin, end);
+            nb_evt[1] = database.countNbEvent(readerEPCFile.getForceSeuil(11).IDAlert, parcour_id, begin, end)
+                    + database.countNbEvent(readerEPCFile.getForceSeuil(16).IDAlert, parcour_id, begin, end);
+            nb_evt[2] = database.countNbEvent(readerEPCFile.getForceSeuil(12).IDAlert, parcour_id, begin, end)
+                    + database.countNbEvent(readerEPCFile.getForceSeuil(17).IDAlert, parcour_id, begin, end);
+            nb_evt[3] = database.countNbEvent(readerEPCFile.getForceSeuil(13).IDAlert, parcour_id, begin, end)
+                    + database.countNbEvent(readerEPCFile.getForceSeuil(18).IDAlert, parcour_id, begin, end);
+            nb_evt[4] = database.countNbEvent(readerEPCFile.getForceSeuil(14).IDAlert, parcour_id, begin, end)
+                    + database.countNbEvent(readerEPCFile.getForceSeuil(19).IDAlert, parcour_id, begin, end);
         }
 
+//        float coeff_general = 1;
+//        int[] coeff_force = {1,1,1,1,1};
+//        int[] nb_evt = {8,5,1,0,0};
 
-        int nb_total = nb_vert + nb_bleu + nb_jaune + nb_orange + nb_rouge;
+        // CALCUL
+        int coeff_sum = coeff_force[0] + coeff_force[1] + coeff_force[2] + coeff_force[3] + coeff_force[4];
+        float coeff_percent = (float) (coeff_sum * 0.01);
+        float[] interm_1 = {
+                ( coeff_sum * coeff_force[0] ) / ( 100f * coeff_percent * coeff_general ),
+                ( coeff_sum * coeff_force[1] ) / ( 100f * coeff_percent * coeff_general ),
+                ( coeff_sum * coeff_force[2] ) / ( 100f * coeff_percent * coeff_general ),
+                ( coeff_sum * coeff_force[3] ) / ( 100f * coeff_percent * coeff_general ),
+                ( coeff_sum * coeff_force[4] ) / ( 100f * coeff_percent * coeff_general )
+        };
 
-        // VALEUR DU PARCOURS (Par seuil, en pourcentage)
-        int evt_vert = ( nb_vert > 0 ) ? nb_vert * 100 / nb_total : 0;
-        int evt_bleu = ( nb_bleu > 0 ) ? nb_bleu * 100 / nb_total : 0;
-        int evt_jaune = ( nb_jaune > 0 ) ? nb_jaune * 100 / nb_total : 0;
-        int evt_orange = ( nb_orange > 0 ) ? nb_orange * 100 / nb_total : 0;
-        int evt_rouge = ( nb_rouge > 0 ) ? nb_rouge * 100 / nb_total : 0;
+        int evt_sum = nb_evt[0] + nb_evt[1] + nb_evt[2] + nb_evt[3] + nb_evt[4];
+        float coeff_evt = (float) (evt_sum * 0.01);
+        float[] interm_2 = {
+                ( evt_sum * nb_evt[0] ) / ( 100f * coeff_evt * coeff_evt ),
+                ( evt_sum * nb_evt[1] ) / ( 100f * coeff_evt * coeff_evt ),
+                ( evt_sum * nb_evt[2] ) / ( 100f * coeff_evt * coeff_evt ),
+                ( evt_sum * nb_evt[3] ) / ( 100f * coeff_evt * coeff_evt ),
+                ( evt_sum * nb_evt[4] ) / ( 100f * coeff_evt * coeff_evt )
+        };
 
-//        // TEST
-//        if( DataDOBJ.ACCELERATIONS.equals(type) ){
-//            evt_vert = 46;
-//            evt_bleu = 21;
-//            evt_jaune = 16;
-//            evt_orange = 11;
-//            evt_rouge = 6;
-//        } else if( DataDOBJ.FREINAGES.equals(type) ){
-//            evt_vert = 93;
-//            evt_bleu = 0;
-//            evt_jaune = 1;
-//            evt_orange = 4;
-//            evt_rouge = 2;
-//        } else if( DataDOBJ.VIRAGES.equals(type) ){
-//            evt_vert = 46;
-//            evt_bleu = 21;
-//            evt_jaune = 16;
-//            evt_orange = 11;
-//            evt_rouge = 6;
-//        }
+        float[] interm_3 = {
+                interm_1[0] * interm_2[0],
+                interm_1[1] * interm_2[1],
+                interm_1[2] * interm_2[2],
+                interm_1[3] * interm_2[3],
+                interm_1[4] * interm_2[4]
+        };
 
-Log.d(tag,"Objectifs (%):\n" + "vert: " + obj_vert + "; bleu " + obj_bleu +
-        "; jaune: " + obj_jaune + "; orange " + obj_orange +"; rouge: " + obj_rouge );
-Log.d(tag,"Evenements (nb): " + nb_total + "\nnb_vert: " + nb_vert + "; nb_bleu " + nb_bleu +
-        "; nb_jaune: " + nb_jaune + "; nb_orange " + nb_orange +"; nb_rouge: " + nb_rouge );
-Log.d(tag,"Evènements (%):\n" + "vert: " + evt_vert + "; bleu " + evt_bleu +
-        "; jaune: " + evt_jaune + "; orange " + evt_orange +"; rouge: " + evt_rouge );
+        float interm_3_sum = interm_3[0] + interm_3[1] + interm_3[2] + interm_3[3] + interm_3[4];
 
-        /// UPDATE STATS OF THE LAST DRIVING
-        if( update_stats && parcour_id == StatsLastDriving.get_start_at(ctx) ) {
-            if( DataDOBJ.ACCELERATIONS.equals(type) ){
-                StatsLastDriving.init_objectif(ctx);
-                StatsLastDriving.set_resultat_A(ctx,LEVEL_t.LEVEL_1,evt_vert);
-                StatsLastDriving.set_resultat_A(ctx,LEVEL_t.LEVEL_2,evt_bleu);
-                StatsLastDriving.set_resultat_A(ctx,LEVEL_t.LEVEL_3,evt_jaune);
-                StatsLastDriving.set_resultat_A(ctx,LEVEL_t.LEVEL_4,evt_orange);
-                StatsLastDriving.set_resultat_A(ctx,LEVEL_t.LEVEL_5,evt_rouge);
-            } else if( DataDOBJ.FREINAGES.equals(type) ){
-                StatsLastDriving.init_objectif(ctx);
-                StatsLastDriving.set_resultat_F(ctx,LEVEL_t.LEVEL_1,evt_vert);
-                StatsLastDriving.set_resultat_F(ctx,LEVEL_t.LEVEL_2,evt_bleu);
-                StatsLastDriving.set_resultat_F(ctx,LEVEL_t.LEVEL_3,evt_jaune);
-                StatsLastDriving.set_resultat_F(ctx,LEVEL_t.LEVEL_4,evt_orange);
-                StatsLastDriving.set_resultat_F(ctx,LEVEL_t.LEVEL_5,evt_rouge);
-            } else {//if( DataDOBJ.VIRAGES.equals(type) ){
-                StatsLastDriving.init_objectif(ctx);
-                StatsLastDriving.set_resultat_V(ctx,LEVEL_t.LEVEL_1,evt_vert);
-                StatsLastDriving.set_resultat_V(ctx,LEVEL_t.LEVEL_2,evt_bleu);
-                StatsLastDriving.set_resultat_V(ctx,LEVEL_t.LEVEL_3,evt_jaune);
-                StatsLastDriving.set_resultat_V(ctx,LEVEL_t.LEVEL_4,evt_orange);
-                StatsLastDriving.set_resultat_V(ctx,LEVEL_t.LEVEL_5,evt_rouge);
-            }
-            StatsLastDriving.set_distance( ctx, database.get_distance(parcour_id) );
-        }
+        float[] interm_4 = {
+                interm_3[0] / (interm_3_sum * 0.01f),
+                interm_3[1] / (interm_3_sum * 0.01f),
+                interm_3[2] / (interm_3_sum * 0.01f),
+                interm_3[3] / (interm_3_sum * 0.01f),
+                interm_3[4] / (interm_3_sum * 0.01f)
+        };
 
-        // CALCUL INTERMEDIARE PAR SEUIL
-        int calc_vert = ( evt_vert >= obj_vert ) ? 20*coeff_vert : 0;
-        int calc_jaune = ( evt_jaune <= obj_jaune ) ? 0 : (obj_jaune-evt_jaune)*coeff_jaune;
-        int calc_orange = ( evt_orange <= obj_orange ) ? 0 : (obj_orange-evt_orange)*coeff_orange;
-        int calc_rouge = ( evt_rouge <= obj_rouge ) ? 0 : (obj_rouge-evt_rouge)*coeff_rouge;
-Log.d(tag,"Calcul intermediaire par seuil:\n" + "vert: " + calc_vert +
-                "; jaune: " + calc_jaune + "; orange " + calc_orange +"; rouge: " + calc_rouge );
-        // CALCUL MOYENNE POUR CETTE FORCE
-        int tmp = (calc_vert+(calc_jaune+calc_orange+calc_rouge));
-        ret = tmp;
-        if( coeff ) {
-            ret = ( tmp <= 0f ) ? 0f : tmp*coeff_general;
-        }
-//        ret = tmp*coeff_general;
-Log.d(tag,"Moyenne pour cett famille de force:\ntmp =" + tmp + "; ret: " + ret );
+
+        ret = ( interm_4[0] + interm_4[1] - interm_4[2] - interm_4[3] - interm_4[4] ) * (1f/5f);
         return ret;
     }
 
-    // Get force cotation by parcours, or all parcours (parcours_id = -1), in the last X seconds
-    private float get_cotation_force( String type, long parcour_id, long secs, boolean coeff, boolean update_stats  ){
-        long end = System.currentTimeMillis();
-        long begin = end - (secs*1000);
-        return get_cotation_force(type, parcour_id, begin, end, coeff, update_stats);
+    private float calc_note_by_force_type( String type, long parcour_id ) {
+        long begin = 0;
+        long end = System.currentTimeMillis() + 3600;
+        return calc_note_by_force_type( type, parcour_id, begin, end );
     }
 
-    // Get force cotation per parcours, or all parcours (parcours_id = -1);
-    private float get_cotation_force( String type, long parcour_id, boolean coeff, boolean update_stats ){
+    private float calc_note( long parcour_id, long begin, long end ) {
+        float Note_A = calc_note_by_force_type(DataDOBJ.ACCELERATIONS, parcour_id, begin, end);
+        float Note_F = calc_note_by_force_type(DataDOBJ.FREINAGES,parcour_id, begin, end);
+        float Note_V = calc_note_by_force_type(DataDOBJ.VIRAGES,parcour_id, begin, end);
+        float Coeff_General_A = DataDOBJ.get_coefficient_general(ctx, DataDOBJ.ACCELERATIONS);
+        float Coeff_General_F = DataDOBJ.get_coefficient_general(ctx, DataDOBJ.FREINAGES);
+        float Coeff_General_V = DataDOBJ.get_coefficient_general(ctx, DataDOBJ.VIRAGES);
+        return ( (Note_A*Coeff_General_A) + (Note_F*Coeff_General_F) + (Note_V*Coeff_General_V) )
+                / ( Coeff_General_A + Coeff_General_F + Coeff_General_V );
+    }
+
+    private float calc_note( long parcour_id ) {
         long begin = 0;
-        long end = System.currentTimeMillis() + 10000;
-        return get_cotation_force(type, parcour_id, begin, end, coeff, update_stats);
+        long end = System.currentTimeMillis() + 3600;
+        return calc_note( parcour_id, begin, end );
+    }
+
+    private void update_parcour_note() {
+        // Every 5 minutes
+        if( note_parcour_update_at + (5 * 60 * 1000) < System.currentTimeMillis() )
+        {
+            float parcour_note = calc_note(parcour_id);
+
+            LEVEL_t parcour_level = LEVEL_t.LEVEL_5;
+            if( parcour_note >= 16f ) parcour_level = LEVEL_t.LEVEL_1;
+            else if( parcour_note >= 13f ) parcour_level = LEVEL_t.LEVEL_2;
+            else if( parcour_note >= 9f ) parcour_level = LEVEL_t.LEVEL_3;
+            else if( parcour_note >= 6f ) parcour_level = LEVEL_t.LEVEL_4;
+
+            long end = startOfDays(System.currentTimeMillis());
+            long begin = end - (5 * 24 * 3600 * 1000);
+            float last_5_days_note = calc_note( -1, begin, end );
+
+            LEVEL_t last_5_days_level = LEVEL_t.LEVEL_5;
+            if( last_5_days_note >= 16f ) last_5_days_level = LEVEL_t.LEVEL_1;
+            else if( last_5_days_note >= 13f ) last_5_days_level = LEVEL_t.LEVEL_2;
+            else if( last_5_days_note >= 9f ) last_5_days_level = LEVEL_t.LEVEL_3;
+            else if( last_5_days_note >= 6f ) last_5_days_level = LEVEL_t.LEVEL_4;
+
+            StatsLastDriving.set_note(ctx,SCORE_t.FINAL,parcour_note);
+
+            if( listener != null ) listener.onNoteChanged( (int)parcour_note, parcour_level, last_5_days_level );
+        }
+    }
+
+    private void update_force_note() {
+
+        // Every 1 minutes
+        if( note_forces_update_at + (60 * 1000) < System.currentTimeMillis() ) {
+            float Note_A = calc_note_by_force_type(DataDOBJ.ACCELERATIONS, parcour_id);
+            LEVEL_t level_A = LEVEL_t.LEVEL_5;
+            if (Note_A >= 16f) level_A = LEVEL_t.LEVEL_1;
+            else if (Note_A >= 13f) level_A = LEVEL_t.LEVEL_2;
+            else if (Note_A >= 9f) level_A = LEVEL_t.LEVEL_3;
+            else if (Note_A >= 6f) level_A = LEVEL_t.LEVEL_4;
+
+            float Note_F = calc_note_by_force_type(DataDOBJ.FREINAGES, parcour_id);
+            LEVEL_t level_F = LEVEL_t.LEVEL_5;
+            if (Note_F >= 16f) level_F = LEVEL_t.LEVEL_1;
+            else if (Note_F >= 13f) level_F = LEVEL_t.LEVEL_2;
+            else if (Note_F >= 9f) level_F = LEVEL_t.LEVEL_3;
+            else if (Note_F >= 6f) level_F = LEVEL_t.LEVEL_4;
+
+            float Note_V = calc_note_by_force_type(DataDOBJ.VIRAGES, parcour_id);
+            LEVEL_t level_V = LEVEL_t.LEVEL_5;
+            if (Note_V >= 16f) level_V = LEVEL_t.LEVEL_1;
+            else if (Note_V >= 13f) level_V = LEVEL_t.LEVEL_2;
+            else if (Note_V >= 9f) level_V = LEVEL_t.LEVEL_3;
+            else if (Note_V >= 6f) level_V = LEVEL_t.LEVEL_4;
+
+            float Note_M = (Note_A + Note_F + Note_V) * (1f / 3f);
+            LEVEL_t level_M = LEVEL_t.LEVEL_5;
+            if (Note_M >= 16f) level_M = LEVEL_t.LEVEL_1;
+            else if (Note_M >= 13f) level_M = LEVEL_t.LEVEL_2;
+            else if (Note_M >= 9f) level_M = LEVEL_t.LEVEL_3;
+            else if (Note_M >= 6f) level_M = LEVEL_t.LEVEL_4;
+
+            StatsLastDriving.set_note(ctx,SCORE_t.ACCELERATING,Note_A);
+            StatsLastDriving.set_note(ctx,SCORE_t.BRAKING,Note_F);
+            StatsLastDriving.set_note(ctx,SCORE_t.CORNERING,Note_V);
+
+            float speed_avg = database.speed_avg(parcour_id, System.currentTimeMillis(), 0f);
+            StatsLastDriving.set_speed_avg(ctx,speed_avg);
+
+            if (listener != null) {
+                listener.onScoreChanged(SCORE_t.ACCELERATING, level_A);
+                listener.onScoreChanged(SCORE_t.BRAKING, level_F);
+                listener.onScoreChanged(SCORE_t.CORNERING, level_V);
+                listener.onScoreChanged(SCORE_t.AVERAGE, level_M);
+            }
+        }
+
     }
 
     private long startOfDays(long timestamp){
@@ -1528,7 +1427,7 @@ Log.d(tag,"Moyenne pour cett famille de force:\ntmp =" + tmp + "; ret: " + ret )
     private float speed_max = 0f;
 
     /// Calculate recommended speed
-    private void calc_recommended_speed() {
+    private void update_recommended_speed() {
 
         // Calculate recommended val and get speed maximum since XX secondes
         // 10 minutes
@@ -1540,9 +1439,7 @@ Log.d(tag,"Moyenne pour cett famille de force:\ntmp =" + tmp + "; ret: " + ret )
                 String key = ctx.getResources().getString(R.string.recommended_speed_time);
                 long delay_sec = sp.getInt(key,10) * 60;
 
-addLog("calc_recommended_speed");
                 // Get the horizontal maximum speed since
-
                 speed_H = database.speed_max(parcour_id, delay_sec,
                         readerEPCFile.getForceSeuil(0).IDAlert, // IDAlert +X1
                         readerEPCFile.getForceSeuil(1).IDAlert, // IDAlert +X2
@@ -1560,7 +1457,6 @@ addLog("calc_recommended_speed");
                 speed_max = database.speed_max(parcour_id, delay_sec);
                 // Set calculate at
                 recommended_speed_update_at = System.currentTimeMillis();
-Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " speed_max: " + speed_max);
             }
         }
         // Update the UI
@@ -1591,7 +1487,6 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
             listener.onRecommendedSpeedChanged( SPEED_t.IN_CORNERS, (int)(speed_V*MS_TO_KMH),
                     level_V, speed_V <= speed_observed);
         }
-
     }
 
     /// ============================================================================================
@@ -1650,8 +1545,8 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
             if ( chrono_ready_to_start.getSeconds() > SECS_TO_SET_PARCOURS_START ) {
                 loading_epc();
                 button_stop = false;
-                cotation_update_at = 0;
-                forces_update_at = 0;
+                note_parcour_update_at = 0;
+                note_forces_update_at = 0;
                 alertX_add_at = 0;
                 alertY_add_at = 0;
                 alertPos_add_at = 0;
@@ -1692,6 +1587,8 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
 //                } else {
 //                    parcour_id = System.currentTimeMillis();
 //                }
+
+
                 addLog("START PARCOURS");
                 // ADD ECA Line when started
                 if( _tracking ) {
@@ -1733,12 +1630,12 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         {
 
             // Force calcul note
-            cotation_update_at = 0;
-            forces_update_at = 0;
+            note_parcour_update_at = 0;
+            note_forces_update_at = 0;
             recommended_speed_update_at = 0;
-            calc_parcour_cotation();
-            calc_cotation_forces();
-            calc_recommended_speed();
+            update_parcour_note();
+            update_force_note();
+            update_recommended_speed();
 
             database.close_last_parcour();
 
@@ -1785,10 +1682,10 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         STATUS_t ret = status;
 
         calc_eca();
-        calc_parcour_cotation();
-        calc_cotation_forces();
+        update_parcour_note();
+        update_force_note();
         check_shock();
-        calc_recommended_speed();
+        update_recommended_speed();
 
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
         String key = ctx.getResources().getString(R.string.pause_trigger_time);
@@ -1924,7 +1821,6 @@ Log.d("CALC","RECOMMENDED speed_H: " + speed_H + " speed_V: " + speed_V + " spee
         lock.lock();
         ret = gps;
         lock.unlock();
-        ret = true;
         return ret;
     }
 
