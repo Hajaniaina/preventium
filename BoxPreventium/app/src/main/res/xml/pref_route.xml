@@ -6,7 +6,7 @@
         android:title="@string/pause_string">
 
         <com.pavelsikun.seekbarpreference.SeekBarPreference
-            android:key="@string/pause_trigger_time"
+            android:key="@string/pause_trigger_time_key"
             android:title="@string/pref_trigger_time_string"
             android:summary=""
             android:enabled="true"
@@ -40,7 +40,7 @@
         android:title="@string/speed_string">
 
         <com.pavelsikun.seekbarpreference.SeekBarPreference
-            android:key="@string/recommended_speed_time"
+            android:key="@string/recommended_speed_time_key"
             android:title="@string/avg_speed_time_string"
             android:summary=""
             android:enabled="true"
@@ -67,7 +67,7 @@
         </ListPreference>
 
         <com.pavelsikun.seekbarpreference.SeekBarPreference
-            android:key="@string/phone_select_sms_pause_timeout"
+            android:key="@string/phone_select_sms_pause_timeout_key"
             android:title="@string/send_sms_after_pause_string"
             android:summary=""
             android:enabled="true"
@@ -84,13 +84,13 @@
         android:title="@string/template_route_string">
 
         <SwitchPreference
-            android:key="@string/parcours_type_enabled"
+            android:key="@string/parcours_type_enabled_key"
             android:defaultValue="false"
             android:title="@string/template_route_title_string" />
 
         <EditTextPreference
             android:key="@string/parcours_type_name"
-            android:dependency="@string/parcours_type_enabled"
+            android:dependency="@string/parcours_type_enabled_key"
             android:defaultValue="@string/template_route_name_string"
             android:title="@string/template_route_name_string" />
 

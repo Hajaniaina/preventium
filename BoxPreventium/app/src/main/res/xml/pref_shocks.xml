@@ -6,7 +6,7 @@
         android:title="@string/sms_notifications_string">
 
         <com.pavelsikun.seekbarpreference.SeekBarPreference
-            android:key="@string/shock_trigger_mG"
+            android:key="@string/shock_trigger_mG_key"
             android:title="@string/shock_trigger_string"
             android:summary=""
             android:enabled="true"
@@ -18,7 +18,7 @@
             sample:msbp_dialogEnabled="true"/>
 
         <ListPreference
-            android:key="@string/phone_select_sms_shock"
+            android:key="@string/phone_select_sms_shock_key"
             android:title="@string/number_string"
             android:entries="@array/pref_phone_numbers_titles"
             android:entryValues="@array/pref_phone_numbers_values"

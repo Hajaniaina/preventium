@@ -47,6 +47,20 @@
                     android:text=""/>
 
                 <TextView
+                    android:id="@+id/textview_driver_id"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text=""/>
+
+                <TextView
+                    android:id="@+id/textview_driver_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text=""/>
+
+                <TextView
                     android:id="@+id/textview_start_time"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

@@ -1,14 +1,11 @@
 package com.preventium.boxpreventium.gui;
 
 import android.Manifest;
-import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -24,7 +21,6 @@ import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -563,7 +559,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         changeViewColorFilter(drivingTimeView, AppColor.ORANGE);
                         accForceView.hide(true);
 
-                        int pauseNotifTimeout = sharedPref.getInt(getString(R.string.phone_select_sms_pause_timeout), 0);
+                        int pauseNotifTimeout = sharedPref.getInt(getString(R.string.phone_select_sms_pause_timeout_key), 0);
 
                         if (pauseNotifTimeout > 0) {
 
@@ -829,7 +825,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             shockDetected = false;
 
                             String msg = getString(R.string.sms_shock_msg_string) + " " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")";
-                            sendSms(getPhoneNumber(R.string.phone_select_sms_shock), msg);
+                            sendSms(getPhoneNumber(R.string.phone_select_sms_shock_key), msg);
 
                             markerManager.addMarker("Shock " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")", lastPos, CustomMarker.MARKER_ROSE);
                         }
@@ -949,7 +945,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mapReady = false;
         initDone = true;
         appColor = new AppColor(this);
-        sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         appManager = new AppManager(this, this);
 
         qrRequest = new QrScanRequest();
@@ -959,7 +955,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         progress.setMessage(getString(R.string.progress_map_string));
         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progress.setIndeterminate(true);
-        progress.setCancelable(false);
+        // progress.setCancelable(false);
         progress.setProgressNumberFormat(null);
         progress.setProgressPercentFormat(null);
 
@@ -1212,7 +1208,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (DialogInterface dialogInterface, int i) {
 
-                call(getPhoneNumber(R.string.phone_select_voice));
+                call(getPhoneNumber(R.string.phone_select_voice_key));
             }
         });
 
@@ -1252,7 +1248,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     menuButtonTracking.setColorNormal(appColor.getColor(AppColor.ORANGE));
                     menuButtonTracking.setColorPressed(appColor.getColor(AppColor.GREEN));
 
-                    sendSms(getPhoneNumber(R.string.phone_select_sms_tracking), getString(R.string.tracking_disabled_string));
+                    sendSms(getPhoneNumber(R.string.phone_select_sms_tracking_key), getString(R.string.tracking_disabled_string));
                 }
                 else {
 
@@ -1261,7 +1257,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     menuButtonTracking.setColorNormal(appColor.getColor(AppColor.GREEN));
                     menuButtonTracking.setColorPressed(appColor.getColor(AppColor.ORANGE));
 
-                    sendSms(getPhoneNumber(R.string.phone_select_sms_tracking), getString(R.string.tracking_enabled_string));
+                    sendSms(getPhoneNumber(R.string.phone_select_sms_tracking_key), getString(R.string.tracking_enabled_string));
                 }
 
                 SharedPreferences.Editor editor = sharedPref.edit();
@@ -1616,7 +1612,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (!actionCanceled) {
 
-                    sendSms(getPhoneNumber(R.string.phone_select_sms_sos), getString(R.string.sms_sos_msg_string));
+                    sendSms(getPhoneNumber(R.string.phone_select_sms_sos_key), getString(R.string.sms_sos_msg_string));
                 }
 
                 if (dialog.isShowing()) {
@@ -1724,11 +1720,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         String[] numberList = new String[5];
 
-        numberList[0] = sharedPref.getString(getString(R.string.phone_number_1), "");
-        numberList[1] = sharedPref.getString(getString(R.string.phone_number_2), "");
-        numberList[2] = sharedPref.getString(getString(R.string.phone_number_3), "");
-        numberList[3] = sharedPref.getString(getString(R.string.phone_number_4), "");
-        numberList[4] = sharedPref.getString(getString(R.string.phone_number_5), "");
+        numberList[0] = sharedPref.getString(getString(R.string.phone_number_1_key), "");
+        numberList[1] = sharedPref.getString(getString(R.string.phone_number_2_key), "");
+        numberList[2] = sharedPref.getString(getString(R.string.phone_number_3_key), "");
+        numberList[3] = sharedPref.getString(getString(R.string.phone_number_4_key), "");
+        numberList[4] = sharedPref.getString(getString(R.string.phone_number_5_key), "");
 
         int number = Integer.parseInt(sharedPref.getString(getString(key), "0"));
 
@@ -1742,8 +1738,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void updateQRPrefs() {
 
-        String scanModeOnStart = sharedPref.getString(getString(R.string.qr_select_start_mode), "0");
-        String scanModeOnStop = sharedPref.getString(getString(R.string.qr_select_stop_mode), "0");
+        String scanModeOnStart = sharedPref.getString(getString(R.string.qr_select_start_mode_key), "0");
+        String scanModeOnStop = sharedPref.getString(getString(R.string.qr_select_stop_mode_key), "0");
 
         if (scanModeOnStart.equals(QrScanActivity.SCAN_MODE_VEHICLE_FRONT_BACK)) {
 
@@ -1777,7 +1773,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             qrRequest.vehicleFrontOnStopEnabled = true;
         }
 
-        qrSmsTimeout = sharedPref.getInt(getString(R.string.phone_select_sms_qr_timeout), 0);
+        qrSmsTimeout = sharedPref.getInt(getString(R.string.phone_select_sms_qr_timeout_key), 0);
         qrSmsTimeout *= 60;
     }
 

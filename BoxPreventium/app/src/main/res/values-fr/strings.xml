@@ -47,6 +47,9 @@
     <string name="new_marker_string">Nom du marqueur</string>
     <string name="next">Suivant</string>
     <string name="no_string">Non</string>
+    <string name="hello_string">Bonjour</string>
+    <string name="driver_id_string">Identifiant conducteur</string>
+    <string name="driver_name_string">Conducteur</string>
     <string name="not_used_string">Non utilisé</string>
     <string name="number_1_string">Numéro 1</string>
     <string name="number_2_string">Numéro 2</string>

@@ -5,7 +5,7 @@
         android:title="@string/sms_notifications_string">
 
         <ListPreference
-            android:key="@string/phone_select_sms_tracking"
+            android:key="@string/phone_select_sms_tracking_key"
             android:title="@string/number_string"
             android:entries="@array/pref_phone_numbers_titles"
             android:entryValues="@array/pref_phone_numbers_values"
