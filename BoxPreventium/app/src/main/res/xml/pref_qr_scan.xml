@@ -31,7 +31,7 @@
         android:title="@string/sms_notifications_string">
 
         <ListPreference
-            android:key="@string/phone_select_sms_qr"
+            android:key="@string/phone_select_sms_qr_key"
             android:title="@string/phone_number_string"
             android:entries="@array/pref_phone_numbers_titles"
             android:entryValues="@array/pref_phone_numbers_values"

@@ -23,7 +23,7 @@
         android:title="@string/stop_string">
 
         <com.pavelsikun.seekbarpreference.SeekBarPreference
-            android:key="@string/stop_trigger_time"
+            android:key="@string/stop_trigger_time_key"
             android:title="@string/pref_trigger_time_string"
             android:summary=""
             android:enabled="true"
@@ -57,7 +57,7 @@
         android:title="@string/sms_notifications_string">
 
         <ListPreference
-            android:key="@string/phone_select_sms_pause"
+            android:key="@string/phone_select_sms_pause_key"
             android:title="@string/number_string"
             android:entries="@array/pref_phone_numbers_titles"
             android:entryValues="@array/pref_phone_numbers_values"
@@ -89,7 +89,7 @@
             android:title="@string/template_route_title_string" />
 
         <EditTextPreference
-            android:key="@string/parcours_type_name"
+            android:key="@string/parcours_type_name_key"
             android:dependency="@string/parcours_type_enabled_key"
             android:defaultValue="@string/template_route_name_string"
             android:title="@string/template_route_name_string" />
