@@ -1077,7 +1077,16 @@ public class AppManager extends ThreadDefault
 
     synchronized private void calc_eca(){
 
-
+// TEST
+List<Location> list_loc = get_location_list(5,5000);
+List<Double> list_XmG = new ArrayList<>();
+this.XmG = 0.0;
+if(list_loc != null && list_loc.size() >= 2){
+    this.XmG = LocationsToXmG( list_loc.get(0), list_loc.get(1) );
+    for (int i = 0; i < list_loc.size()-1; i++)
+        list_XmG.add(i, LocationsToXmG( list_loc.get(i), list_loc.get(i+1) ) );
+}
+// TEST
 
         Location loc = get_last_location();
 
@@ -1158,6 +1167,27 @@ public class AppManager extends ThreadDefault
             seuil = seuil_y;
         }
 
+
+// TEST
+if( seuil != null
+        && (seuil.type == FORCE_t.ACCELERATION || seuil.type == FORCE_t.BRAKING) ) {
+    String txt = (seuil.type == FORCE_t.ACCELERATION) ? "ACC " : "BRK ";
+    switch ( seuil.level ) {
+        case LEVEL_UNKNOW: txt += "LVL_? "; break;
+        case LEVEL_1: txt += "LVL_1 "; break;
+        case LEVEL_2: txt += "LVL_2 "; break;
+        case LEVEL_3: txt += "LVL_3 "; break;
+        case LEVEL_4: txt += "LVL_4 "; break;
+        case LEVEL_5: txt += "LVL_5 "; break;
+    }
+    double sum = 0.0;
+    for( int i = 0; i < list_XmG.size(); i++ ) {
+        sum += list_XmG.get(i);
+        txt += (int)( sum/(i+1) ) + "; ";
+    }
+    setLog( txt );
+}
+// TEST
         boolean change = false;
         if( (seuil_ui == null) != (seuil == null) ) change = true;
         if( seuil_ui != null  ) change = !seuil_ui.equals( seuil );
