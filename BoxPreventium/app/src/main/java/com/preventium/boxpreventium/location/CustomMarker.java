@@ -62,7 +62,6 @@ public class CustomMarker {
     private boolean alert = false;
     private boolean alertActivated = false;
     private int alertRadius = 0;
-    private Circle alertCircle = null;
     private String alertMsg = null;
     private boolean alertReqSignature = false;
     public ArrayList<String> alertAttachments = null;
@@ -108,24 +107,6 @@ public class CustomMarker {
         marker = map.addMarker(opt);
         pos = opt.getPosition();
 
-        if (alert) {
-
-            CircleOptions circleOpt = new CircleOptions();
-
-            circleOpt.center(pos);
-            circleOpt.radius(alertRadius);
-            circleOpt.strokeColor(Color.RED);
-
-                /*
-                List<PatternItem> pattern = circleOpt.getStrokePattern();
-                pattern.clear();
-                pattern.add(new Dot());
-                circleOpt.strokePattern(pattern);
-                */
-
-            alertCircle = map.addCircle(circleOpt);
-        }
-
         return marker;
     }
 
@@ -149,11 +130,13 @@ public class CustomMarker {
                 break;
 
             case MARKER_INFO:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
+                // bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
+                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE);
                 break;
 
             case MARKER_DANGER:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);
+                // bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);
+                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
                 break;
 
             default:

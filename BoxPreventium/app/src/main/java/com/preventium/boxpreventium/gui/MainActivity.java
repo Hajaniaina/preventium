@@ -36,6 +36,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -77,7 +78,9 @@ import java.util.Locale;
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
 
     private static final String TAG = "MainActivity";
-    private static final boolean DEBUG_UI_ON = false;
+
+    private static final boolean DEBUG_UI_ON      = false;
+    private static final boolean DEBUG_LOGVIEW_ON = false;
 
     private static final int MAP_ZOOM_ON_MOVE         = 17;
     private static final int MAP_ZOOM_ON_PAUSE        = 15;
@@ -97,6 +100,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private AppManager appManager;
 
     private TextView debugView;
+    private LinearLayout debugLayout;
     private TextView boxNumView;
     private TextView drivingTimeView;
     private ImageView backgroundView;
@@ -885,11 +889,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     if (txt.isEmpty()) {
 
-                        debugView.setVisibility(View.INVISIBLE);
+                        debugLayout.setVisibility(View.GONE);
                     }
                     else {
 
-                        debugView.setVisibility(View.VISIBLE);
+                        debugLayout.setVisibility(View.VISIBLE);
                     }
 
                     debugView.setText(txt);
@@ -999,15 +1003,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             menuButtonTracking.setColorNormal(appColor.getColor(AppColor.GREEN));
             menuButtonTracking.setColorPressed(appColor.getColor(AppColor.ORANGE));
-        }
-        else {
+        } else {
 
             menuButtonTracking.setColorNormal(appColor.getColor(AppColor.ORANGE));
             menuButtonTracking.setColorPressed(appColor.getColor(AppColor.GREEN));
         }
 
-        // debugView = (TextView) findViewById(R.id.debug_view);
-        // debugView.setVisibility(View.GONE);
+        if (DEBUG_LOGVIEW_ON){
+
+            debugLayout = (LinearLayout) findViewById(R.id.debug_layout);
+            debugView = (TextView) findViewById(R.id.debug_view);
+        }
 
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
 
@@ -1304,9 +1310,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onShow (DialogInterface dialogInterface) {
 
-                EditText editTitle = (EditText) alertDlg.findViewById(R.id.marker_title);
-                CheckBox alarmCheckBox = (CheckBox) alertDlg.findViewById(R.id.marker_alarm_checkbox);
-                Spinner markerTypeSpinner = (Spinner) alertDlg.findViewById(R.id.marker_type_spinner);
+                final EditText editTitle = (EditText) alertDlg.findViewById(R.id.marker_title);
+                final CheckBox alarmCheckBox = (CheckBox) alertDlg.findViewById(R.id.marker_alarm_checkbox);
+                final Spinner markerTypeSpinner = (Spinner) alertDlg.findViewById(R.id.marker_type_spinner);
                 final EditableSeekBar alertRadiusSeekBar = (EditableSeekBar) alertDlg.findViewById(R.id.marker_radius_seekbar);
 
                 final String titleBefore = customMarker.getTitle();
@@ -1391,6 +1397,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (customMarker.isAlertEnabled())
                         {
                             customMarker.setAlertRadius(alertRadiusSeekBar.getValue());
+                            markerManager.drawCircle(customMarker.getPos(), customMarker.getAlertRadius());
                         }
 
                         if (titleBefore != currTitle) {

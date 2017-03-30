@@ -22,7 +22,7 @@
         android:layout_weight="1"
         android:layout_height="0dp"
         android:layout_width="fill_parent"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:layout_marginLeft="30dp"
         android:layout_marginRight="30dp" />
 
@@ -32,7 +32,7 @@
        android:layout_weight="1"
        android:layout_height="0dp"
        android:layout_width="fill_parent"
-       android:layout_marginTop="12dp"
+       android:layout_marginTop="8dp"
        android:layout_marginLeft="30dp"
        android:layout_marginRight="30dp" />
 
@@ -41,7 +41,7 @@
         android:layout_width="wrap_content"
         android:layout_weight="1"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
         android:layout_marginLeft="30dp"
         android:layout_marginRight="30dp"
         android:text="@string/alarm_string" />
@@ -51,8 +51,8 @@
         android:layout_weight="1"
         android:layout_height="0dp"
         android:layout_width="fill_parent"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="12dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="0dp"
         android:layout_marginLeft="30dp"
         android:layout_marginRight="30dp"
         app:esbSelectAllOnFocus="false"
@@ -61,6 +61,6 @@
         app:esbMin="50"
         app:esbMax="1000"
         app:esbValue="50"
-        android:visibility="invisible"/>
+        android:visibility="gone"/>
 
 </LinearLayout>

@@ -1,7 +1,11 @@
 package com.preventium.boxpreventium.location;
 
 import android.app.Activity;
+import android.graphics.Color;
 
+import com.google.android.gms.maps.model.CircleOptions;
+import com.google.android.gms.maps.model.Dot;
+import com.google.android.gms.maps.model.PatternItem;
 import com.preventium.boxpreventium.R;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
@@ -9,6 +13,7 @@ import com.google.android.gms.maps.model.Marker;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class MarkerManager {
 
@@ -68,6 +73,18 @@ public class MarkerManager {
         }
 
         return foundedMarker;
+    }
+
+    public void drawCircle (LatLng pos, int radius) {
+
+        CircleOptions circleOpt = new CircleOptions();
+
+        circleOpt.center(pos);
+        circleOpt.radius(radius);
+        circleOpt.strokeWidth((float)(1.5));
+        circleOpt.strokeColor(Color.RED);
+
+        map.addCircle(circleOpt);
     }
 
     public Marker addMarker (String title, LatLng pos, int type, boolean editable) {
