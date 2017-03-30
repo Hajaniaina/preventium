@@ -155,7 +155,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference(getString(R.string.recommended_speed_time_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.parcours_type_name_key)));
 
-            updatePhoneNumbersList(this, R.string.phone_select_sms_pause);
+            updatePhoneNumbersList(this, R.string.phone_select_sms_pause_key);
 
             final SeekBarPreference pauseTimeoutPref = (SeekBarPreference) findPreference(getString(R.string.pause_trigger_time_key));
             final SeekBarPreference stopTimeoutPref = (SeekBarPreference) findPreference(getString(R.string.stop_trigger_time_key));
@@ -296,7 +296,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr_timeout_key)));
 
-            updatePhoneNumbersList(this, R.string.phone_select_sms_qr);
+            updatePhoneNumbersList(this, R.string.phone_select_sms_qr_key);
         }
 
         @Override
