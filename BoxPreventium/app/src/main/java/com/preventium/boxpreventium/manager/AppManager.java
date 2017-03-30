@@ -268,10 +268,10 @@ public class AppManager extends ThreadDefault
             update_recommended_speed(true);
             ret = STATUS_t.PAR_PAUSING;
             addLog( "Phone launch: Resume parcours with status PAUSE.");
-            addLog( "Status change to PAUSE." );
+            addLog( "Status change to PAUSE. (" + ComonUtils.currentDateTime() + ")" );
         } else {
             addLog( "Phone launch: No parcours.");
-            addLog( "Status change to STOP." );
+            addLog( "Status change to STOP. (" + ComonUtils.currentDateTime() + ")" );
         }
 
         if (listener != null) listener.onStatusChanged(ret);
@@ -1702,7 +1702,7 @@ if( seuil != null
                     listener.onRecommendedSpeedChanged(SPEED_t.IN_CORNERS,0,LEVEL_t.LEVEL_UNKNOW,true);
                     listener.onStatusChanged(ret);
                 }
-                addLog( "Status change to START" );
+                addLog( "Status change to START. (" + ComonUtils.currentDateTime() + ")" );
             }
         }
         return ret;
@@ -1720,7 +1720,7 @@ if( seuil != null
             if( database.parcour_expired(parcour_id,delay_pause) ) {
                 ret = STATUS_t.PAR_PAUSING_WITH_STOP;
                 if (listener != null) listener.onStatusChanged(ret);
-                addLog( "Status change to PAUSE (show button stop)." );
+                addLog( "Status change to PAUSE (show button stop). (" + ComonUtils.currentDateTime() + ")" );
             }
         }
 
@@ -1729,7 +1729,7 @@ if( seuil != null
         if( stop ) {
             ret = STATUS_t.PAR_STOPPED;
             if (listener != null) listener.onStatusChanged(ret);
-            addLog( "Status change to STOP." );
+            addLog( "Status change to STOP. (" + ComonUtils.currentDateTime() + ")" );
         }
         // Or checking if car re-moving
         else if ( mov_t_last != MOVING_t.STP
@@ -1744,7 +1744,7 @@ if( seuil != null
 
             clear_force_ui();
 
-            addLog( "Status change to RESUME." );
+            addLog( "Status change to RESUME. (" + ComonUtils.currentDateTime() + ")" );
         }
 
         return ret;
@@ -1759,7 +1759,7 @@ if( seuil != null
         update_force_note(false);
         check_shock();
         update_recommended_speed(false);
-        
+
         // Checking if car is in pause
         if ( engine_t != ENGINE_t.ON ) {
 
@@ -1772,7 +1772,7 @@ if( seuil != null
 
             clear_force_ui();
 
-            addLog( "Status change to PAUSE." );
+            addLog( "Status change to PAUSE. (" + ComonUtils.currentDateTime() + ")" );
         }
 
         return ret;

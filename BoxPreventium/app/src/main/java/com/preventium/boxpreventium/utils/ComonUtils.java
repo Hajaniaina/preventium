@@ -14,7 +14,11 @@ import android.os.Build;
 import android.provider.Settings;
 import android.support.annotation.RequiresPermission;
 import android.telephony.TelephonyManager;
+import android.text.format.DateFormat;
 import android.util.Log;
+
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 /**
  * Created by Franck on 21/09/2016.
@@ -176,7 +180,7 @@ public class ComonUtils {
     }
 
     public static String getIMEInumber(Context ctx) {
-        //return "352136063069450";
+//return "358656074739746";
         //Get the instance of TelephonyManager
         TelephonyManager tm = (TelephonyManager)ctx.getSystemService(Context.TELEPHONY_SERVICE);
         return tm.getDeviceId();
@@ -228,5 +232,9 @@ public class ComonUtils {
         double ret = d1 - d2;
         if( ret < 0.0 ) ret = -ret;
         return ret;
+    }
+
+    public static String currentDateTime() {
+        return new SimpleDateFormat("d-MMM-yyyy HH:mm:ss", Locale.getDefault()).format(System.currentTimeMillis());
     }
 }
