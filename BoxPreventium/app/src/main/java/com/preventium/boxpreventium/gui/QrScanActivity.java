@@ -174,6 +174,7 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
                             }
 
                             qrRequest.driverId = driverId;
+                            qrRequest.driverName = driverName;
 
                             SharedPreferences.Editor editor = sharedPref.edit();
                             editor.putLong(getString(R.string.driver_id_key), driverId);

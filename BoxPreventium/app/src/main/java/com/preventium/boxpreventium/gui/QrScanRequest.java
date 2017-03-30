@@ -11,6 +11,7 @@ public class QrScanRequest implements Parcelable {
     public static final int REQUEST_ON_STOP   = 1;
 
     public long driverId = 0;
+    public String driverName = "";
 
     public boolean driverIdEnabled = true;
     public boolean vehicleFrontOnStartEnabled = true;
@@ -127,6 +128,7 @@ public class QrScanRequest implements Parcelable {
     public void writeToParcel (Parcel dest, int flags) {
 
         dest.writeLong(this.driverId);
+        dest.writeString(driverName);
         dest.writeByte(this.driverIdEnabled ? (byte) 1 : (byte) 0);
         dest.writeByte(this.vehicleFrontOnStartEnabled ? (byte) 1 : (byte) 0);
         dest.writeByte(this.vehicleBackOnStartEnabled ? (byte) 1 : (byte) 0);

@@ -31,7 +31,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -44,6 +43,7 @@ import com.firetrap.permissionhelper.action.OnDenyAction;
 import com.firetrap.permissionhelper.action.OnGrantAction;
 import com.firetrap.permissionhelper.helper.PermissionHelper;
 import com.google.android.gms.maps.model.Polyline;
+import com.gregacucnik.EditableSeekBar;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.SCORE_t;
@@ -77,6 +77,7 @@ import java.util.Locale;
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
 
     private static final String TAG = "MainActivity";
+    private static final boolean DEBUG_UI_ON = false;
 
     private static final int MAP_ZOOM_ON_MOVE         = 17;
     private static final int MAP_ZOOM_ON_PAUSE        = 15;
@@ -343,7 +344,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     @Override
                     public void onClick (DialogInterface dialogInterface, int i) {
 
-                        Marker marker = markerManager.addMarker("", latLng, CustomMarker.MARKER_INFO);
+                        Marker marker = markerManager.addMarker("", latLng, CustomMarker.MARKER_INFO, true);
                         showMarkerEditDialog(marker, true);
                     }
                 });
@@ -392,22 +393,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             if (startMarker != null) {
 
-                markerManager.remove(startMarker);
+                markerManager.removeMarker(startMarker);
                 startMarker.remove();
                 startMarker = null;
             }
 
             if (stopMarker != null) {
 
-                markerManager.remove(stopMarker);
+                markerManager.removeMarker(stopMarker);
                 stopMarker.remove();
                 stopMarker = null;
             }
 
-            markerManager.remove(CustomMarker.MARKER_CYAN);
-            markerManager.remove(CustomMarker.MARKER_MAGENTA);
-            markerManager.remove(CustomMarker.MARKER_ORANGE);
-            markerManager.remove(CustomMarker.MARKER_ROSE);
+            markerManager.removeMarker(CustomMarker.MARKER_CYAN);
+            markerManager.removeMarker(CustomMarker.MARKER_MAGENTA);
+            markerManager.removeMarker(CustomMarker.MARKER_ORANGE);
+            markerManager.removeMarker(CustomMarker.MARKER_ROSE);
 
             return true;
         }
@@ -419,6 +420,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onStatusChanged (final STATUS_t status) {
+
+        if (DEBUG_UI_ON) {
+
+            if (status != STATUS_t.PAR_STARTED &&
+                status != STATUS_t.PAR_PAUSING &&
+                status != STATUS_t.PAR_RESUME &&
+                status != STATUS_t.PAR_STOPPED) {
+
+                return;
+            }
+        }
 
         runOnUiThread(new Runnable() {
 
@@ -522,7 +534,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                             if (startMarker == null) {
 
-                                startMarker = markerManager.addMarker(getString(R.string.start_string), lastPos, CustomMarker.MARKER_START);
+                                startMarker = markerManager.addMarker(getString(R.string.start_string), lastPos, CustomMarker.MARKER_START, false);
                             }
                         }
 
@@ -584,7 +596,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (stopMarker == null) {
 
-                            stopMarker = markerManager.addMarker(getString(R.string.stop_string), lastPos, CustomMarker.MARKER_STOP);
+                            stopMarker = markerManager.addMarker(getString(R.string.stop_string), lastPos, CustomMarker.MARKER_STOP, false);
                         }
 
                         routeActive = false;
@@ -816,7 +828,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             String msg = getString(R.string.sms_shock_msg_string) + " " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")";
                             sendSms(getPhoneNumber(R.string.phone_select_sms_shock_key), msg);
 
-                            markerManager.addMarker("Shock " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")", lastPos, CustomMarker.MARKER_ROSE);
+                            markerManager.addMarker("Shock " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")", lastPos, CustomMarker.MARKER_ROSE, false);
                         }
 
                     }.start();
@@ -894,7 +906,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                markerManager.addMarker("Const speed calibration", lastPos, CustomMarker.MARKER_MAGENTA);
+                markerManager.addMarker("Const speed calibration", lastPos, CustomMarker.MARKER_MAGENTA, false);
             }
         });
     }
@@ -907,7 +919,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                markerManager.addMarker("Acceleration calibration", lastPos, CustomMarker.MARKER_CYAN);
+                markerManager.addMarker("Acceleration calibration", lastPos, CustomMarker.MARKER_CYAN, false);
             }
         });
     }
@@ -920,7 +932,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                markerManager.addMarker("Reset calibration", lastPos, CustomMarker.MARKER_ORANGE);
+                markerManager.addMarker("Reset calibration", lastPos, CustomMarker.MARKER_ORANGE, false);
             }
         });
     }
@@ -944,9 +956,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         progress.setMessage(getString(R.string.progress_map_string));
         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progress.setIndeterminate(true);
-        progress.setCancelable(false);
         progress.setProgressNumberFormat(null);
         progress.setProgressPercentFormat(null);
+
+        if (!DEBUG_UI_ON) {
+
+            progress.setCancelable(false);
+        }
 
         if (!isFinishing()) {
 
@@ -1291,13 +1307,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 EditText editTitle = (EditText) alertDlg.findViewById(R.id.marker_title);
                 CheckBox alarmCheckBox = (CheckBox) alertDlg.findViewById(R.id.marker_alarm_checkbox);
                 Spinner markerTypeSpinner = (Spinner) alertDlg.findViewById(R.id.marker_type_spinner);
-                final Spinner markerRadiusSpinner = (Spinner) alertDlg.findViewById(R.id.marker_radius_spinner);
-                markerRadiusSpinner.setVisibility(View.GONE);
-
-                String[] alertRadiusArray = getResources().getStringArray(R.array.marker_alert_radius);
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_spinner_item, alertRadiusArray);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                markerRadiusSpinner.setAdapter(adapter);
+                final EditableSeekBar alertRadiusSeekBar = (EditableSeekBar) alertDlg.findViewById(R.id.marker_radius_seekbar);
 
                 final String titleBefore = customMarker.getTitle();
                 editTitle.setText(titleBefore);
@@ -1316,16 +1326,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     if (customMarker.isAlertEnabled()) {
 
                         alarmCheckBox.setChecked(true);
-                        markerRadiusSpinner.setVisibility(View.VISIBLE);
+                        alertRadiusSeekBar.setVisibility(View.VISIBLE);
                     }
                     else {
 
                         alarmCheckBox.setChecked(false);
-                        markerRadiusSpinner.setVisibility(View.GONE);
+                        alertRadiusSeekBar.setVisibility(View.GONE);
                     }
 
-                    markerRadiusSpinner.setSelection(customMarker.getAlertRaiusId());
-                    Log.d(TAG, "Spinner Selected Item: " + markerRadiusSpinner.getSelectedItem().toString()) ;
+                    alertRadiusSeekBar.setValue(customMarker.getAlertRadius());
                 }
 
                 markerTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -1347,18 +1356,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     public void onNothingSelected (AdapterView<?> parent) {}
                 });
 
-                markerRadiusSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-
-                    @Override
-                    public void onItemSelected (AdapterView<?> parent, View view, int position, long id) {
-
-                        customMarker.setAlertRadiusById(position);
-                    }
-
-                    @Override
-                    public void onNothingSelected (AdapterView<?> parent) {}
-                });
-
                 alarmCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 
                     @Override
@@ -1367,12 +1364,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (b) {
 
                             customMarker.enableAlert(true);
-                            markerRadiusSpinner.setVisibility(View.VISIBLE);
+                            alertRadiusSeekBar.setVisibility(View.VISIBLE);
                         }
                         else {
 
                             customMarker.enableAlert(false);
-                            markerRadiusSpinner.setVisibility(View.GONE);
+                            alertRadiusSeekBar.setVisibility(View.GONE);
                         }
                     }
                 });
@@ -1390,6 +1387,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         assert editTitle != null;
                         String currTitle = editTitle.getText().toString();
+
+                        if (customMarker.isAlertEnabled())
+                        {
+                            customMarker.setAlertRadius(alertRadiusSeekBar.getValue());
+                        }
 
                         if (titleBefore != currTitle) {
 
@@ -1418,7 +1420,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (creation) {
 
-                            markerManager.remove(customMarker);
+                            markerManager.removeMarker(customMarker);
                             marker.remove();
                         }
 
@@ -1440,7 +1442,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             @Override
                             public void onClick (DialogInterface dialogInterface, int i) {
 
-                                markerManager.remove(customMarker);
+                                markerManager.removeMarker(customMarker);
                                 marker.remove();
                                 alertDlg.dismiss();
                             }
@@ -1520,7 +1522,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         String str = "[";
 
         str += ComonUtils.getIMEInumber(getApplicationContext()) + ", ";
-        str += String.valueOf(qrRequest.driverId) + ", ";
+
+        if (qrRequest.driverName.length() > 0) {
+
+            str += String.valueOf(qrRequest.driverName) + ", ";
+        }
+
+        if (qrRequest.driverId > 0) {
+
+            str += String.valueOf(qrRequest.driverId) + ", ";
+        }
 
         if (lastLocation != null) {
 
