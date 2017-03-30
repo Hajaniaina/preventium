@@ -136,7 +136,6 @@ public class AppManager extends ThreadDefault
         download_dobj();
         modules.setActive( true );
 
-        loading_epc();
         STATUS_t status = first_init();
         upload_eca(true);
 
@@ -263,6 +262,7 @@ public class AppManager extends ThreadDefault
 
         STATUS_t ret = STATUS_t.PAR_STOPPED;
         if( parcour_id > 0 ) {
+            loading_epc( database.get_num_epc(parcour_id) );
             update_parcour_note(true);
             update_force_note(true);
             update_recommended_speed(true);
@@ -270,6 +270,7 @@ public class AppManager extends ThreadDefault
             addLog( "Phone launch: Resume parcours with status PAUSE.");
             addLog( "Status change to PAUSE. (" + ComonUtils.currentDateTime() + ")" );
         } else {
+            loading_epc();
             addLog( "Phone launch: No parcours.");
             addLog( "Status change to STOP. (" + ComonUtils.currentDateTime() + ")" );
         }
@@ -486,6 +487,7 @@ public class AppManager extends ThreadDefault
     /// .EPC
     /// ============================================================================================
 
+    private int selected_epc = 1;
     private ReaderEPCFile readerEPCFile = new ReaderEPCFile();
 
     // Downloading .EPC files if is needed
@@ -579,17 +581,37 @@ public class AppManager extends ThreadDefault
     // Load EPC file
     private boolean loading_epc() throws InterruptedException {
         boolean ready = false;
+
         while( isRunning() && !ready ) {
+            selected_epc = 0;
             ready = readerEPCFile.loadFromApp(ctx);
-            if (!ready) {
+
+            if( ready )
+                selected_epc = readerEPCFile.selectedEPC(ctx);
+            else {
                 List<Integer> available = DataEPC.getAppEpcExist(ctx);
                 for (Integer i : available) {
                     ready = readerEPCFile.loadFromApp(ctx, i);
-                    if (ready) break;
+                    if( ready ){
+                        selected_epc = i;
+                        break;
+                    }
                 }
             }
             if( !ready ) download_epc();
         }
+        return ready;
+    }
+
+    private boolean loading_epc(int num) throws InterruptedException {
+        boolean ready = false;
+        if( num < 1 ) num = 1;
+        if( num > 5 ) num = 5;
+        while( isRunning() && !ready ) {
+            ready = readerEPCFile.loadFromApp(ctx, num);
+            if( !ready ) download_epc();
+        }
+        selected_epc = ( ready ) ? num : 0;
         return ready;
     }
 
@@ -790,13 +812,14 @@ public class AppManager extends ThreadDefault
                                     String line = "";
                                     for (CustomMarkerData mk : customMarkerList) {
                                         line = String.format(Locale.getDefault(),
-                                                "%f;%f;%d;%d;%d;%s;\n",
+                                                "%f;%f;%d;%d;%d;%s;%d;\n",
                                                 mk.position.longitude,
                                                 mk.position.latitude,
                                                 mk.type,
                                                 (mk.alert ? 1 : 0),
                                                 mk.alertRadius,
-                                                mk.title);
+                                                mk.title,
+                                                (mk.shared ? 1 : 0) );
                                         fileWriter.write(line);
                                     }
                                     fileWriter.flush();
@@ -1586,12 +1609,13 @@ if( seuil != null
         return ret;
     }
 
-    public void init_parcours_id() {
+    public boolean init_parcours_id() throws InterruptedException {
         long id = get_current_parcours_id(true);
         if( id > 0 )
         {
 
             parcour_id = id;
+            if( !loading_epc( database.get_num_epc(parcour_id) ) ) return false;
             Log.d(TAG,"Initialize parcours ( Resume parcours " + parcour_id + " )" );
             Log.d(TAG,"Add ECA to resume parcous.");
             Location loc = get_last_location();
@@ -1601,8 +1625,11 @@ if( seuil != null
         else
         {
             parcour_id = System.currentTimeMillis();
-            Log.d(TAG,"Initialize parcours: Create parcours " + parcour_id + " )" );
-            Log.d(TAG,"Add ECA to start parcous.");
+            if( !loading_epc() ) return false;
+            database.set_num_epc(parcour_id, selected_epc);
+
+            Log.d(TAG, "Initialize parcours: Create parcours " + parcour_id + " )");
+            Log.d(TAG, "Add ECA to start parcous.");
             Location loc = get_last_location();
             database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_BEGIN, loc, null));
 
@@ -1611,6 +1638,8 @@ if( seuil != null
         update_parcour_note(true);
         update_force_note(true);
         update_recommended_speed(true);
+
+        return true;
     }
 
     public boolean close_parcours(boolean force) throws InterruptedException {
@@ -1684,7 +1713,6 @@ if( seuil != null
             if ( !chrono_ready_to_start.isStarted() ) chrono_ready_to_start.start();
             if ( chrono_ready_to_start.getSeconds() > SECS_TO_SET_PARCOURS_START ) {
 
-                loading_epc();
                 button_stop = false;
                 note_parcour_update_at = 0;
                 note_forces_update_at = 0;
@@ -1694,15 +1722,16 @@ if( seuil != null
                 lastLocSend = null;
                 recommended_speed_update_at = 0;
 
-                init_parcours_id();
-                ret = STATUS_t.PAR_STARTED;
-                if (listener != null){
-                    listener.onForceChanged(FORCE_t.UNKNOW,LEVEL_t.LEVEL_UNKNOW);
-                    listener.onRecommendedSpeedChanged(SPEED_t.IN_STRAIGHT_LINE,0,LEVEL_t.LEVEL_UNKNOW,true);
-                    listener.onRecommendedSpeedChanged(SPEED_t.IN_CORNERS,0,LEVEL_t.LEVEL_UNKNOW,true);
-                    listener.onStatusChanged(ret);
+                if( init_parcours_id() ) {
+                    ret = STATUS_t.PAR_STARTED;
+                    if (listener != null) {
+                        listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW);
+                        listener.onRecommendedSpeedChanged(SPEED_t.IN_STRAIGHT_LINE, 0, LEVEL_t.LEVEL_UNKNOW, true);
+                        listener.onRecommendedSpeedChanged(SPEED_t.IN_CORNERS, 0, LEVEL_t.LEVEL_UNKNOW, true);
+                        listener.onStatusChanged(ret);
+                    }
+                    addLog("Status change to START. (" + ComonUtils.currentDateTime() + ")");
                 }
-                addLog( "Status change to START. (" + ComonUtils.currentDateTime() + ")" );
             }
         }
         return ret;

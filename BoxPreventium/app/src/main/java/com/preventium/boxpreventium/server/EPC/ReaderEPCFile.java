@@ -153,6 +153,12 @@ public class ReaderEPCFile {
         Log.d(TAG, "lat/long enable: " + lat_long );
     }
 
+    public int selectedEPC( Context ctx ) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String key = ctx.getResources().getString(R.string.epc_selected_key);
+        int val = ctx.getResources().getInteger(R.integer.epc_selected_def_key);
+        return sp.getInt(key,val);
+    }
     public boolean loadFromApp( Context ctx ) {
 
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);

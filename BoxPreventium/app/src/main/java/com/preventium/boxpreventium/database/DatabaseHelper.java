@@ -13,7 +13,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Database Info
     private static final String DATABASE_NAME = "DatabaseHelper";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
+
+    // EPC SELECTED: Table Names and Colums names
+    public static final String TABLE_EPC = "epc";
+    public static final String COLUMN_EPC_ID = "id";
+    public static final String COLUMN_EPC_PARCOUR_ID = "parcour_id";
+    public static final String COLUMN_EPC_NUM_EPC = "num_epc";
 
     // ECA: Table Name and column names
     public static final String TABLE_ECA = "eca";
@@ -82,10 +88,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             COLUMN_DRIVER_TIME+ " INTEGER PRIMARY KEY, " +
             COLUMN_DRIVER_ID + " INTEGER, " +
             COLUMN_DRIVER_PARCOUR_ID + " INTEGER );";
+        String CREATE_EPCID_TABLE =
+            "CREATE TABLE " + TABLE_EPC + " (" +
+            COLUMN_EPC_ID + " INTEGER PRIMARY KEY, " +
+            COLUMN_EPC_PARCOUR_ID + " INTEGER, " +
+            COLUMN_EPC_NUM_EPC + " INTEGER );";
 
         sqLiteDatabase.execSQL( CREATE_ECA_TABLE );
         sqLiteDatabase.execSQL( CREATE_CEP_TABLE );
         sqLiteDatabase.execSQL( CREATE_DRIVERID_TABLE );
+        sqLiteDatabase.execSQL( CREATE_EPCID_TABLE );
     }
 
     // Called when the database needs to be upgraded.
@@ -98,6 +110,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_ECA);
             sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_DRIVER);
             sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_CEP);
+            sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_EPC);
             onCreate(sqLiteDatabase);
         }
     }

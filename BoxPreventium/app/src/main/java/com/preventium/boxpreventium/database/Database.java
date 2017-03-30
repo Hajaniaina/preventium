@@ -45,9 +45,12 @@ import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_PA
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_PARCOUR_ID;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_SPEED;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_ECA_TIME;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_EPC_NUM_EPC;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_EPC_PARCOUR_ID;
 import static com.preventium.boxpreventium.database.DatabaseHelper.TABLE_CEP;
 import static com.preventium.boxpreventium.database.DatabaseHelper.TABLE_DRIVER;
 import static com.preventium.boxpreventium.database.DatabaseHelper.TABLE_ECA;
+import static com.preventium.boxpreventium.database.DatabaseHelper.TABLE_EPC;
 
 /**
  * Created by Franck on 02/03/2017.
@@ -231,6 +234,7 @@ public class Database {
                 long cnt = get_eca_counter(ctx,parcour_id) + 1;
                 long time = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_TIME));
                 long driver_id = get_driver_id(parcour_id, time);
+                char epc_num = (char) get_num_epc(parcour_id);
                 String filename = String.format(Locale.getDefault(),"%s_%s_%04d.ECA",
                         ComonUtils.getIMEInumber(ctx), Long.toString(parcour_id), cnt );
                 File file = new File(folder.getAbsolutePath(), filename );
@@ -242,6 +246,7 @@ public class Database {
                                 new FileOutputStream(file.getAbsolutePath()));
                         //output.write( new byte[]{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00} );// Vehicule ID
                         output.write( ByteBuffer.allocate(8).putLong(driver_id).array() ); // Driver ID
+                        output.write( epc_num );
                         line = new ECALine();
                         boolean all_points = DataCFG.get_SEND_ALL_GPS_POINTS(ctx);
                         while ( !cursor.isAfterLast() ) {
@@ -499,6 +504,39 @@ public class Database {
         DatabaseManager.getInstance().closeDatabase();
         return ret;
     }
+
+    /// Get num EPC for a parcours
+    public int get_num_epc(long parcour_id){
+        int ret = 0;
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+        Cursor cursor =
+                db.rawQuery(
+                        "SELECT " + COLUMN_EPC_NUM_EPC +
+                                " FROM " + TABLE_EPC +
+                                " WHERE " + COLUMN_EPC_PARCOUR_ID + " = " + parcour_id +
+                                " LIMIT 1 ;", null );
+
+        if( cursor != null && cursor.moveToFirst() ) {
+            ret = cursor.getInt(0);
+            cursor.close();
+        }
+        DatabaseManager.getInstance().closeDatabase();
+        return ret;
+    }
+
+    /// Get num EPC for a parcours
+    public boolean set_num_epc( long parcour_id, int num_epc ){
+        if( num_epc < 1 || num_epc > 5 ) return false;
+        if( get_num_epc(parcour_id) != 0 ) return true;
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COLUMN_EPC_NUM_EPC, num_epc );
+        contentValues.put(COLUMN_EPC_PARCOUR_ID, parcour_id );
+        long row = db.insert(TABLE_EPC, null, contentValues);
+        DatabaseManager.getInstance().closeDatabase();
+        return row >= 0;
+    }
+
 
     /// ============================================================================================
     /// DRIVER ID
