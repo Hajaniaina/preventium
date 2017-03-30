@@ -234,12 +234,13 @@ public class HandlerBox extends ThreadDefault
             }
 
             // Battery info
+            ENGINE_t engine_t = ENGINE_t.OFF;
             if( !mBoxList.isEmpty() ) {
-                ENGINE_t engine_t = ENGINE_t.UNKNOW;
                 BatteryInfo bat = mBoxList.get(0).getBat();
                 if( bat != null ) engine_t = (bat.running()) ? ENGINE_t.ON : ENGINE_t.OFF;
-                if( listener != null && engine_t != last_engine_t )
-                    listener.onEngineStateChanged( engine_t );
+            }
+            if( listener != null && engine_t != last_engine_t ) {
+                listener.onEngineStateChanged(engine_t);
                 last_engine_t = engine_t;
             }
 

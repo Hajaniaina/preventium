@@ -164,7 +164,8 @@ public class AppManager extends ThreadDefault
                     status = on_moved(status);
                     break;
                 case PAR_PAUSING:
-                    status = on_paused();
+                case PAR_PAUSING_WITH_STOP:
+                    status = on_paused(status);
                     break;
             }
 
@@ -183,7 +184,9 @@ public class AppManager extends ThreadDefault
 
     @Override
     public void onDeviceState(String device_mac, boolean connected) {
-        addLog( device_mac + " is connected: " + connected );
+        if( connected ) addLog( "Device " + device_mac + " connected.");
+        else  addLog( "Device " + device_mac + " disconnected.");
+
         Location location = get_last_location();
         database.addCEP( location, device_mac, connected );
     }
@@ -192,7 +195,7 @@ public class AppManager extends ThreadDefault
     public void onNumberOfBox(int nb) {
         if( DEBUG ) Log.d(TAG,"Number of preventium device connected changed: " + nb );
         if( listener != null ) listener.onNumberOfBoxChanged( nb );
-        if( nb <= 0 ) engine_t = ENGINE_t.OFF;
+        //if( nb <= 0 ) engine_t = ENGINE_t.OFF;
     }
 
     @Override
@@ -231,7 +234,7 @@ public class AppManager extends ThreadDefault
 
     private String chronoRideTxt = "";
 
-    private STATUS_t first_init(){
+    private STATUS_t first_init() throws InterruptedException {
         button_stop = false;
         internet_active = true;
         mov_t_last = MOVING_t.UNKNOW;
@@ -257,14 +260,23 @@ public class AppManager extends ThreadDefault
         lastLocSend = null;
         try_send_eca_at  = 0;
         parcour_id = get_current_parcours_id(true);
+
+        STATUS_t ret = STATUS_t.PAR_STOPPED;
         if( parcour_id > 0 ) {
             update_parcour_note(true);
             update_force_note(true);
             update_recommended_speed(true);
+            ret = STATUS_t.PAR_PAUSING;
+            addLog( "Phone launch: Resume parcours with status PAUSE.");
+            addLog( "Status change to PAUSE." );
+        } else {
+            addLog( "Phone launch: No parcours.");
+            addLog( "Status change to STOP." );
         }
-        parcour_id = 0;
 
-        return STATUS_t.PAR_STOPPED;
+        if (listener != null) listener.onStatusChanged(ret);
+
+        return ret;
     }
 
     private void update_driving_time() {
@@ -1008,7 +1020,6 @@ public class AppManager extends ThreadDefault
             mov_t_last_chrono.start();
             mov_chrono.start();
             mov_t_last = mov_t;
-            //addLog("Moving status changed: " + mov_t.toString());
         }
         else {
             if ( mov_chrono.isStarted() ) {
@@ -1171,15 +1182,16 @@ if(list_loc != null && list_loc.size() >= 2){
 // TEST
 if( seuil != null
         && (seuil.type == FORCE_t.ACCELERATION || seuil.type == FORCE_t.BRAKING) ) {
-    String txt = (seuil.type == FORCE_t.ACCELERATION) ? "ACC " : "BRK ";
-    switch ( seuil.level ) {
-        case LEVEL_UNKNOW: txt += "LVL_? "; break;
-        case LEVEL_1: txt += "LVL_1 "; break;
-        case LEVEL_2: txt += "LVL_2 "; break;
-        case LEVEL_3: txt += "LVL_3 "; break;
-        case LEVEL_4: txt += "LVL_4 "; break;
-        case LEVEL_5: txt += "LVL_5 "; break;
-    }
+//    String txt = (seuil.type == FORCE_t.ACCELERATION) ? "ACC " : "BRK ";
+//    switch ( seuil.level ) {
+//        case LEVEL_UNKNOW: txt += "LVL_? "; break;
+//        case LEVEL_1: txt += "LVL_1 "; break;
+//        case LEVEL_2: txt += "LVL_2 "; break;
+//        case LEVEL_3: txt += "LVL_3 "; break;
+//        case LEVEL_4: txt += "LVL_4 "; break;
+//        case LEVEL_5: txt += "LVL_5 "; break;
+//    }
+    String txt = "";
     double sum = 0.0;
     for( int i = 0; i < list_XmG.size(); i++ ) {
         sum += list_XmG.get(i);
@@ -1357,8 +1369,8 @@ if( seuil != null
     }
 
     private void update_parcour_note(boolean force) {
-        // Every 5 minutes
-        if( force || note_parcour_update_at + (5 * 60 * 1000) < System.currentTimeMillis() )
+        // Every 3 minutes
+        if( force || note_parcour_update_at + (3 * 60 * 1000) < System.currentTimeMillis() )
         {
             note_parcour_update_at = System.currentTimeMillis();
 
@@ -1580,30 +1592,76 @@ if( seuil != null
         long id = get_current_parcours_id(true);
         if( id > 0 )
         {
+
             parcour_id = id;
             Log.d(TAG,"Initialize parcours ( Resume parcours " + parcour_id + " )" );
-            if( _tracking )
-            {
-                Log.d(TAG,"Add ECA to resume parcous.");
-                Location loc = get_last_location();
-                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_BEGIN, loc, null));
-            }
+            Log.d(TAG,"Add ECA to resume parcous.");
+            Location loc = get_last_location();
+            database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_RESUME, loc, null));
+
         }
         else
         {
             parcour_id = System.currentTimeMillis();
             Log.d(TAG,"Initialize parcours: Create parcours " + parcour_id + " )" );
-            if( _tracking )
-            {
-                Log.d(TAG,"Add ECA to start parcous.");
-                Location loc = get_last_location();
-                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_BEGIN, loc, null));
-            }
-        }
+            Log.d(TAG,"Add ECA to start parcous.");
+            Location loc = get_last_location();
+            database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_BEGIN, loc, null));
 
+        }
+        StatsLastDriving.startDriving(ctx,parcour_id);
         update_parcour_note(true);
         update_force_note(true);
         update_recommended_speed(true);
+    }
+
+    public boolean close_parcours(boolean force) throws InterruptedException {
+
+        boolean ret = false;
+
+        String reasons = " FORCED";
+        boolean stop = force;
+        if( !stop ) {
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+            String key = ctx.getResources().getString(R.string.stop_trigger_time_key);
+            long delay_stop = sp.getInt(key, 30) * 60 * 1000;
+
+            // Checking if car is stopped
+            boolean is_closed = database.parcour_is_closed(parcour_id);
+            boolean has_expired  = database.parcour_expired(parcour_id,delay_stop);
+            stop = (button_stop || is_closed || has_expired);
+
+            reasons = " ";
+            if( button_stop ) reasons += "Btn stp pressed; ";
+            if( is_closed ) reasons += "Already closed; ";
+            if( has_expired ) reasons += "Has expired; ";
+
+        }
+
+        if( stop ) {
+
+            addLog( "Close parcours reasons:" + reasons );
+
+            // Force calcul note
+            update_parcour_note(true);
+            update_force_note(true);
+            update_recommended_speed(true);
+            // ADD ECA Line when stopped
+            Location loc = get_last_location();
+            database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_END, loc, null));
+            StatsLastDriving.set_distance(ctx, database.get_distance(parcour_id));
+            clear_force_ui();
+            // Sending files
+            upload_cep();
+            upload_custom_markers();
+            upload_parcours_type();
+            parcour_id = -1;
+
+            ret = true;
+
+        }
+
+        return ret;
     }
 
     public void setStopped(){ button_stop = true; }
@@ -1627,6 +1685,7 @@ if( seuil != null
 
             if ( !chrono_ready_to_start.isStarted() ) chrono_ready_to_start.start();
             if ( chrono_ready_to_start.getSeconds() > SECS_TO_SET_PARCOURS_START ) {
+
                 loading_epc();
                 button_stop = false;
                 note_parcour_update_at = 0;
@@ -1638,83 +1697,64 @@ if( seuil != null
                 recommended_speed_update_at = 0;
 
                 init_parcours_id();
-                StatsLastDriving.startDriving(ctx,parcour_id);
-
                 ret = STATUS_t.PAR_STARTED;
                 if (listener != null){
                     listener.onForceChanged(FORCE_t.UNKNOW,LEVEL_t.LEVEL_UNKNOW);
-
                     listener.onRecommendedSpeedChanged(SPEED_t.IN_STRAIGHT_LINE,0,LEVEL_t.LEVEL_UNKNOW,true);
                     listener.onRecommendedSpeedChanged(SPEED_t.IN_CORNERS,0,LEVEL_t.LEVEL_UNKNOW,true);
                     listener.onStatusChanged(ret);
                 }
+                addLog( "Status change to START" );
             }
         }
         return ret;
     }
 
-    private STATUS_t on_paused() throws InterruptedException {
-        STATUS_t ret = STATUS_t.PAR_PAUSING;
+    private STATUS_t on_paused(STATUS_t status) throws InterruptedException {
 
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-        String key = ctx.getResources().getString(R.string.stop_trigger_time_key);
-        long delay = sp.getInt(key,10) * 60 * 1000;
+        STATUS_t ret = status;
 
-        // Checking if car is stopped
-        if ( button_stop ||
-                ( /*mov_t_last == MOVING_t.STP
-                        && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_STOPPED*/
-                        engine_t_changed_at + delay < System.currentTimeMillis()
-                        && engine_t != ENGINE_t.ON) )
-        {
+        if( status == STATUS_t.PAR_PAUSING ) {
 
-            // Force calcul note
-            update_parcour_note(true);
-            update_force_note(true);
-            update_recommended_speed(true);
-
-            database.close_last_parcour();
-
-            // ADD ECA Line when stopped
-            if( _tracking ) {
-                Location loc = get_last_location();
-                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_END, loc, null));
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+            String key = ctx.getResources().getString(R.string.stop_trigger_time_key);
+            key = ctx.getResources().getString(R.string.pause_trigger_time_key);
+            long delay_pause = sp.getInt(key,5) * 60 * 1000;
+            if( database.parcour_expired(parcour_id,delay_pause) ) {
+                ret = STATUS_t.PAR_PAUSING_WITH_STOP;
+                if (listener != null) listener.onStatusChanged(ret);
+                addLog( "Status change to PAUSE (show button stop)." );
             }
+        }
 
-            StatsLastDriving.set_distance(ctx,database.get_distance(parcour_id));
+        // Close parcours if neccessary
+        boolean stop = close_parcours(false);
+        if( stop ) {
             ret = STATUS_t.PAR_STOPPED;
             if (listener != null) listener.onStatusChanged(ret);
-            addLog("STOP PARCOURS");
-            clear_force_ui();
-
-            upload_cep();
-            upload_custom_markers();
-            upload_parcours_type();
-            parcour_id = -1;
-
-
+            addLog( "Status change to STOP." );
         }
         // Or checking if car re-moving
-        else if (mov_t_last != MOVING_t.STP
+        else if ( mov_t_last != MOVING_t.STP
                 && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_RESUME
                 && engine_t == ENGINE_t.ON) {
             ret = STATUS_t.PAR_RESUME;
             if (listener != null) listener.onStatusChanged(ret);
 
             // ADD ECA Line when resuming
-            if( _tracking ) {
-                Location loc = get_last_location();
-                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_RESUME, loc, null));
-            }
+            Location loc = get_last_location();
+            database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_RESUME, loc, null));
 
-            addLog("RESUME PARCOURS");
             clear_force_ui();
+
+            addLog( "Status change to RESUME." );
         }
 
         return ret;
     }
 
     private STATUS_t on_moved(STATUS_t status){
+
         STATUS_t ret = status;
 
         calc_eca();
@@ -1727,23 +1767,21 @@ if( seuil != null
         String key = ctx.getResources().getString(R.string.pause_trigger_time_key);
         long delay = sp.getInt(key,4) * 60 * 1000;
 
+
         // Checking if car is in pause
-        if ( /*mov_t_last == MOVING_t.STP
-                && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_PAUSE */
-                engine_t != ENGINE_t.ON
-                    &&  engine_t_changed_at + delay < System.currentTimeMillis()) {
+        if ( engine_t != ENGINE_t.ON
+                    /*&& engine_t_changed_at + delay < System.currentTimeMillis()*/) {
+
             ret = STATUS_t.PAR_PAUSING;
 
             // ADD ECA Line when pausing
-            if( _tracking ) {
-                Location loc = get_last_location();
-                database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_PAUSE, loc, null));
-            }
-
+            Location loc = get_last_location();
+            database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_PAUSE, loc, null));
             if (listener != null) listener.onStatusChanged(ret);
-            addLog("PAUSE PARCOURS");
 
             clear_force_ui();
+
+            addLog( "Status change to PAUSE." );
         }
 
         return ret;
@@ -1869,6 +1907,7 @@ if( seuil != null
 
     private void setLog( String txt ){
         log = txt;
+        if( listener != null ) listener.onDebugLog( log );
     }
 
     private void addLog( String txt ){
