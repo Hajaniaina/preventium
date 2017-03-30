@@ -15,13 +15,14 @@ public enum STATUS_t {
     GETTING_DOBJ(2),
     PAR_STARTED(3),
     PAR_PAUSING(4),
-    PAR_RESUME(5),
-    PAR_STOPPED(6),
-    SETTING_CEP(7),
-    SETTING_MARKERS(8),
-    SETTING_PARCOUR_TYPE(9),
-    CHECK_ACTIF(10),
-    IMEI_INACTIF(11);
+    PAR_PAUSING_WITH_STOP(5),
+    PAR_RESUME(6),
+    PAR_STOPPED(7),
+    SETTING_CEP(8),
+    SETTING_MARKERS(9),
+    SETTING_PARCOUR_TYPE(10),
+    CHECK_ACTIF(11),
+    IMEI_INACTIF(12);
 
     private int value;
     private static Map<Integer, STATUS_t> map = new HashMap<>();
@@ -47,6 +48,8 @@ public enum STATUS_t {
                 return "STATUS_t[PAR_STARTED]";
             case PAR_PAUSING:
                 return "STATUS_t[PAR_PAUSING]";
+            case PAR_PAUSING_WITH_STOP:
+                return "STATUS_t[PAR_PAUSING_WITH_STOP]";
             case PAR_RESUME:
                 return "STATUS_t[PAR_RESUME]";
             case SETTING_CEP:

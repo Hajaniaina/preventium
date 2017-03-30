@@ -168,16 +168,16 @@ public class StatsLastDriving {
             case FINAL:
                 key = KEY_PREF_NOTE; break;
             default:
-                return 0f;
+                return 20f;
         }
 
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
-        return sp.getFloat(key,0f);
+        return sp.getFloat(key,20f);
     }
 
     public static float get_speed_avg(Context ctx) {
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
-        return sp.getFloat(KEY_PREF_SPEED,0f);
+        return sp.getFloat(KEY_PREF_SPEED,20f);
     }
 
     public static long get_distance(Context ctx) {
