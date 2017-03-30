@@ -429,6 +429,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             if (status != STATUS_t.PAR_STARTED &&
                 status != STATUS_t.PAR_PAUSING &&
+                status != STATUS_t.PAR_PAUSING_WITH_STOP &&
                 status != STATUS_t.PAR_RESUME &&
                 status != STATUS_t.PAR_STOPPED) {
 
@@ -559,6 +560,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         break;
 
                     case PAR_PAUSING:
+                    case PAR_PAUSING_WITH_STOP:
 
                         routeInPause = true;
 
@@ -569,7 +571,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             googleMap.getUiSettings().setAllGesturesEnabled(true);
                         }
 
-                        stopButton.setVisibility(View.VISIBLE);
+                        stopButton.setVisibility( (status == STATUS_t.PAR_PAUSING_WITH_STOP) ? View.VISIBLE  : View.GONE );
                         accForceView.hide(true);
 
                         int pauseNotifTimeout = sharedPref.getInt(getString(R.string.phone_select_sms_pause_timeout_key), 0);

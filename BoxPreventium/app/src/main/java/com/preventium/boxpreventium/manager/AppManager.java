@@ -795,7 +795,7 @@ public class AppManager extends ThreadDefault
                                                 mk.position.latitude,
                                                 mk.type,
                                                 (mk.alert ? 1 : 0),
-                                                mk.perimeter,
+                                                mk.alertRadius,
                                                 mk.title);
                                         fileWriter.write(line);
                                     }
