@@ -1,7 +1,7 @@
 package com.preventium.boxpreventium.location;
 
 import com.google.android.gms.maps.model.LatLng;
-import com.google.firebase.auth.api.model.StringList;
+import java.util.ArrayList;
 
 public class CustomMarkerData {
 
@@ -9,10 +9,9 @@ public class CustomMarkerData {
     public LatLng position = null;
     public String title = null;
     public boolean alert = false;
-    public int perimeter = 0;
-
-    public boolean signature = false;
+    public int alertRadius = 0;
+    public ArrayList<String> alertAttachments = null;
+    public String alertMsg = null;
+    public boolean alertReqSignature = false;
     public boolean shared = false;
-    public StringList documents = null;
-    public String message = null;
 }

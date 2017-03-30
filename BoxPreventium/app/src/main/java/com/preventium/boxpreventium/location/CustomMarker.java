@@ -1,5 +1,11 @@
 package com.preventium.boxpreventium.location;
 
+import android.graphics.Color;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
+import com.google.android.gms.maps.model.Dash;
+import com.google.android.gms.maps.model.Dot;
+import com.google.android.gms.maps.model.PatternItem;
 import com.preventium.boxpreventium.R;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptor;
@@ -7,6 +13,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class CustomMarker {
@@ -50,20 +57,37 @@ public class CustomMarker {
     private boolean editable = true;
     private LatLng pos = null;
     private String title = "";
+    private boolean shared = false;
+
     private boolean alert = false;
-    private int alertRaiusId = 0;
-    private int alertRadiusM = 0;
-    private int[] alertRadiusArr;
+    private boolean alertActivated = false;
+    private int alertRadius = 0;
+    private Circle alertCircle = null;
+    private String alertMsg = null;
+    private boolean alertReqSignature = false;
+    public ArrayList<String> alertAttachments = null;
 
     CustomMarker() {
 
-        alertRadiusArr = new int[4];
-        alertRadiusArr[0] = 50;
-        alertRadiusArr[1] = 100;
-        alertRadiusArr[2] = 300;
-        alertRadiusArr[3] = 500;
-
         opt = new MarkerOptions();
+    }
+
+    CustomMarker (CustomMarkerData data) {
+
+        pos = data.position;
+        title = data.title;
+        type = data.type;
+        shared = data.shared;
+        alert = data.alert;
+        alertMsg = data.alertMsg;
+        alertRadius = data.alertRadius;
+        alertReqSignature = data.alertReqSignature;
+        alertAttachments = data.alertAttachments;
+    }
+
+    public Marker getMarker() {
+
+        return marker;
     }
 
     public String toString() {
@@ -80,12 +104,26 @@ public class CustomMarker {
     public Marker addToMap (GoogleMap map) {
 
         setType(type);
+
         marker = map.addMarker(opt);
         pos = opt.getPosition();
 
-        if (isAlertEnabled()) {
+        if (alert) {
 
+            CircleOptions circleOpt = new CircleOptions();
 
+            circleOpt.center(pos);
+            circleOpt.radius(alertRadius);
+            circleOpt.strokeColor(Color.RED);
+
+                /*
+                List<PatternItem> pattern = circleOpt.getStrokePattern();
+                pattern.clear();
+                pattern.add(new Dot());
+                circleOpt.strokePattern(pattern);
+                */
+
+            alertCircle = map.addCircle(circleOpt);
         }
 
         return marker;
@@ -94,14 +132,7 @@ public class CustomMarker {
     public void setType (int type) {
 
         BitmapDescriptor bitmap = null;
-
-        if (!editable) {
-
-            return;
-        }
-
         this.type = type;
-        editable = false;
 
         switch (type) {
 
@@ -119,12 +150,10 @@ public class CustomMarker {
 
             case MARKER_INFO:
                 bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
-                editable = true;
                 break;
 
             case MARKER_DANGER:
                 bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);
-                editable = true;
                 break;
 
             default:
@@ -153,48 +182,7 @@ public class CustomMarker {
         return type;
     }
 
-    public void setAlertRadius (int meters) {
-
-        alertRadiusM = meters;
-    }
-
-    public void setAlertRadiusById (int id) {
-
-        if (id > 3) {
-
-            id = 3;
-        }
-
-        alertRaiusId = id;
-        alertRadiusM = alertRadiusArr[id];
-    }
-
-    public int getAlertRadius() {
-
-        return alertRadiusM;
-    }
-
-    public int getAlertRaiusId() {
-
-        return alertRaiusId;
-    }
-
-    public void enableAlert (boolean enable) {
-
-        alert = enable;
-    }
-
-    public boolean isAlertEnabled () {
-
-        return alert;
-    }
-
     public void setPos (LatLng pos) {
-
-        if (!editable) {
-
-            return;
-        }
 
         if (pos != null) {
 
@@ -214,11 +202,6 @@ public class CustomMarker {
 
     public void setSnippet (String snippet) {
 
-        if (!editable) {
-
-            return;
-        }
-
         if (snippet != null && snippet.length() > 0) {
 
             opt.snippet(snippet);
@@ -231,11 +214,6 @@ public class CustomMarker {
     }
 
     public void setTitle (String title) {
-
-        if (!editable) {
-
-            return;
-        }
 
         if (title != null && title.length() > 0) {
 
@@ -261,11 +239,6 @@ public class CustomMarker {
 
     public void setIcon (BitmapDescriptor bitmap) {
 
-        if (!editable) {
-
-            return;
-        }
-
         if (bitmap != null) {
 
             opt.icon(bitmap);
@@ -275,6 +248,31 @@ public class CustomMarker {
                 marker.setIcon(bitmap);
             }
         }
+    }
+
+    public void setAlertRadius (int meters) {
+
+        alertRadius = meters;
+    }
+
+    public int getAlertRadius() {
+
+        return alertRadius;
+    }
+
+    public void enableAlert (boolean enable) {
+
+        alert = enable;
+    }
+
+    public boolean isAlertEnabled() {
+
+        return alert;
+    }
+
+    public boolean isAlertActivated() {
+
+        return alertActivated;
     }
 
     public void setEditable (boolean editable) {
@@ -287,8 +285,43 @@ public class CustomMarker {
         return editable;
     }
 
-    public Marker getMarker() {
+    public void share (boolean share) {
 
-        return marker;
+        shared = share;
+    }
+
+    public boolean isShared() {
+
+        return shared;
+    }
+
+    public void setAlertMsg (String msg) {
+
+        alertMsg = msg;
+    }
+
+    public String getAlertMsg() {
+
+        return alertMsg;
+    }
+
+    public void setAlertAttachments (ArrayList<String> urls) {
+
+        alertAttachments = urls;
+    }
+
+    public ArrayList<String> getAlertAttachments() {
+
+        return alertAttachments;
+    }
+
+    public void setAlertSignatureReq (boolean request) {
+
+        alertReqSignature = request;
+    }
+
+    public boolean isAlertSignatureRequired() {
+
+        return alertReqSignature;
     }
 }

@@ -60,13 +60,6 @@ public class MarkerManager {
 
             for (CustomMarker customMarker : markersList) {
 
-                /*
-                if (customMarker.getMarker().equals(marker)) {
-
-                    foundedMarker = customMarker;
-                }
-                */
-
                 if (marker.getPosition().equals(customMarker.getPos())) {
 
                     foundedMarker = customMarker;
@@ -77,15 +70,16 @@ public class MarkerManager {
         return foundedMarker;
     }
 
-    public Marker addMarker (String title, LatLng pos, int type) {
+    public Marker addMarker (String title, LatLng pos, int type, boolean editable) {
 
         CustomMarker customMarker = new CustomMarker();
 
+        customMarker.setEditable(editable);
         customMarker.setPos(pos);
         customMarker.setTitle(title);
         customMarker.setType(type);
 
-        if (customMarker.isEditable()) {
+        if (editable) {
 
             customMarker.setSnippet(activity.getString(R.string.marker_snippet_string));
         }
@@ -96,13 +90,24 @@ public class MarkerManager {
         return marker;
     }
 
-    public boolean remove (int markerType)
+    public Marker addMarker (CustomMarkerData data) {
+
+        CustomMarker customMarker = new CustomMarker(data);
+        customMarker.setEditable(false);
+
+        Marker marker = customMarker.addToMap(map);
+        markersList.add(customMarker);
+
+        return marker;
+    }
+
+    public boolean removeMarker (int markerType)
     {
         boolean found = false;
 
         if (markersList.size() > 0) {
 
-            for (Iterator<CustomMarker> iterator = markersList.iterator(); iterator.hasNext(); ) {
+            for (Iterator<CustomMarker> iterator = markersList.iterator(); iterator.hasNext();) {
 
                 CustomMarker customMarker = iterator.next();
 
@@ -117,7 +122,7 @@ public class MarkerManager {
         return found;
     }
 
-    public boolean remove (CustomMarker marker) {
+    public boolean removeMarker (CustomMarker marker) {
 
         boolean found = false;
 
@@ -138,14 +143,21 @@ public class MarkerManager {
         return found;
     }
 
-    public boolean remove (Marker marker) {
+    public boolean removeMarker (Marker marker) {
 
-        if (remove(getMarker(marker))) {
+        return removeMarker(getMarker(marker));
+    }
 
-            return true;
+    public void removeAllMarkers() {
+
+        if (markersList.size() > 0) {
+
+            for (Iterator<CustomMarker> iterator = markersList.iterator(); iterator.hasNext(); ) {
+
+                CustomMarker customMarker = iterator.next();
+                iterator.remove();
+            }
         }
-
-        return false;
     }
 
     public ArrayList<CustomMarkerData> getUserMarkersData() {
@@ -160,7 +172,7 @@ public class MarkerManager {
 
                 markerData.alert = customMarker.isAlertEnabled();
                 markerData.position = customMarker.getPos();
-                markerData.perimeter = customMarker.getAlertRadius();
+                markerData.alertRadius = customMarker.getAlertRadius();
                 markerData.title = customMarker.getTitle();
                 markerData.type = customMarker.getType();
 
