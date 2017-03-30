@@ -1477,7 +1477,7 @@ if( seuil != null
                 // Period pour calucl: (utiliser les X derniere secondes)
                 SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
                 String key = ctx.getResources().getString(R.string.recommended_speed_time_key);
-                long delay_sec = sp.getInt(key,10) * 60;
+                long delay_sec = sp.getInt(key,30) * 60;
 
                 // Get the horizontal maximum speed since
                 speed_H = database.speed_max(parcour_id, delay_sec,
@@ -1539,9 +1539,7 @@ if( seuil != null
 
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
             String key = ctx.getResources().getString(R.string.shock_trigger_mG_key);
-            int val = ctx.getResources().getInteger(R.integer.shock_trigger_mG_def);
-            val = sp.getInt(key,val);
-
+            int val = sp.getInt(key,1000);
             if( interval(0.0, shock.first) > val ) {
                 listener.onShock( shock.first, shock.second );
             }
@@ -1568,7 +1566,7 @@ if( seuil != null
 
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
         String key = ctx.getResources().getString(R.string.stop_trigger_time_key);
-        long delay = sp.getInt(key,10) * 60 * 1000;
+        long delay = sp.getInt(key,420) * 60 * 1000;
 
         ret = database.get_last_parcours_id();
 
@@ -1624,7 +1622,7 @@ if( seuil != null
         if( !stop ) {
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
             String key = ctx.getResources().getString(R.string.stop_trigger_time_key);
-            long delay_stop = sp.getInt(key, 30) * 60 * 1000;
+            long delay_stop = sp.getInt(key, 420) * 60 * 1000;
 
             // Checking if car is stopped
             boolean is_closed = database.parcour_is_closed(parcour_id);
@@ -1717,9 +1715,8 @@ if( seuil != null
         if( status == STATUS_t.PAR_PAUSING ) {
 
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-            String key = ctx.getResources().getString(R.string.stop_trigger_time_key);
-            key = ctx.getResources().getString(R.string.pause_trigger_time_key);
-            long delay_pause = sp.getInt(key,5) * 60 * 1000;
+            String key = ctx.getResources().getString(R.string.pause_trigger_time_key);
+            long delay_pause = sp.getInt(key,4) * 60 * 1000;
             if( database.parcour_expired(parcour_id,delay_pause) ) {
                 ret = STATUS_t.PAR_PAUSING_WITH_STOP;
                 if (listener != null) listener.onStatusChanged(ret);
@@ -1762,15 +1759,9 @@ if( seuil != null
         update_force_note(false);
         check_shock();
         update_recommended_speed(false);
-
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-        String key = ctx.getResources().getString(R.string.pause_trigger_time_key);
-        long delay = sp.getInt(key,4) * 60 * 1000;
-
-
+        
         // Checking if car is in pause
-        if ( engine_t != ENGINE_t.ON
-                    /*&& engine_t_changed_at + delay < System.currentTimeMillis()*/) {
+        if ( engine_t != ENGINE_t.ON ) {
 
             ret = STATUS_t.PAR_PAUSING;
 
