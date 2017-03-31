@@ -1364,6 +1364,30 @@ if( seuil != null
 
             if (ret < 0f) ret = 0f;
             if (ret > 20f) ret = 20f;
+
+            // Update statictics data
+            if( StatsLastDriving.get_start_at(ctx) == parcour_id ) {
+
+                if( DataDOBJ.ACCELERATIONS.equals(type) ) {
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_1, (int) interm_1[0]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_2, (int) interm_1[1]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_3, (int) interm_1[2]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_4, (int) interm_1[3]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_5, (int) interm_1[4]);
+                } else if( DataDOBJ.FREINAGES.equals(type) ) {
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_1, (int) interm_1[0]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_2, (int) interm_1[1]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_3, (int) interm_1[2]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_4, (int) interm_1[3]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_5, (int) interm_1[4]);
+                } else if( DataDOBJ.VIRAGES.equals(type) ) {
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_1, (int) interm_1[0]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_2, (int) interm_1[1]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_3, (int) interm_1[2]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_4, (int) interm_1[3]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_5, (int) interm_1[4]);
+                }
+            }
         }
         return ret;
     }
