@@ -1,18 +1,16 @@
 package com.preventium.boxpreventium.location;
 
 import android.graphics.Color;
-import com.google.android.gms.maps.model.Circle;
-import com.google.android.gms.maps.model.CircleOptions;
-import com.google.android.gms.maps.model.Dash;
-import com.google.android.gms.maps.model.Dot;
-import com.google.android.gms.maps.model.PatternItem;
-import com.preventium.boxpreventium.R;
+
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.preventium.boxpreventium.R;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -60,11 +58,13 @@ public class CustomMarker {
     private boolean shared = false;
 
     private boolean alert = false;
-    private boolean alertActivated = false;
+    private boolean alertWasActivated = false;
     private int alertRadius = 0;
+    private boolean near = false;
     private String alertMsg = null;
     private boolean alertReqSignature = false;
-    public ArrayList<String> alertAttachments = null;
+    private ArrayList<String> alertAttachments = null;
+    private Circle alertCircle = null;
 
     CustomMarker() {
 
@@ -110,6 +110,44 @@ public class CustomMarker {
         return marker;
     }
 
+    public void addAlertCircle (GoogleMap map) {
+
+        if (alertCircle != null) {
+
+            if (alertCircle.getRadius() != alertRadius) {
+
+                alertCircle.setRadius(alertRadius);
+            }
+        }
+        else {
+
+            CircleOptions circleOpt = new CircleOptions();
+
+            circleOpt.center(pos);
+            circleOpt.radius(alertRadius);
+            circleOpt.strokeWidth(2);
+            circleOpt.strokeColor(Color.RED);
+
+            alertCircle = map.addCircle(circleOpt);
+        }
+    }
+
+    public void showAlertCircle (boolean show) {
+
+        if (alertCircle != null) {
+
+            alertCircle.setVisible(show);
+        }
+    }
+
+    public void removeAlertCircle() {
+
+        if (alertCircle != null) {
+
+            alertCircle.remove();
+        }
+    }
+
     public void setType (int type) {
 
         BitmapDescriptor bitmap = null;
@@ -117,35 +155,24 @@ public class CustomMarker {
 
         switch (type) {
 
-            case MARKER_RANDOM:
-                bitmap = BitmapDescriptorFactory.defaultMarker(MARKER_HUES[new Random().nextInt(MARKER_HUES.length)]);
+            case MARKER_RANDOM:  bitmap = BitmapDescriptorFactory.defaultMarker(MARKER_HUES[new Random().nextInt(MARKER_HUES.length)]);
                 break;
 
-            case MARKER_START:
-                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
+            case MARKER_START: bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
                 break;
 
-            case MARKER_STOP:
-                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
+            case MARKER_STOP:  bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
                 break;
 
-            case MARKER_INFO:
-                // bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
-                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE);
+            case MARKER_INFO: bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
+                              opt.anchor(0.5f, 0.5f);
                 break;
 
-            case MARKER_DANGER:
-                // bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);
-                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
+            case MARKER_DANGER: bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);;
+                                opt.anchor(0.5f, 0.5f);
                 break;
 
-            default:
-
-                if (type < MARKER_RANDOM) {
-
-                    bitmap = BitmapDescriptorFactory.defaultMarker(MARKER_HUES[type]);
-                }
-
+            default: if (type < MARKER_RANDOM) bitmap = BitmapDescriptorFactory.defaultMarker(MARKER_HUES[type]);
                 break;
         }
 
@@ -253,9 +280,14 @@ public class CustomMarker {
         return alert;
     }
 
-    public boolean isAlertActivated() {
+    public boolean isAlertAlreadyActivated() {
 
-        return alertActivated;
+        return alertWasActivated;
+    }
+
+    public void setAsActivated (boolean activated) {
+
+        alertWasActivated = activated;
     }
 
     public void setEditable (boolean editable) {
@@ -306,5 +338,15 @@ public class CustomMarker {
     public boolean isAlertSignatureRequired() {
 
         return alertReqSignature;
+    }
+
+    public boolean isNear() {
+
+        return near;
+    }
+
+    public void setAsNear (boolean near) {
+
+        this.near = near;
     }
 }

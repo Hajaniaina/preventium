@@ -139,6 +139,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private int qrSmsTimeout = 0;
     private int selectedEpcFile = 0;
     private boolean trackingActivated = true;
+    private int locFilterTimeout = 0;
 
     // -------------------------------------------------------------------------------------------- //
 
@@ -357,6 +358,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+        googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+
+            @Override
+            public void onMapClick (LatLng latLng) {
+
+                markerManager.hideAllAlertCircles();
+            }
+        });
+
         googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
 
             @Override
@@ -368,6 +378,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     showMarkerEditDialog(marker, false);
                 }
+            }
+        });
+
+        googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+
+            @Override
+            public boolean onMarkerClick (Marker marker) {
+
+                CustomMarker customMarker = markerManager.getMarker(marker);
+
+                if (customMarker.isAlertEnabled()) {
+
+                    markerManager.showAlertCircle(customMarker, true);
+                }
+
+                return false;
             }
         });
     }
@@ -1105,6 +1131,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 .request(0);
     }
 
+    private void openDocumentFromUrl (String url) {
+
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        startActivity(browserIntent);
+    }
+
     public void showPermissionsAlert (final boolean retry) {
 
         final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
@@ -1187,6 +1219,26 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
 
         }.start();
+    }
+
+    public void showMarkerAlert (CustomMarker customMarker) {
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+
+        alertDialog.setCancelable(true);
+        alertDialog.setTitle("Alerte");
+
+        alertDialog.setMessage("Vous vous approchez du marqueur " + customMarker.getTitle());
+
+        alertDialog.setPositiveButton(getString(R.string.action_settings), new DialogInterface.OnClickListener() {
+
+            public void onClick (DialogInterface dialog,int which) {
+
+                dialog.dismiss();
+            }
+        });
+
+        alertDialog.show();
     }
 
     public void askEndDayConfirm() {
@@ -1313,6 +1365,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onShow (DialogInterface dialogInterface) {
 
                 final EditText editTitle = (EditText) alertDlg.findViewById(R.id.marker_title);
+                final CheckBox shareCheckBox = (CheckBox) alertDlg.findViewById(R.id.marker_share_checkbox);
                 final CheckBox alarmCheckBox = (CheckBox) alertDlg.findViewById(R.id.marker_alarm_checkbox);
                 final Spinner markerTypeSpinner = (Spinner) alertDlg.findViewById(R.id.marker_type_spinner);
                 final EditableSeekBar alertRadiusSeekBar = (EditableSeekBar) alertDlg.findViewById(R.id.marker_radius_seekbar);
@@ -1342,6 +1395,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         alertRadiusSeekBar.setVisibility(View.GONE);
                     }
 
+                    if (customMarker.isShared()) {
+
+                        shareCheckBox.setChecked(true);
+                    }
+                    else {
+
+                        shareCheckBox.setChecked(false);
+                    }
+
                     alertRadiusSeekBar.setValue(customMarker.getAlertRadius());
                 }
 
@@ -1364,6 +1426,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     public void onNothingSelected (AdapterView<?> parent) {}
                 });
 
+                shareCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+                    @Override
+                    public void onCheckedChanged (CompoundButton compoundButton, boolean b) {
+
+                        if (b) {
+
+                            customMarker.share(true);
+                        }
+                        else {
+
+                            customMarker.share(false);
+                        }
+                    }
+                });
+
                 alarmCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 
                     @Override
@@ -1372,11 +1450,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (b) {
 
                             customMarker.enableAlert(true);
+                            customMarker.showAlertCircle(true);
+
                             alertRadiusSeekBar.setVisibility(View.VISIBLE);
                         }
                         else {
 
                             customMarker.enableAlert(false);
+                            customMarker.showAlertCircle(false);
+
                             alertRadiusSeekBar.setVisibility(View.GONE);
                         }
                     }
@@ -1399,7 +1481,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (customMarker.isAlertEnabled())
                         {
                             customMarker.setAlertRadius(alertRadiusSeekBar.getValue());
-                            markerManager.drawCircle(customMarker.getPos(), customMarker.getAlertRadius());
+                            markerManager.addAlertCircle(customMarker);
                         }
 
                         if (titleBefore != currTitle) {
@@ -1408,8 +1490,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                                 customMarker.setTitle(currTitle);
 
-                                // Refresh marker's title
-                                marker.hideInfoWindow();
+                                marker.hideInfoWindow();    // Refresh marker's title
                                 marker.showInfoWindow();
 
                                 alertDlg.dismiss();
@@ -1573,7 +1654,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void call(String phoneNumber) {
+    private void call (String phoneNumber) {
 
         if (phoneNumber.isEmpty()) {
 
@@ -1820,20 +1901,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 lastLocation = location;
                 appManager.setLocation(lastLocation);
 
-                if (routeActive) {
+                if (routeActive && !routeInPause) {
 
-                    speedView.setSpeed(SPEED_t.MAX_LIMIT, LEVEL_t.LEVEL_UNKNOW, posManager.getInstantSpeed(), true);
-
-                    if (!routeInPause) {
-
-                        googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
-                        CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_MOVE).bearing(0).tilt(30).build();
-                        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                    }
-                }
-                else {
-
-                    speedView.setSpeed(SPEED_t.MAX_LIMIT, LEVEL_t.LEVEL_UNKNOW, 0, true);
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPos));
+                    CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_MOVE).bearing(0).tilt(30).build();
+                    googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 }
             }
 
@@ -1846,6 +1918,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());
 
                     drawMapLine(prevPos, currPos);
+
+                    if (locFilterTimeout++ > 10) {
+
+                        markerManager.fetchNearMarkers(currPos);
+                        locFilterTimeout = 0;
+                    }
+
+                    CustomMarker customMarker = markerManager.findClosestAlertMarker(currPos);
+
+                    if (customMarker != null) {
+
+                        Log.d("ALERT", "We are in the alert zone of " + customMarker.getTitle() + " marker!");
+
+                        showMarkerAlert(customMarker);
+                        customMarker.setAsActivated(true);
+                    }
                 }
             }
 
