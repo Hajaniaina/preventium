@@ -51,6 +51,7 @@ import com.preventium.boxpreventium.enums.SCORE_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
 import com.preventium.boxpreventium.enums.SPEED_t;
 import com.preventium.boxpreventium.location.CustomMarker;
+import com.preventium.boxpreventium.location.CustomMarkerData;
 import com.preventium.boxpreventium.location.MarkerManager;
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.R;
@@ -616,7 +617,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (progress != null) {
 
                             progress.setMessage(getString(R.string.progress_ready_string));
-                            progress.hide();
+                            progress.dismiss();
                         }
 
                         if (routeActive) {
@@ -805,7 +806,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                appManager.setCustomMarkerDataList(markerManager.getUserMarkersData());
+                appManager.setCustomMarkerDataList(markerManager.getAllUserMarkersData());
             }
         });
     }
@@ -894,7 +895,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     if (Connectivity.isConnected(getApplicationContext())) {
 
-                        progress.hide();
+                        progress.dismiss();
                     }
                     else {
 
@@ -917,11 +918,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     if (txt.isEmpty()) {
 
-                        debugLayout.setVisibility(View.GONE);
+                       debugLayout.setVisibility(View.GONE);
                     }
                     else {
 
-                        debugLayout.setVisibility(View.VISIBLE);
+                       debugLayout.setVisibility(View.VISIBLE);
                     }
 
                     debugView.setText(txt);
@@ -1031,7 +1032,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             menuButtonTracking.setColorNormal(appColor.getColor(AppColor.GREEN));
             menuButtonTracking.setColorPressed(appColor.getColor(AppColor.ORANGE));
-        } else {
+        }
+        else {
 
             menuButtonTracking.setColorNormal(appColor.getColor(AppColor.ORANGE));
             menuButtonTracking.setColorPressed(appColor.getColor(AppColor.GREEN));
@@ -1221,18 +1223,29 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }.start();
     }
 
-    public void showMarkerAlert (CustomMarker customMarker) {
+    public void showMarkerAlert (final CustomMarker customMarker) {
 
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
 
-        alertDialog.setCancelable(true);
-        alertDialog.setTitle("Alerte");
+        String msg = "";
+        msg += "Vous vous approchez du marqueur '" + customMarker.getTitle() + "'\n";
+        msg += "Vous avez " + customMarker.getAlertAttachNumber() + " fichier(s) à prendre en compte";
 
-        alertDialog.setMessage("Vous vous approchez du marqueur " + customMarker.getTitle());
+        alertDialog.setCancelable(false);
+        alertDialog.setTitle("");
+        alertDialog.setMessage(msg);
 
-        alertDialog.setPositiveButton(getString(R.string.action_settings), new DialogInterface.OnClickListener() {
+        alertDialog.setPositiveButton(getString(R.string.open_string), new DialogInterface.OnClickListener() {
 
             public void onClick (DialogInterface dialog,int which) {
+
+                customMarker.setAsActivated(true);
+                CustomMarkerData data = markerManager.getUserMarkerData(customMarker);
+
+                Intent intent = new Intent(MainActivity.this, WebViewActivity.class);
+                intent.putExtra(WebViewActivity.MARKER_DATA_PARAM, data);
+                startActivity(intent);
+                // startActivityForResult(intent, REQ_CODE);
 
                 dialog.dismiss();
             }
@@ -1907,6 +1920,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_MOVE).bearing(0).tilt(30).build();
                     googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 }
+
+                markerManager.fetchNearMarkers(lastPos);
+                CustomMarker customMarker = markerManager.findClosestAlertMarker(lastPos);
+
+                if (customMarker != null) {
+
+                    Log.d("ALERT", "We are in the alert zone of " + customMarker.getTitle() + " marker!");
+                    showMarkerAlert(customMarker);
+                }
             }
 
             @Override
@@ -1919,6 +1941,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     drawMapLine(prevPos, currPos);
 
+                    /*
                     if (locFilterTimeout++ > 10) {
 
                         markerManager.fetchNearMarkers(currPos);
@@ -1934,6 +1957,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         showMarkerAlert(customMarker);
                         customMarker.setAsActivated(true);
                     }
+                    */
                 }
             }
 

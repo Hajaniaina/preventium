@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.preventium.boxpreventium.gui.WebViewActivity">
+
+    <WebView android:id="@+id/webview"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+    </WebView>
+
+    <RelativeLayout
+        android:id="@+id/web_layout"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent">
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/fab_page_refresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginBottom="92dp"
+            android:layout_marginEnd="16dp"
+            android:src="@drawable/quantum_ic_refresh_white_24"
+            fab:fab_size="@dimen/fb_button_size"
+            fab:fab_colorNormal="@color/colorAppBlue"
+            fab:fab_colorPressed="@color/colorAppRed"
+            fab:fab_colorRipple="#ffee58"
+            fab:fab_shadowColor="#444" />
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/fab_file_check"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginBottom="40dp"
+            android:layout_marginEnd="16dp"
+            android:src="@drawable/chevron_right"
+            fab:fab_size="@dimen/fb_button_size"
+            fab:fab_colorNormal="@color/colorAppBlue"
+            fab:fab_colorPressed="@color/colorAppRed"
+            fab:fab_colorRipple="#ffee58"
+            fab:fab_shadowColor="#444" />
+
+        <TextView
+            android:id="@+id/step_num"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="28dp"
+            android:elevation="4dp"
+            android:textColor="#757575"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:shadowColor="#bdbdbd"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:text="0/0" />
+
+    </RelativeLayout>
+
+</android.support.design.widget.CoordinatorLayout>

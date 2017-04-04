@@ -28,6 +28,41 @@
         android:alpha=".75"
         android:visibility="invisible"/>
 
+    <!-- DEBUG -->
+    <LinearLayout android:id="@+id/debug_layout"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_marginStart="56dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginTop="186dp"
+        android:layout_marginBottom="10dp"
+        android:focusableInTouchMode="false"
+        android:visibility="gone">
+
+        <ScrollView android:id="@+id/debugScroller"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:scrollbars="vertical"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:layout_weight="1">
+
+            <TextView android:id="@+id/debug_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="bottom"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:paddingStart="20dp"
+                android:paddingEnd="10dp"
+                android:textColor="#000000"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </ScrollView>
+
+    </LinearLayout>
+
     <!-- MAIN CONTENT -->
     <LinearLayout android:id="@+id/content_layout"
         android:layout_width="match_parent"
@@ -449,41 +484,6 @@
             </LinearLayout>
 
         </RelativeLayout>
-
-    </LinearLayout>
-
-    <!-- DEBUG -->
-    <LinearLayout android:id="@+id/debug_layout"
-        android:orientation="vertical"
-        android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:layout_marginStart="100dp"
-        android:layout_marginEnd="100dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="100dp"
-        android:focusableInTouchMode="false"
-        android:visibility="gone">
-
-        <ScrollView android:id="@+id/debugScroller"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:scrollbars="vertical"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:layout_weight="1">
-
-            <TextView android:id="@+id/debug_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="bottom"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
-                android:paddingStart="20dp"
-                android:paddingEnd="10dp"
-                android:textColor="#000000"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-        </ScrollView>
 
     </LinearLayout>
 

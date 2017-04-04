@@ -239,7 +239,24 @@ public class MarkerManager {
         }
     }
 
-    public ArrayList<CustomMarkerData> getUserMarkersData() {
+    public CustomMarkerData getUserMarkerData (CustomMarker customMarker) {
+
+        CustomMarkerData data = new CustomMarkerData();
+
+        data.position = customMarker.getPos();
+        data.title = customMarker.getTitle();
+        data.type = customMarker.getType();
+        data.shared = customMarker.isShared();
+        data.alert = customMarker.isAlertEnabled();
+        data.alertRadius = customMarker.getAlertRadius();
+        data.alertMsg = customMarker.getAlertMsg();
+        data.alertAttachments = customMarker.getAlertAttachments();
+        data.alertReqSignature = customMarker.isAlertSignatureRequired();
+
+        return data;
+    }
+
+    public ArrayList<CustomMarkerData> getAllUserMarkersData() {
 
         ArrayList<CustomMarkerData> markersDataList = new ArrayList<CustomMarkerData>();
 
@@ -249,11 +266,15 @@ public class MarkerManager {
 
                 CustomMarkerData markerData = new CustomMarkerData();
 
-                markerData.alert = customMarker.isAlertEnabled();
                 markerData.position = customMarker.getPos();
-                markerData.alertRadius = customMarker.getAlertRadius();
                 markerData.title = customMarker.getTitle();
                 markerData.type = customMarker.getType();
+                markerData.shared = customMarker.isShared();
+                markerData.alert = customMarker.isAlertEnabled();
+                markerData.alertRadius = customMarker.getAlertRadius();
+                markerData.alertMsg = customMarker.getAlertMsg();
+                markerData.alertAttachments = customMarker.getAlertAttachments();
+                markerData.alertReqSignature = customMarker.isAlertSignatureRequired();
 
                 markersDataList.add(markerData);
             }

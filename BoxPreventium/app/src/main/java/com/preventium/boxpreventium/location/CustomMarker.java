@@ -349,4 +349,14 @@ public class CustomMarker {
 
         this.near = near;
     }
+
+    public int getAlertAttachNumber() {
+
+        if (alertAttachments != null) {
+
+            return alertAttachments.size();
+        }
+
+        return 0;
+    }
 }
