@@ -28,6 +28,7 @@ import com.preventium.boxpreventium.server.EPC.ForceSeuil;
 import com.preventium.boxpreventium.server.EPC.ReaderEPCFile;
 import com.preventium.boxpreventium.server.DOBJ.DataDOBJ;
 import com.preventium.boxpreventium.server.DOBJ.ReaderDOBJFile;
+import com.preventium.boxpreventium.server.POSS.ReaderPOSSFile;
 import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
@@ -39,6 +40,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -68,6 +70,7 @@ public class AppManager extends ThreadDefault
         void onDebugLog(String txt);
         void onStatusChanged(STATUS_t status);
         void onCustomMarkerDataListGet();
+        void onSharedPositionsChanged(List<CustomMarkerData> list);
         void onUiTimeout(int timer_id, STATUS_t status);
 
         void onNoteChanged( int note_par, LEVEL_t level_par, LEVEL_t level_5_days );
@@ -125,7 +128,6 @@ public class AppManager extends ThreadDefault
     @Override
     public void myRun() throws InterruptedException {
         super.myRun();
-
         setLog("");
 
         database.clear_obselete_data();
@@ -867,6 +869,81 @@ public class AppManager extends ThreadDefault
         }
     }
 
+    // Dowloading shared positions
+    private boolean download_shared_pos()  throws InterruptedException {
+        boolean ready = false;
+
+        if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_MARKERS_SHARED );
+
+        File folder = new File(ctx.getFilesDir(), "");
+        FTPConfig config = DataCFG.getFptConfig(ctx);
+        FTPClientIO ftp = new FTPClientIO();
+
+        while( isRunning() && !ready ) {
+            if (listener != null) listener.onStatusChanged(STATUS_t.GETTING_DOBJ);
+
+            // Trying to connect to FTP server...
+            if( !ftp.ftpConnect(config, 5000) ) {
+                check_internet_is_active();
+            } else {
+                // Changing working directory if needed
+                boolean change_directory = true;
+                if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                    change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
+
+                if( !change_directory ) {
+                    Log.w(TAG, "Error while trying to change working directory!");
+                } else {
+
+                    boolean poss = false;
+
+                    // Checking if .POSS file is in FTP server ?
+                    String srcFileName = ReaderPOSSFile.getOBJFileName(ctx, false);
+                    String srcAckName = ReaderDOBJFile.getOBJFileName(ctx, true);
+                    boolean exist_server_poss = ftp.checkFileExists( srcFileName );
+                    boolean exist_server_ack = ftp.checkFileExists( srcAckName );
+
+                    // If .POSS file exist in the FTP server
+                    poss = ( exist_server_ack && ReaderPOSSFile.existLocalFile(ctx) );
+                    if( !poss ) {
+                        if( exist_server_poss ) {
+                            // Create folder if not exist
+                            if (!folder.exists())
+                                if (!folder.mkdirs())
+                                    Log.w(TAG, "Error while trying to create new folder!");
+                            // Trying to download .POSS file...
+                            String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+                            if (ftp.ftpDownload(srcFileName, desFileName))
+                            {
+                                List<CustomMarkerData> list = ReaderPOSSFile.readFile(desFileName);
+                                poss = (list != null);
+                                if( poss )
+                                {
+                                    ready = true;
+                                    // envoi acknowledge
+                                    try {
+                                        File temp = File.createTempFile("temp-file-name", ".tmp");
+                                        ftp.ftpUpload(temp.getPath(), srcAckName);
+                                        temp.delete();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                    new File(desFileName).delete();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Disconnect from FTP server.
+            ftp.ftpDisconnect();
+
+            if( isRunning() && !ready ) sleep(1000);
+        }
+
+        return ready;
+    }
+
     /// ============================================================================================
     /// PARCOURS TYPE
     /// ============================================================================================
@@ -1027,15 +1104,6 @@ public class AppManager extends ThreadDefault
             else if (acceleration) mov_t = MOVING_t.ACC;
             else if (freinage) mov_t = MOVING_t.BRK;
             else mov_t = MOVING_t.NCS;
-
-            // CALCULATE FORCE X
-            // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
-            // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
-            // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
-//            this.XmG = ((list.get(0).getSpeed() - list.get(1).getSpeed())
-//                    / (9.81 * ((list.get(0).getTime() - list.get(1).getTime()) * 0.001)))
-//                    * 1000.0;
-            this.XmG = LocationsToXmG( list.get(0), list.get(1) );
         }
 
         if ( mov_t != mov_t_last )
@@ -1080,6 +1148,7 @@ public class AppManager extends ThreadDefault
                 / (9.81 * ((l0.getTime() - l1.getTime()) * 0.001)))
                 * 1000.0;
     }
+
     private boolean isRightRoad( Location location_1, Location location_2, Location location_3 ) {
         double Lat_rad_1 = location_1.getLatitude() * Math.PI / 180.0;
         double Lat_rad_2 = location_2.getLatitude() * Math.PI / 180.0;
@@ -1119,7 +1188,10 @@ if(list_loc != null && list_loc.size() >= 2){
     this.XmG = LocationsToXmG( list_loc.get(0), list_loc.get(1) );
     for (int i = 0; i < list_loc.size()-1; i++)
         list_XmG.add(i, LocationsToXmG( list_loc.get(i), list_loc.get(i+1) ) );
+
+    if( list_XmG.size() >= 2 ) this.XmG = list_XmG.get(1);
 }
+
 // TEST
 
         Location loc = get_last_location();
