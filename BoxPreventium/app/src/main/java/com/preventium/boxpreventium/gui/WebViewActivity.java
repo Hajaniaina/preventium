@@ -45,6 +45,7 @@ public class WebViewActivity extends AppCompatActivity {
         ///////////////////////////////////////////////////////////////
 
         ArrayList<String> urlList = new ArrayList<>();
+
         urlList.add("http://www.orimi.com/pdf-test.pdf");
         urlList.add("http://www.hubharp.com/web_sound/HarrisLilliburleroShort.mp3");
         urlList.add("https://www.w3schools.com/css/trolltunga.jpg");
@@ -117,7 +118,7 @@ public class WebViewActivity extends AppCompatActivity {
 
                     if (pageLoadProgress < 100) {
 
-                        if (pageReloadAttempts < 5) {
+                        if (pageReloadAttempts < 3) {
 
                             pageReloadAttempts++;
                             view.clearCache(true);
@@ -171,7 +172,6 @@ public class WebViewActivity extends AppCompatActivity {
         });
 
         final FloatingActionButton buttonRefresh = (FloatingActionButton) findViewById(R.id.fab_page_refresh);
-
         buttonRefresh.setOnClickListener(new View.OnClickListener() {
 
             @Override

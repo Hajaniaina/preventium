@@ -1225,6 +1225,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void showMarkerAlert (final CustomMarker customMarker) {
 
+        customMarker.setAsActivated(true);
+
         final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
 
         String msg = "";
@@ -1239,7 +1241,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             public void onClick (DialogInterface dialog,int which) {
 
-                customMarker.setAsActivated(true);
                 CustomMarkerData data = markerManager.getUserMarkerData(customMarker);
 
                 Intent intent = new Intent(MainActivity.this, WebViewActivity.class);
@@ -1921,14 +1922,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 }
 
+                //////////////////////////////////////////////////////////////////////////
+
                 markerManager.fetchNearMarkers(lastPos);
                 CustomMarker customMarker = markerManager.findClosestAlertMarker(lastPos);
 
                 if (customMarker != null) {
 
-                    Log.d("ALERT", "We are in the alert zone of " + customMarker.getTitle() + " marker!");
                     showMarkerAlert(customMarker);
                 }
+
+                //////////////////////////////////////////////////////////////////////////
             }
 
             @Override
@@ -1942,7 +1946,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     drawMapLine(prevPos, currPos);
 
                     /*
-                    if (locFilterTimeout++ > 10) {
+                    if (locFilterTimeout++ > 5) {
 
                         markerManager.fetchNearMarkers(currPos);
                         locFilterTimeout = 0;
@@ -1951,8 +1955,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     CustomMarker customMarker = markerManager.findClosestAlertMarker(currPos);
 
                     if (customMarker != null) {
-
-                        Log.d("ALERT", "We are in the alert zone of " + customMarker.getTitle() + " marker!");
 
                         showMarkerAlert(customMarker);
                         customMarker.setAsActivated(true);

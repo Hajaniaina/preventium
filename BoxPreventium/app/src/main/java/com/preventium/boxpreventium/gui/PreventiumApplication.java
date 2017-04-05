@@ -12,7 +12,6 @@ public class PreventiumApplication extends Application {
 
         super.onCreate();
 
-        /*
         AutoErrorReporter.get(this)
                 .setEmailAddresses("")
                 .setEmailSubject("Preventium Crash Report")
@@ -26,6 +25,5 @@ public class PreventiumApplication extends Application {
                 .setIgnoreFlagSecure(true)
                 .assemble()
                 .start();
-        */
     }
 }

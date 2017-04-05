@@ -89,16 +89,13 @@ public class MarkerManager {
 
                 CustomMarker customMarker = iterator.next();
 
-                if (customMarker.isAlertEnabled()) {
+                if (customMarker.isAlertEnabled() && !customMarker.isAlertAlreadyActivated()) {
 
                     float[] results = new float[3];
                     Location.distanceBetween(currPos.latitude, currPos.longitude, customMarker.getPos().latitude, customMarker.getPos().longitude, results);
 
-                    Log.d("ALERT", "Marker: " + customMarker.getTitle() + " is " + results[0] + "m from us");
-
                     if (results[0] < NEAR_MARKER_DISTANCE_TH) {
 
-                        Log.d("ALERT", "Marker: " + customMarker.getTitle() + " is near");
                         customMarker.setAsNear(true);
                     }
                     else {
