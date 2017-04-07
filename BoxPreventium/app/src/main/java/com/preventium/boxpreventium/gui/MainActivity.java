@@ -124,7 +124,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private ProgressDialog progress;
     private boolean toggle = false;
     private SupportMapFragment mapFrag;
-    List<Polyline> mapPolylineList = new ArrayList<Polyline>();
+    List<Polyline> mapPolylineList = new ArrayList<>();
     private Marker startMarker = null, stopMarker = null;
     private boolean initDone = false;
     private boolean actionCanceled = false;
@@ -303,9 +303,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     // -------------------------------------------------------------------------------------------- //
 
     @Override
-    public void onMapReady (GoogleMap googleMap) {
+    public void onMapReady (GoogleMap map) {
 
-        this.googleMap = googleMap;
+        googleMap = map;
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         this.googleMap.getUiSettings().setMyLocationButtonEnabled(false);
         this.googleMap.getUiSettings().setAllGesturesEnabled(true);
@@ -326,8 +326,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             return;
         }
 
-        this.googleMap.setMyLocationEnabled(true);
-        markerManager.setMap(this.googleMap);
+        googleMap.setMyLocationEnabled(true);
 
         setMapListeners();
         setButtonListeners();
@@ -350,7 +349,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     @Override
                     public void onClick (DialogInterface dialogInterface, int i) {
 
-                        Marker marker = markerManager.addMarker("", latLng, CustomMarker.MARKER_INFO, true);
+                        Marker marker = markerManager.addMarker(googleMap, "", latLng, CustomMarker.MARKER_INFO, true);
                         showMarkerEditDialog(marker, true);
                     }
                 });
@@ -421,25 +420,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
 
             mapPolylineList.clear();
+            markerManager.removeAllMarkers();
 
-            if (startMarker != null) {
-
-                markerManager.removeMarker(startMarker);
-                startMarker.remove();
-                startMarker = null;
-            }
-
-            if (stopMarker != null) {
-
-                markerManager.removeMarker(stopMarker);
-                stopMarker.remove();
-                stopMarker = null;
-            }
-
-            markerManager.removeMarker(CustomMarker.MARKER_CYAN);
-            markerManager.removeMarker(CustomMarker.MARKER_MAGENTA);
-            markerManager.removeMarker(CustomMarker.MARKER_ORANGE);
-            markerManager.removeMarker(CustomMarker.MARKER_ROSE);
+            startMarker = null;
+            stopMarker = null;
 
             return true;
         }
@@ -488,7 +472,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (progress != null) {
 
                             progress.show();
-                            //progress.setProgressStyle(R.style.NegativeDialogStyle); // <-- CRASH
                             progress.setMessage(getString(R.string.progress_inactive_imei_string) );
                         }
 
@@ -566,7 +549,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                             if (startMarker == null) {
 
-                                startMarker = markerManager.addMarker(getString(R.string.start_string), lastPos, CustomMarker.MARKER_START, false);
+                                startMarker = markerManager.addMarker(googleMap, getString(R.string.start_string), lastPos, CustomMarker.MARKER_START, false);
                             }
                         }
 
@@ -576,6 +559,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         routeActive = true;
                         routeInPause = false;
+
+                        System.gc();
 
                         if (mapReady) {
 
@@ -629,7 +614,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (stopMarker == null) {
 
-                            stopMarker = markerManager.addMarker(getString(R.string.stop_string), lastPos, CustomMarker.MARKER_STOP, false);
+                            stopMarker = markerManager.addMarker(googleMap, getString(R.string.stop_string), lastPos, CustomMarker.MARKER_STOP, false);
                         }
 
                         routeActive = false;
@@ -812,6 +797,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
+    public void onSharedPositionsChanged (List<CustomMarkerData> list) {
+
+    }
+
+    @Override
     public void onNoteChanged (final int note_par, final LEVEL_t level_par, final LEVEL_t level_5_days) {
 
         runOnUiThread(new Runnable() {
@@ -861,7 +851,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             String msg = getString(R.string.sms_shock_msg_string) + " " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")";
                             sendSms(getPhoneNumber(R.string.phone_select_sms_shock_key), msg);
 
-                            markerManager.addMarker("Shock " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")", lastPos, CustomMarker.MARKER_ROSE, false);
+                            markerManager.addMarker(googleMap, "Shock " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")", lastPos, CustomMarker.MARKER_ROSE, false);
                         }
 
                     }.start();
@@ -939,7 +929,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                markerManager.addMarker("Const speed calibration", lastPos, CustomMarker.MARKER_MAGENTA, false);
+                markerManager.addMarker(googleMap, "Const speed calibration", lastPos, CustomMarker.MARKER_MAGENTA, false);
             }
         });
     }
@@ -952,7 +942,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                markerManager.addMarker("Acceleration calibration", lastPos, CustomMarker.MARKER_CYAN, false);
+                markerManager.addMarker(googleMap, "Acceleration calibration", lastPos, CustomMarker.MARKER_CYAN, false);
             }
         });
     }
@@ -965,7 +955,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                markerManager.addMarker("Reset calibration", lastPos, CustomMarker.MARKER_ORANGE, false);
+                markerManager.addMarker(googleMap, "Reset calibration", lastPos, CustomMarker.MARKER_VIOLET, false);
             }
         });
     }
@@ -1002,7 +992,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             progress.show();
         }
 
-        markerManager = new MarkerManager(this);
+        markerManager = new MarkerManager(getApplicationContext());
         speedView = new SpeedView(this);
         scoreView = new ScoreView(this);
         accForceView = new AccForceView(this);
@@ -1241,6 +1231,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             public void onClick (DialogInterface dialog,int which) {
 
+                System.gc();
                 CustomMarkerData data = markerManager.getUserMarkerData(customMarker);
 
                 Intent intent = new Intent(MainActivity.this, WebViewActivity.class);
@@ -1495,7 +1486,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (customMarker.isAlertEnabled())
                         {
                             customMarker.setAlertRadius(alertRadiusSeekBar.getValue());
-                            markerManager.addAlertCircle(customMarker);
+                            markerManager.addAlertCircle(googleMap, customMarker);
                         }
 
                         if (titleBefore != currTitle) {
@@ -1921,18 +1912,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_MOVE).bearing(0).tilt(30).build();
                     googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 }
-
-                //////////////////////////////////////////////////////////////////////////
-
-                markerManager.fetchNearMarkers(lastPos);
-                CustomMarker customMarker = markerManager.findClosestAlertMarker(lastPos);
-
-                if (customMarker != null) {
-
-                    showMarkerAlert(customMarker);
-                }
-
-                //////////////////////////////////////////////////////////////////////////
             }
 
             @Override
@@ -1942,10 +1921,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     LatLng prevPos = new LatLng(prevLoc.getLatitude(), prevLoc.getLongitude());
                     LatLng currPos = new LatLng(currLoc.getLatitude(), currLoc.getLongitude());
-
                     drawMapLine(prevPos, currPos);
 
-                    /*
                     if (locFilterTimeout++ > 5) {
 
                         markerManager.fetchNearMarkers(currPos);
@@ -1959,7 +1936,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         showMarkerAlert(customMarker);
                         customMarker.setAsActivated(true);
                     }
-                    */
                 }
             }
 

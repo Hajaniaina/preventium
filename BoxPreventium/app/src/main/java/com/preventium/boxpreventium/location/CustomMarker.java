@@ -1,7 +1,6 @@
 package com.preventium.boxpreventium.location;
 
 import android.graphics.Color;
-
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -10,7 +9,6 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.preventium.boxpreventium.R;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -155,24 +153,32 @@ public class CustomMarker {
 
         switch (type) {
 
-            case MARKER_RANDOM:  bitmap = BitmapDescriptorFactory.defaultMarker(MARKER_HUES[new Random().nextInt(MARKER_HUES.length)]);
+            case MARKER_RANDOM:
+                bitmap = BitmapDescriptorFactory.defaultMarker(MARKER_HUES[new Random().nextInt(MARKER_HUES.length)]);
                 break;
 
-            case MARKER_START: bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
+            case MARKER_START:
+                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
                 break;
 
-            case MARKER_STOP:  bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
+            case MARKER_STOP:
+                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
                 break;
 
-            case MARKER_INFO: bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
-                              opt.anchor(0.5f, 0.5f);
+            case MARKER_INFO:
+                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE);
+                //bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
+                //opt.anchor(0.5f, 0.5f);
                 break;
 
-            case MARKER_DANGER: bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);;
-                                opt.anchor(0.5f, 0.5f);
+            case MARKER_DANGER:
+                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
+                //bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);;
+                //opt.anchor(0.5f, 0.5f);
                 break;
 
-            default: if (type < MARKER_RANDOM) bitmap = BitmapDescriptorFactory.defaultMarker(MARKER_HUES[type]);
+            default:
+                if (type < MARKER_RANDOM) bitmap = BitmapDescriptorFactory.defaultMarker(MARKER_HUES[type]);
                 break;
         }
 

@@ -55,7 +55,7 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
 
         sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 
-        appColor = new AppColor(this);
+        appColor = new AppColor(getApplicationContext());
         returnIntent = getIntent();
         qrRequest = returnIntent.getParcelableExtra(QR_SCAN_REQUEST_PARAM);
         setResult(Activity.RESULT_CANCELED, returnIntent);

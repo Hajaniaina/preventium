@@ -24,7 +24,7 @@ public class ScoreView implements Parcelable {
 
     ScoreView (Activity activity) {
 
-        appColor = new AppColor(activity);
+        appColor = new AppColor(activity.getApplicationContext());
 
         viewMap = new HashMap<>();
         levelMap = new HashMap<>();
