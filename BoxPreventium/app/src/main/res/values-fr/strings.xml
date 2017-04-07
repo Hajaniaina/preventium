@@ -16,6 +16,7 @@
     <string name="call_string">Appel</string>
     <string name="empty_string">Vide</string>
     <string name="cancel_string">Annuler</string>
+    <string name="quit_string">Quitter</string>
     <string name="corners_caps_string">VIRAGE</string>
     <string name="corners_string">Virages</string>
     <string name="create_string">Créer</string>

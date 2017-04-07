@@ -63,7 +63,7 @@
         <activity
             android:name=".gui.QrScanActivity"
             android:keepScreenOn="true"
-            android:screenOrientation="sensorPortrait">
+            android:screenOrientation="fullSensor">
         </activity>
         <activity
             android:name=".gui.WebViewActivity"

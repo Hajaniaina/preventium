@@ -21,66 +21,65 @@
             android:id="@+id/fab_page_refresh"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
-            android:layout_marginBottom="150dp"
-            android:layout_marginEnd="16dp"
             android:src="@drawable/quantum_ic_refresh_white_24"
             fab:fab_size="@dimen/fb_button_size"
             fab:fab_colorNormal="@color/colorAppBlue"
             fab:fab_colorPressed="@color/colorAppRed"
             fab:fab_colorDisabled="@color/colorAppGrey"
             fab:fab_colorRipple="#ffee58"
-            fab:fab_shadowColor="#444" />
+            fab:fab_shadowColor="#444"
+            android:layout_above="@+id/fab_page_prev"
+            android:layout_alignStart="@+id/fab_page_prev" />
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/fab_page_prev"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
-            android:layout_marginBottom="100dp"
-            android:layout_marginEnd="16dp"
             android:src="@drawable/ic_chevron_left"
             fab:fab_size="@dimen/fb_button_size"
             fab:fab_colorNormal="@color/colorAppBlue"
             fab:fab_colorPressed="@color/colorAppRed"
             fab:fab_colorDisabled="@color/colorAppGrey"
             fab:fab_colorRipple="#ffee58"
-            fab:fab_shadowColor="#444" />
+            fab:fab_shadowColor="#444"
+            android:layout_above="@+id/fab_page_next"
+            android:layout_alignStart="@+id/fab_page_next" />
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/fab_page_next"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
-            android:layout_marginBottom="50dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginEnd="14dp"
             android:src="@drawable/ic_chevron_right"
             fab:fab_size="@dimen/fb_button_size"
             fab:fab_colorNormal="@color/colorAppBlue"
             fab:fab_colorPressed="@color/colorAppRed"
             fab:fab_colorRipple="#ffee58"
-            fab:fab_shadowColor="#444" />
+            fab:fab_shadowColor="#444"
+            android:layout_above="@+id/step_num"
+            android:layout_alignParentEnd="true" />
 
         <TextView
             android:id="@+id/step_num"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignEnd="@+id/fab_page_next"
             android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
+            android:layout_alignStart="@+id/fab_page_next"
             android:layout_marginBottom="10dp"
-            android:layout_marginEnd="28dp"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:backgroundTint="@color/colorAppGrey"
             android:elevation="4dp"
-            android:textColor="#757575"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:shadowColor="#bdbdbd"
+            android:gravity="center_vertical|center_horizontal|center"
+            android:shadowColor="#9e9e9e"
             android:shadowDx="1"
             android:shadowDy="1"
             android:shadowRadius="2"
-            android:text="0/0" />
+            android:text="0/0"
+            android:textAlignment="center"
+            android:textColor="#ffffff"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
     </RelativeLayout>
 
