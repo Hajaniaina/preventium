@@ -3,11 +3,11 @@
     <!-- Base application themes -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar" />
 
-     <style name="AppThemeDialog" parent="Base.Theme.AppCompat.Light.Dialog.FixedSize">
-         <item name="windowNoTitle">true</item>
-         <item name="windowFixedWidthMajor">@dimen/app_theme_dialog_width</item>
-         <item name="windowActionBar">false</item>
-     </style>
+    <style name="AppThemeDialog" parent="Base.Theme.AppCompat.Light.Dialog.FixedSize">
+        <item name="windowNoTitle">true</item>
+        <item name="windowFixedWidthMajor">@dimen/app_theme_dialog_width</item>
+        <item name="windowActionBar">false</item>
+    </style>
 
     <style name="PositiveDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
         <!-- Used for the buttons -->
@@ -32,50 +32,56 @@
         <item name="colorAccent">#ffffff</item>
         <!-- Used for the title and text -->
         <item name="android:textColorPrimary">#ffffff</item>
+        <item name="android:textColor">#ffffff</item>
+        <item name="android:textColorSecondary">#ffffff</item>
         <!-- Used for the background -->
         <item name="android:background">#03a9f4</item>
     </style>
 
-     <style name="device_name_text" >
-         <item name="android:layout_width" >fill_parent</item>
-         <item name="android:layout_height" >wrap_content</item>
-         <item name="android:textColor" >#808080</item>
-         <item name="android:gravity" >left</item>
-         <item name="android:layout_margin" >3dp</item>
-         <item name="android:textSize" >20dp</item>
-         <item name="android:textStyle" >bold</item>
-         <item name="android:shadowColor" >#808080</item>
-         <item name="android:shadowDx" >1</item>
-         <item name="android:shadowDy" >1</item>
-         <item name="android:shadowRadius" >2</item>
-     </style>
+    <style name="device_name_text">
+        <item name="android:layout_width">fill_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">#808080</item>
+        <item name="android:gravity">left</item>
+        <item name="android:layout_margin">3dp</item>
+        <item name="android:textSize">20dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:shadowColor">#808080</item>
+        <item name="android:shadowDx">1</item>
+        <item name="android:shadowDy">1</item>
+        <item name="android:shadowRadius">2</item>
+    </style>
 
-     <style name="device_address_text" >
-         <item name="android:layout_width" >fill_parent</item>
-         <item name="android:layout_height" >wrap_content</item>
-         <item name="android:textColor" >#A0A0A0</item>
-         <item name="android:gravity" >left</item>
-         <item name="android:layout_margin" >3dp</item>
-         <item name="android:textSize" >15dp</item>
-         <item name="android:textStyle" >normal</item>
-         <item name="android:shadowColor" >#A0A0A0</item>
-         <item name="android:shadowDx" >1</item>
-         <item name="android:shadowDy" >1</item>
-         <item name="android:shadowRadius" >2</item>
-     </style>
+    <style name="device_address_text">
+        <item name="android:layout_width">fill_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">#A0A0A0</item>
+        <item name="android:gravity">left</item>
+        <item name="android:layout_margin">3dp</item>
+        <item name="android:textSize">15dp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:shadowColor">#A0A0A0</item>
+        <item name="android:shadowDx">1</item>
+        <item name="android:shadowDy">1</item>
+        <item name="android:shadowRadius">2</item>
+    </style>
 
-     <style name="device_rssi_text" >
-         <item name="android:layout_width" >fill_parent</item>
-         <item name="android:layout_height" >wrap_content</item>
-         <item name="android:textColor" >#A0A0A0</item>
-         <item name="android:gravity" >left</item>
-         <item name="android:layout_margin" >3dp</item>
-         <item name="android:textSize" >15dp</item>
-         <item name="android:textStyle" >normal</item>
-         <item name="android:shadowColor" >#A0A0A0</item>
-         <item name="android:shadowDx" >1</item>
-         <item name="android:shadowDy" >1</item>
-         <item name="android:shadowRadius" >2</item>
-     </style>
+    <style name="device_rssi_text">
+        <item name="android:layout_width">fill_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">#A0A0A0</item>
+        <item name="android:gravity">left</item>
+        <item name="android:layout_margin">3dp</item>
+        <item name="android:textSize">15dp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:shadowColor">#A0A0A0</item>
+        <item name="android:shadowDx">1</item>
+        <item name="android:shadowDy">1</item>
+        <item name="android:shadowRadius">2</item>
+    </style>
 
- </resources>
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+</resources>

@@ -35,7 +35,7 @@
     <dimen name="fb_button_icon_size">32dp</dimen>
 
     <dimen name="action_menu_padding_start">4dp</dimen>
-    <dimen name="action_menu_padding_bottom">5dp</dimen>
+    <dimen name="action_menu_padding_bottom">7dp</dimen>
     <dimen name="action_menu_padding_end">3dp</dimen>
     <dimen name="action_menu_button_spacing">2dp</dimen>
 

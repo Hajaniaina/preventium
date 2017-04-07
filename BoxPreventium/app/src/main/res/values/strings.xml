@@ -46,6 +46,7 @@
     <string name="brakes_string">Braking</string>
     <string name="corners_string">Corners</string>
     <string name="number_string">Number</string>
+    <string name="open_string">Open</string>
     <string name="pause_string">Pause</string>
     <string name="call_string">Call</string>
     <string name="unknown_string">Unknown</string>
@@ -64,6 +65,7 @@
     <string name="speed_string">Speed</string>
     <string name="shock_string">Shock</string>
     <string name="shocks_string">Shocks</string>
+    <string name="share_string">Share</string>
     <string name="tracking_string">Tracking</string>
     <string name="corners_caps_string">CORNER</string>
     <string name="straights_caps_string">STRAIGHT</string>
@@ -179,5 +181,6 @@
         <item>4</item>
         <item>5</item>
     </string-array>
+    <string name="title_activity_web_view">WebViewActivity</string>
 
 </resources>

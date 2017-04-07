@@ -14,10 +14,10 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
-    v<uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.CAMERA" />
 
     <application
@@ -31,6 +31,7 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
+
         <activity
             android:name=".gui.MainActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
@@ -39,7 +40,6 @@
             android:screenOrientation="sensorLandscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -65,6 +65,12 @@
             android:name=".gui.QrScanActivity"
             android:keepScreenOn="true"
             android:screenOrientation="sensorPortrait">
+        </activity>
+        <activity
+            android:name=".gui.WebViewActivity"
+            android:keepScreenOn="true"
+            android:label="@string/title_activity_web_view"
+            android:theme="@style/AppTheme">
         </activity>
     </application>
 

@@ -22,7 +22,7 @@
         android:layout_weight="1"
         android:layout_height="0dp"
         android:layout_width="fill_parent"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="4dp"
         android:layout_marginLeft="30dp"
         android:layout_marginRight="30dp" />
 
@@ -32,16 +32,26 @@
        android:layout_weight="1"
        android:layout_height="0dp"
        android:layout_width="fill_parent"
-       android:layout_marginTop="8dp"
+       android:layout_marginTop="2dp"
        android:layout_marginLeft="30dp"
        android:layout_marginRight="30dp" />
+
+    <CheckBox
+        android:id="@+id/marker_share_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_weight="1"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
+        android:text="@string/share_string" />
 
     <CheckBox
         android:id="@+id/marker_alarm_checkbox"
         android:layout_width="wrap_content"
         android:layout_weight="1"
         android:layout_height="0dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="2dp"
         android:layout_marginLeft="30dp"
         android:layout_marginRight="30dp"
         android:text="@string/alarm_string" />
@@ -51,8 +61,7 @@
         android:layout_weight="1"
         android:layout_height="0dp"
         android:layout_width="fill_parent"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="0dp"
+        android:layout_marginTop="2dp"
         android:layout_marginLeft="30dp"
         android:layout_marginRight="30dp"
         app:esbSelectAllOnFocus="false"
