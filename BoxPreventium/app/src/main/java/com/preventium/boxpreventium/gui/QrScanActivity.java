@@ -8,11 +8,9 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.widget.CheckBox;
-
 import com.github.clans.fab.FloatingActionButton;
 import com.google.android.gms.samples.vision.barcodereader.BarcodeCapture;
 import com.google.android.gms.samples.vision.barcodereader.BarcodeGraphic;
@@ -53,16 +51,51 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_qr_scan);
 
-        sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-
-        appColor = new AppColor(getApplicationContext());
         returnIntent = getIntent();
         qrRequest = returnIntent.getParcelableExtra(QR_SCAN_REQUEST_PARAM);
         setResult(Activity.RESULT_CANCELED, returnIntent);
 
+        appColor = new AppColor(getApplicationContext());
+
         checkBoxDriverId = (CheckBox) findViewById(R.id.checkbox_driver_id);
         checkBoxVehicleFront = (CheckBox) findViewById(R.id.checkbox_vehicle_front);
         checkBoxVehicleBack = (CheckBox) findViewById(R.id.checkbox_vehicle_back);
+
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        String scanModeOnStart = sharedPref.getString(getString(R.string.qr_select_start_mode_key), "0");
+        String scanModeOnStop = sharedPref.getString(getString(R.string.qr_select_stop_mode_key), "0");
+
+        if (scanModeOnStart.equals(QrScanActivity.SCAN_MODE_VEHICLE_FRONT_BACK)) {
+
+            qrRequest.vehicleFrontOnStartEnabled = true;
+            qrRequest.vehicleBackOnStartEnabled = true;
+        }
+        else {
+
+            qrRequest.vehicleFrontOnStartEnabled = false;
+            qrRequest.vehicleBackOnStartEnabled = false;
+        }
+
+        if (scanModeOnStart.equals(QrScanActivity.SCAN_MODE_VEHICLE_FRONT)) {
+
+            qrRequest.vehicleFrontOnStartEnabled = true;
+        }
+
+        if (scanModeOnStop.equals(QrScanActivity.SCAN_MODE_VEHICLE_FRONT_BACK)) {
+
+            qrRequest.vehicleFrontOnStopEnabled = true;
+            qrRequest.vehicleBackOnStopEnabled = true;
+        }
+        else {
+
+            qrRequest.vehicleFrontOnStopEnabled = false;
+            qrRequest.vehicleBackOnStopEnabled = false;
+        }
+
+        if (scanModeOnStop.equals(QrScanActivity.SCAN_MODE_VEHICLE_FRONT)) {
+
+            qrRequest.vehicleFrontOnStopEnabled = true;
+        }
 
         if (!qrRequest.driverIdEnabled) {
 
@@ -182,7 +215,7 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
                             editor.apply();
 
                             String name[] = driverName.split(" ");
-                            String hello = getString(R.string.hello_string) + " " + name[0];
+                            String hello = getString(R.string.hello_string) + " " + name[1];
                             showConfirmDialog(hello, true);
                         }
                         else {

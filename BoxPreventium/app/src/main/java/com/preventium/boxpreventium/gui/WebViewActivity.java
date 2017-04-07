@@ -1,11 +1,14 @@
 package com.preventium.boxpreventium.gui;
 
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.graphics.drawable.Icon;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import com.github.clans.fab.FloatingActionButton;
+
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -82,8 +85,6 @@ public class WebViewActivity extends AppCompatActivity {
             maxPages = markerData.alertAttachments.size();
         }
 
-        updateStepView();
-
         if (!isFinishing()) {
 
             progressBar.show();
@@ -134,6 +135,7 @@ public class WebViewActivity extends AppCompatActivity {
         });
 
         openPage(currPageIndex);
+        updateStepView();
 
         final FloatingActionButton buttonNext = (FloatingActionButton) findViewById(R.id.fab_page_next);
         final FloatingActionButton buttonPrev = (FloatingActionButton) findViewById(R.id.fab_page_prev);
@@ -155,7 +157,7 @@ public class WebViewActivity extends AppCompatActivity {
                 }
                 else {
 
-                    onBackPressed();
+                    quit();
                 }
 
                 if (currPageIndex >= (maxPages - 1)) {
@@ -204,6 +206,35 @@ public class WebViewActivity extends AppCompatActivity {
                 updateStepView();
             }
         });
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+
+        alertDialog.setCancelable(false);
+        alertDialog.setTitle("");
+        alertDialog.setMessage("Vous n'avez pas fini la lecture des documents. Êtes-vous sûr de vouloir quitter?");
+
+        alertDialog.setPositiveButton(getString(R.string.quit_string), new DialogInterface.OnClickListener() {
+
+            public void onClick (DialogInterface dialog, int which) {
+
+                quit();
+                dialog.dismiss();
+            }
+        });
+
+        alertDialog.setNegativeButton(getString(R.string.cancel_string), new DialogInterface.OnClickListener() {
+
+            public void onClick (DialogInterface dialog, int which) {
+
+                dialog.dismiss();
+            }
+        });
+
+        alertDialog.show();
     }
 
     @Override
@@ -282,5 +313,10 @@ public class WebViewActivity extends AppCompatActivity {
         }
 
         return false;
+    }
+
+    private void quit() {
+
+        super.onBackPressed();
     }
 }

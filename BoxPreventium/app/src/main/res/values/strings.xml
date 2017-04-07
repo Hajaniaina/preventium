@@ -40,6 +40,7 @@
     <string name="yes_string">Yes</string>
     <string name="no_string">No</string>
     <string name="cancel_string">Cancel</string>
+    <string name="quit_string">Quit</string>
     <string name="obj_string">Objective</string>
     <string name="results_string">Result</string>
     <string name="acc_string">Acceleration</string>
