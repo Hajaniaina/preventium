@@ -1189,7 +1189,12 @@ if(list_loc != null && list_loc.size() >= 2){
     for (int i = 0; i < list_loc.size()-1; i++)
         list_XmG.add(i, LocationsToXmG( list_loc.get(i), list_loc.get(i+1) ) );
 
-    if( list_XmG.size() >= 2 ) this.XmG = list_XmG.get(1);
+    if( list_XmG.size() >= 2 ){
+        // Compare difference between the current and the prevent XmG
+        double diff = Math.abs( list_XmG.get(0) - list_XmG.get(1) );
+
+        if( diff <= 20.0 ) this.XmG = list_XmG.get(0);
+    }
 }
 
 // TEST
