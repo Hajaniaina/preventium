@@ -1193,7 +1193,7 @@ if(list_loc != null && list_loc.size() >= 2){
         // Compare difference between the current and the prevent XmG
         double diff = Math.abs( list_XmG.get(0) - list_XmG.get(1) );
 
-        if( diff <= 20.0 ) this.XmG = list_XmG.get(0);
+        if( diff <= 10.0 ) this.XmG = list_XmG.get(0);
     }
 }
 
