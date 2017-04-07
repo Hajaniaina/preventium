@@ -74,7 +74,7 @@
 
     </LinearLayout>
 
-   <LinearLayout
+    <LinearLayout
        android:id="@+id/buttons_action_layout"
        android:orientation="vertical"
        android:layout_width="wrap_content"
@@ -90,7 +90,7 @@
            android:layout_width="wrap_content"
            android:layout_height="wrap_content"
            android:layout_margin="2dp"
-           android:src="@drawable/ic_flashlight"
+           android:src="@drawable/ic_flash"
            fab:fab_colorNormal="@color/colorAppGreen"
            fab:fab_colorPressed="@color/colorAppRed"
            fab:fab_shadowColor="#444"/>
