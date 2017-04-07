@@ -19,9 +19,7 @@ public class AppColor {
 
     private int[] appColors;
 
-    public AppColor (Activity activity) {
-
-        Context context = activity.getApplicationContext();
+    public AppColor (Context context) {
 
         appColors = new int[7];
 

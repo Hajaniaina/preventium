@@ -4,15 +4,11 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.view.MotionEvent;
 import android.view.View;
-
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.SPEED_t;
-
 import java.util.HashMap;
-
 import at.grabner.circleprogress.CircleProgressView;
 import at.grabner.circleprogress.TextMode;
 
@@ -51,7 +47,7 @@ public class SpeedView implements Parcelable {
 
     private void init (Activity activity) {
 
-        appColor = new AppColor(activity);
+        appColor = new AppColor(activity.getApplicationContext());
 
         viewMap = new HashMap<>();
         levelMap = new HashMap<>();

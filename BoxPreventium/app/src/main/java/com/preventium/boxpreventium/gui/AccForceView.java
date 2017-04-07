@@ -27,7 +27,7 @@ public class AccForceView implements Parcelable {
     public AccForceView (Activity activity) {
 
         accForceView = (ImageView) activity.findViewById(R.id.acc_force_view);
-        appColor = new AppColor(activity);
+        appColor = new AppColor(activity.getApplicationContext());
     }
 
     protected AccForceView (Parcel in) {

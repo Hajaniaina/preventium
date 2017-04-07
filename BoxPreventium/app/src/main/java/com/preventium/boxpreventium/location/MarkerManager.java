@@ -1,9 +1,7 @@
 package com.preventium.boxpreventium.location;
 
-import android.app.Activity;
+import android.content.Context;
 import android.location.Location;
-import android.util.Log;
-
 import com.preventium.boxpreventium.R;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
@@ -17,12 +15,11 @@ public class MarkerManager {
     private static final int NEAR_MARKER_DISTANCE_TH = 1000;
 
     private ArrayList<CustomMarker> markersList = null;
-    private GoogleMap map = null;
-    private Activity activity;
+    private Context context;
 
-    public MarkerManager (Activity activity) {
+    public MarkerManager (Context context) {
 
-        this.activity = activity;
+        this.context = context;
         markersList = new ArrayList<>();
     }
 
@@ -45,14 +42,6 @@ public class MarkerManager {
         return "null";
     }
 
-    public void setMap (GoogleMap map) {
-
-        if (map != null) {
-
-            this.map = map;
-        }
-    }
-
     public CustomMarker getMarker (Marker marker) {
 
         CustomMarker foundedMarker = null;
@@ -71,7 +60,7 @@ public class MarkerManager {
         return foundedMarker;
     }
 
-    public void addAlertCircle(CustomMarker marker) {
+    public void addAlertCircle (GoogleMap map, CustomMarker marker) {
 
         marker.addAlertCircle(map);
     }
@@ -143,7 +132,7 @@ public class MarkerManager {
         }
     }
 
-    public Marker addMarker (String title, LatLng currPos, int type, boolean editable) {
+    public Marker addMarker (GoogleMap map, String title, LatLng currPos, int type, boolean editable) {
 
         CustomMarker customMarker = new CustomMarker();
 
@@ -154,7 +143,7 @@ public class MarkerManager {
 
         if (editable) {
 
-            customMarker.setSnippet(activity.getString(R.string.marker_snippet_string));
+            customMarker.setSnippet(context.getString(R.string.marker_snippet_string));
         }
 
         Marker marker = customMarker.addToMap(map);
@@ -163,7 +152,7 @@ public class MarkerManager {
         return marker;
     }
 
-    public Marker addMarker (CustomMarkerData data) {
+    public Marker addMarker (GoogleMap map, CustomMarkerData data) {
 
         CustomMarker customMarker = new CustomMarker(data);
         customMarker.setEditable(false);
@@ -186,8 +175,9 @@ public class MarkerManager {
 
                 if (customMarker.getType() == markerType) {
 
-                    customMarker.removeAlertCircle();
                     iterator.remove();
+                    customMarker.removeAlertCircle();
+                    customMarker.getMarker().remove();
                     found = true;
                 }
             }
@@ -208,8 +198,9 @@ public class MarkerManager {
 
                 if (customMarker.equals(marker)) {
 
-                    customMarker.removeAlertCircle();
                     iterator.remove();
+                    customMarker.removeAlertCircle();
+                    customMarker.getMarker().remove();
                     found = true;
                 }
             }
@@ -230,10 +221,13 @@ public class MarkerManager {
             for (Iterator<CustomMarker> iterator = markersList.iterator(); iterator.hasNext();) {
 
                 CustomMarker customMarker = iterator.next();
-                customMarker.removeAlertCircle();
                 iterator.remove();
+                customMarker.removeAlertCircle();
+                customMarker.getMarker().remove();
             }
         }
+
+        markersList.clear();
     }
 
     public CustomMarkerData getUserMarkerData (CustomMarker customMarker) {

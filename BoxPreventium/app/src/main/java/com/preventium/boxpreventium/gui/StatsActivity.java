@@ -50,7 +50,7 @@ public class StatsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stats);
 
-        sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
         TextView appVerView = (TextView) findViewById(R.id.textview_app_ver);
         TextView imeiView = (TextView) findViewById(R.id.textview_imei);
@@ -62,8 +62,8 @@ public class StatsActivity extends AppCompatActivity {
         TextView avgSpeedView = (TextView) findViewById(R.id.textview_avg_speed);
         TextView avgScoreView = (TextView) findViewById(R.id.textview_avg_score);
 
-        appVerView.setText("App Version: " + ComonUtils.getVersionName(this));
-        imeiView.setText("IMEI: " + StatsLastDriving.getIMEI(this));
+        appVerView.setText("App Version: " + ComonUtils.getVersionName(getApplicationContext()));
+        imeiView.setText("IMEI: " + StatsLastDriving.getIMEI(getApplicationContext()));
 
         long driverId = sharedPref.getLong(getString(R.string.driver_id_key), 0);
         driverIdView.setText(getString(R.string.driver_id_string) + ": " + driverId);
@@ -71,20 +71,20 @@ public class StatsActivity extends AppCompatActivity {
         String driverName = sharedPref.getString(getString(R.string.driver_name_key), "");
         driverNameView.setText(getString(R.string.driver_name_string) + ": " + driverName);
 
-        long timestamp = StatsLastDriving.get_start_at(this);
+        long timestamp = StatsLastDriving.get_start_at(getApplicationContext());
         String startTime = "00:00:00";
 
         if (timestamp > 0) {
 
-            startTime = getDate(StatsLastDriving.get_start_at(this));
+            startTime = getDate(StatsLastDriving.get_start_at(getApplicationContext()));
         }
 
         startTimeView.setText(getString(R.string.start_time_string) + ": " + startTime);
 
-        String timeElapsed = getTime(StatsLastDriving.get_times(this));
+        String timeElapsed = getTime(StatsLastDriving.get_times(getApplicationContext()));
         timeElapsedView.setText(getString(R.string.time_elapsed_string) + ": " + timeElapsed);
 
-        float distanceMeters = StatsLastDriving.get_distance(this);
+        float distanceMeters = StatsLastDriving.get_distance(getApplicationContext());
         String distance = getString(R.string.distance_string) + ": ";
 
         if (distanceMeters < 1000) {
@@ -99,19 +99,19 @@ public class StatsActivity extends AppCompatActivity {
 
         distanceView.setText(distance);
 
-        float speed = StatsLastDriving.get_speed_avg(this) * PositionManager.MS_TO_KMPH;
+        float speed = StatsLastDriving.get_speed_avg(getApplicationContext()) * PositionManager.MS_TO_KMPH;
         String avgSpeed = String.valueOf(speed) + " km/h";
 
         avgSpeedView.setText(getString(R.string.avg_speed_string) + ": " + avgSpeed);
-        avgScoreView.setText(getString(R.string.avg_score_string) + ": " + String.valueOf(StatsLastDriving.get_note(this, SCORE_t.FINAL)));
+        avgScoreView.setText(getString(R.string.avg_score_string) + ": " + String.valueOf(StatsLastDriving.get_note(getApplicationContext(), SCORE_t.FINAL)));
 
         colors = new int[5];
 
-        colors[0] = ContextCompat.getColor(this, R.color.colorAppGreen);
-        colors[1] = ContextCompat.getColor(this, R.color.colorAppBlue);
-        colors[2] = ContextCompat.getColor(this, R.color.colorAppYellow);
-        colors[3] = ContextCompat.getColor(this, R.color.colorAppOrange);
-        colors[4] = ContextCompat.getColor(this, R.color.colorAppRed);
+        colors[0] = ContextCompat.getColor(getApplicationContext(), R.color.colorAppGreen);
+        colors[1] = ContextCompat.getColor(getApplicationContext(), R.color.colorAppBlue);
+        colors[2] = ContextCompat.getColor(getApplicationContext(), R.color.colorAppYellow);
+        colors[3] = ContextCompat.getColor(getApplicationContext(), R.color.colorAppOrange);
+        colors[4] = ContextCompat.getColor(getApplicationContext(), R.color.colorAppRed);
 
         chartArr = new PieChart[6];
 
@@ -147,11 +147,11 @@ public class StatsActivity extends AppCompatActivity {
         }
 
         chartArr[ACC_OBJ].setCenterText(objStr + "\n" + accStr);
-        chartArr[ACC_RES].setCenterText(resStr + "\n" + accStr + ":" + "\n" + String.valueOf(StatsLastDriving.get_note(this, SCORE_t.ACCELERATING)));
+        chartArr[ACC_RES].setCenterText(resStr + "\n" + accStr + ":" + "\n" + String.valueOf(StatsLastDriving.get_note(getApplicationContext(), SCORE_t.ACCELERATING)));
         chartArr[BRK_OBJ].setCenterText(objStr + "\n" + brakeStr);
-        chartArr[BRK_RES].setCenterText(resStr + "\n" + brakeStr + ":" + "\n" + String.valueOf(StatsLastDriving.get_note(this, SCORE_t.BRAKING)));
+        chartArr[BRK_RES].setCenterText(resStr + "\n" + brakeStr + ":" + "\n" + String.valueOf(StatsLastDriving.get_note(getApplicationContext(), SCORE_t.BRAKING)));
         chartArr[CRN_OBJ].setCenterText(objStr + "\n" + cornerStr);
-        chartArr[CRN_RES].setCenterText(resStr + "\n" + cornerStr + ":" + "\n" + String.valueOf(StatsLastDriving.get_note(this, SCORE_t.CORNERING)));
+        chartArr[CRN_RES].setCenterText(resStr + "\n" + cornerStr + ":" + "\n" + String.valueOf(StatsLastDriving.get_note(getApplicationContext(), SCORE_t.CORNERING)));
 
         for (int i = 0; i < 6; i++) {
 
@@ -183,22 +183,22 @@ public class StatsActivity extends AppCompatActivity {
 
                 switch (id) {
 
-                    case ACC_OBJ: values[i] = StatsLastDriving.get_objectif_A(this, level);
+                    case ACC_OBJ: values[i] = StatsLastDriving.get_objectif_A(getApplicationContext(), level);
                         break;
 
-                    case ACC_RES: values[i] = StatsLastDriving.get_resultat_A(this, level);
+                    case ACC_RES: values[i] = StatsLastDriving.get_resultat_A(getApplicationContext(), level);
                         break;
 
-                    case BRK_OBJ: values[i] = StatsLastDriving.get_objectif_F(this, level);
+                    case BRK_OBJ: values[i] = StatsLastDriving.get_objectif_F(getApplicationContext(), level);
                         break;
 
-                    case BRK_RES: values[i] = StatsLastDriving.get_resultat_F(this, level);
+                    case BRK_RES: values[i] = StatsLastDriving.get_resultat_F(getApplicationContext(), level);
                         break;
 
-                    case CRN_OBJ: values[i] = StatsLastDriving.get_objectif_V(this, level);
+                    case CRN_OBJ: values[i] = StatsLastDriving.get_objectif_V(getApplicationContext(), level);
                         break;
 
-                    case CRN_RES: values[i] = StatsLastDriving.get_resultat_V(this, level);
+                    case CRN_RES: values[i] = StatsLastDriving.get_resultat_V(getApplicationContext(), level);
                         break;
                 }
 
