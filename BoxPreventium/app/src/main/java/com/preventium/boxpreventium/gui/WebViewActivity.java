@@ -1,11 +1,14 @@
 package com.preventium.boxpreventium.gui;
 
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.graphics.drawable.Icon;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import com.github.clans.fab.FloatingActionButton;
+
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -41,20 +44,6 @@ public class WebViewActivity extends AppCompatActivity {
 
         markerData = getIntent().getParcelableExtra(MARKER_DATA_PARAM);
 
-        ///////////////////////////////////////////////////////////////
-
-        ArrayList<String> urlList = new ArrayList<>();
-
-        urlList.add("http://www.orimi.com/pdf-test.pdf");
-        urlList.add("http://techslides.com/demos/sample-videos/small.mp4");
-        urlList.add("https://allthingsaudio.wikispaces.com/file/view/Out%20on%20the%20road.mp3/139234925/Out%20on%20the%20road.mp3");
-        urlList.add("https://www.w3schools.com/css/trolltunga.jpg");
-        urlList.add("https://www.ikalogic.com/");
-
-        markerData.alertAttachments = urlList;
-
-        ///////////////////////////////////////////////////////////////
-
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 
@@ -81,8 +70,6 @@ public class WebViewActivity extends AppCompatActivity {
 
             maxPages = markerData.alertAttachments.size();
         }
-
-        updateStepView();
 
         if (!isFinishing()) {
 
@@ -134,6 +121,7 @@ public class WebViewActivity extends AppCompatActivity {
         });
 
         openPage(currPageIndex);
+        updateStepView();
 
         final FloatingActionButton buttonNext = (FloatingActionButton) findViewById(R.id.fab_page_next);
         final FloatingActionButton buttonPrev = (FloatingActionButton) findViewById(R.id.fab_page_prev);
@@ -155,7 +143,7 @@ public class WebViewActivity extends AppCompatActivity {
                 }
                 else {
 
-                    onBackPressed();
+                    quit();
                 }
 
                 if (currPageIndex >= (maxPages - 1)) {
@@ -204,6 +192,35 @@ public class WebViewActivity extends AppCompatActivity {
                 updateStepView();
             }
         });
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+
+        alertDialog.setCancelable(false);
+        alertDialog.setTitle("");
+        alertDialog.setMessage(getString(R.string.activity_quit_alert));
+
+        alertDialog.setPositiveButton(getString(R.string.quit_string), new DialogInterface.OnClickListener() {
+
+            public void onClick (DialogInterface dialog, int which) {
+
+                quit();
+                dialog.dismiss();
+            }
+        });
+
+        alertDialog.setNegativeButton(getString(R.string.cancel_string), new DialogInterface.OnClickListener() {
+
+            public void onClick (DialogInterface dialog, int which) {
+
+                dialog.dismiss();
+            }
+        });
+
+        alertDialog.show();
     }
 
     @Override
@@ -282,5 +299,10 @@ public class WebViewActivity extends AppCompatActivity {
         }
 
         return false;
+    }
+
+    private void quit() {
+
+        super.onBackPressed();
     }
 }

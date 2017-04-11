@@ -9,6 +9,8 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.preventium.boxpreventium.R;
+
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -166,15 +168,15 @@ public class CustomMarker {
                 break;
 
             case MARKER_INFO:
-                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE);
-                //bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
-                //opt.anchor(0.5f, 0.5f);
+                // bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE);
+                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
+                opt.anchor(0.5f, 0.5f);
                 break;
 
             case MARKER_DANGER:
-                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
-                //bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);;
-                //opt.anchor(0.5f, 0.5f);
+                // bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
+                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);;
+                opt.anchor(0.5f, 0.5f);
                 break;
 
             default:

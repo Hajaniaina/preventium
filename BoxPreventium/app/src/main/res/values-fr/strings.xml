@@ -16,6 +16,7 @@
     <string name="call_string">Appel</string>
     <string name="empty_string">Vide</string>
     <string name="cancel_string">Annuler</string>
+    <string name="quit_string">Quitter</string>
     <string name="corners_caps_string">VIRAGE</string>
     <string name="corners_string">Virages</string>
     <string name="create_string">Créer</string>
@@ -38,6 +39,7 @@
     <string name="front_only_string">Avant uniquement</string>
     <string name="location_settings_string">Paramètres de localisation</string>
     <string name="location_rationale_string">Le service de localisation est désactivé. Activer le mode Haute précision dans les paramètres Android pour continuer</string>
+    <string name="activity_quit_alert">Vous n\'avez pas fini la lecture des documents. Êtes-vous sûr de vouloir quitter?</string>
     <string name="location_disable">Le service de localisation est désactivé!</string>
     <string name="make_call_confirma_string">Faire un appel?</string>
     <string name="marker_create_string">Créer un marqueur</string>

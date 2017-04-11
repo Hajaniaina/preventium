@@ -11,14 +11,14 @@
 
     <RelativeLayout
         android:id="@+id/qr_scanner_layout"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
         <fragment
             android:name="com.google.android.gms.samples.vision.barcodereader.BarcodeCapture"
             android:id="@+id/qr_scanner"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             app:gvb_code_format="all_format"
             app:gvb_auto_focus="true"
             app:gvb_draw="true"
@@ -26,85 +26,82 @@
             app:gvb_rect_colors="@array/rect_color">
         </fragment>
 
+        <LinearLayout
+            android:id="@+id/req_info_layout"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center"
+            android:layout_marginTop="16dp"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true">
+
+            <CheckBox
+                android:id="@+id/checkbox_driver_id"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:textColor="#fafafa"
+                android:shadowColor="#757575"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2"
+                android:text="@string/scan_qr_driver_id_string" />
+
+            <CheckBox
+                android:id="@+id/checkbox_vehicle_front"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:textColor="#fafafa"
+                android:shadowColor="#757575"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2"
+                android:text="@string/scan_qr_vehicle_front_string" />
+
+            <CheckBox
+                android:id="@+id/checkbox_vehicle_back"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:textColor="#fafafa"
+                android:shadowColor="#757575"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2"
+                android:text="@string/scan_qr_vehicle_back_string" />
+
+        </LinearLayout>
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/button_qr_flash"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_flash"
+            fab:fab_colorNormal="@color/colorAppGreen"
+            fab:fab_colorPressed="@color/colorAppRed"
+            fab:fab_shadowColor="#444"
+            android:layout_marginLeft="2dp"
+            android:layout_marginRight="2dp"
+            android:layout_above="@+id/button_qr_close"
+            android:layout_alignStart="@+id/button_qr_close" />
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/button_qr_close"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/mr_ic_close_dark"
+            fab:fab_colorNormal="@color/colorAppRed"
+            fab:fab_colorPressed="@color/colorAppYellow"
+            fab:fab_shadowColor="#444"
+            android:layout_marginLeft="2dp"
+            android:layout_marginRight="2dp"
+            android:layout_marginBottom="17dp"
+            android:layout_marginEnd="11dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true" />
+
     </RelativeLayout>
-
-    <LinearLayout
-        android:id="@+id/req_info_layout"
-        android:orientation="vertical"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|center"
-        android:layout_marginTop="10dp">
-
-        <CheckBox
-            android:id="@+id/checkbox_driver_id"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:textColor="#fafafa"
-            android:shadowColor="#757575"
-            android:shadowDx="1"
-            android:shadowDy="1"
-            android:shadowRadius="2"
-            android:text="@string/scan_qr_driver_id_string" />
-
-        <CheckBox
-            android:id="@+id/checkbox_vehicle_front"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:textColor="#fafafa"
-            android:shadowColor="#757575"
-            android:shadowDx="1"
-            android:shadowDy="1"
-            android:shadowRadius="2"
-            android:text="@string/scan_qr_vehicle_front_string" />
-
-        <CheckBox
-            android:id="@+id/checkbox_vehicle_back"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:textColor="#fafafa"
-            android:shadowColor="#757575"
-            android:shadowDx="1"
-            android:shadowDy="1"
-            android:shadowRadius="2"
-            android:text="@string/scan_qr_vehicle_back_string" />
-
-    </LinearLayout>
-
-    <LinearLayout
-       android:id="@+id/buttons_action_layout"
-       android:orientation="vertical"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:layout_gravity="bottom|end"
-       android:layout_marginTop="@dimen/buttons_layout_margin_top"
-       android:layout_marginBottom="@dimen/buttons_layout_margin_bottom"
-       android:layout_marginEnd="@dimen/buttons_layout_margin_end"
-       android:layout_marginStart="@dimen/buttons_layout_margin_start">
-
-       <com.github.clans.fab.FloatingActionButton
-           android:id="@+id/button_qr_flash"
-           android:layout_width="wrap_content"
-           android:layout_height="wrap_content"
-           android:layout_margin="2dp"
-           android:src="@drawable/ic_flash"
-           fab:fab_colorNormal="@color/colorAppGreen"
-           fab:fab_colorPressed="@color/colorAppRed"
-           fab:fab_shadowColor="#444"/>
-
-       <com.github.clans.fab.FloatingActionButton
-           android:id="@+id/button_qr_close"
-           android:layout_width="wrap_content"
-           android:layout_height="wrap_content"
-           android:layout_margin="2dp"
-           android:src="@drawable/mr_ic_close_dark"
-           fab:fab_colorNormal="@color/colorAppRed"
-           fab:fab_colorPressed="@color/colorAppYellow"
-           fab:fab_shadowColor="#444"/>
-
-    </LinearLayout>
 
 </android.support.design.widget.CoordinatorLayout>

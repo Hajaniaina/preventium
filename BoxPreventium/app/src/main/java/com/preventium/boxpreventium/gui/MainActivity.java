@@ -118,12 +118,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton menuButtonSettings;
 
     private GoogleMap googleMap;
+    private SupportMapFragment mapFrag;
     private LatLng lastPos;
     private Location lastLocation = null;
     private AppColor appColor;
     private ProgressDialog progress;
     private boolean toggle = false;
-    private SupportMapFragment mapFrag;
     List<Polyline> mapPolylineList = new ArrayList<>();
     private Marker startMarker = null, stopMarker = null;
     private boolean initDone = false;
@@ -239,6 +239,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed() {
+
     }
 
     @Override
@@ -533,7 +538,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         routeInPause = false;
 
                         stopButton.setVisibility(View.GONE);
-                        updateQRPrefs();
 
                         if (qrRequest.isAnyReqPending(QrScanRequest.REQUEST_ON_START)) {
 
@@ -560,8 +564,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         routeActive = true;
                         routeInPause = false;
 
-                        System.gc();
-
                         if (mapReady) {
 
                             googleMap.getUiSettings().setAllGesturesEnabled(false);
@@ -574,7 +576,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     case PAR_PAUSING:
                     case PAR_PAUSING_WITH_STOP:
 
+                        System.gc();
                         routeInPause = true;
+
+                        qrSmsTimeout = sharedPref.getInt(getString(R.string.phone_select_sms_qr_timeout_key), 0);
+                        qrSmsTimeout *= 60;
 
                         if (mapReady) {
 
@@ -583,7 +589,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             googleMap.getUiSettings().setAllGesturesEnabled(true);
                         }
 
-                        stopButton.setVisibility( (status == STATUS_t.PAR_PAUSING_WITH_STOP) ? View.VISIBLE  : View.GONE );
+                        stopButton.setVisibility((status == STATUS_t.PAR_PAUSING_WITH_STOP) ? View.VISIBLE : View.GONE);
                         accForceView.hide(true);
 
                         int pauseNotifTimeout = sharedPref.getInt(getString(R.string.phone_select_sms_pause_timeout_key), 0);
@@ -607,7 +613,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (routeActive) {
 
-                            updateQRPrefs();
                             qrRequest.resetVehicleReq();
                             appManager.add_ui_timer(180, QR_CHECK_ON_END_TMR);
                         }
@@ -650,7 +655,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         }
                         else {
 
-                            updateQRPrefs();
                             qrRequest.resetAllReq();
                             appManager.clear_ui_timer();
                          }
@@ -668,7 +672,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         }
                         else {
 
-                            updateQRPrefs();
                             qrRequest.resetAllReq();
                         }
 
@@ -705,7 +708,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     case QR_RESTART_REQ_TMR:
 
-                        updateQRPrefs();
                         qrRequest.resetAllReq();
                         appManager.clear_ui_timer();
 
@@ -799,6 +801,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onSharedPositionsChanged (List<CustomMarkerData> list) {
 
+        for (CustomMarkerData data : list) {
+
+            markerManager.addMarker(googleMap, data);
+        }
     }
 
     @Override
@@ -973,7 +979,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         appManager = new AppManager(this, this);
 
         qrRequest = new QrScanRequest();
-        updateQRPrefs();
 
         progress = new ProgressDialog(this, R.style.InfoDialogStyle);
         progress.setMessage(getString(R.string.progress_map_string));
@@ -1840,47 +1845,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         return "";
-    }
-
-    public void updateQRPrefs() {
-
-        String scanModeOnStart = sharedPref.getString(getString(R.string.qr_select_start_mode_key), "0");
-        String scanModeOnStop = sharedPref.getString(getString(R.string.qr_select_stop_mode_key), "0");
-
-        if (scanModeOnStart.equals(QrScanActivity.SCAN_MODE_VEHICLE_FRONT_BACK)) {
-
-            qrRequest.vehicleFrontOnStartEnabled = true;
-            qrRequest.vehicleBackOnStartEnabled = true;
-        }
-        else {
-
-            qrRequest.vehicleFrontOnStartEnabled = false;
-            qrRequest.vehicleBackOnStartEnabled = false;
-        }
-
-        if (scanModeOnStart.equals(QrScanActivity.SCAN_MODE_VEHICLE_FRONT)) {
-
-            qrRequest.vehicleFrontOnStartEnabled = true;
-        }
-
-        if (scanModeOnStop.equals(QrScanActivity.SCAN_MODE_VEHICLE_FRONT_BACK)) {
-
-            qrRequest.vehicleFrontOnStopEnabled = true;
-            qrRequest.vehicleBackOnStopEnabled = true;
-        }
-        else {
-
-            qrRequest.vehicleFrontOnStopEnabled = false;
-            qrRequest.vehicleBackOnStopEnabled = false;
-        }
-
-        if (scanModeOnStop.equals(QrScanActivity.SCAN_MODE_VEHICLE_FRONT)) {
-
-            qrRequest.vehicleFrontOnStopEnabled = true;
-        }
-
-        qrSmsTimeout = sharedPref.getInt(getString(R.string.phone_select_sms_qr_timeout_key), 0);
-        qrSmsTimeout *= 60;
     }
 
     private void setPositionListeners() {
