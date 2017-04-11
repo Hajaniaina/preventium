@@ -44,20 +44,6 @@ public class WebViewActivity extends AppCompatActivity {
 
         markerData = getIntent().getParcelableExtra(MARKER_DATA_PARAM);
 
-        ///////////////////////////////////////////////////////////////
-
-        ArrayList<String> urlList = new ArrayList<>();
-
-        urlList.add("http://www.orimi.com/pdf-test.pdf");
-        urlList.add("http://techslides.com/demos/sample-videos/small.mp4");
-        urlList.add("https://allthingsaudio.wikispaces.com/file/view/Out%20on%20the%20road.mp3/139234925/Out%20on%20the%20road.mp3");
-        urlList.add("https://www.w3schools.com/css/trolltunga.jpg");
-        urlList.add("https://www.ikalogic.com/");
-
-        markerData.alertAttachments = urlList;
-
-        ///////////////////////////////////////////////////////////////
-
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 
@@ -215,7 +201,7 @@ public class WebViewActivity extends AppCompatActivity {
 
         alertDialog.setCancelable(false);
         alertDialog.setTitle("");
-        alertDialog.setMessage("Vous n'avez pas fini la lecture des documents. Êtes-vous sûr de vouloir quitter?");
+        alertDialog.setMessage(getString(R.string.activity_quit_alert));
 
         alertDialog.setPositiveButton(getString(R.string.quit_string), new DialogInterface.OnClickListener() {
 
