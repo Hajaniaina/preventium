@@ -134,6 +134,7 @@ public class AppManager extends ThreadDefault
 
         download_cfg();
         IMEI_is_actif();
+        download_shared_pos();
         download_epc();
         download_dobj();
         modules.setActive( true );
@@ -898,8 +899,8 @@ public class AppManager extends ThreadDefault
                     boolean poss = false;
 
                     // Checking if .POSS file is in FTP server ?
-                    String srcFileName = ReaderPOSSFile.getOBJFileName(ctx, false);
-                    String srcAckName = ReaderDOBJFile.getOBJFileName(ctx, true);
+                    String srcFileName = ReaderPOSSFile.getFileName(ctx, false);
+                    String srcAckName = ReaderPOSSFile.getFileName(ctx, true);
                     boolean exist_server_poss = ftp.checkFileExists( srcFileName );
                     boolean exist_server_ack = ftp.checkFileExists( srcAckName );
 
@@ -929,6 +930,10 @@ public class AppManager extends ThreadDefault
                                         e.printStackTrace();
                                     }
                                     new File(desFileName).delete();
+
+                                    if( listener != null ) {
+                                        listener.onSharedPositionsChanged(list);
+                                    }
                                 }
                             }
                         }
@@ -940,7 +945,6 @@ public class AppManager extends ThreadDefault
 
             if( isRunning() && !ready ) sleep(1000);
         }
-
         return ready;
     }
 
