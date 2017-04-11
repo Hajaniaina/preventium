@@ -243,7 +243,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onBackPressed() {
-        
+
     }
 
     @Override
@@ -801,6 +801,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onSharedPositionsChanged (List<CustomMarkerData> list) {
 
+        for (CustomMarkerData data : list) {
+
+            markerManager.addMarker(googleMap, data);
+        }
     }
 
     @Override

@@ -99,6 +99,7 @@
     <string name="permissions_enable_string">This application need all permissions to be enabled</string>
     <string name="location_settings_string">Location settings</string>
     <string name="location_rationale_string">Location service is disabled. Activate High Precision mode in the Android settings to continue</string>
+    <string name="activity_quit_alert">You have not finished reading all of the documents. Are you sure you want to leave?</string>
     <string name="bluetooth_rationale_string">Bluetooth is disabled. Activate it to continue</string>
     <string name="qr_rationale_string">One or more QR scans are pending</string>
     <string name="force_permissions_string">To continue please activate all permissions in the settings menu</string>
