@@ -77,7 +77,6 @@ public class ReaderPOSSFile {
         } catch (IOException e) {
             e.printStackTrace();
         }
-Log.d("AZE","AAA"+list.size());
         return list;
     }
 

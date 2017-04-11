@@ -799,12 +799,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onSharedPositionsChanged (List<CustomMarkerData> list) {
+    public void onSharedPositionsChanged (final List<CustomMarkerData> list) {
 
-        for (CustomMarkerData data : list) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                for (CustomMarkerData data : list) {
+                    markerManager.addMarker(googleMap, data);
+                }
+            }
+        });
 
-            markerManager.addMarker(googleMap, data);
-        }
     }
 
     @Override

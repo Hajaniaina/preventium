@@ -82,6 +82,7 @@ public class CustomMarker {
         alertRadius = data.alertRadius;
         alertReqSignature = data.alertReqSignature;
         alertAttachments = data.alertAttachments;
+        opt = new MarkerOptions();
     }
 
     public Marker getMarker() {
