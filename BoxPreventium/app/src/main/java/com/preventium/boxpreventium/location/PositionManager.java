@@ -55,8 +55,6 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
     private ArrayList<Location> lastLocList;
 
     private List<PositionListener> posListeners;
-    private List<MovingStateListener> movListeners;
-    private List<AccStateListener> accListeners;
 
     public interface PositionListener {
 
@@ -65,25 +63,11 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
         public void onGpsStatusChange(boolean gpsFix);
     }
 
-    public interface MovingStateListener {
-
-        public void onStartMoving();
-        public void onStopMoving();
-    }
-
-    public interface AccStateListener {
-
-        public void onAccelerating();
-        public void onDeAccelerating();
-    }
-
     public PositionManager(Activity activity) {
 
         context = activity.getApplicationContext();
 
         posListeners = new ArrayList<PositionListener>();
-        movListeners = new ArrayList<MovingStateListener>();
-        accListeners = new ArrayList<AccStateListener>();
 
         lastLocList = new ArrayList<Location>();
 
@@ -279,172 +263,9 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
         return true;
     }
 
-    public void setPositionChangedListener(PositionListener listener) {
+    public void setPositionChangedListener (PositionListener listener) {
 
         posListeners.add(listener);
-    }
-
-    public void setMovingListener (MovingStateListener listener) {
-
-        movListeners.add(listener);
-    }
-
-    public void setAccListener (AccStateListener listener) {
-
-        accListeners.add(listener);
-    }
-
-    private boolean checkMovingState (int points) {
-
-        boolean movingState = false;
-
-        if (lastLocList.size() >= points) {
-
-            double avgSpeed = 0.0;
-
-            for (int i = 0; i < points; i++) {
-
-                avgSpeed += (lastLocList.get(i).getSpeed() * MS_TO_KMPH);
-            }
-
-            avgSpeed = (avgSpeed / (double) points);
-
-            if (avgSpeed >= MOVING_MIN_SPEED_KMPH) {
-
-                Log.d(TAG, "Start Moving. Speed: " + String.valueOf(avgSpeed) + " km/h");
-                movingState = true;
-            }
-            else {
-
-                Log.d(TAG, "Stop Moving. Speed: " + String.valueOf(avgSpeed) + " km/h");
-            }
-        }
-
-        return movingState;
-    }
-
-    private int checkAccState (int points) {
-
-        float errMargin = 1.0f;
-
-        if (lastLocList.size() > points) {
-
-            List<Location> tailList = lastLocList.subList((lastLocList.size() - points), lastLocList.size());
-            float[] speeds = new float[points];
-
-            for (int i = 0; i < tailList.size(); i++) {
-
-                speeds[i] = tailList.get(i).getSpeed();
-            }
-
-            boolean accPos = true;
-
-            for (int i = 0; i < (speeds.length - 1); i++) {
-
-                if (speeds[i] < (speeds[i + 1] + errMargin)) {
-
-                    accPos = false;
-                }
-            }
-
-            if (accPos) {
-
-                Log.d(TAG, "Pos Acc");
-                return ACC_POS;
-            }
-
-            boolean accNeg = true;
-
-            for (int i = 0; i < (speeds.length - 1); i++) {
-
-                if ((speeds[i] + errMargin) >= speeds[i + 1]) {
-
-                    accNeg = false;
-                }
-            }
-
-            if (accNeg) {
-
-                Log.d(TAG, "Neg Acc");
-                return ACC_NEG;
-            }
-        }
-
-        Log.d(TAG, "No Acc");
-        return ACC_NONE;
-    }
-
-    private boolean checkConstSpeed (int points) {
-
-        boolean stable = false;
-        double errMargin = 2.0;
-
-        if (lastLocList.size() >= points) {
-
-            double[] speedList = new double[points];
-
-            for (int i = 0; i < speedList.length; i++) {
-
-                if (lastLocList.get(i).hasSpeed()) {
-
-                    speedList[i] = 0.0;
-                }
-                else {
-
-                    speedList[i] = lastLocList.get(i).getSpeed();
-                }
-            }
-
-            double variance = getVariance(speedList, points);
-
-            Log.d(TAG, "Speed Variance: " + String.valueOf(variance));
-
-            if (variance <= errMargin) {
-
-                Log.d(TAG, "Const Speed");
-                stable = true;
-            }
-        }
-
-        return stable;
-    }
-
-    private double getVariance (double values[], int size) {
-
-        if (size < 1) {
-
-            return 0.0;
-        }
-
-        double sum = 0.0;
-
-        for (int i = 0; i < size; ++i) {
-
-            sum += values[i];
-        }
-
-        double mean = sum / size;
-        double sqDiffsum = 0.0;
-
-        for (int i = 0; i < size; ++i) {
-
-            double diff = values[i] - mean;
-            sqDiffsum += diff * diff;
-        }
-
-        double variance = sqDiffsum / size;
-        return variance;
-    }
-
-    private double getStdDeviation (double values[], int size) {
-
-        if (size < 1) {
-
-            return 0.0;
-        }
-
-        double variance = getVariance(values, size);
-        return Math.sqrt(variance);
     }
 
     public static boolean isLocationEnabled (Context context) {

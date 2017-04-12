@@ -73,16 +73,18 @@ public class CustomMarker {
 
     CustomMarker (CustomMarkerData data) {
 
-        pos = data.position;
-        title = data.title;
-        type = data.type;
-        shared = data.shared;
-        alert = data.alert;
-        alertMsg = data.alertMsg;
-        alertRadius = data.alertRadius;
-        alertReqSignature = data.alertReqSignature;
-        alertAttachments = data.alertAttachments;
         opt = new MarkerOptions();
+
+        setPos(data.position);
+        setTitle(data.title);
+        setType(data.type);
+        share(data.shared);
+        enableAlert(data.alert);
+        setAlertMsg(data.alertMsg);
+        setAlertRadius(data.alertRadius);
+        setAlertSignatureReq(data.alertReqSignature);
+        setAlertAttachments(data.alertAttachments);
+        setEditable(false);
     }
 
     public Marker getMarker() {

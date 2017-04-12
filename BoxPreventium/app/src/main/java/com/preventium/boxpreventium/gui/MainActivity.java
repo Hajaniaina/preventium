@@ -802,14 +802,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public void onSharedPositionsChanged (final List<CustomMarkerData> list) {
 
         runOnUiThread(new Runnable() {
+
             @Override
             public void run() {
+
                 for (CustomMarkerData data : list) {
+
                     markerManager.addMarker(googleMap, data);
                 }
             }
         });
-
     }
 
     @Override
@@ -1026,7 +1028,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         menuButtonTracking = (FloatingActionButton) findViewById(R.id.menu_button_tracking);
         menuButtonSettings = (FloatingActionButton) findViewById(R.id.menu_button_settings);
 
-        trackingActivated = sharedPref.getBoolean(getString(R.string.tracking_activated), true);
+        trackingActivated = sharedPref.getBoolean(getString(R.string.tracking_activated_key), true);
 
         if (trackingActivated) {
 
