@@ -62,7 +62,7 @@ public class ReaderPOSSFile {
                 if( column.length == 10 ) {
                     CustomMarkerData mk = new CustomMarkerData();
                     mk.type = Integer.valueOf( column[2] );
-                    mk.position = new LatLng( Float.valueOf(column[0]), Float.valueOf(column[1]) );
+                    mk.position = new LatLng( Float.valueOf(column[1]), Float.valueOf(column[0]) );
                     mk.title = column[5];
                     mk.alert = column[3].equals("1");
                     mk.alertRadius =  Integer.valueOf( column[4] );;
@@ -71,6 +71,17 @@ public class ReaderPOSSFile {
                     mk.alertReqSignature = column[7].equals("1");;
                     mk.shared = column[6].equals("1");
                     list.add(mk);
+
+//                    Log.d("AA","Type:" + mk.type);
+//                    Log.d("AA","position:" + mk.position);
+//                    Log.d("AA","title:" + mk.title);
+//                    Log.d("AA","alert:" + mk.alert);
+//                    Log.d("AA","alertRadius:" + mk.alertRadius);
+//                    Log.d("AA","alertAttachments:" + mk.alertAttachments);
+//                    Log.d("AA","alertMsg:" + mk.alertMsg);
+//                    Log.d("AA","alertReqSignature:" + mk.alertReqSignature);
+//                    Log.d("AA","shared:" + mk.shared);
+
                 }
             }
 
