@@ -936,6 +936,11 @@ public class AppManager extends ThreadDefault
                                     }
                                 }
                             }
+                        } else {
+                            ready = true;
+                            if( listener != null ) {
+                                listener.onSharedPositionsChanged(new ArrayList<CustomMarkerData>());
+                            }
                         }
                     }
                 }
