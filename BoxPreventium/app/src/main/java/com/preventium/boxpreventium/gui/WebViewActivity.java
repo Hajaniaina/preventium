@@ -18,6 +18,7 @@ import android.webkit.WebViewClient;
 import android.widget.TextView;
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.location.CustomMarkerData;
+import com.preventium.boxpreventium.server.POSS.ReaderPOSSFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -240,7 +241,8 @@ public class WebViewActivity extends AppCompatActivity {
 
     public void openPage (int pageIndex) {
 
-        String url = markerData.alertAttachments.get(pageIndex);
+        String url = ReaderPOSSFile.getHrefLink(markerData.alertAttachments.get(pageIndex));
+        String urlName = ReaderPOSSFile.getHrefName(markerData.alertAttachments.get(pageIndex));
 
         mediaPlayer.stop();
         mediaPlayer.reset();
@@ -263,9 +265,12 @@ public class WebViewActivity extends AppCompatActivity {
                 Log.d(TAG, "Media Player Exception: " + e.toString());
             }
 
-            String page = "<html><body><center><img src=\"http://gurmeet.net/Images/index_page/happy-songs.png\" alt=\"Message Audio\"></center></body></html>";
-            webView.loadData(page, "text/html", "UTF-8");
+            String page = "";
+            page += "<html><head><style>.container {position: absolute; top: 50%; left: 50%; transform: translateX(-50%) translateY(-50%);}</style></head>";
+            page += "<body><div class=\"container\"><center><img src=\"http://gurmeet.net/Images/index_page/happy-songs.png\" alt=\"Message Audio\" height=\"160\"><p>";
+            page += urlName + "</p></center></div></body></html>";
 
+            webView.loadData(page, "text/html", "UTF-8");
             mediaPlayer.start();
             return;
         }
