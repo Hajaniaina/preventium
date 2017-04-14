@@ -1826,6 +1826,7 @@ if( seuil != null
                 alertPos_add_at = 0;
                 lastLocSend = null;
                 recommended_speed_update_at = 0;
+                download_shared_pos();
 
                 if( init_parcours_id() ) {
                     ret = STATUS_t.PAR_STARTED;
