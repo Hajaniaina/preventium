@@ -44,8 +44,6 @@ public class CustomMarker {
     public static final int MARKER_ROSE    = 9;
     public static final int MARKER_RANDOM  = 10;
 
-    public static final int MARKER_START  = 11;
-    public static final int MARKER_STOP   = 12;
     public static final int MARKER_INFO   = 13;
     public static final int MARKER_DANGER = 14;
 
@@ -162,22 +160,12 @@ public class CustomMarker {
                 bitmap = BitmapDescriptorFactory.defaultMarker(MARKER_HUES[new Random().nextInt(MARKER_HUES.length)]);
                 break;
 
-            case MARKER_START:
-                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
-                break;
-
-            case MARKER_STOP:
-                bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
-                break;
-
             case MARKER_INFO:
-                // bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE);
                 bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
                 opt.anchor(0.5f, 0.5f);
                 break;
 
             case MARKER_DANGER:
-                // bitmap = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
                 bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);;
                 opt.anchor(0.5f, 0.5f);
                 break;

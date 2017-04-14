@@ -155,8 +155,6 @@ public class MarkerManager {
     public Marker addMarker (GoogleMap map, CustomMarkerData data) {
 
         CustomMarker customMarker = new CustomMarker(data);
-        customMarker.setEditable(false);
-
         Marker marker = customMarker.addToMap(map);
         markersList.add(customMarker);
 

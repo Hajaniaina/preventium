@@ -415,27 +415,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mapPolylineList.add(googleMap.addPolyline(opt));
     }
 
-    private boolean clearMap() {
-
-        if (mapReady) {
-
-            for (Polyline line : mapPolylineList) {
-
-                line.remove();
-            }
-
-            mapPolylineList.clear();
-            markerManager.removeAllMarkers();
-
-            startMarker = null;
-            stopMarker = null;
-
-            return true;
-        }
-
-        return false;
-    }
-
     // -------------------------------------------------------------------------------------------- //
 
     @Override
@@ -548,12 +527,30 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (mapReady) {
 
-                            clearMap();
+                            for (Polyline line : mapPolylineList) {
+
+                                line.remove();
+                            }
+
+                            mapPolylineList.clear();
+
+                            if (startMarker != null) {
+
+                                markerManager.removeMarker(startMarker);
+                                startMarker = null;
+                            }
+
+                            if (stopMarker != null) {
+
+                                markerManager.removeMarker(stopMarker);
+                                stopMarker = null;
+                            }
+
                             googleMap.getUiSettings().setAllGesturesEnabled(false);
 
                             if (startMarker == null) {
 
-                                startMarker = markerManager.addMarker(googleMap, getString(R.string.start_string), lastPos, CustomMarker.MARKER_START, false);
+                                startMarker = markerManager.addMarker(googleMap, getString(R.string.start_string), lastPos, CustomMarker.MARKER_GREEN, false);
                             }
                         }
 
@@ -619,7 +616,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (stopMarker == null) {
 
-                            stopMarker = markerManager.addMarker(googleMap, getString(R.string.stop_string), lastPos, CustomMarker.MARKER_STOP, false);
+                            stopMarker = markerManager.addMarker(googleMap, getString(R.string.stop_string), lastPos, CustomMarker.MARKER_RED, false);
                         }
 
                         routeActive = false;
@@ -806,9 +803,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
+                if (list.size() > 0) {
+
+                    markerManager.removeMarker(CustomMarker.MARKER_INFO);
+                    markerManager.removeMarker(CustomMarker.MARKER_DANGER);
+                }
+
                 for (CustomMarkerData data : list) {
 
-                    markerManager.addMarker(googleMap, data);
+                    Marker marker = markerManager.addMarker(googleMap, data);
+                    CustomMarker customMarker = markerManager.getMarker(marker);
+
+                    if (customMarker.isAlertEnabled())
+                    {
+                        markerManager.addAlertCircle(googleMap, customMarker);
+                        markerManager.showAlertCircle(customMarker, false);
+                    }
                 }
             }
         });
@@ -1135,12 +1145,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 .request(0);
     }
 
-    private void openDocumentFromUrl (String url) {
-
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        startActivity(browserIntent);
-    }
-
     public void showPermissionsAlert (final boolean retry) {
 
         final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
@@ -1249,7 +1253,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 Intent intent = new Intent(MainActivity.this, WebViewActivity.class);
                 intent.putExtra(WebViewActivity.MARKER_DATA_PARAM, data);
                 startActivity(intent);
-                // startActivityForResult(intent, REQ_CODE);
 
                 dialog.dismiss();
             }
