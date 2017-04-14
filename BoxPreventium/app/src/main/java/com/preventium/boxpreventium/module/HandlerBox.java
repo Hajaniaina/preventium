@@ -304,6 +304,19 @@ public class HandlerBox extends ThreadDefault
             BluetoothBox box = new BluetoothBox(context);
             if( listener != null ) listener.onDeviceState( device.getAddress(), true );
             if( DEBUG ) Log.d(TAG,"FIND " + device.getAddress() );
+
+            // On ferme l'ancienne instance de ce divice s'il est déjà dans la list
+            // (car si il existe déjà, c'est qu'il n'est plus connecté mais que sont status n'est
+            // pas encore actualisé, donc on le ferme et on le supprime, pour eviter des conflit)
+            for( int i = mBoxList.size()-1; i >= 0; i-- ){
+                if( mBoxList.get(i).getMacAddr().equals(device.getAddress()) ) {
+                    mBoxList.get(i).close();
+                    while( isRunning() && mBoxList.get(i).getConnectionState() != CONNEXION_STATE_t.DISCONNECTED ) sleep(50);
+                    mBoxList.remove(i);
+                }
+            }
+
+            // Connection + ajout à la liste du nouveau device
             box.connect(device);
             while( isRunning() && box.getConnectionState() == CONNEXION_STATE_t.CONNECTING ) sleep(50);
             if( box.getConnectionState() == CONNEXION_STATE_t.CONNECTED ) {
