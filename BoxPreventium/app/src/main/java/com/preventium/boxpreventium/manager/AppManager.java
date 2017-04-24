@@ -1083,7 +1083,77 @@ public class AppManager extends ThreadDefault
     Pair<Double,Short> smooth = Pair.create(0.0,(short)0);
     Pair<Double,Short> shock = Pair.create(0.0,(short)0);
 
-    private void calc_movements(){
+    private float Vavg = 0f;
+    private float Acceleration = 0f;
+    private long Tavg = System.currentTimeMillis();;
+
+    private void calc_movements() {
+        this.mov_t = MOVING_t.UNKNOW;
+        this.XmG = 0f;
+        boolean rightRoad = false;
+
+        // Calculate Vavg and Acceleration (m/s)
+        List<Location> list = get_location_list(3,5000);
+        if( list != null && list.size() >= 3 ) {
+            int i = list.size()-1;
+            rightRoad = isRightRoad( list.get(i-2), list.get(i-1), list.get(i) );
+            float Vavg_next = ( list.get(i-2).getSpeed() + list.get(i-1).getSpeed() + list.get(i).getSpeed() ) * (1f/3f);
+            long Tavg_next = System.currentTimeMillis();
+
+            // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
+            // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+            // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+            XmG = SpeedToXmG(Vavg,Vavg_next,Tavg,Tavg_next);
+
+            Acceleration = Vavg - Vavg_next;
+            Vavg = Vavg_next;
+            Tavg = Tavg_next;
+        } else {
+            Acceleration = 0f;
+            Vavg = 0f;
+            Tavg = System.currentTimeMillis();
+        }
+
+        // Set moving status
+        if (Vavg * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
+        else if ( Math.abs( 0f - (Acceleration * MS_TO_KMH) ) < 2f ) mov_t = MOVING_t.CST;
+        else if (Acceleration > 0f ) mov_t = MOVING_t.ACC;
+        else if (Acceleration < 0f) mov_t = MOVING_t.BRK;
+        else mov_t = MOVING_t.NCS;
+
+        // Set move chrono and calibration if necessary
+        if ( mov_t != mov_t_last )
+        {
+            mov_t_last_chrono.start();
+            mov_chrono.start();
+            mov_t_last = mov_t;
+        }
+        else
+        {
+            if ( mov_chrono.isStarted() ) {
+                switch (mov_t_last) {
+                    case ACC:
+                        if (rightRoad) {
+                            mov_chrono.stop();
+                            modules.on_acceleration();
+                        }
+                        break;
+                    case BRK:
+                        if (rightRoad) {
+                            mov_chrono.stop();
+                            modules.on_constant_speed();
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+
+    }
+
+    private void calc_movements_(){
 
         this.mov_t = MOVING_t.UNKNOW;
         this.XmG = 0f;
@@ -1091,7 +1161,7 @@ public class AppManager extends ThreadDefault
 
         List<Location> list = get_location_list(3,5000);
 //if( list != null ) Log.d("AAAA","sss" + list.size()); else Log.d("AAAA","sss null");
-        if( list != null && list.size() >= 3 ){
+        if( list != null && list.size() >= 3 ) {
 
             int i = list.size()-1;
 
@@ -1152,6 +1222,15 @@ public class AppManager extends ThreadDefault
         }
     }
 
+    private double SpeedToXmG( @NonNull float v1, @NonNull float v2, @NonNull long t1, @NonNull long t2 ) {
+        // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
+        // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+        // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+        return ((v2 - v1)
+                / (9.81 * ((t2 - t1) * 0.001)))
+                * 1000.0;
+    }
+
     private double LocationsToXmG( @NonNull Location l0, @NonNull Location l1 ) {
         // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
         // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
@@ -1191,25 +1270,6 @@ public class AppManager extends ThreadDefault
     }
 
     synchronized private void calc_eca(){
-
-// TEST
-List<Location> list_loc = get_location_list(5,5000);
-List<Double> list_XmG = new ArrayList<>();
-this.XmG = 0.0;
-if(list_loc != null && list_loc.size() >= 2){
-    this.XmG = LocationsToXmG( list_loc.get(0), list_loc.get(1) );
-    for (int i = 0; i < list_loc.size()-1; i++)
-        list_XmG.add(i, LocationsToXmG( list_loc.get(i), list_loc.get(i+1) ) );
-
-    if( list_XmG.size() >= 2 ){
-        // Compare difference between the current and the prevent XmG
-        double diff = Math.abs( list_XmG.get(0) - list_XmG.get(1) );
-
-        if( diff <= 10.0 ) this.XmG = list_XmG.get(0);
-    }
-}
-
-// TEST
 
         Location loc = get_last_location();
 
@@ -1291,27 +1351,6 @@ if(list_loc != null && list_loc.size() >= 2){
         }
 
 
-// TEST
-if( seuil != null
-        && (seuil.type == FORCE_t.ACCELERATION || seuil.type == FORCE_t.BRAKING) ) {
-//    String txt = (seuil.type == FORCE_t.ACCELERATION) ? "ACC " : "BRK ";
-//    switch ( seuil.level ) {
-//        case LEVEL_UNKNOW: txt += "LVL_? "; break;
-//        case LEVEL_1: txt += "LVL_1 "; break;
-//        case LEVEL_2: txt += "LVL_2 "; break;
-//        case LEVEL_3: txt += "LVL_3 "; break;
-//        case LEVEL_4: txt += "LVL_4 "; break;
-//        case LEVEL_5: txt += "LVL_5 "; break;
-//    }
-    String txt = "";
-    double sum = 0.0;
-    for( int i = 0; i < list_XmG.size(); i++ ) {
-        sum += list_XmG.get(i);
-        txt += (int)( sum/(i+1) ) + "; ";
-    }
-    setLog( txt );
-}
-// TEST
         boolean change = false;
         if( (seuil_ui == null) != (seuil == null) ) change = true;
         if( seuil_ui != null  ) change = !seuil_ui.equals( seuil );
