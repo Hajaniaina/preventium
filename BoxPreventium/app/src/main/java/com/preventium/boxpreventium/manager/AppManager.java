@@ -881,7 +881,7 @@ public class AppManager extends ThreadDefault
         FTPClientIO ftp = new FTPClientIO();
 
         while( isRunning() && !ready ) {
-            if (listener != null) listener.onStatusChanged(STATUS_t.GETTING_DOBJ);
+            if (listener != null) listener.onStatusChanged( STATUS_t.GETTING_MARKERS_SHARED );
 
             // Trying to connect to FTP server...
             if( !ftp.ftpConnect(config, 5000) ) {
@@ -896,50 +896,53 @@ public class AppManager extends ThreadDefault
                     Log.w(TAG, "Error while trying to change working directory!");
                 } else {
 
-                    boolean poss = false;
+                    change_directory = ftp.changeWorkingDirectory("POSS");
+                    if( !change_directory ) {
+                        Log.w(TAG, "Error while trying to change working directory!");
+                    } else {
+                        boolean poss = false;
 
-                    // Checking if .POSS file is in FTP server ?
-                    String srcFileName = ReaderPOSSFile.getFileName(ctx, false);
-                    String srcAckName = ReaderPOSSFile.getFileName(ctx, true);
-                    boolean exist_server_poss = ftp.checkFileExists( srcFileName );
-                    boolean exist_server_ack = ftp.checkFileExists( srcAckName );
+                        // Checking if .POSS file is in FTP server ?
+                        String srcFileName = ReaderPOSSFile.getFileName(ctx, false);
+                        String srcAckName = ReaderPOSSFile.getFileName(ctx, true);
+                        boolean exist_server_poss = ftp.checkFileExists( srcFileName );
+                        boolean exist_server_ack = ftp.checkFileExists( srcAckName );
 
-                    // If .POSS file exist in the FTP server
-                    poss = ( exist_server_ack && ReaderPOSSFile.existLocalFile(ctx) );
-                    if( !poss ) {
-                        if( exist_server_poss ) {
-                            // Create folder if not exist
-                            if (!folder.exists())
-                                if (!folder.mkdirs())
-                                    Log.w(TAG, "Error while trying to create new folder!");
-                            // Trying to download .POSS file...
-                            String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
-                            if (ftp.ftpDownload(srcFileName, desFileName))
-                            {
-                                List<CustomMarkerData> list = ReaderPOSSFile.readFile(desFileName);
-                                poss = (list != null);
-                                if( poss )
-                                {
-                                    ready = true;
-                                    // envoi acknowledge
-                                    try {
-                                        File temp = File.createTempFile("temp-file-name", ".tmp");
-                                        ftp.ftpUpload(temp.getPath(), srcAckName);
-                                        temp.delete();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                    new File(desFileName).delete();
+                        // If .POSS file exist in the FTP server
+                        poss = ( exist_server_ack && ReaderPOSSFile.existLocalFile(ctx) );
+                        if( !poss ) {
+                            if (exist_server_poss) {
+                                // Create folder if not exist
+                                if (!folder.exists())
+                                    if (!folder.mkdirs())
+                                        Log.w(TAG, "Error while trying to create new folder!");
+                                // Trying to download .POSS file...
+                                String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+                                if (ftp.ftpDownload(srcFileName, desFileName)) {
+                                    List<CustomMarkerData> list = ReaderPOSSFile.readFile(desFileName);
+                                    poss = (list != null);
+                                    if (poss) {
+                                        ready = true;
+                                        // envoi acknowledge
+                                        try {
+                                            File temp = File.createTempFile("temp-file-name", ".tmp");
+                                            ftp.ftpUpload(temp.getPath(), srcAckName);
+                                            temp.delete();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                        new File(desFileName).delete();
 
-                                    if( listener != null ) {
-                                        listener.onSharedPositionsChanged(list);
+                                        if (listener != null) {
+                                            listener.onSharedPositionsChanged(list);
+                                        }
                                     }
                                 }
-                            }
-                        } else {
-                            ready = true;
-                            if( listener != null ) {
-                                listener.onSharedPositionsChanged(new ArrayList<CustomMarkerData>());
+                            } else {
+                                ready = true;
+                                if (listener != null) {
+                                    listener.onSharedPositionsChanged(new ArrayList<CustomMarkerData>());
+                                }
                             }
                         }
                     }
