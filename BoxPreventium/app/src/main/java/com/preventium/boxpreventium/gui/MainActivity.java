@@ -790,7 +790,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                appManager.setCustomMarkerDataList(markerManager.getAllUserMarkersData());
+                appManager.setCustomMarkerDataList(markerManager.fetchAllUserMarkersData());
             }
         });
     }
@@ -805,8 +805,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (list.size() > 0) {
 
-                    markerManager.removeMarker(CustomMarker.MARKER_INFO);
-                    markerManager.removeMarker(CustomMarker.MARKER_DANGER);
+                    markerManager.removeMarker(CustomMarker.MARKER_INFO, true);
+                    markerManager.removeMarker(CustomMarker.MARKER_DANGER, true);
                 }
 
                 for (CustomMarkerData data : list) {

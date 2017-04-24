@@ -44,8 +44,8 @@ public class CustomMarker {
     public static final int MARKER_ROSE    = 9;
     public static final int MARKER_RANDOM  = 10;
 
-    public static final int MARKER_INFO   = 13;
-    public static final int MARKER_DANGER = 14;
+    public static final int MARKER_INFO    = 13;
+    public static final int MARKER_DANGER  = 14;
 
     private MarkerOptions opt = null;
     private Marker marker = null;
@@ -54,6 +54,7 @@ public class CustomMarker {
     private LatLng pos = null;
     private String title = "";
     private boolean shared = false;
+    private boolean newCreated = false;
 
     private boolean alert = false;
     private boolean alertWasActivated = false;
@@ -66,6 +67,7 @@ public class CustomMarker {
 
     CustomMarker() {
 
+        newCreated = true;
         opt = new MarkerOptions();
     }
 
@@ -257,6 +259,16 @@ public class CustomMarker {
                 marker.setIcon(bitmap);
             }
         }
+    }
+
+    public void setAsNewCreated (boolean created) {
+
+        newCreated = created;
+    }
+
+    public boolean isNewCreated() {
+
+        return newCreated;
     }
 
     public void setAlertRadius (int meters) {

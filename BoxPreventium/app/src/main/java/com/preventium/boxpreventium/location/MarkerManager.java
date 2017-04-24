@@ -161,7 +161,7 @@ public class MarkerManager {
         return marker;
     }
 
-    public boolean removeMarker (int markerType) {
+    public boolean removeMarker (int markerType, boolean onlyOldMarkers) {
 
         boolean found = false;
 
@@ -173,10 +173,23 @@ public class MarkerManager {
 
                 if (customMarker.getType() == markerType) {
 
-                    iterator.remove();
-                    customMarker.removeAlertCircle();
-                    customMarker.getMarker().remove();
-                    found = true;
+                    if (onlyOldMarkers) {
+
+                        if (!customMarker.isNewCreated()) {
+
+                            iterator.remove();
+                            customMarker.removeAlertCircle();
+                            customMarker.getMarker().remove();
+                            found = true;
+                        }
+                    }
+                    else {
+
+                        iterator.remove();
+                        customMarker.removeAlertCircle();
+                        customMarker.getMarker().remove();
+                        found = true;
+                    }
                 }
             }
         }
@@ -245,13 +258,13 @@ public class MarkerManager {
         return data;
     }
 
-    public ArrayList<CustomMarkerData> getAllUserMarkersData() {
+    public ArrayList<CustomMarkerData> fetchAllUserMarkersData() {
 
         ArrayList<CustomMarkerData> markersDataList = new ArrayList<CustomMarkerData>();
 
         for (CustomMarker customMarker : markersList) {
 
-            if (customMarker.isEditable()) {
+            if (customMarker.isEditable() && customMarker.isNewCreated()) {
 
                 CustomMarkerData markerData = new CustomMarkerData();
 
@@ -266,6 +279,9 @@ public class MarkerManager {
                 markerData.alertReqSignature = customMarker.isAlertSignatureRequired();
 
                 markersDataList.add(markerData);
+
+                customMarker.setAsNewCreated(false);
+                customMarker.setEditable(false);
             }
         }
 
