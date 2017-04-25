@@ -872,6 +872,7 @@ public class AppManager extends ThreadDefault
 
     // Dowloading shared positions
     private boolean download_shared_pos()  throws InterruptedException {
+
         boolean ready = false;
 
         if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_MARKERS_SHARED );
@@ -900,51 +901,69 @@ public class AppManager extends ThreadDefault
                     if( !change_directory ) {
                         Log.w(TAG, "Error while trying to change working directory!");
                     } else {
-                        boolean poss = false;
+
+                        boolean need_download = false;
 
                         // Checking if .POSS file is in FTP server ?
                         String srcFileName = ReaderPOSSFile.getFileName(ctx, false);
                         String srcAckName = ReaderPOSSFile.getFileName(ctx, true);
                         boolean exist_server_poss = ftp.checkFileExists( srcFileName );
                         boolean exist_server_ack = ftp.checkFileExists( srcAckName );
+                        boolean exist_local_poss = ReaderPOSSFile.existLocalFile(ctx);
 
-                        // If .POSS file exist in the FTP server
-                        poss = ( exist_server_ack && ReaderPOSSFile.existLocalFile(ctx) );
-                        if( !poss ) {
-                            if (exist_server_poss) {
-                                // Create folder if not exist
-                                if (!folder.exists())
-                                    if (!folder.mkdirs())
-                                        Log.w(TAG, "Error while trying to create new folder!");
-                                // Trying to download .POSS file...
-                                String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
-                                if (ftp.ftpDownload(srcFileName, desFileName)) {
-                                    List<CustomMarkerData> list = ReaderPOSSFile.readFile(desFileName);
-                                    poss = (list != null);
-                                    if (poss) {
-                                        ready = true;
-                                        // envoi acknowledge
-                                        try {
-                                            File temp = File.createTempFile("temp-file-name", ".tmp");
-                                            ftp.ftpUpload(temp.getPath(), srcAckName);
-                                            temp.delete();
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                        new File(desFileName).delete();
+                        need_download = ( (exist_server_poss && !exist_server_ack) || (exist_server_poss && !exist_local_poss) );
 
-                                        if (listener != null) {
-                                            listener.onSharedPositionsChanged(list);
-                                        }
-                                    }
+                        // Create folder if not exist
+                        if ( !folder.exists() )
+                            if ( !folder.mkdirs() )
+                                Log.w(TAG, "Error while trying to create new folder!");
+                        String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+
+                        if( need_download ) {
+                            try{
+                                File local_file = new File(desFileName);
+                                if(local_file.delete()) {
+                                    System.out.println(local_file.getName() + " is deleted!");
+                                } else {
+                                    System.out.println("Delete operation is failed.");
                                 }
-                            } else {
-                                ready = true;
-                                if (listener != null) {
-                                    listener.onSharedPositionsChanged(new ArrayList<CustomMarkerData>());
+                            }catch(Exception e) {
+                                e.printStackTrace();
+                            }
+
+                            if (ftp.ftpDownload(srcFileName, desFileName)) {
+                                need_download = false;
+                                // envoi acknowledge
+                                try {
+                                    File temp = File.createTempFile("temp-file-name", ".tmp");
+                                    ftp.ftpUpload(temp.getPath(), srcAckName);
+                                    temp.delete();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
                                 }
                             }
                         }
+
+                        if( !need_download )
+                        {
+                            exist_local_poss = ReaderPOSSFile.existLocalFile(ctx);
+                            if( !exist_local_poss ) {
+                                ready = true;
+                                if (listener != null) listener.onSharedPositionsChanged(new ArrayList<CustomMarkerData>());
+                            } else {
+
+                                List<CustomMarkerData> list = ReaderPOSSFile.readFile(desFileName);
+                                if (list != null) {
+                                    ready = true;
+                                    if (listener != null) listener.onSharedPositionsChanged(list);
+                                }
+                            }
+                        }
+
+
+
+
+
                     }
                 }
             }
@@ -1088,6 +1107,9 @@ public class AppManager extends ThreadDefault
     private long Tavg = System.currentTimeMillis();;
 
     private void calc_movements() {
+
+        if(  System.currentTimeMillis() - Tavg < 1000 ) return;
+
         this.mov_t = MOVING_t.UNKNOW;
         this.XmG = 0f;
         boolean rightRoad = false;
@@ -1105,7 +1127,7 @@ public class AppManager extends ThreadDefault
             // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
             XmG = SpeedToXmG(Vavg,Vavg_next,Tavg,Tavg_next);
 
-            Acceleration = Vavg - Vavg_next;
+            Acceleration = Vavg_next - Vavg ;
             Vavg = Vavg_next;
             Tavg = Tavg_next;
         } else {
