@@ -902,8 +902,6 @@ public class AppManager extends ThreadDefault
                         Log.w(TAG, "Error while trying to change working directory!");
                     } else {
 
-                        boolean need_download = false;
-
                         // Checking if .POSS file is in FTP server ?
                         String srcFileName = ReaderPOSSFile.getFileName(ctx, false);
                         String srcAckName = ReaderPOSSFile.getFileName(ctx, true);
@@ -911,7 +909,7 @@ public class AppManager extends ThreadDefault
                         boolean exist_server_ack = ftp.checkFileExists( srcAckName );
                         boolean exist_local_poss = ReaderPOSSFile.existLocalFile(ctx);
 
-                        need_download = ( (exist_server_poss && !exist_server_ack) || (exist_server_poss && !exist_local_poss) );
+                        boolean need_download = ( (exist_server_poss && !exist_server_ack) || (exist_server_poss && !exist_local_poss) );
 
                         // Create folder if not exist
                         if ( !folder.exists() )
