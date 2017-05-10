@@ -57,12 +57,14 @@ public class ReaderPOSSFile {
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
             while ((line = br.readLine()) != null) {
                 // use comma as separator
-                line = line.replaceAll(";;","; ;");
+                while( line.contains(";;") ) {
+                    line = line.replaceAll(";;", "; ;");
+                }
                 String[] column = line.split(cvsSplitBy);
                 if( column.length == 10 ) {
                     CustomMarkerData mk = new CustomMarkerData();
                     mk.type = Integer.valueOf( column[2] );
-                    mk.position = new LatLng( Float.valueOf(column[1]), Float.valueOf(column[0]) );
+                    mk.position = new LatLng( Float.valueOf(column[1].replace(",",".")), Float.valueOf(column[0].replace(",",".")) );
                     mk.title = column[5];
                     mk.alert = column[3].equals("1");
                     mk.alertRadius =  Integer.valueOf( column[4] );;
@@ -96,6 +98,7 @@ public class ReaderPOSSFile {
     public static ArrayList<String> extractListOfHref( String txt ) {
 
         ArrayList<String> ret = new ArrayList<>();
+        if( txt != null && !txt.isEmpty() )
         for ( String href: txt.split(",") )
         {
             if( isHref(href) )

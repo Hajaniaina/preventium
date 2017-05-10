@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -377,46 +378,17 @@ public class AppManager extends ThreadDefault
         }
     }
 
-    /// ============================================================================================
-    /// .CHECK IF ACTIF
-    /// ============================================================================================
-
-    private boolean IMEI_is_actif() {
-        boolean exist_actif = false;
-
-        if( listener != null ) listener.onStatusChanged( STATUS_t.CHECK_ACTIF );
-
-        FTPConfig config = DataCFG.getFptConfig(ctx);
-        FTPClientIO ftp = new FTPClientIO();
-
-        do {
-            // Trying to connect to FTP server...
-            if( !ftp.ftpConnect(config, 5000) ) {
-                check_internet_is_active();
-            } else {
-                exist_actif = false;
-                if (!ftp.changeWorkingDirectory("/ACTIFS")) {
-                    Log.d(TAG, "Error while trying to change working directory to \"/ACTIFS\"");
-                } else {
-                    // Checking if .ACTIVE file is in FTP server ?
-                    String srcFileName = ComonUtils.getIMEInumber(ctx);
-                    exist_actif = ftp.checkFileExists(srcFileName);
-                    if( !exist_actif ) {
-                    try {
-                        sleep(3000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                        if( listener != null ) listener.onStatusChanged( STATUS_t.IMEI_INACTIF );
-                    }
-                }
-            }
-
-        } while (!exist_actif && isRunning() );
+    private final static String HOSTNAME = "www.preventium.fr";
+    private final static String USERNAME = "box.preventium";
+    private final static String PASSWORD = "Box*16/64/prev";
+    private final static int PORTNUM = 21;
+    private final static FTPConfig FTP_CFG = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
+    private final static FTPConfig FTP_ACTIF = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM,"/ACTIFS");
+    private final static FTPConfig FTP_POS = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM,"/POSS");
+    private final static FTPConfig FTP_EPC = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
+    private final static FTPConfig FTP_DOBJ = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
 
 
-        return exist_actif;
-    }
     /// ============================================================================================
     /// .CFG
     /// ============================================================================================
@@ -429,15 +401,14 @@ public class AppManager extends ThreadDefault
 
         File folder = new File(ctx.getFilesDir(), "");
         ReaderCFGFile reader = new ReaderCFGFile();
-        //FTPConfig config = new FTPConfig("ftp.ikalogic.com","ikalogic","Tecteca1",21);
-        FTPConfig config = new FTPConfig("www.preventium.fr","box.preventium","Box*16/64/prev",21);
+
         FTPClientIO ftp = new FTPClientIO();
 
         while ( isRunning() && !cfg  ){
             if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
 
             // Trying to connect to FTP server...
-            if( !ftp.ftpConnect(config, 5000) ) {
+            if( !ftp.ftpConnect(FTP_CFG, 5000) ) {
                 check_internet_is_active();
             } else {
                 // Checking if .CFG file is in FTP server ?
@@ -487,6 +458,46 @@ public class AppManager extends ThreadDefault
     }
 
     /// ============================================================================================
+    /// .CHECK IF ACTIF
+    /// ============================================================================================
+
+    private boolean IMEI_is_actif() {
+        boolean exist_actif = false;
+
+        if( listener != null ) listener.onStatusChanged( STATUS_t.CHECK_ACTIF );
+
+        FTPClientIO ftp = new FTPClientIO();
+
+        do {
+            // Trying to connect to FTP server...
+            if( !ftp.ftpConnect(FTP_ACTIF, 5000) ) {
+                check_internet_is_active();
+            } else {
+                exist_actif = false;
+                if (!ftp.changeWorkingDirectory(FTP_ACTIF.getWorkDirectory())) {
+                    Log.d(TAG, "ACTIFS: Error while trying to change working directory to \""+FTP_ACTIF.getWorkDirectory()+"\"");
+                } else {
+                    // Checking if .ACTIVE file is in FTP server ?
+                    String srcFileName = ComonUtils.getIMEInumber(ctx);
+                    exist_actif = ftp.checkFileExists(srcFileName);
+                    if( !exist_actif ) {
+                        try {
+                            sleep(3000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        if( listener != null ) listener.onStatusChanged( STATUS_t.IMEI_INACTIF );
+                    }
+                }
+            }
+
+        } while (!exist_actif && isRunning() );
+
+
+        return exist_actif;
+    }
+
+    /// ============================================================================================
     /// .EPC
     /// ============================================================================================
 
@@ -501,24 +512,23 @@ public class AppManager extends ThreadDefault
 
         File folder = new File(ctx.getFilesDir(), "");
         ReaderEPCFile reader = new ReaderEPCFile();
-        FTPConfig config = DataCFG.getFptConfig(ctx);
         FTPClientIO ftp = new FTPClientIO();
 
         while( isRunning() && !ready ) {
             if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
 
             // Trying to connect to FTP server...
-            if( !ftp.ftpConnect(config, 5000) ) {
+            if( !ftp.ftpConnect(FTP_EPC, 5000) ) {
                 check_internet_is_active();
             } else {
 
                 // Changing working directory if needed
                 boolean change_directory = true;
-                if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                    change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
+                if ( FTP_EPC.getWorkDirectory() != null && !FTP_EPC.getWorkDirectory().isEmpty() && !FTP_EPC.getWorkDirectory().equals("/"))
+                    change_directory = ftp.changeWorkingDirectory(FTP_EPC.getWorkDirectory());
 
                 if( !change_directory ) {
-                    Log.w(TAG, "Error while trying to change working directory!");
+                    Log.w(TAG, "EPC: Error while trying to change working directory to \"" + FTP_EPC.getWorkDirectory() + "\"");
                 } else {
                     boolean epc;
                     boolean exist_server_epc = false;
@@ -630,24 +640,23 @@ public class AppManager extends ThreadDefault
 
         File folder = new File(ctx.getFilesDir(), "");
         ReaderDOBJFile reader = new ReaderDOBJFile();
-        FTPConfig config = DataCFG.getFptConfig(ctx);
         FTPClientIO ftp = new FTPClientIO();
 
         while( isRunning() && !ready ) {
             if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
 
             // Trying to connect to FTP server...
-            if( !ftp.ftpConnect(config, 5000) ) {
+            if( !ftp.ftpConnect(FTP_DOBJ, 5000) ) {
                 check_internet_is_active();
             } else {
 
                 // Changing working directory if needed
                 boolean change_directory = true;
-                if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                    change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
+                if (FTP_DOBJ.getWorkDirectory() != null && !FTP_DOBJ.getWorkDirectory().isEmpty() && !FTP_DOBJ.getWorkDirectory().equals("/"))
+                    change_directory = ftp.changeWorkingDirectory(FTP_DOBJ.getWorkDirectory());
 
                 if( !change_directory ) {
-                    Log.w(TAG, "Error while trying to change working directory!");
+                    Log.w(TAG, "DOBJ: Error while trying to change working directory to \"" + FTP_DOBJ.getWorkDirectory() + "\"!");
                 } else {
 
                     boolean dobj = false;
@@ -751,10 +760,10 @@ public class AppManager extends ThreadDefault
                     FTPClientIO ftp = new FTPClientIO();
                     if (config != null && ftp.ftpConnect(config, 5000)) {
                         boolean change_directory = true;
-                        if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                        if (config.getWorkDirectory() != null && !config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
                             change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
                         if (!change_directory) {
-                            Log.w(TAG, "Error while trying to change working directory!");
+                            Log.w(TAG, "CEP: Error while trying to change working directory to \"" + config.getWorkDirectory() + "\"!");
                         } else {
                             for (File file : listOfFiles) {
                                 if (ftp.ftpUpload(file.getAbsolutePath(), file.getName())) {
@@ -783,11 +792,12 @@ public class AppManager extends ThreadDefault
         customMarkerList_Received = true;
     }
 
-    // Create .POS files (Position of map markers) and uploading to the server.
-    private void upload_custom_markers() throws InterruptedException {
-
+    // Create .SHARE file (Position of map markers) and uploading to the server.
+    private void upload_shared_pos() throws InterruptedException {
         if( isRunning() ) {
             if (listener != null) {
+
+
                 customMarkerList_Received = false;
                 customMarkerList = null;
                 listener.onCustomMarkerDataListGet();
@@ -797,17 +807,19 @@ public class AppManager extends ThreadDefault
                     sleep(500);
                 }
                 listener.onStatusChanged(STATUS_t.SETTING_MARKERS);
+
+                // CREATE FILE
+                File folder = new File(ctx.getFilesDir(), "SHARE");
+
                 if (customMarkerList_Received) {
                     if (parcour_id > 0 && customMarkerList != null && customMarkerList.size() > 0) {
-                        // CREATE FILE
-                        File folder = new File(ctx.getFilesDir(), "POS");
                         // Create folder if not exist
                         if (!folder.exists())
                             if (!folder.mkdirs())
                                 Log.w(TAG, "Error while trying to create new folder!");
                         if (folder.exists()) {
-                            String filename = String.format(Locale.getDefault(), "%s_%s.POS",
-                                    ComonUtils.getIMEInumber(ctx), parcour_id);
+                            String filename = String.format(Locale.getDefault(), "%s.SHARE",
+                                    ComonUtils.getIMEInumber(ctx));
                             File file = new File(folder.getAbsolutePath(), filename);
                             try {
                                 if (file.createNewFile()) {
@@ -815,14 +827,19 @@ public class AppManager extends ThreadDefault
                                     String line = "";
                                     for (CustomMarkerData mk : customMarkerList) {
                                         line = String.format(Locale.getDefault(),
-                                                "%f;%f;%d;%d;%d;%s;%d;\n",
-                                                mk.position.longitude,
-                                                mk.position.latitude,
-                                                mk.type,
-                                                (mk.alert ? 1 : 0),
-                                                mk.alertRadius,
-                                                mk.title,
-                                                (mk.shared ? 1 : 0) );
+                                                "%f;%f;%d;%d;%d;%s;%d;%d;%s;%s;%s;\n",
+                                                mk.position.longitude,  // Longitude position
+                                                mk.position.latitude,   // Latitude position
+                                                mk.type,                // Type de position
+                                                (mk.alert ? 1 : 0),     // Alert de proximité
+                                                mk.alertRadius,         // Périmètre de déclenchement
+                                                mk.title,               // Titre de la position
+                                                (mk.shared ? 1 : 0),    // Partager cette position
+                                                0,                      // Require une signature sur cette position
+                                                ( (mk.alertMsg != null && mk.alertMsg.isEmpty() ) ? mk.alertMsg : ""),            // Message
+                                                ComonUtils.getIMEInumber(ctx), // Liste des IMEI qui partage la position
+                                                ""                      // Pieces jointes
+                                        );
                                         fileWriter.write(line);
                                     }
                                     fileWriter.flush();
@@ -837,23 +854,22 @@ public class AppManager extends ThreadDefault
                     }
                 }
 
-                // UPLOAD .POS FILES
-                File folder = new File(ctx.getFilesDir(), "POS");
+                // UPLOAD .SHARE FILES
+
                 if (folder.exists()) {
                     File[] listOfFiles = folder.listFiles(new FilenameFilter() {
                         public boolean accept(File dir, String name) {
-                            return name.toUpperCase().endsWith(".POS");
+                            return name.toUpperCase().endsWith(".SHARE");
                         }
                     });
                     if (listOfFiles != null && listOfFiles.length > 0) {
-                        FTPConfig config = DataCFG.getFptConfig(ctx);
                         FTPClientIO ftp = new FTPClientIO();
-                        if (config != null && ftp.ftpConnect(config, 5000)) {
+                        if (ftp.ftpConnect(FTP_POS, 5000)) {
                             boolean change_directory = true;
-                            if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                                change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
+                            if ( FTP_POS.getWorkDirectory() != null && !FTP_POS.getWorkDirectory().isEmpty() && !FTP_POS.getWorkDirectory().equals("/"))
+                                change_directory = ftp.changeWorkingDirectory(FTP_POS.getWorkDirectory());
                             if (!change_directory) {
-                                Log.w(TAG, "Error while trying to change working directory!");
+                                Log.w(TAG, "SHARE: Error while trying to change working directory to \"" + FTP_POS.getWorkDirectory() + "\"!");
                             } else {
                                 for (File file : listOfFiles) {
                                     if (ftp.ftpUpload(file.getAbsolutePath(), file.getName())) {
@@ -878,90 +894,82 @@ public class AppManager extends ThreadDefault
         if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_MARKERS_SHARED );
 
         File folder = new File(ctx.getFilesDir(), "");
-        FTPConfig config = DataCFG.getFptConfig(ctx);
         FTPClientIO ftp = new FTPClientIO();
 
         while( isRunning() && !ready ) {
             if (listener != null) listener.onStatusChanged( STATUS_t.GETTING_MARKERS_SHARED );
 
             // Trying to connect to FTP server...
-            if( !ftp.ftpConnect(config, 5000) ) {
+            if( !ftp.ftpConnect(FTP_POS, 5000) ) {
                 check_internet_is_active();
             } else {
                 // Changing working directory if needed
                 boolean change_directory = true;
-                if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
-                    change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
+                if ( FTP_POS.getWorkDirectory() != null && !FTP_POS.getWorkDirectory().isEmpty() && !FTP_POS.getWorkDirectory().equals("/"))
+                    change_directory = ftp.changeWorkingDirectory(FTP_POS.getWorkDirectory());
 
                 if( !change_directory ) {
-                    Log.w(TAG, "Error while trying to change working directory!");
+                    Log.w(TAG, "POSS: Error while trying to change working directory to \"" + FTP_POS + "\"!");
                 } else {
 
-                    change_directory = ftp.changeWorkingDirectory("POSS");
-                    if( !change_directory ) {
-                        Log.w(TAG, "Error while trying to change working directory!");
-                    } else {
+                    // Checking if .POSS file is in FTP server ?
+                    String srcFileName = ReaderPOSSFile.getFileName(ctx, false);
+                    String srcAckName = ReaderPOSSFile.getFileName(ctx, true);
+                    boolean exist_server_poss = ftp.checkFileExists( srcFileName );
+                    boolean exist_server_ack = ftp.checkFileExists( srcAckName );
+                    boolean exist_local_poss = ReaderPOSSFile.existLocalFile(ctx);
 
-                        // Checking if .POSS file is in FTP server ?
-                        String srcFileName = ReaderPOSSFile.getFileName(ctx, false);
-                        String srcAckName = ReaderPOSSFile.getFileName(ctx, true);
-                        boolean exist_server_poss = ftp.checkFileExists( srcFileName );
-                        boolean exist_server_ack = ftp.checkFileExists( srcAckName );
-                        boolean exist_local_poss = ReaderPOSSFile.existLocalFile(ctx);
+                    boolean need_download = ( (exist_server_poss && !exist_server_ack) || (exist_server_poss && !exist_local_poss) );
 
-                        boolean need_download = ( (exist_server_poss && !exist_server_ack) || (exist_server_poss && !exist_local_poss) );
+                    // Create folder if not exist
+                    if ( !folder.exists() )
+                        if ( !folder.mkdirs() )
+                            Log.w(TAG, "Error while trying to create new folder!");
+                    String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
 
-                        // Create folder if not exist
-                        if ( !folder.exists() )
-                            if ( !folder.mkdirs() )
-                                Log.w(TAG, "Error while trying to create new folder!");
-                        String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+                    if( need_download ) {
+                        try{
+                            File local_file = new File(desFileName);
+                            if(local_file.delete()) {
+                                System.out.println(local_file.getName() + " is deleted!");
+                            } else {
+                                System.out.println("Delete operation is failed.");
+                            }
+                        }catch(Exception e) {
+                            e.printStackTrace();
+                        }
 
-                        if( need_download ) {
-                            try{
-                                File local_file = new File(desFileName);
-                                if(local_file.delete()) {
-                                    System.out.println(local_file.getName() + " is deleted!");
-                                } else {
-                                    System.out.println("Delete operation is failed.");
-                                }
-                            }catch(Exception e) {
+                        if (ftp.ftpDownload(srcFileName, desFileName)) {
+                            need_download = false;
+                            // envoi acknowledge
+                            try {
+                                File temp = File.createTempFile("temp-file-name", ".tmp");
+                                ftp.ftpUpload(temp.getPath(), srcAckName);
+                                temp.delete();
+                            } catch (IOException e) {
                                 e.printStackTrace();
                             }
-
-                            if (ftp.ftpDownload(srcFileName, desFileName)) {
-                                need_download = false;
-                                // envoi acknowledge
-                                try {
-                                    File temp = File.createTempFile("temp-file-name", ".tmp");
-                                    ftp.ftpUpload(temp.getPath(), srcAckName);
-                                    temp.delete();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
                         }
+                    }
 
-                        if( !need_download )
-                        {
-                            exist_local_poss = ReaderPOSSFile.existLocalFile(ctx);
-                            if( !exist_local_poss ) {
+                    if( !need_download )
+                    {
+                        exist_local_poss = ReaderPOSSFile.existLocalFile(ctx);
+                        if( !exist_local_poss ) {
+                            ready = true;
+                            if (listener != null) listener.onSharedPositionsChanged(new ArrayList<CustomMarkerData>());
+                        } else {
+
+                            List<CustomMarkerData> list = ReaderPOSSFile.readFile(desFileName);
+
+                            if (list != null) {
+                                Log.d("AAA","NB POS:" + list.size() );
                                 ready = true;
-                                if (listener != null) listener.onSharedPositionsChanged(new ArrayList<CustomMarkerData>());
+                                if (listener != null) listener.onSharedPositionsChanged(list);
                             } else {
-
-                                List<CustomMarkerData> list = ReaderPOSSFile.readFile(desFileName);
-                                if (list != null) {
-                                    ready = true;
-                                    if (listener != null) listener.onSharedPositionsChanged(list);
-                                }
+                                Log.d("AAA","NB POS:" + "NULL" );
                             }
                         }
-
-
-
-
-
                     }
                 }
             }
@@ -1047,10 +1055,10 @@ public class AppManager extends ThreadDefault
                     FTPClientIO ftp = new FTPClientIO();
                     if( config != null && ftp.ftpConnect(config, 5000) ) {
                         boolean change_directory = true;
-                        if (!config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                        if ( config.getWorkDirectory() != null && !config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
                             change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
                         if (!change_directory) {
-                            Log.w(TAG, "Error while trying to change working directory!");
+                            Log.w(TAG, "PT: Error while trying to change working directory to \"" + config.getWorkDirectory() + "\"!");
                         } else {
                             for ( File file : listOfFiles ) {
                                 if( ftp.ftpUpload(file.getAbsolutePath(),file.getName()) ){
@@ -1852,7 +1860,7 @@ public class AppManager extends ThreadDefault
             clear_force_ui();
             // Sending files
             upload_cep();
-            upload_custom_markers();
+            upload_shared_pos();
             upload_parcours_type();
             parcour_id = -1;
 
