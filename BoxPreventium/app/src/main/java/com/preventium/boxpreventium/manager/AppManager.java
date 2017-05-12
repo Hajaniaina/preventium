@@ -1304,6 +1304,7 @@ public class AppManager extends ThreadDefault
         LEVEL_t alertX = LEVEL_t.LEVEL_UNKNOW;
         LEVEL_t alertY = LEVEL_t.LEVEL_UNKNOW;
         // Read the runtime value force
+
         ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
         ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(smooth.first);
         if( loc == null || (loc.getSpeed() * MS_TO_KMH) < 20.0 ) {
@@ -1311,50 +1312,45 @@ public class AppManager extends ThreadDefault
             seuil_y = null;
         }
 
+        // ADD ECA? ( location with X alert )
         // Compare the runtime X value force with the prevent X value force, and add alert to ECA database
         if( seuil_x != null ) {
             alertX = seuil_x.level;
             if( !seuil_x.equals(seuil_last_x) ) seuil_chrono_x.start();
             if( seuil_chrono_x.getSeconds() >= seuil_x.TPS ) {
                 seuil_chrono_x.start();
-//                // If elapsed time > 2 seconds
-//                if(System.currentTimeMillis() - alertX_add_at >= 500) {
-//                    if( _tracking ) database.addECA( parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc, null ) );
-//                    alertX_add_at = System.currentTimeMillis();
-//                }
                 if( _tracking ) {
                     database.addECA(parcour_id, ECALine.newInstance(seuil_last_x.IDAlert, loc, null));
                     alertX_add_at = System.currentTimeMillis();
                     lastLocSend = loc;
                 }
             }
+            else
+            {
+                seuil_x = null; // For not use on UI
+            }
         }
         seuil_last_x = seuil_x;
 
+        // ADD ECA? ( location with Y alert )
         // Compare the runtime Y value force with the prevent Y value force, and add alert to ECA database
         if( seuil_y != null ) {
             alertY = seuil_y.level;
             if( !seuil_y.equals(seuil_last_y) )seuil_chrono_y.start();
             if( seuil_chrono_y.getSeconds() >= seuil_y.TPS ) {
                 seuil_chrono_y.start();
-//                // If elapsed time > 2 seconds
-//                if(System.currentTimeMillis() - alertY_add_at >= 500) {
-//                    //if( _tracking ) database.addECA( parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc, null ) );
-//                    alertY_add_at = System.currentTimeMillis();
-//                }
                 if( _tracking ) {
                     database.addECA(parcour_id, ECALine.newInstance(seuil_last_y.IDAlert, loc, null));
                     alertY_add_at = System.currentTimeMillis();
                     lastLocSend = loc;
                 }
+            } else {
+                seuil_y = null; // For not use on UI
             }
         }
         seuil_last_y = seuil_y;
 
-        // Add location to ECA database
-//        if( _tracking &&
-//                alertX == LEVEL_t.LEVEL_UNKNOW
-//                && alertY == LEVEL_t.LEVEL_UNKNOW  ){
+        // ADD ECA? (simple location without alert)
         if( _tracking ) {
 
             List<Location> locations = get_location_list(1);
@@ -1370,20 +1366,17 @@ public class AppManager extends ThreadDefault
             }
         }
 
-        // Update ui interface
+        // Update UI interface
         ForceSeuil seuil = null;
         if( alertX.getValue() > alertY.getValue() ) {
             seuil = seuil_x;
         } else {
             seuil = seuil_y;
         }
-
-
         boolean change = false;
         if( (seuil_ui == null) != (seuil == null) ) change = true;
         if( seuil_ui != null  ) change = !seuil_ui.equals( seuil );
         if( seuil != null  ) change = !seuil.equals( seuil_ui );
-
         if( change ) {
             if( seuil != null ) {
 
@@ -1406,9 +1399,6 @@ public class AppManager extends ThreadDefault
                     alertUI_add_at = System.currentTimeMillis();
                     seuil_ui = seuil;
                 }
-//                if( listener != null )listener.onForceChanged(seuil.type, seuil.level);
-//                alertUI_add_at = System.currentTimeMillis();
-//                seuil_ui = seuil;
             }
             else if( alertUI_add_at + 3000 < System.currentTimeMillis() ) {
                 if( listener != null ) listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW);
@@ -1418,6 +1408,7 @@ public class AppManager extends ThreadDefault
         } else {
             alertUI_add_at = System.currentTimeMillis();
         }
+
     }
 
     /// ============================================================================================
