@@ -98,6 +98,10 @@ public class ReaderEPCFile {
         return ret;
     }
 
+    public short get_TPS(int index) {
+        return  ( index >= 0 && index < seuil.length )
+                ? seuil[index].TPS : -1;
+    }
     public ForceSeuil getForceSeuil(int index) {
         return  ( index >= 0 && index < seuil.length )
                 ? seuil[index] : null;
@@ -143,6 +147,17 @@ public class ReaderEPCFile {
                     ret = seuil[s];
                     break;
                 }
+            }
+        }
+        return ret;
+    }
+
+    public ForceSeuil getForceSeuilByID(short IDAlert) {
+        ForceSeuil ret = null;
+        for( int i = 0; i < 20; i++ ){
+            if( seuil[i].IDAlert == IDAlert ) {
+                ret = seuil[i];
+                break;
             }
         }
         return ret;
