@@ -32,6 +32,8 @@ public enum LEVEL_t {
     @NonNull
     public String toString() {
         switch ( valueOf(value) ) {
+            case LEVEL_UNKNOW    :
+                return "LEVEL_t[LEVEL_UNKNOW]";
             case LEVEL_1    :
                 return "LEVEL_t[LEVEL_1]";
             case LEVEL_2    :

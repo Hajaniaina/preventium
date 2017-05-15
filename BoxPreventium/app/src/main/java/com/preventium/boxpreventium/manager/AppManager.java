@@ -135,8 +135,8 @@ public class AppManager extends ThreadDefault
 
         database.clear_obselete_data();
 
-        download_cfg();
         IMEI_is_actif();
+        download_cfg();
         download_shared_pos();
         download_epc();
         download_dobj();
@@ -799,7 +799,6 @@ public class AppManager extends ThreadDefault
         if( isRunning() ) {
             if (listener != null) {
 
-
                 customMarkerList_Received = false;
                 customMarkerList = null;
                 listener.onCustomMarkerDataListGet();
@@ -957,7 +956,7 @@ public class AppManager extends ThreadDefault
                     if( !need_download )
                     {
                         exist_local_poss = ReaderPOSSFile.existLocalFile(ctx);
-                        if( !exist_local_poss ) {
+                        if( !exist_local_poss || (!exist_server_poss && !exist_server_ack) ) {
                             ready = true;
                             if (listener != null) listener.onSharedPositionsChanged(new ArrayList<CustomMarkerData>());
                         } else {
@@ -1111,8 +1110,7 @@ public class AppManager extends ThreadDefault
     Pair<Double,Short> shock = Pair.create(0.0,(short)0);
 
     private float Vavg = 0f;
-    private float Acceleration = 0f;
-    private long Tavg = System.currentTimeMillis();;
+    private long Tavg = System.currentTimeMillis();
 
     private void calc_movements() {
 
@@ -1124,6 +1122,7 @@ public class AppManager extends ThreadDefault
 
         // Calculate Vavg and Acceleration (m/s)
         List<Location> list = get_location_list(3,5000);
+        float acceleration = 0f;
         if( list != null && list.size() >= 3 ) {
             int i = list.size()-1;
             rightRoad = isRightRoad( list.get(i-2), list.get(i-1), list.get(i) );
@@ -1135,20 +1134,20 @@ public class AppManager extends ThreadDefault
             // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
             XmG = SpeedToXmG(Vavg,Vavg_next,Tavg,Tavg_next);
 
-            Acceleration = Vavg_next - Vavg ;
+            acceleration = Vavg_next - Vavg ;
             Vavg = Vavg_next;
             Tavg = Tavg_next;
         } else {
-            Acceleration = 0f;
+            acceleration = 0f;
             Vavg = 0f;
             Tavg = System.currentTimeMillis();
         }
 
         // Set moving status
         if (Vavg * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
-        else if ( Math.abs( 0f - (Acceleration * MS_TO_KMH) ) < 2f ) mov_t = MOVING_t.CST;
-        else if (Acceleration > 0f ) mov_t = MOVING_t.ACC;
-        else if (Acceleration < 0f) mov_t = MOVING_t.BRK;
+        else if ( Math.abs( 0f - (acceleration * MS_TO_KMH) ) < 2f ) mov_t = MOVING_t.CST;
+        else if (acceleration > 0f ) mov_t = MOVING_t.ACC;
+        else if (acceleration < 0f) mov_t = MOVING_t.BRK;
         else mov_t = MOVING_t.NCS;
 
         // Set move chrono and calibration if necessary
@@ -1181,75 +1180,6 @@ public class AppManager extends ThreadDefault
         }
 
 
-    }
-
-    private void calc_movements_(){
-
-        this.mov_t = MOVING_t.UNKNOW;
-        this.XmG = 0f;
-        boolean rightRoad = false;
-
-        List<Location> list = get_location_list(3,5000);
-//if( list != null ) Log.d("AAAA","sss" + list.size()); else Log.d("AAAA","sss null");
-        if( list != null && list.size() >= 3 ) {
-
-            int i = list.size()-1;
-
-            rightRoad = isRightRoad( list.get(i-2), list.get(i-1), list.get(i) );
-            boolean acceleration = true;
-            boolean freinage = true;
-            float speed_min = list.get(0).getSpeed();
-            float speed_max = list.get(0).getSpeed();
-            for (i = 0; i < list.size(); i++) {// i is more recent than (i+1)
-                // Calculate minimum and maximum value
-                if (list.get(i).getSpeed() < speed_min) speed_min = list.get(i).getSpeed();
-                if (list.get(i).getSpeed() > speed_max) speed_max = list.get(i).getSpeed();
-                // Checking acceleration and braking
-                if (i < list.size() - 1) {
-                    if (list.get(i).getSpeed() <= list.get(i + 1).getSpeed())acceleration = false;
-                    if (list.get(i).getSpeed() >= list.get(i + 1).getSpeed())freinage = false;
-                }
-            }
-
-            if (speed_max * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
-            else if ((speed_max - speed_min) * MS_TO_KMH < 2f) mov_t = MOVING_t.CST;
-            else if (acceleration) mov_t = MOVING_t.ACC;
-            else if (freinage) mov_t = MOVING_t.BRK;
-            else mov_t = MOVING_t.NCS;
-        }
-
-        if ( mov_t != mov_t_last )
-        {
-            mov_t_last_chrono.start();
-            mov_chrono.start();
-            mov_t_last = mov_t;
-        }
-        else {
-            if ( mov_chrono.isStarted() ) {
-                switch (mov_t_last) {
-                    case UNKNOW:
-                        break;
-                    case STP:
-                        break;
-                    case ACC:
-                        if (rightRoad) {
-                            mov_chrono.stop();
-                            modules.on_acceleration();
-                        }
-                        break;
-                    case BRK:
-                        if (rightRoad) {
-                            mov_chrono.stop();
-                            modules.on_constant_speed();
-                        }
-                        break;
-                    case CST:
-                        break;
-                    case NCS:
-                        break;
-                }
-            }
-        }
     }
 
     private double SpeedToXmG( @NonNull float v1, @NonNull float v2, @NonNull long t1, @NonNull long t2 ) {
@@ -1351,14 +1281,14 @@ public class AppManager extends ThreadDefault
         for( int i = 0; i < 10; i++ ) {
             if( tab[i] > 0 ) {
                 tps = nd - tab[i];
-                if( tps >= readerEPCFile.get_TPS(i+10) ) {
+                if( tps >= readerEPCFile.get_TPS(i) ) {
                     a = i;
                 }
             }
         }
         if( a >= 0 && a < 10 ) {
 
-            ret = readerEPCFile.getForceSeuil(a+10);
+            ret = readerEPCFile.getForceSeuil(a);
 
             if( a >= 0 && a < 5 ) {
                 for( int i = a; i < 5; i++ ) tab[i] = 0;
@@ -1375,10 +1305,10 @@ public class AppManager extends ThreadDefault
 
         switch ( t ) {
             case UNKNOW:
-            case TURN_LEFT:
-            case TURN_RIGHT:
-                break;
             case ACCELERATION:
+            case BRAKING:
+                break;
+            case TURN_LEFT:
                 switch ( l ) {
                     case LEVEL_UNKNOW: break;
                     case LEVEL_1: i1 = 0; i2 = 0; break;
@@ -1388,7 +1318,7 @@ public class AppManager extends ThreadDefault
                     case LEVEL_5: i1 = 0; i2 = 4; break;
                 }
                 break;
-            case BRAKING:
+            case TURN_RIGHT:
                 switch ( l ) {
                     case LEVEL_UNKNOW: break;
                     case LEVEL_1: i1 = 5; i2 = 5; break;
@@ -1417,14 +1347,14 @@ public class AppManager extends ThreadDefault
         for( int i = 0; i < 10; i++ ) {
             if( tab[i] > 0 ) {
                 tps = nd - tab[i];
-                if( tps >= readerEPCFile.get_TPS(i) ) {
+                if( tps >= readerEPCFile.get_TPS(i+10) ) {
                     a = i;
                 }
             }
         }
         if( a >= 0 && a < 10 ) {
 
-            ret = readerEPCFile.getForceSeuil(a);
+            ret = readerEPCFile.getForceSeuil(a+10);
 
             if( a >= 0 && a < 5 ) {
                 for( int i = a; i < 5; i++ ) tab[i] = 0;
@@ -1442,57 +1372,60 @@ public class AppManager extends ThreadDefault
         Location loc = get_last_location();
         ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
         ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(smooth.first);
+        // Get type and level of runtime alert
         if( loc == null || (loc.getSpeed() * MS_TO_KMH) < 20.0 )
         {
             seuil_x = null;
             seuil_y = null;
         }
-        // Get type and level of runtime alert
-        FORCE_t type_X = FORCE_t.UNKNOW;
-        FORCE_t type_Y = FORCE_t.UNKNOW;
-        LEVEL_t level_X = LEVEL_t.LEVEL_UNKNOW;
-        LEVEL_t level_Y = LEVEL_t.LEVEL_UNKNOW;
-        if( seuil_x != null ) {
-            type_X = seuil_x.type;
-            level_X = seuil_x.level;
-        }
-        if( seuil_y != null ) {
-            type_Y = seuil_y.type;
-            level_Y = seuil_y.level;
-        }
-        // Update start at for all alerts
-        update_tab_X( X, type_X, level_X, ST );
-        update_tab_Y( Y, type_Y, level_Y, ST );
-        // Gettings alerts
-        seuil_x = read_tab_X(X);
-        seuil_y = read_tab_Y(Y);
-        // ADD ECA? ( location with X alert )
-        if( seuil_x != null ) {
-            if( _tracking ) {
-                database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc, null));
-                alertX_add_at = System.currentTimeMillis();
-                lastLocSend = loc;
+        else
+        {
+            FORCE_t type_X = FORCE_t.UNKNOW;
+            FORCE_t type_Y = FORCE_t.UNKNOW;
+            LEVEL_t level_X = LEVEL_t.LEVEL_UNKNOW;
+            LEVEL_t level_Y = LEVEL_t.LEVEL_UNKNOW;
+            if (seuil_x != null) {
+                type_X = seuil_x.type;
+                level_X = seuil_x.level;
             }
-        }
-        // ADD ECA? ( location with Y alert )
-        if( seuil_y != null ) {
-            if( _tracking ) {
-                database.addECA(parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc, null));
-                alertY_add_at = System.currentTimeMillis();
-                lastLocSend = loc;
+            if (seuil_y != null) {
+                type_Y = seuil_y.type;
+                level_Y = seuil_y.level;
             }
-        }
-        // ADD ECA? (simple location without alert)
-        if( _tracking ) {
-            List<Location> locations = get_location_list(1);
-            if (locations != null && locations.size() >= 1) {
-                float min_meters = ( (locations.get(0).getSpeed()*MS_TO_KMH) < 70f ) ? 5f : 15f;
-                if( lastLocSend == null
-                        || locations.get(0).distanceTo(lastLocSend) > min_meters ) {
+            // Update start at for all alerts
+            update_tab_X(X, type_X, level_X, ST);
+            update_tab_Y(Y, type_Y, level_Y, ST);
+            // Gettings alerts
+            seuil_x = read_tab_X(X);
+            seuil_y = read_tab_Y(Y);
+            // ADD ECA? ( location with X alert )
+            if (seuil_x != null) {
+                if (_tracking) {
+                    database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc, null));
+                    alertX_add_at = System.currentTimeMillis();
+                    lastLocSend = loc;
+                }
+            }
+            // ADD ECA? ( location with Y alert )
+            if (seuil_y != null) {
+                if (_tracking) {
+                    database.addECA(parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc, null));
+                    alertY_add_at = System.currentTimeMillis();
+                    lastLocSend = loc;
+                }
+            }
+            // ADD ECA? (simple location without alert)
+            if (_tracking) {
+                List<Location> locations = get_location_list(1);
+                if (locations != null && locations.size() >= 1) {
+                    float min_meters = ((locations.get(0).getSpeed() * MS_TO_KMH) < 70f) ? 5f : 15f;
+                    if (lastLocSend == null
+                            || locations.get(0).distanceTo(lastLocSend) > min_meters) {
 
-                    if( lastLocSend == null ) lastLocSend = new Location(locations.get(0));
-                    database.addECA(parcour_id, ECALine.newInstance(locations.get(0), lastLocSend));
-                    lastLocSend = new Location(locations.get(0));
+                        if (lastLocSend == null) lastLocSend = new Location(locations.get(0));
+                        database.addECA(parcour_id, ECALine.newInstance(locations.get(0), lastLocSend));
+                        lastLocSend = new Location(locations.get(0));
+                    }
                 }
             }
         }
@@ -2193,6 +2126,7 @@ public class AppManager extends ThreadDefault
                 && mov_t_last != MOVING_t.UNKNOW
                 && engine_t == ENGINE_t.ON
         );
+        Log.d("PT0","Movement:" + mov_t_last + "ready_to_started:" + ready_to_started + "(" + (modules.getNumberOfBoxConnected()>=1) + ";" + mov_t_last + ";" + engine_t+")");
 
         if ( !ready_to_started ) {
             chrono_ready_to_start.stop();
@@ -2328,6 +2262,7 @@ public class AppManager extends ThreadDefault
     }
 
     public void setGpsStatus( boolean active ) {
+active = true;
         lock.lock();
         gps = active;
         lock.unlock();
