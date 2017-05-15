@@ -118,7 +118,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton menuButtonSettings;
 
     private GoogleMap googleMap;
-    private SupportMapFragment mapFrag;
     private LatLng lastPos;
     private Location lastLocation = null;
     private AppColor appColor;
@@ -136,7 +135,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private QrScanRequest qrRequest;
     private boolean routeActive = false;
     private boolean routeInPause = false;
-    private STATUS_t globalStatus = STATUS_t.PAR_STOPPED;
     private int qrSmsTimeout = 0;
     private int selectedEpcFile = 0;
     private boolean trackingActivated = true;
@@ -317,6 +315,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         mapReady = true;
 
+        if (Connectivity.isConnected(getApplicationContext())) {
+
+            if (progress != null) {
+
+                progress.setMessage(getString(R.string.network_alert_string));
+            }
+        }
+
         if (progress != null && progress.isShowing()) {
 
             progress.setMessage(getString(R.string.progress_location_string));
@@ -436,8 +442,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void run() {
-
-                globalStatus = status;
 
                 switch (status) {
 
@@ -1057,7 +1061,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             debugView = (TextView) findViewById(R.id.debug_view);
         }
 
-        mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        SupportMapFragment mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
 
         if (firstLaunch) {
 
@@ -1234,29 +1238,49 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         customMarker.setAsActivated(true);
 
         final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        final int filesNum = customMarker.getTotalAttachmentsNum();
+        String msg = "Attention, vous vous approchez du marqueur '" + customMarker.getTitle() + "'\n";
 
-        String msg = "";
-        msg += "Vous vous approchez du marqueur '" + customMarker.getTitle() + "'\n";
-        msg += "Vous avez " + customMarker.getAlertAttachNumber() + " fichier(s) à prendre en compte";
+        if (filesNum > 0) {
+
+            msg += "\nVous avez " + filesNum + " fichier(s) à prendre en compte";
+        }
+        else {
+
+            msg += "\nIl n'y a aucun fichier ou message attribué à cette position";
+        }
 
         alertDialog.setCancelable(false);
         alertDialog.setTitle("");
         alertDialog.setMessage(msg);
 
-        alertDialog.setPositiveButton(getString(R.string.open_string), new DialogInterface.OnClickListener() {
+        if (filesNum > 0) {
 
-            public void onClick (DialogInterface dialog,int which) {
+            alertDialog.setPositiveButton(getString(R.string.open_string), new DialogInterface.OnClickListener() {
 
-                System.gc();
-                CustomMarkerData data = markerManager.getUserMarkerData(customMarker);
+                public void onClick (DialogInterface dialog,int which) {
 
-                Intent intent = new Intent(MainActivity.this, WebViewActivity.class);
-                intent.putExtra(WebViewActivity.MARKER_DATA_PARAM, data);
-                startActivity(intent);
+                    System.gc();
+                    CustomMarkerData data = markerManager.getUserMarkerData(customMarker);
 
-                dialog.dismiss();
-            }
-        });
+                    Intent intent = new Intent(MainActivity.this, WebViewActivity.class);
+                    intent.putExtra(WebViewActivity.MARKER_DATA_PARAM, data);
+                    startActivity(intent);
+
+                    dialog.dismiss();
+                }
+            });
+        }
+        else {
+
+            alertDialog.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
+
+                public void onClick(DialogInterface dialog, int which) {
+
+                    dialog.dismiss();
+                }
+            });
+        }
 
         alertDialog.show();
     }
