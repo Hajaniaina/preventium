@@ -55,7 +55,6 @@ public class CustomMarker {
     private String title = "";
     private boolean shared = false;
     private boolean newCreated = false;
-
     private boolean alert = false;
     private boolean alertWasActivated = false;
     private int alertRadius = 0;
@@ -339,6 +338,23 @@ public class CustomMarker {
     public ArrayList<String> getAlertAttachments() {
 
         return alertAttachments;
+    }
+
+    public int getTotalAttachmentsNum() {
+
+        int num = 0;
+
+        if (alertMsg != null)
+        {
+            if (alertMsg.length() > 1)
+            {
+                num += 1;
+            }
+        }
+
+        num += getAlertAttachNumber();
+
+        return num;
     }
 
     public void setAlertSignatureReq (boolean request) {

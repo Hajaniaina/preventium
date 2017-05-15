@@ -65,11 +65,26 @@ public class WebViewActivity extends AppCompatActivity {
         progressBar.setCancelable(false);
         progressBar.setMax(100);
 
+        if (markerData.alertMsg != null) {
+
+            if (markerData.alertMsg.length() > 1) {
+
+                String customUrl = "<a href=\"http://local.text_msg\">" + markerData.alertMsg + "</a>";
+
+                if (markerData.alertAttachments == null) {
+
+                    markerData.alertAttachments = new ArrayList<>();
+                }
+
+                markerData.alertAttachments.add(0, customUrl);
+            }
+        }
+
         stepsView = (TextView) findViewById(R.id.step_num);
 
         if (markerData.alertAttachments != null) {
 
-            maxPages = markerData.alertAttachments.size();
+            maxPages += markerData.alertAttachments.size();
         }
 
         if (!isFinishing()) {
@@ -121,12 +136,18 @@ public class WebViewActivity extends AppCompatActivity {
             }
         });
 
-        openPage(currPageIndex);
-        updateStepView();
-
         final FloatingActionButton buttonNext = (FloatingActionButton) findViewById(R.id.fab_page_next);
         final FloatingActionButton buttonPrev = (FloatingActionButton) findViewById(R.id.fab_page_prev);
         buttonPrev.setEnabled(false);
+
+        if (currPageIndex >= (maxPages - 1)) {
+
+            buttonNext.setImageIcon(Icon.createWithResource(getApplicationContext(), R.drawable.ic_check));
+            buttonNext.setColorNormal(appColor.getColor(AppColor.GREEN));
+            buttonPrev.setEnabled(false);
+        }
+
+        openPage(currPageIndex);
 
         buttonNext.setOnClickListener(new View.OnClickListener() {
 
@@ -140,7 +161,6 @@ public class WebViewActivity extends AppCompatActivity {
                     currPageIndex++;
                     pageReloadAttempts = 0;
                     openPage(currPageIndex);
-                    updateStepView();
                 }
                 else {
 
@@ -165,7 +185,6 @@ public class WebViewActivity extends AppCompatActivity {
                     currPageIndex--;
                     pageReloadAttempts = 0;
                     openPage(currPageIndex);
-                    updateStepView();
 
                     if (buttonNext.getColorNormal() == appColor.getColor(AppColor.GREEN)) {
 
@@ -190,7 +209,7 @@ public class WebViewActivity extends AppCompatActivity {
                 pageReloadAttempts = 0;
                 webView.clearCache(true);
                 openPage(currPageIndex);
-                updateStepView();
+
             }
         });
     }
@@ -239,7 +258,10 @@ public class WebViewActivity extends AppCompatActivity {
         super.onPause();
     }
 
-    public void openPage (int pageIndex) {
+    public boolean openPage (int pageIndex) {
+
+        String text = (currPageIndex + 1) + "/" + maxPages;
+        stepsView.setText(text);
 
         String url = ReaderPOSSFile.getHrefLink(markerData.alertAttachments.get(pageIndex));
         String urlName = ReaderPOSSFile.getHrefName(markerData.alertAttachments.get(pageIndex));
@@ -251,6 +273,15 @@ public class WebViewActivity extends AppCompatActivity {
 
             String temp = url;
             url = "https://docs.google.com/gview?embedded=true&url=" + temp;
+        }
+
+        if (url.endsWith(".text_msg")) {
+
+            String page = "<html><head><style>.container {position: absolute; top: 50%; left: 50%; transform: translateX(-50%) translateY(-50%);}</style></head>";
+            page += "<body><div class=\"container\"><center><p style=\"font-size:28px\">" + urlName + "</p></center></div></body></html>";
+
+            webView.loadData(page, "text/html", "UTF-8");
+            return true;
         }
 
         if (isAudioStream(url)) {
@@ -265,14 +296,13 @@ public class WebViewActivity extends AppCompatActivity {
                 Log.d(TAG, "Media Player Exception: " + e.toString());
             }
 
-            String page = "";
-            page += "<html><head><style>.container {position: absolute; top: 50%; left: 50%; transform: translateX(-50%) translateY(-50%);}</style></head>";
+            String page = "<html><head><style>.container {position: absolute; top: 50%; left: 50%; transform: translateX(-50%) translateY(-50%);}</style></head>";
             page += "<body><div class=\"container\"><center><img src=\"http://gurmeet.net/Images/index_page/happy-songs.png\" alt=\"Message Audio\" height=\"160\"><p>";
             page += urlName + "</p></center></div></body></html>";
 
             webView.loadData(page, "text/html", "UTF-8");
             mediaPlayer.start();
-            return;
+            return true;
         }
 
         try {
@@ -284,12 +314,8 @@ public class WebViewActivity extends AppCompatActivity {
 
             Log.d(TAG, "Page Load Exception: " + e.toString());
         }
-    }
 
-    private void updateStepView() {
-
-        String text = (currPageIndex + 1) + "/" + maxPages;
-        stepsView.setText(text);
+        return true;
     }
 
     private boolean isAudioStream (String url) {
