@@ -185,4 +185,11 @@
     </string-array>
     <string name="title_activity_web_view">WebViewActivity</string>
 
+    <string name="epc_selected">epc_selected</string>
+    <string name="parcours_type_name">parcours_type_name</string>
+    <string name="phone_select_sms_pause">phone_select_sms_pause</string>
+    <string name="phone_select_sms_qr">phone_select_sms_qr</string>
+    <string name="stop_trigger_time">stop_trigger_time</string>
+    <string name="tracking_activated">tracking_activated</string>
+
 </resources>

@@ -1239,10 +1239,10 @@ public class AppManager extends ThreadDefault
 
         switch ( t ) {
             case UNKNOW:
-            case ACCELERATION:
-            case BRAKING:
-                break;
+            case TURN_LEFT:
             case TURN_RIGHT:
+                break;
+            case ACCELERATION:
                 switch ( l ) {
                 case LEVEL_UNKNOW: break;
                 case LEVEL_1: i1 = 0; i2 = 0; break;
@@ -1252,7 +1252,7 @@ public class AppManager extends ThreadDefault
                 case LEVEL_5: i1 = 0; i2 = 4; break;
                 }
                 break;
-            case TURN_LEFT:
+            case BRAKING:
                 switch ( l ) {
                     case LEVEL_UNKNOW: break;
                     case LEVEL_1: i1 = 5; i2 = 5; break;
@@ -1270,11 +1270,16 @@ public class AppManager extends ThreadDefault
                 tab[i] = 0;
             }
         }
+//Log.d("PT0 a","update_tab_X( " + t + ", " + l + ", " + s + " )");
+//Log.d("PT0 a","i1: " + i1 +" i2: " + i2 );
+//for( int i = 0; i < 10; i++ ) {
+//    Log.d("PT0 b","tab[" + i + "] = " + tab[i] );
+//}
     }
     private ForceSeuil read_tab_X( long tab[] ){
         ForceSeuil ret = null;
-        // 0 to 4: LEVEL_1 to LEVEL_5 for R
-        // 5 to 9: LEVEL_1 to LEVEL_5 for L
+        // 0 to 4: LEVEL_1 to LEVEL_5 for A
+        // 5 to 9: LEVEL_1 to LEVEL_5 for F
         int a = -1;
         long nd = System.currentTimeMillis();
         long tps;
@@ -1308,7 +1313,7 @@ public class AppManager extends ThreadDefault
             case ACCELERATION:
             case BRAKING:
                 break;
-            case TURN_LEFT:
+            case TURN_RIGHT:
                 switch ( l ) {
                     case LEVEL_UNKNOW: break;
                     case LEVEL_1: i1 = 0; i2 = 0; break;
@@ -1318,7 +1323,7 @@ public class AppManager extends ThreadDefault
                     case LEVEL_5: i1 = 0; i2 = 4; break;
                 }
                 break;
-            case TURN_RIGHT:
+            case TURN_LEFT:
                 switch ( l ) {
                     case LEVEL_UNKNOW: break;
                     case LEVEL_1: i1 = 5; i2 = 5; break;
@@ -1474,164 +1479,12 @@ public class AppManager extends ThreadDefault
             }
             else if( seuil_ui != null && seuil != null )
             {
-                if( seuil.type != seuil_ui.type ) {
+                if( seuil.level.getValue() > seuil_ui.level.getValue() ) {
                     listener.onForceChanged(seuil.type, seuil.level);
                     alertUI_add_at = System.currentTimeMillis();
                     seuil_ui = seuil;
                 } else {
-                    if( seuil.level.getValue() >= seuil_ui.level.getValue() ) {
-                        listener.onForceChanged(seuil.type, seuil.level);
-                        alertUI_add_at = System.currentTimeMillis();
-                        seuil_ui = seuil;
-                    } else {
-                        int t = 0;
-                        switch ( seuil_ui.level ) {
-                            case LEVEL_UNKNOW: t = 0; break;
-                            case LEVEL_1: t = 1000; break;
-                            case LEVEL_2: t = 2000; break;
-                            case LEVEL_3: t = 2000; break;
-                            case LEVEL_4: t = 3000; break;
-                            case LEVEL_5: t = 3000; break;
-                        }
-                        if( alertUI_add_at + t < System.currentTimeMillis() ) {
-                            listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW);
-                            alertUI_add_at = System.currentTimeMillis();
-                            seuil_ui = null;
-                        }
-                    }
-                }
-            }
-        }
-
-
-//        boolean change = false;
-//        if( (seuil_ui == null) != (seuil == null) ) change = true;
-//        if( seuil_ui != null  ) change = !seuil_ui.equals( seuil );
-//        else if( seuil != null ) change = !seuil.equals( seuil_ui );
-//        if( change ) {
-//            if( seuil != null ) {
-//
-//                int t = 0;
-//                if( seuil_ui != null ) {
-//                    switch ( seuil_ui.level ) {
-//                        case LEVEL_UNKNOW: t = 0; break;
-//                        case LEVEL_1: t = 1000; break;
-//                        case LEVEL_2: t = 2000; break;
-//                        case LEVEL_3: t = 2000; break;
-//                        case LEVEL_4: t = 3000; break;
-//                        case LEVEL_5: t = 3000; break;
-//                    }
-//                }
-//                if( seuil_ui == null
-//                        || seuil.level.getValue() >= seuil_ui.level.getValue()
-//                        || alertUI_add_at + t < System.currentTimeMillis() ){
-//                    if( listener != null )listener.onForceChanged(seuil.type, seuil.level);
-//
-//                    alertUI_add_at = System.currentTimeMillis();
-//                    seuil_ui = seuil;
-//                }
-//            }
-//            else if( alertUI_add_at + 3000 < System.currentTimeMillis() ) {
-//                if( listener != null ) listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW);
-//                alertUI_add_at = System.currentTimeMillis();
-//                seuil_ui = null;
-//            }
-//        } else {
-//            alertUI_add_at = System.currentTimeMillis();
-//        }
-
-
-
-    }
-
-// ==============================================================
-
-    synchronized private void calc_eca(){
-
-        Location loc = get_last_location();
-
-        LEVEL_t alertX = LEVEL_t.LEVEL_UNKNOW;
-        LEVEL_t alertY = LEVEL_t.LEVEL_UNKNOW;
-        // Read the runtime value force
-
-        ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
-        ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(smooth.first);
-        if( loc == null || (loc.getSpeed() * MS_TO_KMH) < 20.0 ) {
-            seuil_x = null;
-            seuil_y = null;
-        }
-
-        // ADD ECA? ( location with X alert )
-        // Compare the runtime X value force with the prevent X value force, and add alert to ECA database
-        boolean alert_x = false;
-        if( seuil_x != null ) {
-            alertX = seuil_x.level;
-            if( !seuil_x.equals(seuil_last_x) ) seuil_chrono_x.start();
-            if( seuil_chrono_x.getSeconds() >= seuil_x.TPS ) {
-                seuil_chrono_x.start();
-                if( _tracking ) {
-                    database.addECA(parcour_id, ECALine.newInstance(seuil_last_x.IDAlert, loc, null));
-                    alertX_add_at = System.currentTimeMillis();
-                    lastLocSend = loc;
-                }
-                alert_x = true;
-            }
-        }
-        seuil_last_x = seuil_x;
-
-        // ADD ECA? ( location with Y alert )
-        // Compare the runtime Y value force with the prevent Y value force, and add alert to ECA database
-        boolean alert_y = false;
-        if( seuil_y != null ) {
-            alertY = seuil_y.level;
-            if( !seuil_y.equals(seuil_last_y) )seuil_chrono_y.start();
-            if( seuil_chrono_y.getSeconds() >= seuil_y.TPS ) {
-                seuil_chrono_y.start();
-                if( _tracking ) {
-                    database.addECA(parcour_id, ECALine.newInstance(seuil_last_y.IDAlert, loc, null));
-                    alertY_add_at = System.currentTimeMillis();
-                    lastLocSend = loc;
-                }
-                alert_y = true;
-            }
-        }
-        seuil_last_y = seuil_y;
-
-        // ADD ECA? (simple location without alert)
-        if( _tracking ) {
-
-            List<Location> locations = get_location_list(1);
-            if (locations != null && locations.size() >= 1) {
-                float min_meters = ( (locations.get(0).getSpeed()*MS_TO_KMH) < 70f ) ? 5f : 15f;
-                if( lastLocSend == null
-                        || locations.get(0).distanceTo(lastLocSend) > min_meters ) {
-
-                    if( lastLocSend == null ) lastLocSend = new Location(locations.get(0));
-                    database.addECA(parcour_id, ECALine.newInstance(locations.get(0), lastLocSend));
-                    lastLocSend = new Location(locations.get(0));
-                }
-            }
-        }
-
-        if( !alert_x ) seuil_x = null;
-        if( !alert_y ) seuil_y = null;
-
-        // Update UI interface
-        ForceSeuil seuil = null;
-        if( alertX.getValue() > alertY.getValue() ) {
-            seuil = seuil_x;
-        } else {
-            seuil = seuil_y;
-        }
-        boolean change = false;
-        if( (seuil_ui == null) != (seuil == null) ) change = true;
-        if( seuil_ui != null  ) change = !seuil_ui.equals( seuil );
-        else if( seuil != null ) change = !seuil.equals( seuil_ui );
-        if( change ) {
-            if( seuil != null ) {
-
-                int t = 0;
-                if( seuil_ui != null ) {
+                    int t = 0;
                     switch ( seuil_ui.level ) {
                         case LEVEL_UNKNOW: t = 0; break;
                         case LEVEL_1: t = 1000; break;
@@ -1640,26 +1493,18 @@ public class AppManager extends ThreadDefault
                         case LEVEL_4: t = 3000; break;
                         case LEVEL_5: t = 3000; break;
                     }
+                    if( alertUI_add_at + t < System.currentTimeMillis() ) {
+                        listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW);
+                        alertUI_add_at = System.currentTimeMillis();
+                        seuil_ui = null;
+                    }
                 }
-                if( seuil_ui == null
-                        || seuil.level.getValue() >= seuil_ui.level.getValue()
-                        || alertUI_add_at + t < System.currentTimeMillis() ){
-                    if( listener != null )listener.onForceChanged(seuil.type, seuil.level);
 
-                    alertUI_add_at = System.currentTimeMillis();
-                    seuil_ui = seuil;
-                }
             }
-            else if( alertUI_add_at + 3000 < System.currentTimeMillis() ) {
-                if( listener != null ) listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW);
-                alertUI_add_at = System.currentTimeMillis();
-                seuil_ui = null;
-            }
-        } else {
-            alertUI_add_at = System.currentTimeMillis();
         }
 
     }
+
 
     /// ============================================================================================
     /// CALCUL COTATION
@@ -2126,7 +1971,6 @@ public class AppManager extends ThreadDefault
                 && mov_t_last != MOVING_t.UNKNOW
                 && engine_t == ENGINE_t.ON
         );
-        Log.d("PT0","Movement:" + mov_t_last + "ready_to_started:" + ready_to_started + "(" + (modules.getNumberOfBoxConnected()>=1) + ";" + mov_t_last + ";" + engine_t+")");
 
         if ( !ready_to_started ) {
             chrono_ready_to_start.stop();

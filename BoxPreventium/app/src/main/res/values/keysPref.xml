@@ -1,7 +1,7 @@
 <resources>
 
     <!-- Selected EPC file, values: 1, 2, 3, 4 ou 5, default: 0-->
-    <string name="epc_selected_key">epc_selected_key</string>
+    <string name="epc_selected_key" translatable="false">epc_selected_key</string>
     <integer name="epc_selected_def_key">1</integer>
 
     <!-- Trigger shock, value minimum: 1000mG, default: 1000 mG -->
@@ -12,7 +12,7 @@
     <string name="pause_trigger_time_key" translatable="false">pause_trigger_time_key</string>
 
     <!-- Trigger stop, values min: ( Trigger pause + 1 minutes ), default: 7 hours -->
-    <string name="stop_trigger_time_key">stop_trigger_time_key</string>
+    <string name="stop_trigger_time_key" translatable="false">stop_trigger_time_key</string>
 
     <!-- Recommended speed,
     Sliding average over the last XX minute, values min: 10 minutes, default: 30 minutes -->
@@ -27,21 +27,21 @@
 
     <!-- Parcours type -->
     <string name="parcours_type_enabled_key" translatable="false">parcours_type_enabled_key</string>
-    <string name="parcours_type_name_key">parcours_type_name_key</string>
+    <string name="parcours_type_name_key" translatable="false">parcours_type_name_key</string>
 
     <!-- ////////////////////////////////////////////////////////////////////// -->
 
     <string name="phone_select_sms_sos_key" translatable="false">phone_select_sms_sos_key</string>
     <string name="phone_select_sms_shock_key" translatable="false">phone_select_sms_shock_key</string>
-    <string name="phone_select_sms_pause_key">phone_select_sms_pause_key</string>
+    <string name="phone_select_sms_pause_key" translatable="false">phone_select_sms_pause_key</string>
     <string name="phone_select_sms_pause_timeout_key" translatable="false">phone_select_sms_pause_timeout_key</string>
     <string name="phone_select_sms_tracking_key" translatable="false">phone_select_sms_tracking_key</string>
-    <string name="phone_select_sms_qr_key">phone_select_sms_qr_key</string>
+    <string name="phone_select_sms_qr_key" translatable="false">phone_select_sms_qr_key</string>
     <string name="phone_select_sms_qr_timeout_key" translatable="false">phone_select_sms_qr_timeout_key</string>
     <string name="phone_select_voice_key" translatable="false">phone_select_voice_key</string>
     <string name="qr_select_start_mode_key" translatable="false">qr_select_start_mode_key</string>
     <string name="qr_select_stop_mode_key" translatable="false">qr_select_stop_mode_key</string>
-    <string name="tracking_activated_key">tracking_activated_key</string>
+    <string name="tracking_activated_key" translatable="false">tracking_activated_key</string>
     <string name="pin_code_key" translatable="false">pin_code_key</string>
     <string name="driver_id_key" translatable="false">driver_id_key</string>
     <string name="driver_name_key" translatable="false">driver_name_key</string>

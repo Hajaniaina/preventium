@@ -138,5 +138,6 @@
     <string name="tracking_activated">tracking_activated</string>
     <string name="tracking_disabled_string">Tracking disabled</string>
     <string name="tracking_enabled_string">Tracking enabled</string>
+    <string name="title_activity_web_view">WebViewActivity</string>
 
 </resources>

@@ -186,8 +186,6 @@ public class ComonUtils {
         return tm.getDeviceId();
     }
 
-
-
     // === APK
 
     public static int getVersionCode(Context ctx) {
