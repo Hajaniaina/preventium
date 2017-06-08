@@ -32,7 +32,7 @@
     <string name="enable_tracking_string">Activer le tracking</string>
     <string name="enabled_string">Activée</string>
     <string name="end_day_confirm_string">Avez-vous terminé votre journée?</string>
-    <string name="epc_missing_string">Aucun fichier EPC disponible</string>
+    <string name="epc_missing_string">Aucun fichier de seuils de forces disponible sur serveur</string>
     <string name="finish_marker_string">Fin</string>
     <string name="force_permissions_string">Pour continuer, activez toutes les autorisations dans les paramètres Android</string>
     <string name="front_back_string">Avant et arrière</string>
@@ -81,12 +81,12 @@
     <string name="pref_title_voice_call_string">Appels</string>
     <string name="progress_check_imei_string">Vérification de l\'activation du IMEI: </string>
     <string name="progress_inactive_imei_string">L’application rencontre un problème de connexion. Si ce n’est pas la première fois, merci de vous rapprocher de votre service formation ou de notre service commercial</string>
-    <string name="progress_cfg_string">Téléchargement de données CFG pour IMEI: </string>
-    <string name="progress_epc_string">Téléchargement de données EPC pour IMEI: </string>
+    <string name="progress_cfg_string">Vérification de données CFG pour IMEI: </string>
+    <string name="progress_epc_string">Vérification de données EPC pour IMEI: </string>
     <string name="progress_loading_string">Chargement…</string>
     <string name="progress_location_string">En attente de données GPS</string>
     <string name="progress_map_string">Chargement de GoogleMaps</string>
-    <string name="progress_obj_string">Téléchargement des données OBJ pour IMEI:</string>
+    <string name="progress_obj_string">Vérification des données OBJ pour IMEI:</string>
     <string name="qr_rationale_string">Vous avez un ou plusieurs QR codes à scanner</string>
     <string name="progress_ready_string">Prêt</string>
     <string name="quit_scan">Quitter</string>
@@ -97,7 +97,7 @@
     <string name="scan_qr_ok_string">Code bon</string>
     <string name="scan_qr_vehicle_back_string">Arrière du véhicule</string>
     <string name="scan_qr_vehicle_front_string">Avant du véhicule</string>
-    <string name="select_epc_string">Sélectionner le fichier EPC</string>
+    <string name="select_epc_string">Sélectionner la catégorie de seuils de force chargée depuis l’interface web</string>
     <string name="send_sms_after_pause_string">Envoyer une notification SMS après une pause plus de</string>
     <string name="send_sos_string">Envoi de SOS dans</string>
     <string name="shock_string">Choc</string>
@@ -120,7 +120,7 @@
     <string name="validate_marker_delete_string">Supprimer ce marqueur?</string>
     <string name="voice_calls_string">Appels</string>
     <string name="yes_string">Oui</string>
-    <string name="pref_title_qr_mode_string">Scan du vehicule</string>
+    <string name="pref_title_qr_mode_string">Scan du véhicule</string>
     <string name="alarm_string">Alarme</string>
     <string name="sms_pause_msg_string">TEMPS DE PAUSE DEPASSE</string>
     <string name="progress_send_string">Envoi de données du parcours vers le serveur</string>
