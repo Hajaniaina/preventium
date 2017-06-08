@@ -277,8 +277,16 @@ public class WebViewActivity extends AppCompatActivity {
 
         if (url.endsWith(".text_msg")) {
 
-            String page = "<html><head><style>.container {position: absolute; top: 50%; left: 50%; transform: translateX(-50%) translateY(-50%);}</style></head>";
-            page += "<body><div class=\"container\"><center><p style=\"font-size:28px\">" + urlName + "</p></center></div></body></html>";
+            String page = "";
+            page += "<html>";
+            page += "<head>";
+            page += "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>";
+            page += "<style>.container {position: absolute; top: 50%; left: 50%; transform: translateX(-50%) translateY(-50%);}</style>";
+            page += "</head>";
+            page += "<body>";
+            page += "<div class=\"container\"><center><p style=\"font-size:28px\">" + urlName + "</p></center></div>";
+            page += "</body>";
+            page += "</html>";
 
             webView.loadData(page, "text/html", "UTF-8");
             return true;
@@ -296,9 +304,16 @@ public class WebViewActivity extends AppCompatActivity {
                 Log.d(TAG, "Media Player Exception: " + e.toString());
             }
 
-            String page = "<html><head><style>.container {position: absolute; top: 50%; left: 50%; transform: translateX(-50%) translateY(-50%);}</style></head>";
-            page += "<body><div class=\"container\"><center><img src=\"http://gurmeet.net/Images/index_page/happy-songs.png\" alt=\"Message Audio\" height=\"160\"><p>";
-            page += urlName + "</p></center></div></body></html>";
+            String page = "";
+            page += "<html>";
+            page += "<head>";
+            page += "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>";
+            page += "<style>.container {position: absolute; top: 50%; left: 50%; transform: translateX(-50%) translateY(-50%);}</style>";
+            page += "</head>";
+            page += "<body>";
+            page += "<div class=\"container\"><center><img src=\"http://gurmeet.net/Images/index_page/happy-songs.png\" alt=\"Message Audio\" height=\"160\"><p>" + urlName + "</p></center></div>";
+            page += "</body>";
+            page += "</html>";
 
             webView.loadData(page, "text/html", "UTF-8");
             mediaPlayer.start();
