@@ -193,28 +193,36 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
 
                         scannedOnce = true;
 
-                        String subStrings[] = code.split("/");
-                        long driverId = parseDriverId(subStrings[0]);
-                        String driverName = subStrings[1];
+                        if (code.contains("/")) {
 
-                        if (driverId > 0) {
+                            String subStrings[] = code.split("/");
+                            long driverId = parseDriverId(subStrings[0]);
 
-                            if (qrRequest.driverIdReq == QrScanRequest.REQUEST_PENDING) {
+                            if (driverId > 0) {
 
-                                qrRequest.driverIdReq = QrScanRequest.REQUEST_COMPLETED;
+                                String driverName = subStrings[1];
+
+                                if (qrRequest.driverIdReq == QrScanRequest.REQUEST_PENDING) {
+
+                                    qrRequest.driverIdReq = QrScanRequest.REQUEST_COMPLETED;
+                                }
+
+                                qrRequest.driverId = driverId;
+                                qrRequest.driverName = driverName;
+
+                                SharedPreferences.Editor editor = sharedPref.edit();
+                                editor.putLong(getString(R.string.driver_id_key), driverId);
+                                editor.putString(getString(R.string.driver_name_key), driverName);
+                                editor.apply();
+
+                                String name[] = driverName.split(" ");
+                                String hello = getString(R.string.hello_string) + " " + name[1];
+                                showConfirmDialog(hello, true);
                             }
+                            else {
 
-                            qrRequest.driverId = driverId;
-                            qrRequest.driverName = driverName;
-
-                            SharedPreferences.Editor editor = sharedPref.edit();
-                            editor.putLong(getString(R.string.driver_id_key), driverId);
-                            editor.putString(getString(R.string.driver_name_key), driverName);
-                            editor.apply();
-
-                            String name[] = driverName.split(" ");
-                            String hello = getString(R.string.hello_string) + " " + name[1];
-                            showConfirmDialog(hello, true);
+                                showConfirmDialog(getString(R.string.scan_qr_error_string), false);
+                            }
                         }
                         else {
 
