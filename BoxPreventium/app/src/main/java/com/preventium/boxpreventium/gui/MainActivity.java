@@ -951,6 +951,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onCalibrateOnConstantSpeed() {
 
+        /*
         runOnUiThread(new Runnable() {
 
             @Override
@@ -959,11 +960,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 markerManager.addMarker(googleMap, "Const speed calibration", lastPos, CustomMarker.MARKER_MAGENTA, false);
             }
         });
+        */
     }
 
     @Override
     public void onCalibrateOnAcceleration() {
 
+        /*
         runOnUiThread(new Runnable() {
 
             @Override
@@ -972,11 +975,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 markerManager.addMarker(googleMap, "Acceleration calibration", lastPos, CustomMarker.MARKER_CYAN, false);
             }
         });
+        */
     }
 
     @Override
     public void onCalibrateRAZ() {
 
+        /*
         runOnUiThread(new Runnable() {
 
             @Override
@@ -985,6 +990,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 markerManager.addMarker(googleMap, "Reset calibration", lastPos, CustomMarker.MARKER_VIOLET, false);
             }
         });
+        */
     }
 
     // -------------------------------------------------------------------------------------------- //
@@ -1603,7 +1609,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             for (int i = 0; i < epcStrList.length; i++) {
 
-                epcStrList[i] = "EPC " + String.valueOf(i + 1);
+                epcStrList[i] = "Seuils de force " + String.valueOf(i + 1);
 
                 boolean exist = false;
 
