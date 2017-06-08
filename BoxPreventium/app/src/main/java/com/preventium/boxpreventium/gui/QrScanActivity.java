@@ -24,10 +24,8 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
     private static final String TAG = "QrScanActivity";
 
     public static final String QR_SCAN_REQUEST_PARAM = "QR_REQUEST";
-    public static final String SCAN_DRIVER_PREFIX    = "DRIVER";
-    public static final String SCAN_VEHICLE_PREFIX   = "VEHICLE";
-    public static final String SCAN_VEHICLE_FRONT    = "FRONT";
-    public static final String SCAN_VEHICLE_BACK     = "BACK";
+    public static final String SCAN_VEHICLE_FRONT    = "AVANT";
+    public static final String SCAN_VEHICLE_BACK     = "ARRIERE";
 
     public static final String SCAN_MODE_VEHICLE_DISABLED   = "0";
     public static final String SCAN_MODE_VEHICLE_FRONT      = "1";
@@ -160,9 +158,9 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
 
                 String code = barcode.displayValue;
 
-                if (code.startsWith(SCAN_VEHICLE_PREFIX)) {
+                if (code.startsWith(SCAN_VEHICLE_FRONT) || code.startsWith(SCAN_VEHICLE_BACK)) {
 
-                    if (code.contains(SCAN_VEHICLE_FRONT)) {
+                    if (code.startsWith(SCAN_VEHICLE_FRONT)) {
 
                         if (qrRequest.vehicleFrontOnStartEnabled) {
 
@@ -173,7 +171,7 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
                             }
                         }
                     }
-                    else if (code.contains(SCAN_VEHICLE_BACK)) {
+                    else if (code.startsWith(SCAN_VEHICLE_BACK)) {
 
                         if (qrRequest.vehicleBackOnStartEnabled) {
 
