@@ -471,6 +471,95 @@ public class Database {
         return ret;
     }
 
+    public float speed_max_test(long parcour_id, long n_last_secs,
+                                long n_minimum_points, long n_max_last_secs,
+                                @Nullable int... alertID){
+        float ret = 0f;
+        long nb = 0;
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+        long begin = System.currentTimeMillis() - (n_last_secs*1000);
+        long begin_max = System.currentTimeMillis() - (n_max_last_secs*1000);
+
+        // COUNT NB ROW
+        String request =
+                "SELECT COUNT(*)" +
+                        " FROM " + TABLE_ECA +
+                        " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
+                        " AND " + COLUMN_ECA_TIME + " >= " + begin ;
+        if( alertID != null && alertID.length > 0 ){
+            if( alertID.length > 1 ) {
+                request += " AND " +  COLUMN_ECA_ALERTID + " IN (" + alertID[0];
+                for( int i = 1; i < alertID.length; i++ ) request += ", " + alertID[i];
+                request += " )";
+            } else {
+                request += " AND " + COLUMN_ECA_ALERTID + " = " + alertID[0];
+            }
+        }
+        request += " AND "  + COLUMN_ECA_SPEED  + " >= 0 AND " + COLUMN_ECA_SPEED + " <= " + 190/MS_TO_KMH;
+        request += " ;";
+        Cursor cursor = db.rawQuery(request, null );
+        if( cursor != null ){
+            if( cursor.moveToFirst() ) nb = cursor.getLong(0);
+            cursor.close();
+        }
+Log.d("AAAAA","NB POINTS " + nb);
+        if( nb >= 50 ) {
+            // GET MAX
+            request =
+                    "SELECT MAX( " + COLUMN_ECA_SPEED + " )" +
+                            " FROM " + TABLE_ECA +
+                            " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
+                            " AND " + COLUMN_ECA_TIME + " >= " + begin ;
+            if( alertID != null && alertID.length > 0 ){
+                if( alertID.length > 1 ) {
+                    request += " AND " +  COLUMN_ECA_ALERTID + " IN (" + alertID[0];
+                    for( int i = 1; i < alertID.length; i++ ) request += ", " + alertID[i];
+                    request += " )";
+                } else {
+                    request += " AND " + COLUMN_ECA_ALERTID + " = " + alertID[0];
+                }
+            }
+            request += " AND "  + COLUMN_ECA_SPEED  + " >= 0 AND " + COLUMN_ECA_SPEED + " <= " + 190/MS_TO_KMH;
+            request += " ORDER BY " + COLUMN_ECA_TIME + " DESC";
+            request += " LIMIT " + n_minimum_points;
+            request += " ;";
+
+            cursor = db.rawQuery(request, null );
+            if( cursor != null ){
+                if( cursor.moveToFirst() ) ret = cursor.getFloat(0);
+                cursor.close();
+            }
+
+        } else {
+            request =
+                    "SELECT MAX( " + COLUMN_ECA_SPEED + " )" +
+                            " FROM " + TABLE_ECA +
+                            " WHERE " + COLUMN_ECA_PARCOUR_ID + " = " + parcour_id +
+                            " AND " + COLUMN_ECA_TIME + " >= " + begin ;
+            if( alertID != null && alertID.length > 0 ){
+                if( alertID.length > 1 ) {
+                    request += " AND " +  COLUMN_ECA_ALERTID + " IN (" + alertID[0];
+                    for( int i = 1; i < alertID.length; i++ ) request += ", " + alertID[i];
+                    request += " )";
+                } else {
+                    request += " AND " + COLUMN_ECA_ALERTID + " = " + alertID[0];
+                }
+            }
+            request += " AND "  + COLUMN_ECA_SPEED  + " >= 0 AND " + COLUMN_ECA_SPEED + " <= " + 190/MS_TO_KMH;
+            request += " ORDER BY " + COLUMN_ECA_TIME + " DESC";
+            request += " LIMIT " + n_minimum_points;
+            request += " ;";
+            cursor = db.rawQuery(request, null );
+            if( cursor != null ){
+                if( cursor.moveToFirst() ) ret = cursor.getFloat(0);
+                cursor.close();
+            }
+        }
+
+        DatabaseManager.getInstance().closeDatabase();
+        return ret;
+    }
+
     /// Get speed average by parcours, by events type, since X seconds
     public float speed_avg(long parcour_id, long secs, float speed_min, @Nullable int... alertID){
         float ret = 0f;

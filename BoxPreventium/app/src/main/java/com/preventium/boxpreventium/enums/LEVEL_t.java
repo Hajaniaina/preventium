@@ -29,6 +29,17 @@ public enum LEVEL_t {
     public int getValue() {
         return value;
     }
+    public int get_ui_time_ms(){
+        switch ( valueOf(value) ) {
+            case LEVEL_1: return 3000;
+            case LEVEL_2: return 3000;
+            case LEVEL_3: return 3000;
+            case LEVEL_4: return 5000;
+            case LEVEL_5: return 5000;
+            case LEVEL_UNKNOW: return 0;
+        }
+        return 0;
+    }
     @NonNull
     public String toString() {
         switch ( valueOf(value) ) {
