@@ -17,6 +17,7 @@ import android.telephony.TelephonyManager;
 import android.text.format.DateFormat;
 import android.util.Log;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
@@ -234,5 +235,12 @@ public class ComonUtils {
 
     public static String currentDateTime() {
         return new SimpleDateFormat("d-MMM-yyyy HH:mm:ss", Locale.getDefault()).format(System.currentTimeMillis());
+    }
+
+    public  static float round (float d, int decimalPlace) {
+
+        BigDecimal bd = new BigDecimal(Float.toString(d));
+        bd = bd.setScale(decimalPlace, BigDecimal.ROUND_DOWN);
+        return bd.floatValue();
     }
 }

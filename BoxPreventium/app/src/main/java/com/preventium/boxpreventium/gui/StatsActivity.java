@@ -40,7 +40,6 @@ public class StatsActivity extends AppCompatActivity {
     private static final int CRN_OBJ = 4;
     private static final int CRN_RES = 5;
 
-    private SharedPreferences sharedPref;
     private PieChart[] chartArr;
     private int[] colors;
 
@@ -50,7 +49,7 @@ public class StatsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stats);
 
-        sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
         TextView appVerView = (TextView) findViewById(R.id.textview_app_ver);
         TextView imeiView = (TextView) findViewById(R.id.textview_imei);
@@ -89,18 +88,18 @@ public class StatsActivity extends AppCompatActivity {
 
         if (distanceMeters < 1000) {
 
-            distance += String.valueOf(distanceMeters) + "m";
+            distance += String.valueOf(ComonUtils.round(distanceMeters, 1)) + "m";
         }
         else {
 
             distanceMeters = distanceMeters / (float) 1000.0;
-            distance += String.valueOf(distanceMeters) + "km";
+            distance += String.valueOf(ComonUtils.round(distanceMeters, 1)) + "km";
         }
 
         distanceView.setText(distance);
 
         float speed = StatsLastDriving.get_speed_avg(getApplicationContext()) * PositionManager.MS_TO_KMPH;
-        String avgSpeed = String.valueOf(speed) + " km/h";
+        String avgSpeed = String.valueOf(ComonUtils.round(speed, 1)) + " km/h";
 
         avgSpeedView.setText(getString(R.string.avg_speed_string) + ": " + avgSpeed);
         avgScoreView.setText(getString(R.string.avg_score_string) + ": " + String.valueOf(StatsLastDriving.get_note(getApplicationContext(), SCORE_t.FINAL)));
@@ -175,7 +174,7 @@ public class StatsActivity extends AppCompatActivity {
         if (id > CRN_RES) id = CRN_RES;
 
         int i = 0;
-        int[] values = new int[5];
+        float[] values = new float[5];
 
         for (LEVEL_t level : LEVEL_t.values()) {
 
@@ -210,17 +209,16 @@ public class StatsActivity extends AppCompatActivity {
 
         for (int k = 0; k < 5; k++) {
 
-            arrayList.add(new PieEntry(values[k], ""));
+            float value = ComonUtils.round(values[k], 1);
+            arrayList.add(new PieEntry(value, ""));
         }
 
         PieDataSet pieDataSet = new PieDataSet(arrayList, "");
-
         pieDataSet.setSliceSpace(3f);
         pieDataSet.setSelectionShift(5f);
         pieDataSet.setColors(colors);
 
         PieData pieData = new PieData(pieDataSet);
-
         pieData.setValueFormatter(new PercentFormatter());
         pieData.setValueTextSize(16f);
         pieData.setValueTextColor(Color.WHITE);
