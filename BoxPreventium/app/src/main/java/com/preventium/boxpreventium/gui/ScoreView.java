@@ -1,12 +1,16 @@
 package com.preventium.boxpreventium.gui;
 
 import android.app.Activity;
+import android.content.Context;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.view.View;
 import android.widget.TextView;
+
+import com.github.florent37.viewtooltip.ViewTooltip;
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.SCORE_t;
@@ -29,11 +33,30 @@ public class ScoreView implements Parcelable {
         viewMap = new HashMap<>();
         levelMap = new HashMap<>();
 
+        final Context context = activity.getApplicationContext();
+        final TextView driverScoreView = (TextView) activity.findViewById(R.id.driving_score_view);
+
+        driverScoreView.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+
+                String text = context.getString(R.string.driver_score_tooltip_string);
+
+                ViewTooltip.on(driverScoreView)
+                        .autoHide(true, 5000)
+                        .corner(10)
+                        .position(ViewTooltip.Position.LEFT)
+                        .text(text)
+                        .show();
+            }
+        });
+
         viewMap.put(SCORE_t.CORNERING, ((TextView) activity.findViewById(R.id.corner_note_view)));
         viewMap.put(SCORE_t.BRAKING, ((TextView) activity.findViewById(R.id.brake_note_view)));
         viewMap.put(SCORE_t.ACCELERATING,((TextView) activity.findViewById(R.id.acc_note_view)));
         viewMap.put(SCORE_t.AVERAGE, ((TextView) activity.findViewById(R.id.avg_note_view)));
-        viewMap.put(SCORE_t.FINAL, ((TextView) activity.findViewById(R.id.driving_score_view)));
+        viewMap.put(SCORE_t.FINAL, driverScoreView);
 
         levelMap.put(SCORE_t.CORNERING, null);
         levelMap.put(SCORE_t.BRAKING, null);

@@ -134,6 +134,7 @@
     <string name="title_activity_info">InfoActivity</string>
     <string name="template_route_name_string">Template route name</string>
     <string name="template_route_title_string">Next route will be used as template route</string>
+    <string name="driver_score_tooltip_string">It is a score of 20 at max</string>
 
     <string name="pref_title_sms_sos_string">SMS SOS</string>
     <string name="pref_title_sms_shock_string">SMS Shocks</string>
