@@ -98,9 +98,18 @@ public class ReaderEPCFile {
         return ret;
     }
 
+    public int[] get_all_alertID(){
+        int ret[] = new int[20];
+        for( int i = 0; i < 20; i++ ) ret[i] = seuil[i].IDAlert;
+        return  ret;
+    }
     public short get_TPS(int index) {
         return  ( index >= 0 && index < seuil.length )
                 ? seuil[index].TPS : -1;
+    }
+    public long get_TPS_ms(int index) {
+        return  ( index >= 0 && index < seuil.length )
+                ? (seuil[index].TPS*1000) : -1;
     }
     public ForceSeuil getForceSeuil(int index) {
         return  ( index >= 0 && index < seuil.length )

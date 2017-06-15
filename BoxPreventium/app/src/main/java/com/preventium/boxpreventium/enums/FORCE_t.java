@@ -5,10 +5,6 @@ import android.support.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by Franck on 13/09/2016.
- */
-
 public enum FORCE_t {
 
     UNKNOW(-1),
@@ -28,6 +24,21 @@ public enum FORCE_t {
     public int getValue() {
         return value;
     }
+
+    public AXE_t getAxe() {
+        switch ( valueOf(value) ) {
+            case TURN_LEFT :
+            case TURN_RIGHT :
+                return AXE_t.HORIZONTAL;
+            case ACCELERATION :
+            case BRAKING :
+                return AXE_t.VERTICAL;
+            case UNKNOW :
+            default :
+                return AXE_t.UNKNOW;
+        }
+    }
+
     @NonNull
     public String toString() {
         switch ( valueOf(value) ) {
