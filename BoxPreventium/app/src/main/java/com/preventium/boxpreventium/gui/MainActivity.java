@@ -149,8 +149,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         setContentView(R.layout.activity_main);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        Log.d(TAG, "onCreate");
-
         if (checkPermissions() > 0) {
 
             if (savedInstanceState == null) {
@@ -170,8 +168,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     protected void onResume() {
-
-        Log.d(TAG, "onResume");
 
         if (!PositionManager.isLocationEnabled(getApplicationContext())) {
 
@@ -211,8 +207,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onPause() {
 
-        Log.d(TAG, "onPause");
-
         if (progress != null) {
 
             progress.dismiss();
@@ -225,17 +219,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public void onStop() {
 
         permissionsChecked = false;
-        Log.d(TAG, "onStop");
         super.onStop();
     }
 
     @Override
     protected void onDestroy() {
 
-        Log.d(TAG, "onDestroy");
-
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
         super.onDestroy();
     }
 
@@ -270,7 +260,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onRequestPermissionsResult (int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
 
-        Log.d(TAG, "onRequestPermissionsResult");
         permissionRequest.onRequestPermissionsResult(requestCode, permissions, grantResults);
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
@@ -1081,8 +1070,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         int ok = 1;
 
-        Log.d(TAG, "Check permissions");
-
         if (!permissionsChecked) {
 
             permissionsChecked = true;
@@ -1127,8 +1114,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     @Override
                     public void call (int requestCode, boolean shouldShowRequestPermissionRationale) {
 
-                        Log.d(TAG, "Permissions denied");
-
                         if (shouldShowRequestPermissionRationale) {
 
                             showPermissionsAlert(true);
@@ -1143,8 +1128,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     @Override
                     public void call (int requestCode) {
-
-                        Log.d(TAG, "Permissions granted");
 
                         if (!initDone) {
 
@@ -1715,7 +1698,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
 
-            Log.d(TAG, "CALL_PHONE permission disabled");
             return;
         }
 
