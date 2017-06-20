@@ -1,6 +1,7 @@
 package com.preventium.boxpreventium.server.DOBJ;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.preventium.boxpreventium.utils.ComonUtils;
 
@@ -66,6 +67,18 @@ public class ReaderDOBJFile {
                             obj_yellow[t] = data[i++];
                             obj_orange[t] = data[i++];
                             obj_red[t] = data[i++];
+
+//                            Log.d("AAA", "coeff_general["+t+"] = " + coeff_general[t]);
+//                            Log.d("AAA", "coeff_green["+t+"] = " + coeff_green[t]);
+//                            Log.d("AAA", "coeff_blue["+t+"] = " + coeff_blue[t]);
+//                            Log.d("AAA", "coeff_yellow["+t+"] = " + coeff_yellow[t]);
+//                            Log.d("AAA", "coeff_orange["+t+"] = " + coeff_orange[t]);
+//                            Log.d("AAA", "coeff_red["+t+"] = " + coeff_red[t]);
+//                            Log.d("AAA", "obj_green["+t+"] = " + obj_green[t]);
+//                            Log.d("AAA", "obj_blue["+t+"] = " + obj_blue[t]);
+//                            Log.d("AAA", "obj_yellow["+t+"] = " + obj_yellow[t]);
+//                            Log.d("AAA", "obj_orange["+t+"] = " + obj_orange[t]);
+//                            Log.d("AAA", "obj_red["+t+"] = " + obj_red[t]);
                         }
 
                         ret = true;
@@ -76,6 +89,7 @@ public class ReaderDOBJFile {
                                 break;
                             }
                         }
+//                        Log.d("AAA","RET =" + ret);
 
                         if( ret && apply ){
                             String[] types = new String[]{

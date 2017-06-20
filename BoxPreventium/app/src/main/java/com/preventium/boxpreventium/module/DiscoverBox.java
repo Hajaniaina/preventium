@@ -1,5 +1,6 @@
 package com.preventium.boxpreventium.module;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.util.Log;
@@ -37,7 +38,14 @@ public class DiscoverBox implements ScannerCallback {
         this.mBluetoothRssi = new ArrayList<>();
     }
 
-    public void scan(){ scanner.startLeScan(); }
+    public void scan(){
+
+        if( !BluetoothAdapter.getDefaultAdapter().isEnabled() ) {
+            BluetoothAdapter.getDefaultAdapter().enable();
+        }
+
+        scanner.startLeScan();
+    }
 
     public void stop(){ scanner.stopLeScan(); }
 

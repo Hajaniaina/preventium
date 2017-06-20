@@ -177,7 +177,7 @@ public class StatsLastDriving {
 
     public static float get_speed_avg(Context ctx) {
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
-        return sp.getFloat(KEY_PREF_SPEED,20f);
+        return sp.getFloat(KEY_PREF_SPEED,0f);
     }
 
     public static long get_distance(Context ctx) {
