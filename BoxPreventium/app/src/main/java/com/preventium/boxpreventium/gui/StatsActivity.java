@@ -88,22 +88,22 @@ public class StatsActivity extends AppCompatActivity {
 
         if (distanceMeters < 1000) {
 
-            distance += String.valueOf(ComonUtils.round(distanceMeters, 1)) + "m";
+            distance += String.valueOf(ComonUtils.round(distanceMeters)) + "m";
         }
         else {
 
             distanceMeters = distanceMeters / (float) 1000.0;
-            distance += String.valueOf(ComonUtils.round(distanceMeters, 1)) + "km";
+            distance += String.valueOf(ComonUtils.round(distanceMeters)) + "km";
         }
 
         distanceView.setText(distance);
 
         float speed = StatsLastDriving.get_speed_avg(getApplicationContext()) * PositionManager.MS_TO_KMPH;
-        String speedStr = String.valueOf(ComonUtils.round(speed, 1)) + " km/h";
+        String speedStr = String.valueOf(ComonUtils.round(speed)) + " km/h";
         avgSpeedView.setText(getString(R.string.avg_speed_string) + ": " + speedStr);
 
         float score = StatsLastDriving.get_note(getApplicationContext(), SCORE_t.FINAL);
-        String scoreStr = String.valueOf(ComonUtils.round(score, 1));
+        String scoreStr = String.valueOf(ComonUtils.round(score));
         avgScoreView.setText(getString(R.string.avg_score_string) + ": " + scoreStr);
 
         colors = new int[5];
@@ -149,17 +149,17 @@ public class StatsActivity extends AppCompatActivity {
 
         chartArr[ACC_OBJ].setCenterText(objStr + "\n" + accStr);
         score = StatsLastDriving.get_note(getApplicationContext(), SCORE_t.ACCELERATING);
-        scoreStr = String.valueOf(ComonUtils.round(score, 1));
+        scoreStr = String.valueOf(ComonUtils.round(score));
         chartArr[ACC_RES].setCenterText(resStr + "\n" + accStr + ":" + "\n" + scoreStr);
 
         chartArr[BRK_OBJ].setCenterText(objStr + "\n" + brakeStr);
         score = StatsLastDriving.get_note(getApplicationContext(), SCORE_t.BRAKING);
-        scoreStr = String.valueOf(ComonUtils.round(score, 1));
+        scoreStr = String.valueOf(ComonUtils.round(score));
         chartArr[BRK_RES].setCenterText(resStr + "\n" + brakeStr + ":" + "\n" + scoreStr);
 
         chartArr[CRN_OBJ].setCenterText(objStr + "\n" + cornerStr);
         score = StatsLastDriving.get_note(getApplicationContext(), SCORE_t.CORNERING);
-        scoreStr = String.valueOf(ComonUtils.round(score, 1));
+        scoreStr = String.valueOf(ComonUtils.round(score));
         chartArr[CRN_RES].setCenterText(resStr + "\n" + cornerStr + ":" + "\n" + scoreStr);
 
         for (int i = 0; i < 6; i++) {
@@ -192,22 +192,22 @@ public class StatsActivity extends AppCompatActivity {
 
                 switch (id) {
 
-                    case ACC_OBJ: values[i] = ComonUtils.round(StatsLastDriving.get_objectif_A(getApplicationContext(), level), 1);
+                    case ACC_OBJ: values[i] = ComonUtils.round(StatsLastDriving.get_objectif_A(getApplicationContext(), level));
                         break;
 
-                    case ACC_RES: values[i] = ComonUtils.round(StatsLastDriving.get_resultat_A(getApplicationContext(), level), 1);
+                    case ACC_RES: values[i] = ComonUtils.round(StatsLastDriving.get_resultat_A(getApplicationContext(), level));
                         break;
 
-                    case BRK_OBJ: values[i] = ComonUtils.round(StatsLastDriving.get_objectif_F(getApplicationContext(), level), 1);
+                    case BRK_OBJ: values[i] = ComonUtils.round(StatsLastDriving.get_objectif_F(getApplicationContext(), level));
                         break;
 
-                    case BRK_RES: values[i] = ComonUtils.round(StatsLastDriving.get_resultat_F(getApplicationContext(), level), 1);
+                    case BRK_RES: values[i] = ComonUtils.round(StatsLastDriving.get_resultat_F(getApplicationContext(), level));
                         break;
 
-                    case CRN_OBJ: values[i] = ComonUtils.round(StatsLastDriving.get_objectif_V(getApplicationContext(), level), 1);
+                    case CRN_OBJ: values[i] = ComonUtils.round(StatsLastDriving.get_objectif_V(getApplicationContext(), level));
                         break;
 
-                    case CRN_RES: values[i] = ComonUtils.round(StatsLastDriving.get_resultat_V(getApplicationContext(), level), 1);
+                    case CRN_RES: values[i] = ComonUtils.round(StatsLastDriving.get_resultat_V(getApplicationContext(), level));
                         break;
                 }
 

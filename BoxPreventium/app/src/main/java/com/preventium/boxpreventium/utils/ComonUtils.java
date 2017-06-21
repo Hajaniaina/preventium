@@ -237,10 +237,10 @@ public class ComonUtils {
         return new SimpleDateFormat("d-MMM-yyyy HH:mm:ss", Locale.getDefault()).format(System.currentTimeMillis());
     }
 
-    public  static float round (float d, int decimalPlace) {
+    public  static float round (float d) {
 
         BigDecimal bd = new BigDecimal(Float.toString(d));
-        bd = bd.setScale(decimalPlace, BigDecimal.ROUND_HALF_UP);
+        bd = bd.setScale(2, BigDecimal.ROUND_HALF_EVEN);
         return bd.floatValue();
     }
 }
