@@ -156,15 +156,15 @@ public class AppManager extends ThreadDefault
             update_driving_time();
             calc_movements();
 
-            // DEBUG ==============
-            Log.d("AAAA","TEST CALCULATE +++ ");
-            parcour_id = database.get_last_parcours_id();
-            loading_epc( database.get_num_epc(parcour_id) );
-            update_parcour_note(true);
-            update_force_note(true);
-            update_recommended_speed(true);
-            Log.d("AAAA","--- TEST CALCULATE ");
-            // ====================
+//            // DEBUG ==============
+//            Log.d("AAAA","TEST CALCULATE +++ ");
+//            parcour_id = database.get_last_parcours_id();
+//            loading_epc( database.get_num_epc(parcour_id) );
+//            update_parcour_note(true);
+//            update_force_note(true);
+//            update_recommended_speed(true);
+//            Log.d("AAAA","--- TEST CALCULATE ");
+//            // ====================
 
             while( isRunning() ) {
                 sleep(1000);
