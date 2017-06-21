@@ -156,7 +156,7 @@ public class AppManager extends ThreadDefault
             update_driving_time();
             calc_movements();
 
-//            // DEBUG ==============
+            // DEBUG ==============
 //            Log.d("AAAA","TEST CALCULATE +++ ");
 //            parcour_id = database.get_last_parcours_id();
 //            loading_epc( database.get_num_epc(parcour_id) );
@@ -164,11 +164,12 @@ public class AppManager extends ThreadDefault
 //            update_force_note(true);
 //            update_recommended_speed(true);
 //            Log.d("AAAA","--- TEST CALCULATE ");
-//            // ====================
+//            while( isRunning() ) {
+//                sleep(1000);
+//            }
+            // ====================
 
-            while( isRunning() ) {
-                sleep(1000);
-            }
+
             switch ( status ) {
                 case GETTING_CFG:
                 case GETTING_EPC:
@@ -1657,23 +1658,23 @@ Log.d("AAA","RET = " + ret );
             if( StatsLastDriving.get_start_at(ctx) == parcour_id ) {
 
                 if( DataDOBJ.ACCELERATIONS.equals(type) ) {
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_1, (int) interm_4[0]);
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_2, (int) interm_4[1]);
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_3, (int) interm_4[2]);
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_4, (int) interm_4[3]);
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_5, (int) interm_4[4]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_1, interm_4[0]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_2, interm_4[1]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_3, interm_4[2]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_4, interm_4[3]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_5, interm_4[4]);
                 } else if( DataDOBJ.FREINAGES.equals(type) ) {
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_1, (int) interm_4[0]);
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_2, (int) interm_4[1]);
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_3, (int) interm_4[2]);
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_4, (int) interm_4[3]);
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_5, (int) interm_4[4]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_1, interm_4[0]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_2, interm_4[1]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_3, interm_4[2]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_4, interm_4[3]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_5, interm_4[4]);
                 } else if( DataDOBJ.VIRAGES.equals(type) ) {
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_1, (int) interm_4[0]);
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_2, (int) interm_4[1]);
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_3, (int) interm_4[2]);
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_4, (int) interm_4[3]);
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_5, (int) interm_4[4]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_1, interm_4[0]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_2, interm_4[1]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_3, interm_4[2]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_4, interm_4[3]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_5, interm_4[4]);
                 }
             }
         }

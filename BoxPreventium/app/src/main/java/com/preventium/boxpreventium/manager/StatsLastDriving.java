@@ -25,7 +25,7 @@ public class StatsLastDriving {
     /// Share preference key
     private final static String KEY_STAT = "STAT";
     private final static String KEY_PREF_OBJ = "objectif_%s_%s";
-    private final static String KEY_PREF_RES = "result_%s_%s";
+    private final static String KEY_PREF_RES = "results_%s_%s";
     private final static String KEY_PREF_ST = "startAt";
     private final static String KEY_PREF_STOPPED = "stoppedAt";
     private final static String KEY_PREF_NOTE = "note";
@@ -110,25 +110,25 @@ public class StatsLastDriving {
         switch ( score_t ) {
             case CORNERING:
                 return (get_start_at(ctx) > 0
-                        && ( get_resultat_V(ctx, LEVEL_t.LEVEL_1) > 0
-                        || get_resultat_V(ctx, LEVEL_t.LEVEL_2) > 0
-                        || get_resultat_V(ctx, LEVEL_t.LEVEL_3) > 0
-                        || get_resultat_V(ctx, LEVEL_t.LEVEL_4) > 0
-                        || get_resultat_V(ctx, LEVEL_t.LEVEL_5) > 0) );
+                        && ( get_resultat_V(ctx, LEVEL_t.LEVEL_1) > 0f
+                        || get_resultat_V(ctx, LEVEL_t.LEVEL_2) > 0f
+                        || get_resultat_V(ctx, LEVEL_t.LEVEL_3) > 0f
+                        || get_resultat_V(ctx, LEVEL_t.LEVEL_4) > 0f
+                        || get_resultat_V(ctx, LEVEL_t.LEVEL_5) > 0f) );
             case BRAKING:
                 return (get_start_at(ctx) > 0
-                        && ( get_resultat_F(ctx, LEVEL_t.LEVEL_1) > 0
-                        || get_resultat_F(ctx, LEVEL_t.LEVEL_2) > 0
-                        || get_resultat_F(ctx, LEVEL_t.LEVEL_3) > 0
-                        || get_resultat_F(ctx, LEVEL_t.LEVEL_4) > 0
-                        || get_resultat_F(ctx, LEVEL_t.LEVEL_5) > 0) );
+                        && ( get_resultat_F(ctx, LEVEL_t.LEVEL_1) > 0f
+                        || get_resultat_F(ctx, LEVEL_t.LEVEL_2) > 0f
+                        || get_resultat_F(ctx, LEVEL_t.LEVEL_3) > 0f
+                        || get_resultat_F(ctx, LEVEL_t.LEVEL_4) > 0f
+                        || get_resultat_F(ctx, LEVEL_t.LEVEL_5) > 0f) );
             case ACCELERATING:
                 return (get_start_at(ctx) > 0
-                        && (get_resultat_A(ctx, LEVEL_t.LEVEL_1) > 0
-                        || get_resultat_A(ctx, LEVEL_t.LEVEL_2) > 0
-                        || get_resultat_A(ctx, LEVEL_t.LEVEL_3) > 0
-                        || get_resultat_A(ctx, LEVEL_t.LEVEL_4) > 0
-                        || get_resultat_A(ctx, LEVEL_t.LEVEL_5) > 0 ));
+                        && (get_resultat_A(ctx, LEVEL_t.LEVEL_1) > 0f
+                        || get_resultat_A(ctx, LEVEL_t.LEVEL_2) > 0f
+                        || get_resultat_A(ctx, LEVEL_t.LEVEL_3) > 0f
+                        || get_resultat_A(ctx, LEVEL_t.LEVEL_4) > 0f
+                        || get_resultat_A(ctx, LEVEL_t.LEVEL_5) > 0f ));
 
         }
 
@@ -378,7 +378,7 @@ public class StatsLastDriving {
 
     /// GETTER
     /// Accelerations
-    public static int get_resultat_A(Context ctx, LEVEL_t level){
+    public static float get_resultat_A(Context ctx, LEVEL_t level){
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
         String key = "";
         switch ( level ){
@@ -400,11 +400,11 @@ public class StatsLastDriving {
                 key = String.format(Locale.getDefault(),KEY_PREF_RES,ACCELERATIONS,ROUGE);
                 break;
         }
-        if( !key.isEmpty() ) return sp.getInt(key,0);
+        if( !key.isEmpty() ) return sp.getFloat(key,0f);
         return 0;
     }
     /// Freingaes
-    public static int get_resultat_F(Context ctx, LEVEL_t level){
+    public static float get_resultat_F(Context ctx, LEVEL_t level){
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
         String key = "";
         switch ( level ){
@@ -426,11 +426,11 @@ public class StatsLastDriving {
                 key = String.format(Locale.getDefault(),KEY_PREF_RES,FREINAGES,ROUGE);
                 break;
         }
-        if( !key.isEmpty() ) return sp.getInt(key,0);
+        if( !key.isEmpty() ) return sp.getFloat(key,0f);
         return 0;
     }
     /// Virages
-    public static int get_resultat_V(Context ctx, LEVEL_t level){
+    public static float get_resultat_V(Context ctx, LEVEL_t level){
         SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
         String key = "";
         switch ( level ){
@@ -452,13 +452,13 @@ public class StatsLastDriving {
                 key = String.format(Locale.getDefault(),KEY_PREF_RES,VIRAGES,ROUGE);
                 break;
         }
-        if( !key.isEmpty() ) return sp.getInt(key,0);
+        if( !key.isEmpty() ) return sp.getFloat(key,0f);
         return 0;
     }
 
     /// SETTER
     /// Accelerations
-    public static void set_resultat_A(Context ctx, LEVEL_t level, int val){
+    public static void set_resultat_A(Context ctx, LEVEL_t level, float val){
         String key = "";
         switch ( level ){
             case LEVEL_UNKNOW:
@@ -482,12 +482,12 @@ public class StatsLastDriving {
         if( !key.isEmpty() ){
             SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = sp.edit();
-            editor.putInt(key,val);
+            editor.putFloat(key,val);
             editor.apply();
         }
     }
     /// Freingaes
-    public static void set_resultat_F(Context ctx, LEVEL_t level, int val){
+    public static void set_resultat_F(Context ctx, LEVEL_t level, float val){
         String key = "";
         switch ( level ){
             case LEVEL_UNKNOW:
@@ -511,12 +511,12 @@ public class StatsLastDriving {
         if( !key.isEmpty() ){
             SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = sp.edit();
-            editor.putInt(key,val);
+            editor.putFloat(key,val);
             editor.apply();
         }
     }
     /// Virages
-    public static void set_resultat_V(Context ctx, LEVEL_t level, int val){
+    public static void set_resultat_V(Context ctx, LEVEL_t level, float val){
         String key = "";
         switch ( level ){
             case LEVEL_UNKNOW:
@@ -540,7 +540,7 @@ public class StatsLastDriving {
         if( !key.isEmpty() ){
             SharedPreferences sp = ctx.getSharedPreferences(KEY_STAT, Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = sp.edit();
-            editor.putInt(key,val);
+            editor.putFloat(key,val);
             editor.apply();
         }
     }

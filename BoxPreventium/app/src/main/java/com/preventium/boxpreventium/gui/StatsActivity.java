@@ -4,6 +4,9 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.preventium.boxpreventium.R;
 import com.github.clans.fab.FloatingActionButton;
 import com.github.mikephil.charting.charts.PieChart;
@@ -25,6 +28,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
@@ -130,7 +134,6 @@ public class StatsActivity extends AppCompatActivity {
         String cornerStr = getString(R.string.corners_string);
 
         for (PieChart chart : chartArr) {
-
             chart.getLegend().setEnabled(false);
             chart.setRotationEnabled(false);
             chart.setTouchEnabled(true);
@@ -218,7 +221,6 @@ public class StatsActivity extends AppCompatActivity {
         ArrayList<PieEntry> arrayList = new ArrayList<>();
 
         for (int k = 0; k < 5; k++) {
-
             arrayList.add(new PieEntry(values[k], ""));
         }
 
@@ -228,9 +230,22 @@ public class StatsActivity extends AppCompatActivity {
         pieDataSet.setColors(colors);
 
         PieData pieData = new PieData(pieDataSet);
-        pieData.setValueFormatter(new PercentFormatter());
+        //pieData.setValueFormatter(new PercentFormatter());
+        pieData.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
+                if( value <= 2.0 )
+                    return "";
+                else if( value < 5.0 )
+                    return String.format(Locale.getDefault(),"%.0f", value);
+
+                return String.format(Locale.getDefault(),"%.1f%%", value);
+            }
+        });
         pieData.setValueTextSize(16f);
         pieData.setValueTextColor(Color.WHITE);
+
+
 
         chartArr[id].setData(pieData);
         chartArr[id].invalidate();
