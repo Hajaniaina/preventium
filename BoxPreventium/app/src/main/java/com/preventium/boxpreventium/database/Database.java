@@ -80,13 +80,14 @@ public class Database {
     }
 
     public void clear_obselete_data() {
-        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
-        long end = startOfDays(System.currentTimeMillis());
-        long begin = end - (5 * 24 * 3600 * 1000);
-        db.delete(TABLE_ECA,COLUMN_ECA_TIME + " < " + begin,null);
-        db.delete(TABLE_CEP,COLUMN_CEP_TIME + " < " + begin,null);
-        db.delete(TABLE_DRIVER,COLUMN_DRIVER_TIME + " < " + begin,null);
-        DatabaseManager.getInstance().closeDatabase();
+        Log.d("AAAAAA","DO NOT CLEAR OBSELETE DATA FOR DEBUG");
+//        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+//        long end = startOfDays(System.currentTimeMillis());
+//        long begin = end - (5 * 24 * 3600 * 1000);
+//        db.delete(TABLE_ECA,COLUMN_ECA_TIME + " < " + begin,null);
+//        db.delete(TABLE_CEP,COLUMN_CEP_TIME + " < " + begin,null);
+//        db.delete(TABLE_DRIVER,COLUMN_DRIVER_TIME + " < " + begin,null);
+//        DatabaseManager.getInstance().closeDatabase();
     }
 
     private long startOfDays(long timestamp){

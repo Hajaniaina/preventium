@@ -156,6 +156,19 @@ public class AppManager extends ThreadDefault
             update_driving_time();
             calc_movements();
 
+            // DEBUG ==============
+            Log.d("AAAA","TEST CALCULATE +++ ");
+            parcour_id = database.get_last_parcours_id();
+            loading_epc( database.get_num_epc(parcour_id) );
+            update_parcour_note(true);
+            update_force_note(true);
+            update_recommended_speed(true);
+            Log.d("AAAA","--- TEST CALCULATE ");
+            // ====================
+
+            while( isRunning() ) {
+                sleep(1000);
+            }
             switch ( status ) {
                 case GETTING_CFG:
                 case GETTING_EPC:
@@ -1539,10 +1552,30 @@ public class AppManager extends ThreadDefault
                     + database.countNbEvent(readerEPCFile.getForceSeuil(19).IDAlert, parcour_id, begin, end);
         }
 
-//        float coeff_general = 1;
-//        int[] coeff_force = {1,1,1,1,1};
-//        int[] nb_evt = {8,5,1,0,0};
+Log.d("AAA", "+++++ CALCUL FOR " + type + "+++++"  );
+Log.d("AAA", "COEFFICIENTS" );
+Log.d("AAA", "- General: " + coeff_general );
+Log.d("AAA", "- Vert: " + coeff_force[0] );
+Log.d("AAA", "- Bleu: " + coeff_force[1] );
+Log.d("AAA", "- Jaune: " + coeff_force[2] );
+Log.d("AAA", "- Orange: " + coeff_force[3] );
+Log.d("AAA", "- Rouge: " + coeff_force[4] );
+//Log.d("AAA", "OBJECTIS (%) " );
+//Log.d("AAA", "- General: " + coeff_general );
+//Log.d("AAA", "- Vert: " + coeff_force[0] );
+//Log.d("AAA", "- Bleu: " + coeff_force[1] );
+//Log.d("AAA", "- Jaune: " + coeff_force[2] );
+//Log.d("AAA", "- Orange: " + coeff_force[3] );
+//Log.d("AAA", "- Rouge: " + coeff_force[4] );
+Log.d("AAA", "EVENEMENTS CONSTATEES" );
+Log.d("AAA", "- Vert: " + nb_evt[0] );
+Log.d("AAA", "- Bleu: " + nb_evt[1] );
+Log.d("AAA", "- Jaune: " + nb_evt[2] );
+Log.d("AAA", "- Orange: " + nb_evt[3] );
+Log.d("AAA", "- Rouge: " + nb_evt[4] );
+Log.d("AAA", "ETAPES DE CALCULS" );
         int evt_sum = nb_evt[0] + nb_evt[1] + nb_evt[2] + nb_evt[3] + nb_evt[4];
+Log.d("AAA", "Somme des evenements: " + evt_sum );
         if( evt_sum <= 0 ) {
             ret = 20f;
         } else {
@@ -1558,6 +1591,15 @@ public class AppManager extends ThreadDefault
                     ( coeff_sum * coeff_force[4] ) / ( 100f * coeff_percent * coeff_general )
             };
 
+Log.d("AAA", "coeff_sum: " + coeff_sum );
+Log.d("AAA", "coeff_percent: " + coeff_percent );
+Log.d("AAA", "interm_1:" );
+Log.d("AAA", "- Vert: " + interm_1[0] );
+Log.d("AAA", "- Bleu: " + interm_1[1] );
+Log.d("AAA", "- Jaune: " + interm_1[2] );
+Log.d("AAA", "- Orange: " + interm_1[3] );
+Log.d("AAA", "- Rouge: " + interm_1[4] );
+
             float coeff_evt = (float) (evt_sum * 0.01);
             float[] interm_2 = {
                     (evt_sum * nb_evt[0]) / (100f * coeff_evt * coeff_evt),
@@ -1567,6 +1609,14 @@ public class AppManager extends ThreadDefault
                     (evt_sum * nb_evt[4]) / (100f * coeff_evt * coeff_evt)
             };
 
+Log.d("AAA", "coeff_evt: " + coeff_evt );
+Log.d("AAA", "interm_2:" );
+Log.d("AAA", "- Vert: " + interm_2[0] );
+Log.d("AAA", "- Bleu: " + interm_2[1] );
+Log.d("AAA", "- Jaune: " + interm_2[2] );
+Log.d("AAA", "- Orange: " + interm_2[3] );
+Log.d("AAA", "- Rouge: " + interm_2[4] );
+
             float[] interm_3 = {
                     interm_1[0] * interm_2[0],
                     interm_1[1] * interm_2[1],
@@ -1575,8 +1625,14 @@ public class AppManager extends ThreadDefault
                     interm_1[4] * interm_2[4]
             };
 
-            float interm_3_sum = interm_3[0] + interm_3[1] + interm_3[2] + interm_3[3] + interm_3[4];
+Log.d("AAA", "interm_3:" );
+Log.d("AAA", "- Vert: " + interm_3[0] );
+Log.d("AAA", "- Bleu: " + interm_3[1] );
+Log.d("AAA", "- Jaune: " + interm_3[2] );
+Log.d("AAA", "- Orange: " + interm_3[3] );
+Log.d("AAA", "- Rouge: " + interm_3[4] );
 
+            float interm_3_sum = interm_3[0] + interm_3[1] + interm_3[2] + interm_3[3] + interm_3[4];
             float[] interm_4 = {
                     interm_3[0] / (interm_3_sum * 0.01f),
                     interm_3[1] / (interm_3_sum * 0.01f),
@@ -1584,9 +1640,16 @@ public class AppManager extends ThreadDefault
                     interm_3[3] / (interm_3_sum * 0.01f),
                     interm_3[4] / (interm_3_sum * 0.01f)
             };
+Log.d("AAA", "interm_3_sum: " + interm_3_sum );
+Log.d("AAA", "interm_4:" );
+Log.d("AAA", "- Vert: " + interm_4[0] );
+Log.d("AAA", "- Bleu: " + interm_4[1] );
+Log.d("AAA", "- Jaune: " + interm_4[2] );
+Log.d("AAA", "- Orange: " + interm_4[3] );
+Log.d("AAA", "- Rouge: " + interm_4[4] );
 
             ret = (interm_4[0] + interm_4[1] - interm_4[2] - interm_4[3] - interm_4[4]) * (1f / 5f);
-
+Log.d("AAA","RET = " + ret );
             if (ret < 0f) ret = 0f;
             if (ret > 20f) ret = 20f;
 
@@ -1594,26 +1657,27 @@ public class AppManager extends ThreadDefault
             if( StatsLastDriving.get_start_at(ctx) == parcour_id ) {
 
                 if( DataDOBJ.ACCELERATIONS.equals(type) ) {
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_1, (int) interm_1[0]);
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_2, (int) interm_1[1]);
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_3, (int) interm_1[2]);
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_4, (int) interm_1[3]);
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_5, (int) interm_1[4]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_1, (int) interm_4[0]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_2, (int) interm_4[1]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_3, (int) interm_4[2]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_4, (int) interm_4[3]);
+                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_5, (int) interm_4[4]);
                 } else if( DataDOBJ.FREINAGES.equals(type) ) {
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_1, (int) interm_1[0]);
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_2, (int) interm_1[1]);
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_3, (int) interm_1[2]);
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_4, (int) interm_1[3]);
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_5, (int) interm_1[4]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_1, (int) interm_4[0]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_2, (int) interm_4[1]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_3, (int) interm_4[2]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_4, (int) interm_4[3]);
+                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_5, (int) interm_4[4]);
                 } else if( DataDOBJ.VIRAGES.equals(type) ) {
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_1, (int) interm_1[0]);
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_2, (int) interm_1[1]);
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_3, (int) interm_1[2]);
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_4, (int) interm_1[3]);
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_5, (int) interm_1[4]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_1, (int) interm_4[0]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_2, (int) interm_4[1]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_3, (int) interm_4[2]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_4, (int) interm_4[3]);
+                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_5, (int) interm_4[4]);
                 }
             }
         }
+Log.d("AAA", "----- CALCUL FOR " + type + "-----"  );
         return ret;
     }
 
