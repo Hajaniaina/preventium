@@ -192,22 +192,22 @@ public class StatsActivity extends AppCompatActivity {
 
                 switch (id) {
 
-                    case ACC_OBJ: values[i] = StatsLastDriving.get_objectif_A(getApplicationContext(), level);
+                    case ACC_OBJ: values[i] = ComonUtils.round(StatsLastDriving.get_objectif_A(getApplicationContext(), level), 1);
                         break;
 
-                    case ACC_RES: values[i] = StatsLastDriving.get_resultat_A(getApplicationContext(), level);
+                    case ACC_RES: values[i] = ComonUtils.round(StatsLastDriving.get_resultat_A(getApplicationContext(), level), 1);
                         break;
 
-                    case BRK_OBJ: values[i] = StatsLastDriving.get_objectif_F(getApplicationContext(), level);
+                    case BRK_OBJ: values[i] = ComonUtils.round(StatsLastDriving.get_objectif_F(getApplicationContext(), level), 1);
                         break;
 
-                    case BRK_RES: values[i] = StatsLastDriving.get_resultat_F(getApplicationContext(), level);
+                    case BRK_RES: values[i] = ComonUtils.round(StatsLastDriving.get_resultat_F(getApplicationContext(), level), 1);
                         break;
 
-                    case CRN_OBJ: values[i] = StatsLastDriving.get_objectif_V(getApplicationContext(), level);
+                    case CRN_OBJ: values[i] = ComonUtils.round(StatsLastDriving.get_objectif_V(getApplicationContext(), level), 1);
                         break;
 
-                    case CRN_RES: values[i] = StatsLastDriving.get_resultat_V(getApplicationContext(), level);
+                    case CRN_RES: values[i] = ComonUtils.round(StatsLastDriving.get_resultat_V(getApplicationContext(), level), 1);
                         break;
                 }
 
@@ -219,8 +219,7 @@ public class StatsActivity extends AppCompatActivity {
 
         for (int k = 0; k < 5; k++) {
 
-            float value = ComonUtils.round(values[k], 1);
-            arrayList.add(new PieEntry(value, ""));
+            arrayList.add(new PieEntry(values[k], ""));
         }
 
         PieDataSet pieDataSet = new PieDataSet(arrayList, "");
