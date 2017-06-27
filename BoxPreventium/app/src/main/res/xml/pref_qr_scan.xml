@@ -10,7 +10,7 @@
             android:title="@string/on_departure_string"
             android:entries="@array/pref_qr_mode_titles"
             android:entryValues="@array/pref_qr_mode_values"
-            android:defaultValue="1"
+            android:defaultValue="0"
             android:negativeButtonText="@null"
             android:positiveButtonText="@null">
         </ListPreference>
@@ -20,7 +20,7 @@
             android:title="@string/on_arrival_string"
             android:entries="@array/pref_qr_mode_titles"
             android:entryValues="@array/pref_qr_mode_values"
-            android:defaultValue="2"
+            android:defaultValue="0"
             android:negativeButtonText="@null"
             android:positiveButtonText="@null">
         </ListPreference>
