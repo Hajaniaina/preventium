@@ -28,7 +28,6 @@ dependencies {
     compile 'com.android.support:support-v4:25.3.1'
     compile 'com.github.clans:fab:1.6.4'
     compile 'com.github.PhilJay:MPAndroidChart:v3.0.0-beta1'
-    compile 'com.andrognito.pinlockview:pinlockview:2.0.1'
     compile 'com.github.jakob-grabner:Circle-Progress-View:v1.2.9.1'
     compile 'com.github.firetrap:permissionHelper:1.0.1'
     compile('com.github.KingsMentor:MobileVisionBarcodeScanner:v1.2') { transitive = true; }
@@ -39,4 +38,5 @@ dependencies {
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'org.jsoup:jsoup:1.10.2'
     compile 'com.github.florent37:viewtooltip:1.0.3'
+    compile 'in.arjsna:passcodeview:1.2.1'
 }
