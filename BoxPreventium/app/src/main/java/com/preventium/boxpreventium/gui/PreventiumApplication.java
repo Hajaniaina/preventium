@@ -10,9 +10,10 @@ public class PreventiumApplication extends Application {
 
         super.onCreate();
 
+        /*
         AutoErrorReporter.get(this)
                 .setEmailAddresses("")
                 .setEmailSubject("Preventium Crash Report")
-                .start();
+                .start();*/
     }
 }
