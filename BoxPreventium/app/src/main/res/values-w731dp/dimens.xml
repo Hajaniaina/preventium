@@ -1,0 +1,77 @@
+<resources>
+    <dimen name="score_layout_width">70dp</dimen>
+    <dimen name="score_layout_height">70dp</dimen>
+    <dimen name="score_layout_margin_top">2dp</dimen>
+    <dimen name="score_layout_margin_start">0dp</dimen>
+    <dimen name="score_margin_top1">0dp</dimen>
+    <dimen name="score_margin_top2">6dp</dimen>
+    <dimen name="score_text_size">26sp</dimen>
+
+    <dimen name="driving_time_text_size">18sp</dimen>
+
+    <dimen name="speed_layout_margin_top">2dp</dimen>
+    <dimen name="speed_layout_margin_start">10dp</dimen>
+    <dimen name="speed_layout_width">110dp</dimen>
+    <dimen name="speed_layout_height">110dp</dimen>
+    <dimen name="speed_margin_top1">4dp</dimen>
+    <dimen name="speed_margin_top2">8dp</dimen>
+    <dimen name="speed_rim_width">7dp</dimen>
+    <dimen name="speed_text_size">46sp</dimen>
+
+    <dimen name="force_layout_margin_top">4dp</dimen>
+    <dimen name="force_layout_margin_start">362dp</dimen>
+    <dimen name="force_layout_margin_end">0dp</dimen>
+    <dimen name="force_layout_width">94dp</dimen>
+    <dimen name="force_layout_height">94dp</dimen>
+    <dimen name="force_margin_top">0dp</dimen>
+
+    <dimen name="driving_score_layout_width">82dp</dimen>
+    <dimen name="driving_score_layout_height">82dp</dimen>
+    <dimen name="driving_score_layout_margin_top">5dp</dimen>
+    <dimen name="driving_score_layout_margin_start">6dp</dimen>
+    <dimen name="driving_score_text_size">42sp</dimen>
+
+    <dimen name="fb_button_size">@dimen/fb_button_normal</dimen>
+    <dimen name="fb_button_icon_size">42dp</dimen>
+
+    <dimen name="action_menu_padding_start">4dp</dimen>
+    <dimen name="action_menu_padding_bottom">7dp</dimen>
+    <dimen name="action_menu_padding_end">3dp</dimen>
+    <dimen name="action_menu_button_spacing">3dp</dimen>
+
+    <dimen name="buttons_layout_margin_top">2dp</dimen>
+    <dimen name="buttons_layout_margin_start">472dp</dimen>
+    <dimen name="buttons_layout_margin_bottom">0dp</dimen>
+    <dimen name="buttons_layout_margin_end">0dp</dimen>
+    <dimen name="buttons_margin_top1">2dp</dimen>
+    <dimen name="buttons_margin_top2">6dp</dimen>
+
+    <dimen name="box_num_layout_width">58dp</dimen>
+    <dimen name="box_num_layout_margin_top">218dp</dimen>
+    <dimen name="box_num_layout_margin_start">334dp</dimen>
+    <dimen name="box_num_layout_margin_bottom">0dp</dimen>
+    <dimen name="box_num_layout_margin_end">0dp</dimen>
+    <dimen name="box_num_margin_top">20dp</dimen>
+    <dimen name="box_num_height">56dp</dimen>
+    <dimen name="box_num_text_size">20sp</dimen>
+
+    <dimen name="marker_delete_button_margin">120dp</dimen>
+
+    <dimen name="app_theme_dialog_width">260dp</dimen>
+
+    <dimen name="pinlock_ic_size">70dp</dimen>
+    <dimen name="pinlock_margin_top">4dp</dimen>
+    <dimen name="pinlock_dots_margin_top">20dp</dimen>
+    <dimen name="pinlock_dots_diameter">10dp</dimen>
+    <dimen name="pinlock_dots_spacing">18dp</dimen>
+    <dimen name="pinlock_keypad_margin_top">24dp</dimen>
+    <dimen name="pinlock_keypad_padding_start">28dp</dimen>
+    <dimen name="pinlock_keypad_size">36dp</dimen>
+    <dimen name="pinlock_keypad_vertical_spacing">20dp</dimen>
+    <dimen name="pinlock_keypad_horizontal_spacing">6dp</dimen>
+    <dimen name="pinlock_keypad_text_size">26sp</dimen>
+
+    <dimen name="stats_layout_height">300dp</dimen>
+    <dimen name="stats_layout_padding">4dp</dimen>
+    <dimen name="stats_layout_margin">4dp</dimen>
+</resources>
