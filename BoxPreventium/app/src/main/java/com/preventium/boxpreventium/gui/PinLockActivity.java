@@ -72,10 +72,14 @@ public class PinLockActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onEmpty() {}
+            public void onEmpty() {
+
+            }
 
             @Override
-            public void onPinChange (int pinLength, String intermediatePin) {}
+            public void onPinChange (int pinLength, String intermediatePin) {
+
+            }
         };
 
         mPinLockView.setPinLockListener(mPinLockListener);
