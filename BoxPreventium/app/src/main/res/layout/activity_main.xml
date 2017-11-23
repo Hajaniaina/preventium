@@ -415,6 +415,18 @@
                     fab:fab_label=""/>
 
                 <com.github.clans.fab.FloatingActionButton
+                    android:id="@+id/menu_button_map_recenter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/buttons_margin_top1"
+                    android:src="@drawable/ic_map_marker"
+                    fab:fab_size="@dimen/fb_button_size"
+                    fab:fab_colorNormal="@color/colorAppGrey"
+                    fab:fab_colorPressed="@color/colorAppRed"
+                    fab:fab_colorRipple="#ff5252"
+                    fab:fab_shadowColor="#444" />
+
+                <com.github.clans.fab.FloatingActionButton
                     android:id="@+id/menu_button_tracking"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

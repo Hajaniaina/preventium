@@ -113,6 +113,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton epcSettingsButton;
     private FloatingActionButton stopButton;
     private FloatingActionButton menuButtonSos;
+    private FloatingActionButton menuButtonMapRecenter;
     private FloatingActionButton menuButtonResetCalib;
     private FloatingActionButton menuButtonTracking;
     private FloatingActionButton menuButtonSettings;
@@ -1033,6 +1034,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         optMenu = (FloatingActionMenu) findViewById(R.id.opt_menu);
         optMenu.setClosedOnTouchOutside(false);
         menuButtonSos = (FloatingActionButton) findViewById(R.id.menu_button_sos);
+        menuButtonMapRecenter = (FloatingActionButton) findViewById(R.id.menu_button_map_recenter);
         menuButtonResetCalib = (FloatingActionButton) findViewById(R.id.menu_button_reset_calibration);
         menuButtonTracking = (FloatingActionButton) findViewById(R.id.menu_button_tracking);
         menuButtonSettings = (FloatingActionButton) findViewById(R.id.menu_button_settings);
