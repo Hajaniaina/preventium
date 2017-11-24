@@ -122,6 +122,7 @@
     <string name="voice_calls_string">Appels</string>
     <string name="yes_string">Oui</string>
     <string name="pref_title_qr_mode_string">Scan du véhicule</string>
+    <string name="return_location_string">Retour à l\'emplacement actuel</string>
     <string name="alarm_string">Alarme</string>
     <string name="sms_pause_msg_string">TEMPS DE PAUSE DEPASSE</string>
     <string name="progress_send_string">Envoi de données du parcours vers le serveur</string>

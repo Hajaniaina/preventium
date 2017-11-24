@@ -1321,16 +1321,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         String actionStr = "";
 
-        if (trackingActivated) {
-
-            actionStr = getString(R.string.disable_string);
-            alertBuilder.setMessage(getString(R.string.disable_tracking_string) + "?");
-        }
-        else {
-
-            actionStr = getString(R.string.enable_string);
-            alertBuilder.setMessage(getString(R.string.enable_tracking_string) + "?");
-        }
+        actionStr = getString(R.string.yes_string);
+        alertBuilder.setMessage(getString(R.string.return_location_string) + " ?");
 
         alertBuilder.setNegativeButton(getString(R.string.cancel_string), null);
         alertBuilder.setPositiveButton(actionStr, new DialogInterface.OnClickListener() {
@@ -1338,28 +1330,18 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (DialogInterface dialogInterface, int i) {
 
-                if (trackingActivated) {
+                if (lastLocation != null) {
 
-                    trackingActivated = false;
-
-                    menuButtonTracking.setColorNormal(appColor.getColor(AppColor.ORANGE));
-                    menuButtonTracking.setColorPressed(appColor.getColor(AppColor.GREEN));
-
-                    sendSms(getPhoneNumber(R.string.phone_select_sms_tracking_key), getString(R.string.tracking_disabled_string));
-                }
-                else {
-
-                    trackingActivated = true;
+                    lastPos = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
+                    CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_PAUSE).bearing(0).tilt(0).build();
+                    googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
                     menuButtonTracking.setColorNormal(appColor.getColor(AppColor.GREEN));
                     menuButtonTracking.setColorPressed(appColor.getColor(AppColor.ORANGE));
 
-                    sendSms(getPhoneNumber(R.string.phone_select_sms_tracking_key), getString(R.string.tracking_enabled_string));
+                   // googleMap.animateCamera(CameraUpdateFactory.newLatLng(lastPos));
                 }
 
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putBoolean(getString(R.string.tracking_activated), trackingActivated);
-                editor.apply();
             }
         });
 

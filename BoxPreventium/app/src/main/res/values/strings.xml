@@ -144,6 +144,7 @@
     <string name="pref_trigger_time_string">Trigger timeout</string>
     <string name="pref_header_qr_scan_string">QR Scan</string>
     <string name="pref_title_qr_mode_string">Vehicle scan mode</string>
+    <string name="return_location_string">Return to the current location</string>
 
     <string name="sms_sos_msg_string">SOS</string>
     <string name="sms_shock_msg_string">SHOCK</string>
