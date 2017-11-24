@@ -10,6 +10,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -1759,6 +1760,43 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }.start();
     }
 
+    private void recenterMap(){
+
+        //get the center coordinates of the current displayed screen
+        int mWidth= this.getResources().getDisplayMetrics().widthPixels;
+        int mHeight= this.getResources().getDisplayMetrics().heightPixels;
+
+        //Convert them into lagitude and latitude
+        Point centerPoint = new Point(mWidth, mHeight);
+        LatLng latLng = googleMap.getProjection().fromScreenLocation(centerPoint);
+
+        if (lastPos == null) {
+
+            CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_PAUSE).bearing(0).tilt(0).build();
+            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+            if (progress != null && progress.isShowing()) {
+
+                progress.setMessage(getString(R.string.progress_loading_string));
+            }
+        }
+        //Get current tracker position in the screen
+        Point currentPosition = googleMap.getProjection().toScreenLocation(lastPos);
+
+        //Gets the offset x and y (the distance you want that point to move to the right and to the left)
+        int offsetX = mWidth - currentPosition.x;
+        int offsetY = mHeight - currentPosition.y;
+
+        //The new position
+        Point newPoint = new Point();
+        newPoint.x = currentPosition.x + offsetX;
+        newPoint.y = currentPosition.y + offsetY;
+
+        LatLng newCenterLatLng = googleMap.getProjection().fromScreenLocation(newPoint);
+
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(newCenterLatLng, MAP_ZOOM_ON_PAUSE));
+    }
+
     private void disableActionButtons (boolean disable) {
 
         FloatingActionButton[] actionBtnArray = {infoButton, callButton, scanQrCodeButton, epcSettingsButton};
@@ -2008,6 +2046,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onClick (View view) {
 
                 sendSos();
+            }
+        });
+
+        menuButtonMapRecenter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                recenterMap();
             }
         });
 
