@@ -44,6 +44,7 @@ import android.widget.TextView;
 import com.firetrap.permissionhelper.action.OnDenyAction;
 import com.firetrap.permissionhelper.action.OnGrantAction;
 import com.firetrap.permissionhelper.helper.PermissionHelper;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.Polyline;
 import com.gregacucnik.EditableSeekBar;
 import com.preventium.boxpreventium.enums.FORCE_t;
@@ -1763,12 +1764,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private void recenterMap(){
 
         //get the center coordinates of the current displayed screen
-        int mWidth= this.getResources().getDisplayMetrics().widthPixels;
-        int mHeight= this.getResources().getDisplayMetrics().heightPixels;
-
-        //Convert them into lagitude and latitude
-        Point centerPoint = new Point(mWidth, mHeight);
-        LatLng latLng = googleMap.getProjection().fromScreenLocation(centerPoint);
+        int mWidth= this.getResources().getDisplayMetrics().widthPixels/2;
+        int mHeight= this.getResources().getDisplayMetrics().heightPixels/2;
 
         if (lastPos == null) {
 
@@ -1781,20 +1778,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
         //Get current tracker position in the screen
-        Point currentPosition = googleMap.getProjection().toScreenLocation(lastPos);
+        Projection projection = googleMap.getProjection();
+        Point markerPoint = projection.toScreenLocation(lastPos);
 
         //Gets the offset x and y (the distance you want that point to move to the right and to the left)
-        int offsetX = mWidth - currentPosition.x;
-        int offsetY = mHeight - currentPosition.y;
+        int offsetX = mWidth - markerPoint.x;
+        int offsetY = mHeight - markerPoint.y;
 
         //The new position
-        Point newPoint = new Point();
-        newPoint.x = currentPosition.x + offsetX;
-        newPoint.y = currentPosition.y + offsetY;
-
-        LatLng newCenterLatLng = googleMap.getProjection().fromScreenLocation(newPoint);
-
-        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(newCenterLatLng, MAP_ZOOM_ON_PAUSE));
+        Point targetPoint = new Point(mWidth - offsetX , mHeight - offsetY);
+        LatLng targetPosition = projection.fromScreenLocation(targetPoint);
+        googleMap.animateCamera(CameraUpdateFactory.newLatLng(targetPosition), 1000, null);
     }
 
     private void disableActionButtons (boolean disable) {
