@@ -403,7 +403,7 @@ public class AppManager extends ThreadDefault
     private final static FTPConfig FTP_POS = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM,"/POSS");
     private final static FTPConfig FTP_EPC = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
     private final static FTPConfig FTP_DOBJ = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
-
+    private final static FTPConfig FTP_NAME = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
 
     /// ============================================================================================
     /// .CFG
@@ -547,10 +547,13 @@ public class AppManager extends ThreadDefault
                     Log.w(TAG, "EPC: Error while trying to change working directory to \"" + FTP_EPC.getWorkDirectory() + "\"");
                 } else {
                     boolean epc;
+                    boolean epc_name;
                     boolean exist_server_epc = false;
                     boolean exist_server_ack = false;
+                    boolean exist_server_name = false;
                     String srcFileName = "";
                     String srcAckName = "";
+                    String srcNameName = "";
                     String desFileName = "";
                     int i = 1;
                     while( i <= 5 && isRunning() ) {
@@ -558,8 +561,10 @@ public class AppManager extends ThreadDefault
                         // Checking if .EPC file is in FTP server ?
                         srcFileName = reader.getEPCFileName(ctx, i, false);
                         srcAckName = reader.getEPCFileName(ctx, i, true);
+                        srcNameName = reader.getNameFileName(ctx);
                         exist_server_epc = ftp.checkFileExists( srcFileName );
                         exist_server_ack = ftp.checkFileExists( srcAckName );
+                        exist_server_name = ftp.checkFileExists( srcNameName );
 
                         // If .EPC file exist in the FTP server
                         epc = ( exist_server_ack && reader.loadFromApp(ctx,i) );
@@ -587,6 +592,28 @@ public class AppManager extends ThreadDefault
                                             new File(desFileName).delete();
                                         }
                                     }
+                                    //get the EPC.NAME info in server
+                                    if (exist_server_name) {
+                                        if (!folder.exists())
+                                            if (!folder.mkdirs())
+                                                Log.w(TAG, "Error while trying to create new folder!");
+                                        if (folder.exists()) {
+                                            // Trying to download EPC.NAME file...
+                                            desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcNameName);
+                                            if (ftp.ftpDownload(srcNameName, desFileName)) {
+                                                epc_name = reader.readname(desFileName);
+                                                if( epc_name ) {
+                                                    reader.applyNameToApp(ctx);
+
+                                                    new File(desFileName).delete();
+                                                }
+                                            }
+                                        }
+
+                                    }else{
+                                        reader.loadNameFromApp(ctx);
+                                    }
+
                                 }
                             }
                         } else {
@@ -595,6 +622,9 @@ public class AppManager extends ThreadDefault
 
                         i++;
                     }
+
+
+
                 }
                 // Disconnect from FTP server.
                 ftp.ftpDisconnect();

@@ -8,6 +8,7 @@ import android.util.Log;
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
+import com.preventium.boxpreventium.utils.BytesUtils;
 import com.preventium.boxpreventium.utils.ComonUtils;
 
 import java.io.FileInputStream;
@@ -24,12 +25,29 @@ public class ReaderEPCFile {
     private final static String TAG = "ReaderEPCFile";
     private ForceSeuil[] seuil = new ForceSeuil[20];
     private boolean lat_long = false;
+    private String EPC_name1 = "";
+    private String EPC_name2 = "";
+    private String EPC_name3 = "";
+    private String EPC_name4 = "";
+    private String EPC_name5 = "";
 
-    public ReaderEPCFile(){}
+    public ReaderEPCFile(){clear();}
 
+    private void clear(){
+        EPC_name1 = "";
+        EPC_name2 = "";
+        EPC_name3 = "";
+        EPC_name4 = "";
+        EPC_name5 = "";
+    }
     public String getEPCFileName(Context ctx, int i, boolean acknowledge ) {
         if( acknowledge )return String.format(Locale.getDefault(), ComonUtils.getIMEInumber(ctx) + "_%d_ok.EPC", i);
         return String.format(Locale.getDefault(), ComonUtils.getIMEInumber(ctx) + "_%d.EPC", i);
+    }
+
+    public String getNameFileName(Context ctx) {
+        //if( acknowledge )return String.format(Locale.getDefault(), ComonUtils.getIMEInumber(ctx) + "_%d_ok.EPC", i);
+        return String.format(Locale.getDefault(), ComonUtils.getIMEInumber(ctx) + "_EPC.NAME");
     }
 
     public String getEPCFilePath(Context ctx, int i ) {
@@ -93,6 +111,32 @@ public class ReaderEPCFile {
                 e.printStackTrace();
             }
         } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return ret;
+    }
+
+    public boolean readname( String filename ) {
+        boolean ret = false;
+        try {
+            FileInputStream in = new FileInputStream(filename);
+            int total_size = in.available();
+            byte[] data = new byte[total_size];
+            if( in.read( data ) == total_size ){
+                String txt = BytesUtils.dataToString(data);
+                String[] split = txt.split(",");
+                if( split.length == 5 ) {
+                    int i = 0;
+                    EPC_name1 = split[i++];
+                    EPC_name2 = split[i++];
+                    EPC_name3 = split[i++];
+                    EPC_name4 = split[i++];
+                    EPC_name5 = split[i++];
+
+                    ret = true;
+                }
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return ret;
@@ -215,6 +259,27 @@ public class ReaderEPCFile {
             ret = true;
         }
         return ret;
+    }
+
+    public boolean loadNameFromApp( Context ctx) {
+        clear();
+        boolean ret = false;
+        EPC_name1 = NameEPC.get_EPC_Name(ctx,1);
+        EPC_name2 = NameEPC.get_EPC_Name(ctx,2);
+        EPC_name3 = NameEPC.get_EPC_Name(ctx,3);
+        EPC_name4 = NameEPC.get_EPC_Name(ctx,4);
+        EPC_name5 = NameEPC.get_EPC_Name(ctx,5);
+        ret = true;
+        return ret;
+    }
+
+
+    public void applyNameToApp( Context ctx ) {
+        NameEPC.set_EPC_Name(ctx, EPC_name1, 1);
+        NameEPC.set_EPC_Name(ctx, EPC_name2, 2);
+        NameEPC.set_EPC_Name(ctx, EPC_name3, 3);
+        NameEPC.set_EPC_Name(ctx, EPC_name4, 4);
+        NameEPC.set_EPC_Name(ctx, EPC_name5, 5);
     }
 
 }

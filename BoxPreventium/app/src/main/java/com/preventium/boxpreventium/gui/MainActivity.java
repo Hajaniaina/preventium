@@ -68,6 +68,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.preventium.boxpreventium.manager.AppManager;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
+import com.preventium.boxpreventium.server.EPC.NameEPC;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
 
@@ -139,7 +140,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private int selectedEpcFile = 0;
     private boolean trackingActivated = true;
     private int locFilterTimeout = 0;
-
+    private String epcname = "";
     // -------------------------------------------------------------------------------------------- //
 
     @Override
@@ -1574,7 +1575,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             for (int i = 0; i < epcStrList.length; i++) {
 
-                epcStrList[i] = "Seuils de force " + String.valueOf(i + 1);
+                epcname = NameEPC.get_EPC_Name(this,i + 1);
+
+                epcStrList[i] = epcname; //"Seuils de force " + String.valueOf(i + 1);
 
                 boolean exist = false;
 
