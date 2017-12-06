@@ -430,7 +430,7 @@
                     android:id="@+id/menu_button_tracking"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/ic_location"
+                    android:src="@drawable/ic_place_white_24dp"
                     fab:fab_size="@dimen/fb_button_size"
                     fab:fab_colorNormal="@color/colorAppGrey"
                     fab:fab_colorPressed="@color/colorAppRed"

@@ -70,6 +70,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.preventium.boxpreventium.manager.AppManager;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
+import com.preventium.boxpreventium.server.EPC.NameEPC;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
 
@@ -142,7 +143,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private int selectedEpcFile = 0;
     private boolean trackingActivated = true;
     private int locFilterTimeout = 0;
-
+    private String epcname = "";
     // -------------------------------------------------------------------------------------------- //
 
     @Override
@@ -1325,16 +1326,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         String actionStr = "";
 
-        if (trackingActivated) {
-
-            actionStr = getString(R.string.disable_string);
-            alertBuilder.setMessage(getString(R.string.disable_tracking_string) + "?");
-        }
-        else {
-
-            actionStr = getString(R.string.enable_string);
-            alertBuilder.setMessage(getString(R.string.enable_tracking_string) + "?");
-        }
+        actionStr = getString(R.string.yes_string);
+        alertBuilder.setMessage(getString(R.string.return_location_string) + " ?");
 
         alertBuilder.setNegativeButton(getString(R.string.cancel_string), null);
         alertBuilder.setPositiveButton(actionStr, new DialogInterface.OnClickListener() {
@@ -1342,28 +1335,18 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (DialogInterface dialogInterface, int i) {
 
-                if (trackingActivated) {
+                if (lastLocation != null) {
 
-                    trackingActivated = false;
-
-                    menuButtonTracking.setColorNormal(appColor.getColor(AppColor.ORANGE));
-                    menuButtonTracking.setColorPressed(appColor.getColor(AppColor.GREEN));
-
-                    sendSms(getPhoneNumber(R.string.phone_select_sms_tracking_key), getString(R.string.tracking_disabled_string));
-                }
-                else {
-
-                    trackingActivated = true;
+                    lastPos = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
+                    CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_PAUSE).bearing(0).tilt(0).build();
+                    googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
                     menuButtonTracking.setColorNormal(appColor.getColor(AppColor.GREEN));
                     menuButtonTracking.setColorPressed(appColor.getColor(AppColor.ORANGE));
 
-                    sendSms(getPhoneNumber(R.string.phone_select_sms_tracking_key), getString(R.string.tracking_enabled_string));
+                   // googleMap.animateCamera(CameraUpdateFactory.newLatLng(lastPos));
                 }
 
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putBoolean(getString(R.string.tracking_activated), trackingActivated);
-                editor.apply();
             }
         });
 
@@ -1596,7 +1579,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             for (int i = 0; i < epcStrList.length; i++) {
 
-                epcStrList[i] = "Seuils de force " + String.valueOf(i + 1);
+                epcname = NameEPC.get_EPC_Name(this,i + 1);
+
+                epcStrList[i] = epcname; //"Seuils de force " + String.valueOf(i + 1);
 
                 boolean exist = false;
 
