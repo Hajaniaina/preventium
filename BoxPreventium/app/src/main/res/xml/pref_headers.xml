@@ -26,6 +26,12 @@
     </header>
 
     <header
+        android:fragment="com.preventium.boxpreventium.gui.SettingsActivity$LocalizationPreferenceFragment"
+        android:icon="@drawable/ic_comment_pref"
+        android:title="@string/localization_string">
+    </header>
+
+    <header
         android:fragment="com.preventium.boxpreventium.gui.SettingsActivity$TrackingPreferenceFragment"
         android:icon="@drawable/ic_location_pref"
         android:title="@string/tracking_string">

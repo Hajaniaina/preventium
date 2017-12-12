@@ -18,6 +18,7 @@ import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.net.Uri;
 import android.os.CountDownTimer;
+import android.os.Handler;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
@@ -82,6 +83,8 @@ import java.util.Locale;
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
 
     private static final String TAG = "MainActivity";
+    private static final String APPPREFERENCES = "AppPrefs" ;
+    private final long DURATION = 3000L;
 
     private static final boolean DEBUG_UI_ON      = false;
     private static final boolean DEBUG_LOGVIEW_ON = false;
@@ -108,6 +111,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private TextView boxNumView;
     private TextView drivingTimeView;
     private ImageView backgroundView;
+    private ImageView flagView;
 
     private FloatingActionMenu optMenu;
     private FloatingActionButton infoButton;
@@ -158,6 +162,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             if (savedInstanceState == null) {
 
                 init(true);
+                localizationFlag();
             }
             else {
 
@@ -1026,6 +1031,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         backgroundView = (ImageView) findViewById(R.id.background_image);
         boxNumView = (TextView) findViewById(R.id.box_num_connected);
         drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
+        flagView = (ImageView) findViewById(R.id.localization_flag_image);
 
         infoButton = (FloatingActionButton) findViewById(R.id.button_info);
         callButton = (FloatingActionButton) findViewById(R.id.button_call);
@@ -2065,4 +2071,37 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     // -------------------------------------------------------------------------------------------- //
+
+    private void localizationFlag(){
+
+        SharedPreferences preferences = getSharedPreferences(APPPREFERENCES, Context.MODE_PRIVATE);
+        String language = preferences.getString("language", null);
+        if(language==null){
+            language = Locale.getDefault().getLanguage();
+        }
+        switch (language){
+            case "en":
+                flagView.setImageResource(R.drawable.ic_us_flag);
+                break;
+            case "fr":
+                flagView.setImageResource(R.drawable.ic_fr_flag);
+                break;
+            case "es":
+                flagView.setImageResource(R.drawable.ic_es_flag);
+                break;
+            case "pl":
+                flagView.setImageResource(R.drawable.ic_pl_flag);
+                break;
+        }
+
+        Runnable displayFlag = new Runnable() {
+            @Override
+            public void run() {
+                flagView.setVisibility(View.INVISIBLE);
+            }
+        };
+        Handler handler = new Handler();
+        handler.postDelayed(displayFlag, DURATION);
+
+    }
 }

@@ -6,9 +6,6 @@
 
     <!-- (FRANCK) -->
 
-    <string name="search_and_select_device" translatable="false">Search and select device</string>
-    <string name="start_scan" translatable="false">Start scan</string>
-    <string name="stop_scan" translatable="false">Stop scan</string>
     <string name="unknown_device">Unknown device</string>
     <string name="bluetooth_not_supported">The \"Bluetooth\" is not supported by the device</string>
     <string name="bluetooth_low_energy_not_supported">The \"Bluetooth Low Energy\" is not supported by the device</string>
@@ -84,7 +81,6 @@
     <string name="template_route_string">Template route</string>
     <string name="avg_speed_time_string">Time for avg speed calculation</string>
     <string name="send_sms_after_pause_string">Send notification after pause more than</string>
-    <string name="shock_trigger_string" translatable="false">Shock trigger force</string>
     <string name="marker_tittle_invalid_string">Invalid name</string>
     <string name="new_marker_string">Marker name</string>
     <string name="marker_edit_string">Edit marker</string>
@@ -137,6 +133,14 @@
     <string name="template_route_title_string">Next route will be used as template route</string>
     <string name="driver_score_tooltip_string">It is a score of 20 at max</string>
 
+    <string name="localization_string">Language choice</string>
+    <string name="language_string">Language</string>
+    <string name="languages_string">Languages</string>
+    <string name="pref_title_english_string">English</string>
+    <string name="pref_title_spanish_string">Spanish</string>
+    <string name="pref_title_french_string">French</string>
+    <string name="pref_title_polish_string">Polish</string>
+
     <string name="pref_title_sms_sos_string">SMS SOS</string>
     <string name="pref_title_sms_shock_string">SMS Shocks</string>
     <string name="pref_title_sms_tracking_string">SMS Tracking On/Off</string>
@@ -148,43 +152,8 @@
 
     <string name="sms_sos_msg_string">SOS</string>
     <string name="sms_shock_msg_string">SHOCK</string>
-    <string name="sms_qr_msg_string" translatable="false">QR CODE NOT SCANNED</string>
     <string name="sms_pause_msg_string">PAUSE TOO LONG</string>
 
-    <string-array name="marker_types" translatable="false">
-        <item>INFO</item>
-        <item>DANGER</item>
-    </string-array>
-
-    <string-array name="pref_qr_mode_titles" translatable="false">
-        <item>@string/disabled_string</item>
-        <item>@string/front_only_string</item>
-        <item>@string/front_back_string</item>
-    </string-array>
-
-    <string-array name="pref_qr_mode_values" translatable="false">
-        <item>0</item>
-        <item>1</item>
-        <item>2</item>
-    </string-array>
-
-    <string-array name="pref_phone_numbers_titles" translatable="false">
-        <item>@string/not_used_string</item>
-        <item>@string/number_1_string</item>
-        <item>@string/number_2_string</item>
-        <item>@string/number_3_string</item>
-        <item>@string/number_4_string</item>
-        <item>@string/number_5_string</item>
-    </string-array>
-
-    <string-array name="pref_phone_numbers_values" translatable="false">
-        <item>0</item>
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
-    </string-array>
     <string name="title_activity_web_view">WebViewActivity</string>
 
     <string name="epc_selected">epc_selected</string>
@@ -193,4 +162,6 @@
     <string name="phone_select_sms_qr">phone_select_sms_qr</string>
     <string name="stop_trigger_time">stop_trigger_time</string>
     <string name="tracking_activated">tracking_activated</string>
+
+    <string name="return_location_string">Return to the current location</string>
 </resources>

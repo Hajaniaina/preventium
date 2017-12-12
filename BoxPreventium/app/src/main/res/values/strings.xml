@@ -136,6 +136,14 @@
     <string name="template_route_title_string">Next route will be used as template route</string>
     <string name="driver_score_tooltip_string">It is a score of 20 at max</string>
 
+    <string name="localization_string">Language choice</string>
+    <string name="language_string">Language</string>
+    <string name="languages_string">Languages</string>
+    <string name="pref_title_english_string">English</string>
+    <string name="pref_title_spanish_string">Spanish</string>
+    <string name="pref_title_french_string">French</string>
+    <string name="pref_title_polish_string">Polish</string>
+
     <string name="pref_title_sms_sos_string">SMS SOS</string>
     <string name="pref_title_sms_shock_string">SMS Shocks</string>
     <string name="pref_title_sms_tracking_string">SMS Tracking On/Off</string>

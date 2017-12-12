@@ -140,4 +140,14 @@
     <string name="tracking_disabled_string">ŚLEDZENIE JEST WYŁĄCZONE</string>
     <string name="tracking_enabled_string">ŚLEDZENIE WŁĄCZONE</string>
     <string name="title_activity_web_view">WebViewActivity</string>
+
+    <string name="localization_string">Wybór języka</string>
+    <string name="language_string">Język</string>
+    <string name="languages_string">Języki</string>
+    <string name="pref_title_english_string">Język angielski</string>
+    <string name="pref_title_spanish_string">Język hiszpański</string>
+    <string name="pref_title_french_string">Język francuski</string>
+    <string name="pref_title_polish_string">Język polski</string>
+
+    <string name="return_location_string">WRÓĆ DO BIEŻĄCEJ LOKALIZACJI</string>
 </resources>
