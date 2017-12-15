@@ -1,6 +1,8 @@
 package com.preventium.boxpreventium.server.CFG;
 
 import android.content.Context;
+import android.util.Log;
+
 import com.preventium.boxpreventium.utils.BytesUtils;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 import java.io.FileInputStream;
@@ -22,6 +24,7 @@ public class ReaderCFGFile {
     private String SMS_CALL_3 = "";
     private String SMS_CALL_4 = "";
     private String SMS_CALL_5 = "";
+    private String SERVER_URL = "";
     private boolean reception_trajet_en_temps_reel = false;
     private boolean envoi_de_tous_les_points_gps = false;
 
@@ -40,6 +43,7 @@ public class ReaderCFGFile {
         SMS_CALL_5 = "";
         reception_trajet_en_temps_reel = false;
         envoi_de_tous_les_points_gps = false;
+        SERVER_URL = "";
     }
 
     public boolean read( String filename ) {
@@ -51,7 +55,10 @@ public class ReaderCFGFile {
             if( in.read( data ) == total_size ){
                 String txt = BytesUtils.dataToString(data);
                 String[] split = txt.split(",");
-                if( split.length == 17 ) {
+
+                Log.e("taille f : ", String.valueOf(split));
+
+                if( split.length == 18 ) {
                     int i = 5;
                     FTP = split[i++];
                     FTP_Login = split[i++];
@@ -64,7 +71,8 @@ public class ReaderCFGFile {
                     SMS_CALL_4 = split[i++];
                     SMS_CALL_5 = split[i++];
                     reception_trajet_en_temps_reel = split[i++].equals("1");
-                    envoi_de_tous_les_points_gps = split[i].equals("1");
+                    envoi_de_tous_les_points_gps = split[i++].equals("1");
+                    SERVER_URL = split[i];
                     ret = true;
                 }
             }
@@ -72,6 +80,12 @@ public class ReaderCFGFile {
             e.printStackTrace();
         }
         return ret;
+    }
+
+    public String getServerUrl(){
+
+        return FTP;
+
     }
 
     public boolean loadFromApp( Context ctx ) {

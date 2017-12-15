@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.preventium.boxpreventium">
 
+
     <uses-feature android:name="android.hardware.bluetooth" />
     <uses-feature android:name="android.hardware.location.gps" />
 

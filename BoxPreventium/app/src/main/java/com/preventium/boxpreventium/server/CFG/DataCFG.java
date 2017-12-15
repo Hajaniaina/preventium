@@ -24,6 +24,7 @@ public class DataCFG {
     private final static String KEY_Sms_Call = "SmsCall%d";
     private final static String KEY_Send_In_Real_Time = "SendInRealTime";
     private final static String KEY_Simple_Gps_Points = "SimpleGpsPoints";
+    private final static String KEY_Server = "ServerUrl";
 
     /// GETTERS
 
@@ -35,6 +36,7 @@ public class DataCFG {
         String FTP_pwd = sp.getString(KEY_Pwd,"");
         int FTP_Port = sp.getInt(KEY_Port,-1);
         String FTP_Path = sp.getString(KEY_Path,"");
+        String FTP_server = sp.getString(KEY_Server,"");
         if( !FTP.isEmpty() )
             ret = new FTPConfig(FTP,FTP_Login,FTP_pwd,FTP_Port,FTP_Path);
         return ret;

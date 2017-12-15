@@ -17,6 +17,7 @@
     <string name="empty_string">Vide</string>
     <string name="cancel_string">Annuler</string>
     <string name="quit_string">Quitter</string>
+    <string name="close_string">Fermer</string>
     <string name="corners_caps_string">VIRAGE</string>
     <string name="corners_string">Virages</string>
     <string name="create_string">Créer</string>
@@ -82,6 +83,7 @@
     <string name="pref_title_voice_call_string">Appels</string>
     <string name="progress_check_imei_string">Vérification de l\'activation du IMEI: </string>
     <string name="progress_inactive_imei_string">L’application rencontre un problème de connexion. Si ce n’est pas la première fois, merci de vous rapprocher de votre service formation ou de notre service commercial</string>
+    <string name="progress_inactive_opt_string">Cette option est désactivée. S\'il vous plaît contacter le service de vente Preventium</string>
     <string name="progress_cfg_string">Vérification de données CFG pour IMEI: </string>
     <string name="progress_epc_string">Vérification de données EPC pour IMEI: </string>
     <string name="progress_loading_string">Chargement…</string>
@@ -141,5 +143,30 @@
     <string name="tracking_disabled_string">Tracking disabled</string>
     <string name="tracking_enabled_string">Tracking enabled</string>
     <string name="title_activity_web_view">WebViewActivity</string>
+    <string name="corner_note_string">V</string>
+    <string name="brake_note_string">F</string>
+    <string name="acc_note_string">A</string>
+    <string name="avg_note_string">M</string>
+
+
+    <string name="opt_desactivated_global">, Veuillez contacter le service Preventium</string>
+    <string name="opt_qrcod_activated">L\'option Qrcode est maintenant activée</string>
+    <string name="opt_qrcod_desactivated">L\'option Qrcode est maintenant désactivée</string>
+    <string name="opt_note_activated">L\'option note sur 20 est maintenant activée</string>
+    <string name="opt_note_desactivated">L\'option note sur 20 est maintenant désactivée</string>
+    <string name="opt_VFAM_desactivated">L\'option VFAM est maintenant désactivée</string>
+    <string name="opt_VFAM_activated">L\'option VFAM est maintenant activée</string>
+    <string name="opt_panneau_activated">L\'option panneau de vitesse est maintenant activée</string>
+    <string name="opt_panneau_desactivated">L\'option panneau de vitesse est maintenant désactivée</string>
+    <string name="opt_duree_desactivated">L\'option duree est maintenant désactivée</string>
+    <string name="opt_duree_activated">L\'option duree est maintenant activée</string>
+    <string name="opt_seulforce_activated">L\'option seuil de force est maintenant activée</string>
+    <string name="opt_seulforce_desactivated">L\'option seuil de force est maintenant désactivée</string>
+    <string name="opt_config_type_desactivated">L\'option configuration est maintenant désactivée</string>
+    <string name="opt_config_type_activated">L\'option configuration est maintenant activée</string>
+    <string name="opt_langue_desactivated">L\'option langue est maintenant désactivée</string>
+    <string name="opt_langue_activated">L\'option langue est maintenant activée</string>
+    <string name="opt_carte_activated">L\'option carte est maintenant activée</string>
+    <string name="opt_carte_desactivated">L\'option carte est maintenant désactivée</string>
 
 </resources>

@@ -1,6 +1,9 @@
 package com.preventium.boxpreventium.gui;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
@@ -14,16 +17,20 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.media.AudioManager;
+import android.media.RingtoneManager;
 import android.media.ToneGenerator;
 import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AlertDialog;
 import android.telephony.SmsManager;
 import android.util.Log;
@@ -43,18 +50,6 @@ import android.widget.TextView;
 import com.firetrap.permissionhelper.action.OnDenyAction;
 import com.firetrap.permissionhelper.action.OnGrantAction;
 import com.firetrap.permissionhelper.helper.PermissionHelper;
-import com.google.android.gms.maps.model.Polyline;
-import com.gregacucnik.EditableSeekBar;
-import com.preventium.boxpreventium.enums.FORCE_t;
-import com.preventium.boxpreventium.enums.LEVEL_t;
-import com.preventium.boxpreventium.enums.SCORE_t;
-import com.preventium.boxpreventium.enums.STATUS_t;
-import com.preventium.boxpreventium.enums.SPEED_t;
-import com.preventium.boxpreventium.location.CustomMarker;
-import com.preventium.boxpreventium.location.CustomMarkerData;
-import com.preventium.boxpreventium.location.MarkerManager;
-import com.preventium.boxpreventium.location.PositionManager;
-import com.preventium.boxpreventium.R;
 import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -64,17 +59,35 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.gregacucnik.EditableSeekBar;
+import com.preventium.boxpreventium.R;
+import com.preventium.boxpreventium.enums.FORCE_t;
+import com.preventium.boxpreventium.enums.LEVEL_t;
+import com.preventium.boxpreventium.enums.SCORE_t;
+import com.preventium.boxpreventium.enums.SPEED_t;
+import com.preventium.boxpreventium.enums.STATUS_t;
+import com.preventium.boxpreventium.location.CustomMarker;
+import com.preventium.boxpreventium.location.CustomMarkerData;
+import com.preventium.boxpreventium.location.MarkerManager;
+import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.manager.AppManager;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
+import com.preventium.boxpreventium.server.JSON.ParseJsonData;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
 
@@ -104,6 +117,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private LinearLayout debugLayout;
     private TextView boxNumView;
     private TextView drivingTimeView;
+
     private ImageView backgroundView;
 
     private FloatingActionMenu optMenu;
@@ -140,10 +154,69 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean trackingActivated = true;
     private int locFilterTimeout = 0;
 
+    private int opt_panneau = 99;
+    private int opt_carte = 99;
+    private int opt_note = 99;
+    private int opt_VFAM = 99;
+    private int opt_duree = 99;
+    private int opt_qrcode = 99;
+    private int opt_seulforce = 99;
+    private int opt_config_type = 99;
+    private int opt_langue = 99;
+    private int opt_screen_size = 99;
+
+    private String opt_test;
+    String jsonString;
+    NotificationCompat.Builder notif;
+
+    private static final int id_notif_qr = 10;
+    private static final int id_notif_conf = 11;
+    private static final int id_notif_avfm = 12;
+    private static final int id_notif_seuil = 13;
+    private static final int id_notif_note = 14;
+    private static final int id_notif_lang = 15;
+    private static final int id_notif_duree = 16;
+    private static final int id_notif_pan = 17;
+    private static final int id_notif_map = 18;
+
+   private TextView corner_n_v ;
+   private TextView brake_n_v ;
+   private TextView acc_n_v ;
+   private TextView avg_n_v ;
+   private TextView drive_n_v;
+
+    //FTPConfig configa = DataCFG.getFptConfig(MainActivity.this);
+    //String FTP = configa.getFtpServer();
+
+    /*
+    String serveur;
+    ReaderCFGFile reader1 = new ReaderCFGFile();
+    String srcFileName;
+    String desFileName;
+*/
+
+
     // -------------------------------------------------------------------------------------------- //
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
+
+       // corner_n_v = (TextView) findViewById(R.id.corner_note_view);
+        brake_n_v =(TextView) findViewById(R.id.brake_note_view);
+        acc_n_v =(TextView) findViewById(R.id.acc_note_view);
+        avg_n_v =(TextView) findViewById(R.id.avg_note_view);
+        drive_n_v =(TextView) findViewById(R.id.driving_score_view);
+
+       /* boolean cfg = false;
+        FTPClientIO ftp = new FTPClientIO();
+        srcFileName = ComonUtils.getIMEInumber(getApplicationContext()) + ".CFG";
+        desFileName = String.format(Locale.getDefault(), "%s/%s", getApplicationContext().getFilesDir(), srcFileName);
+        reader1.read(desFileName);
+        serveur = reader1.getServerUrl();
+*/
+
+
+
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -151,9 +224,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         if (checkPermissions() > 0) {
 
+            setRepeatingAsyncTask();
+
             if (savedInstanceState == null) {
 
+
                 init(true);
+
+                notif = new NotificationCompat.Builder(this);
+                notif.setAutoCancel(true);
             }
             else {
 
@@ -617,6 +696,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         break;
                 }
+
+                //mbol afaka asiako
+
             }
         });
     }
@@ -838,7 +920,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                scoreView.setScore(type, level);
+                //scoreView.setScore(type, level);
+                scoreView.hide(true);
             }
         });
     }
@@ -1346,6 +1429,51 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         alertBuilder.create().show();
+    }
+
+    public void ParseJsonaa() {
+     /*   String bol="";
+        String imei = StatsLastDriving.getIMEI(MainActivity.this);
+        ParseJsonData jsonData = new ParseJsonData();
+        String jsonString = jsonData.makeServiceCall("http://test.preventium.fr/index.php/get_config/"+imei);
+
+        try {
+            JSONObject conf;
+            conf = new JSONObject(jsonString).getJSONObject("config");
+            bol = conf.optString(str);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return Boolean.parseBoolean(bol);
+*/
+  /*      String imei = StatsLastDriving.getIMEI(MainActivity.this);
+        ParseJsonData jsonData = new ParseJsonData();
+        String jsonString = jsonData.makeServiceCall("http://test.preventium.fr/index.php/get_config/"+imei);
+
+        try {
+           JSONObject config = (new JSONObject(jsonString)).getJSONObject("config");
+     /*        opt_carte = Boolean.parseBoolean(config.optString( "affiche_carte"));
+            opt_panneau = Boolean.parseBoolean(config.optString( "paneau_vitesse_droite"));
+            opt_note = Boolean.parseBoolean(config.optString( "note_sur_20"));
+            opt_VFAM = Boolean.parseBoolean(config.optString( "VFAM"));
+            opt_duree = Boolean.parseBoolean(config.optString( "duree"));
+            opt_seulforce = Boolean.parseBoolean(config.optString( "seulforce"));
+            opt_qrcode = Integer.parseInt(config.optString( "qrcode"));
+            opt_config_type = Boolean.parseBoolean(config.optString( "config_type"));
+            opt_langue = Boolean.parseBoolean(config.optString( "opt_langue"));
+            opt_screen_size = Integer.parseInt(config.optString( "taille_ecran"));
+            opt_test = config.optString( "nom_boitier");
+*/
+     /*       opt_qrcode = config.getString( "qrcode");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+*/
+
+
     }
 
     protected void showMarkerEditDialog (final Marker marker, final boolean creation) {
@@ -1942,9 +2070,20 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (final View view) {
 
+                if(opt_qrcode== 1)
+                {
+
+
                 Intent intent = new Intent(MainActivity.this, QrScanActivity.class);
                 intent.putExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM, qrRequest);
                 startActivityForResult(intent, QR_REQUEST_ID);
+
+
+            }else {
+                    alertopt();
+
+                }
+
             }
         });
 
@@ -1953,7 +2092,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (final View view) {
 
-                showEpcSelectDialog();
+                if(opt_seulforce== 1)
+                {
+                    showEpcSelectDialog();
+                }else {
+                    alertopt();
+                }
+
             }
         });
 
@@ -2014,11 +2159,358 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View view) {
 
-                startActivity(new Intent(MainActivity.this, PinLockActivity.class));
-                optMenu.close(true);
+                if(opt_config_type== 1)
+                {
+                    startActivity(new Intent(MainActivity.this, PinLockActivity.class));
+                    optMenu.close(true);
+
+                }else {
+                    alertopt();
+                }
+
+
+
             }
         });
     }
+
+    // -------------------------------------------------------------------------------------------- //
+
+    private void hideOPT(){
+   //-----VFAM
+        if(opt_VFAM==0){
+           // corner_n_v.setVisibility(View.GONE);
+            brake_n_v.setVisibility(View.GONE);
+            acc_n_v.setVisibility(View.GONE);
+            avg_n_v.setVisibility(View.GONE);
+        }else {
+           // corner_n_v.setVisibility(View.VISIBLE);
+            brake_n_v.setVisibility(View.VISIBLE);
+            acc_n_v.setVisibility(View.VISIBLE);
+            avg_n_v.setVisibility(View.VISIBLE);
+        }
+
+        //----- drive_note
+        if(opt_note==0){
+            drive_n_v.setVisibility(View.GONE);
+        }else {
+            drive_n_v.setVisibility(View.VISIBLE);
+        }
+
+        //---- qrcode
+        if(opt_qrcode==0){
+            scanQrCodeButton.setVisibility(View.GONE);
+        }else{
+            scanQrCodeButton.setVisibility(View.VISIBLE);
+        }
+
+        //---- durree
+        if(opt_duree==0){
+            drivingTimeView.setVisibility(View.GONE);
+        }else{
+            drivingTimeView.setVisibility(View.VISIBLE);
+        }
+
+        //------ Seuille frc
+        if(opt_seulforce== 0){
+            epcSettingsButton.setVisibility(View.GONE);
+        }else{
+            epcSettingsButton.setVisibility(View.VISIBLE);
+        }
+
+        //--pin btn
+        if(opt_config_type== 0){
+            menuButtonSettings.setVisibility(View.GONE);
+        }else{
+            menuButtonSettings.setVisibility(View.VISIBLE);
+        }
+
+    }
+
+    private void alertopt(){
+
+
+        final AlertDialog.Builder optDisableAlert = new AlertDialog.Builder(MainActivity.this);
+        optDisableAlert.setCancelable(false);
+        optDisableAlert.setMessage(getString(R.string.progress_inactive_opt_string));
+
+        optDisableAlert.setNegativeButton(getString(R.string.close_string), null);
+        optDisableAlert.create().show();
+        //  cancel(true);
+
+      /*            if (progress != null) {
+
+                        progress.show();
+                        progress.setMessage(getString(R.string.progress_inactive_opt_string) );
+                    }
+                    */
+
+    }
+
+
+    private void notification(String msg, int Idnotif){
+
+        Uri soundNotif = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+     /*   if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            notif.setSmallIcon(R.drawable.icon_transperent);
+            //notif.setColor(getResources().getColor(R.color.notification_color));
+        } else {
+            notif.setSmallIcon(R.mipmap.ic_launcher);
+        }
+        */
+        notif.setSmallIcon(R.mipmap.ic_launcher);
+        notif.setTicker("Preventium");
+        notif.setWhen(System.currentTimeMillis());
+        notif.setContentTitle("Preventium");
+        notif.setContentText(msg);
+
+
+
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        notif.setContentIntent(pendingIntent);
+        notif.setSound(soundNotif);
+
+        NotificationManager nm = (NotificationManager ) getSystemService(NOTIFICATION_SERVICE);
+        nm.notify(Idnotif, notif.build());
+
+    }
+
+
+    private void compare(int opt , int obj, String msgActiv, String msgDesactiv, int notifiId){
+
+        if(opt == 99){
+
+
+            Log.e("aopt99  : ", "99");
+
+        }else {
+
+            if ((opt != obj) && opt < obj){
+
+                notification(msgActiv, notifiId);
+
+                Log.e("aopt0  : ", "0->1");
+
+            }else if ((opt != obj) && opt > obj){
+
+                notification(msgDesactiv+"\n"+getString(R.string.opt_desactivated_global), notifiId);
+
+                Log.e("aopt1  : ", "1->=0");
+            }
+
+
+        }
+
+    }
+
+    private void setRepeatingAsyncTask() {
+
+        final Handler handler = new Handler();
+        Timer timer = new Timer();
+
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() {
+                        try {
+
+
+
+                             new ParseJson().execute();
+
+
+                            hideOPT();
+
+
+
+                        } catch (Exception e) {
+                            // error, do something
+                        }
+                    }
+                });
+            }
+        };
+
+        timer.schedule(task, 0, 1*1000);  // interval of one minute (1 sec)
+
+    }
+
+    // -------------------------------------------------------------------------------------------- //
+
+
+     @SuppressLint("StaticFieldLeak")
+     class  ParseJson extends AsyncTask<String, String, Integer> {
+
+         @Override
+         protected Integer doInBackground(String... param) {
+
+
+
+
+         String imei = StatsLastDriving.getIMEI(MainActivity.this);
+             ParseJsonData jsonData = new ParseJsonData();
+             String  jsonString1 = jsonData.makeServiceCall("https://test.preventium.fr/index.php/get_config/"+imei);
+
+            // Log.e("Imei azo : ",imei);
+            // Log.e("objet jsonSring azo : ",jsonString);
+
+             try {
+                // String url = new String(param[0]);
+               //  ParseJsonData jsonData = new ParseJsonData();
+                 //String jsonString = jsonData.makeServiceCall(url);
+
+
+                 JSONObject conf = new JSONObject(jsonString1);
+
+
+                 JSONObject config = conf.getJSONObject("config");
+
+      //------------------        test ---------------
+/*
+                 opt_screen_size = Integer.parseInt(config.optString( "taille_ecran"));
+                 opt_qrcode = Integer.parseInt(config.optString( "qrcode"));
+
+                 Log.e("av @class  : ", String.valueOf(config));
+                 Log.e("av @class  : ", String.valueOf(opt_screen_size));
+                 Log.e("av @class  : ", String.valueOf(opt_qrcode));
+
+  */
+      //-------------------------------------
+
+
+
+                 int opt_qrcode_web = Integer.parseInt(config.optString( "qrcode"));
+                 int opt_carte_web      = Integer.parseInt(config.optString(  "affiche_carte"));
+                 int opt_panneau_web    = Integer.parseInt(config.optString(  "paneau_vitesse_droite"));
+                 int opt_note_web       = Integer.parseInt(config.optString(  "note_sur_20"));
+                 int opt_VFAM_web       = Integer.parseInt(config.optString(  "VFAM"));
+                 int opt_duree_web      = Integer.parseInt(config.optString(  "duree"));
+                 int opt_seulforce_web  = Integer.parseInt(config.optString(  "seulforce"));
+                 int opt_config_type_web = Integer.parseInt(config.optString(  "config_type"));
+                 int opt_langue_web     = Integer.parseInt(config.optString(  "langue"));
+                 //int opt_screen_size_web = Integer.parseInt(config.optString( "taille_ecran"));
+
+
+
+/*
+                 Log.e("opt_carte: ", String.valueOf(opt_carte_web));
+                 Log.e("opt_panneau: ", String.valueOf(opt_panneau_web));
+                 Log.e("opt_note: ", String.valueOf(opt_note_web));
+                 Log.e("opt_VFAM  : ", String.valueOf(opt_VFAM_web));
+                 Log.e("opt_duree  : ", String.valueOf(opt_seulforce_web));
+                 Log.e("opt_config  : ", String.valueOf(opt_config_type_web));
+                 Log.e("opt_langu  : ", String.valueOf(opt_langue_web));
+                 Log.e("opt_qrcode  : ", String.valueOf(opt_qrcode_web));
+*/
+
+
+                 compare(opt_qrcode,opt_qrcode_web, getString(R.string.opt_qrcod_activated)+"\n" ,getString(R.string.opt_qrcod_desactivated), id_notif_qr);
+                 compare(opt_carte,opt_carte_web,getString(R.string.opt_carte_activated),getString(R.string.opt_carte_desactivated)+"\n", id_notif_map);
+                 compare(opt_panneau,opt_panneau_web,getString(R.string.opt_panneau_activated),getString(R.string.opt_panneau_desactivated)+"\n", id_notif_pan);
+                 compare(opt_note,opt_note_web,getString(R.string.opt_note_activated),getString(R.string.opt_note_desactivated)+"\n", id_notif_note);
+                 compare(opt_VFAM,opt_VFAM_web,getString(R.string.opt_VFAM_activated),getString(R.string.opt_VFAM_desactivated)+"\n", id_notif_avfm);
+                 compare(opt_duree,opt_duree_web,getString(R.string.opt_duree_activated),getString(R.string.opt_duree_desactivated)+"\n", id_notif_duree);
+                 compare(opt_seulforce,opt_seulforce_web,getString(R.string.opt_seulforce_activated),getString(R.string.opt_seulforce_desactivated)+"\n", id_notif_seuil);
+                 compare(opt_config_type,opt_config_type_web,getString(R.string.opt_config_type_activated),getString(R.string.opt_config_type_desactivated)+"\n", id_notif_conf);
+                 compare(opt_langue,opt_langue_web,getString(R.string.opt_langue_desactivated),getString(R.string.opt_langue_desactivated)+"\n", id_notif_lang);
+
+                 opt_qrcode = opt_qrcode_web;
+                 opt_carte = opt_carte_web;
+                 opt_panneau = opt_panneau_web;
+                 opt_note = opt_note_web;
+                 opt_VFAM = opt_VFAM_web;
+                 opt_seulforce = opt_seulforce_web;
+                 opt_config_type = opt_config_type_web;
+                 opt_langue = opt_langue_web;
+                 opt_duree = opt_duree_web;
+
+
+
+                 if(opt_VFAM == 0){
+/*
+                     onScoreChanged (SCORE_t.CORNERING,LEVEL_t.LEVEL_UNKNOW);
+                     onScoreChanged (SCORE_t.BRAKING,LEVEL_t.LEVEL_UNKNOW);
+                     onScoreChanged (SCORE_t.ACCELERATING,LEVEL_t.LEVEL_UNKNOW);
+                     onScoreChanged (SCORE_t.AVERAGE,LEVEL_t.LEVEL_UNKNOW);
+*/
+
+                     scoreView.hide(true);
+                 }
+                 else {
+                    // scoreView.restore(MainActivity.this);
+                    // onNoteChanged(20,LEVEL_t.LEVEL_1,LEVEL_t.LEVEL_1);
+                 /*    onScoreChanged(SCORE_t.ACCELERATING,LEVEL_t.LEVEL_1);
+                     onScoreChanged(SCORE_t.BRAKING,LEVEL_t.LEVEL_1);
+                     onScoreChanged(SCORE_t.CORNERING,LEVEL_t.LEVEL_1);
+                     onScoreChanged(SCORE_t.AVERAGE,LEVEL_t.LEVEL_1);
+                     */
+                     scoreView.hide(false);
+                 }
+
+                 if(opt_note == 0){
+                     onNoteChanged (0, LEVEL_t.LEVEL_UNKNOW,LEVEL_t.LEVEL_UNKNOW);
+                 }else {
+                     onNoteChanged(20,LEVEL_t.LEVEL_1,LEVEL_t.LEVEL_1);
+                 }
+
+
+
+
+
+              //   onScoreChanged (final SCORE_t type, final LEVEL_t level);
+
+               //  compare(opt_screen_size,opt_screen_size_web,"","");
+
+
+/*
+                 opt_carte = Boolean.parseBoolean(config.optString( "affiche_carte"));
+                 opt_panneau = Boolean.parseBoolean(config.optString( "paneau_vitesse_droite"));
+                 opt_note = Boolean.parseBoolean(config.optString( "note_sur_20"));
+                 opt_VFAM = Boolean.parseBoolean(config.optString( "VFAM"));
+                 opt_duree = Boolean.parseBoolean(config.optString( "duree"));
+                 opt_seulforce = Boolean.parseBoolean(config.optString( "seulforce"));
+                // opt_qrcode = config.optString( "qrcode");
+                 opt_config_type = Boolean.parseBoolean(config.optString( "config_type"));
+                 opt_langue = Boolean.parseBoolean(config.optString( "opt_langue"));
+                 opt_screen_size = Integer.parseInt(config.optString( "taille_ecran"));
+                 //opt_test = config.optString( "nom_boitier");
+*/
+
+
+                // opt_screen_size = Integer.parseInt(config.optString( "taille_ecran"));
+
+
+                return opt_qrcode;
+
+             } catch (JSONException e) {
+                 e.printStackTrace();
+             }
+
+
+           return null;
+         }
+
+
+         @Override
+         protected void onPostExecute(Integer result) {
+             super.onPostExecute(result);
+             //JSONObject config = new JSONObject(result);
+             // JSONObject conf = config.getJSONObject("config");
+             // String res = conf.getString("taille_ecran");
+             //opt_qrcode = result;
+
+             //compare(opt_qrcode,1, getString(R.string.opt_qrcod_activated) ,getString(R.string.opt_qrcod_desactivated));
+           //Log.e("rah qr : ", String.valueOf(result));
+            // Log.e("av @FTP  : ", FTP);
+             //Log.e("Url server val : ",serveur);
+            // Log.e("Url src : ",srcFileName);
+            // Log.e("Url src ful : ",desFileName);
+
+         }
+     }
+
 
     // -------------------------------------------------------------------------------------------- //
 }

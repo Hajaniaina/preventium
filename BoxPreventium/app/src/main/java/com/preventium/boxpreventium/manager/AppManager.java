@@ -18,17 +18,16 @@ import com.preventium.boxpreventium.enums.MOVING_t;
 import com.preventium.boxpreventium.enums.SCORE_t;
 import com.preventium.boxpreventium.enums.SPEED_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
-import com.preventium.boxpreventium.gui.SettingsActivity;
 import com.preventium.boxpreventium.location.CustomMarkerData;
 import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
+import com.preventium.boxpreventium.server.DOBJ.DataDOBJ;
+import com.preventium.boxpreventium.server.DOBJ.ReaderDOBJFile;
 import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.ForceSeuil;
 import com.preventium.boxpreventium.server.EPC.ReaderEPCFile;
-import com.preventium.boxpreventium.server.DOBJ.DataDOBJ;
-import com.preventium.boxpreventium.server.DOBJ.ReaderDOBJFile;
 import com.preventium.boxpreventium.server.POSS.ReaderPOSSFile;
 import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ComonUtils;
@@ -41,13 +40,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -445,7 +441,9 @@ public class AppManager extends ThreadDefault
                             // Trying to download .CFG file...
                             String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
                             if (ftp.ftpDownload(srcFileName, desFileName)) {
-                                cfg = reader.read(desFileName);
+                                cfg = reader.read(desFileName);  // santooo
+                                String serv = reader.getServerUrl();
+                                Log.e("FTP azo : ", serv);
                                 if (cfg) {
                                     reader.applyToApp(ctx);
                                     // envoi acknowledge

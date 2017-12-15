@@ -41,6 +41,7 @@
     <string name="no_string">No</string>
     <string name="cancel_string">Cancel</string>
     <string name="quit_string">Quit</string>
+    <string name="close_string">Close</string>
     <string name="obj_string">Objective</string>
     <string name="results_string">Result</string>
     <string name="acc_string">Acceleration</string>
@@ -113,6 +114,7 @@
     <string name="progress_location_string">Waiting for GPS data</string>
     <string name="progress_check_imei_string">Checking IMEI activation: </string>
     <string name="progress_inactive_imei_string">Connection error. Please contact Preventium sales service</string>
+    <string name="progress_inactive_opt_string">Option disabled. Please contact Preventium sales service</string>
     <string name="progress_cfg_string">Downloading CFG data for IMEI: </string>
     <string name="progress_epc_string">Downloading EPC data for IMEI: </string>
     <string name="progress_obj_string">Downloading OBJ datafor IMEI: </string>
@@ -145,6 +147,32 @@
     <string name="pref_header_qr_scan_string">QR Scan</string>
     <string name="pref_title_qr_mode_string">Vehicle scan mode</string>
     <string name="return_location_string">Return to the current location</string>
+    <string name="corner_note_string">V</string>
+    <string name="brake_note_string">F</string>
+    <string name="acc_note_string">A</string>
+    <string name="avg_note_string">M</string>
+
+    <string name="opt_desactivated_global">, Please contact the Preventium service</string>
+    <string name="opt_qrcod_activated">Qrcode option is now enabled</string>
+    <string name="opt_qrcod_desactivated">Qrcode option is now disabled</string>
+    <string name="opt_note_activated">Note 20 option is now enabled</string>
+    <string name="opt_note_desactivated">Note 20 option is now disabled</string>
+    <string name="opt_VFAM_desactivated">VFAM option is now disabled</string>
+    <string name="opt_VFAM_activated">VFAM option is now enabled</string>
+    <string name="opt_panneau_activated">The speed panel option is now enabled</string>
+    <string name="opt_panneau_desactivated">The speed panel option is now disabled</string>
+    <string name="opt_duree_desactivated">The duration option is now disabled</string>
+    <string name="opt_duree_activated">The duration option is now enabled</string>
+    <string name="opt_seulforce_activated">Force threshold option is now enabled</string>
+    <string name="opt_seulforce_desactivated">Force threshold option is now disabled</string>
+    <string name="opt_config_type_desactivated">The configuration option is now disabled</string>
+    <string name="opt_config_type_activated">The configuration option is now enabled</string>
+    <string name="opt_langue_desactivated">The language option is now disabled</string>
+    <string name="opt_langue_activated">The language option is now enabled</string>
+    <string name="opt_carte_activated">The map option is now enabled</string>
+    <string name="opt_carte_desactivated">The map option is now disabled</string>
+
+
 
     <string name="sms_sos_msg_string">SOS</string>
     <string name="sms_shock_msg_string">SHOCK</string>

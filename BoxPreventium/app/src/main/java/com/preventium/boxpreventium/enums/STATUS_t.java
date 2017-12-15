@@ -29,6 +29,7 @@ public enum STATUS_t {
     private static Map<Integer, STATUS_t> map = new HashMap<>();
 
     STATUS_t(int value) { this.value = value; }
+
     static { for (STATUS_t e : STATUS_t.values() ) map.put(e.value, e); }
     public static STATUS_t valueOf(int cmdType) {
         return map.get(cmdType);

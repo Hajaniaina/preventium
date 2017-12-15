@@ -152,7 +152,7 @@ public class HandlerBox extends ThreadDefault
 
         int nb = mBoxList.size();
         if( listener != null ) {
-            listener.onNumberOfBox( nb );
+            listener.onNumberOfBox( nb ); //santoo
             listener.onForceChanged( last_smooth, last_shock);
             listener.onEngineStateChanged( last_engine_t );
         }
@@ -269,7 +269,7 @@ public class HandlerBox extends ThreadDefault
             // NUMBER OF CONNECTED DEVICE CHANGED
             if( nb != mBoxList.size() ) {
                 nb = mBoxList.size();
-                if( listener != null ) listener.onNumberOfBox( nb );
+                if( listener != null ) listener.onNumberOfBox( nb );  //sss
                 if( DEBUG ) Log.d(TAG,"Number of connected device changed: " + nb );
             }
         }
@@ -293,7 +293,7 @@ public class HandlerBox extends ThreadDefault
             // NUMBER OF CONNECTED DEVICE CHANGED
             if( nb != mBoxList.size() ) {
                 nb = mBoxList.size();
-                if( listener != null ) listener.onNumberOfBox( nb );
+                if( listener != null ) listener.onNumberOfBox( nb ); //sss
                 if( DEBUG ) Log.d(TAG,"Number of connected device changed: " + nb );
             }
         }
