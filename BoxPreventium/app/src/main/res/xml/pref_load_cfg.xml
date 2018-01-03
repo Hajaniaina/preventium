@@ -1,0 +1,16 @@
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        android:title="@string/firstrun_key">
+
+        <ListPreference
+            android:key="@string/load_alert_cfg_key"
+            android:defaultValue="@bool/load_alert_cfg_val"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null">
+        </ListPreference>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

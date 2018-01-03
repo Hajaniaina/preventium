@@ -20,6 +20,15 @@
         tools:layout="@layout/activity_main">
     </fragment>
 
+
+    <ImageView android:id="@+id/no_map"
+        android:visibility="invisible"
+        android:layout_width="96.0dip"
+        android:layout_height="96.0dip"
+        android:src="@mipmap/ic_nomap"
+        android:layout_centerInParent="true" />
+
+
     <ImageView android:id="@+id/background_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -307,14 +316,15 @@
 
             <!-- BUTTONS -->
             <LinearLayout android:id="@+id/buttons_layout"
-                    android:orientation="vertical"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="top|end"
-                    android:layout_marginTop="@dimen/buttons_layout_margin_top"
-                    android:layout_marginBottom="@dimen/buttons_layout_margin_bottom"
-                    android:layout_marginEnd="@dimen/buttons_layout_margin_end"
-                    android:layout_marginStart="@dimen/buttons_layout_margin_start">
+                android:orientation="vertical"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_alignParentRight="true"
+                android:layout_marginTop="@dimen/buttons_layout_margin_top"
+                android:layout_marginBottom="@dimen/buttons_layout_margin_bottom"
+                android:layout_marginEnd="@dimen/buttons_layout_margin_end"
+                android:layout_marginStart="@dimen/buttons_layout_margin_start">
 
                 <com.github.clans.fab.FloatingActionButton
                     android:id="@+id/button_info"
@@ -414,55 +424,70 @@
                     fab:fab_shadowColor="#444"
                     fab:fab_label=""/>
 
+
                 <com.github.clans.fab.FloatingActionButton
-                    android:id="@+id/menu_button_tracking"
+                    android:id="@+id/menu_button_map_recenter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/ic_place_white_24dp"
+                    android:layout_marginTop="@dimen/buttons_margin_top1"
+                    android:src="@drawable/ic_map_marker"
                     fab:fab_size="@dimen/fb_button_size"
                     fab:fab_colorNormal="@color/colorAppGrey"
                     fab:fab_colorPressed="@color/colorAppRed"
-                    fab:fab_colorRipple="#ffee58"
-                    fab:fab_shadowColor="#444"
-                    fab:fab_label=""/>
+                    fab:fab_colorRipple="#ff5252"
+                    fab:fab_shadowColor="#444" />
 
-                <com.github.clans.fab.FloatingActionButton
-                    android:id="@+id/menu_button_reset_calibration"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/quantum_ic_refresh_white_24"
-                    fab:fab_size="@dimen/fb_button_size"
-                    fab:fab_colorNormal="@color/colorAppGrey"
-                    fab:fab_colorPressed="@color/colorAppRed"
-                    fab:fab_colorRipple="#ffee58"
-                    fab:fab_shadowColor="#444"
-                    fab:fab_label=""/>
 
-                <com.github.clans.fab.FloatingActionButton
-                    android:id="@+id/menu_button_settings"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/ic_lock"
-                    fab:fab_size="@dimen/fb_button_size"
-                    fab:fab_colorNormal="@color/colorAppGrey"
-                    fab:fab_colorPressed="@color/colorAppRed"
-                    fab:fab_colorRipple="#ffee58"
-                    fab:fab_shadowColor="#444"
-                    fab:fab_label=""/>
+            <!-- #######-recenter santo
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/menu_button_tracking"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_place_white_24dp"
+                fab:fab_size="@dimen/fb_button_size"
+                fab:fab_colorNormal="@color/colorAppGrey"
+                fab:fab_colorPressed="@color/colorAppRed"
+                fab:fab_colorRipple="#ffee58"
+                fab:fab_shadowColor="#444"
+                fab:fab_label=""/>
+#######-recenter santo -->
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/menu_button_reset_calibration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/quantum_ic_refresh_white_24"
+                fab:fab_size="@dimen/fb_button_size"
+                fab:fab_colorNormal="@color/colorAppGrey"
+                fab:fab_colorPressed="@color/colorAppRed"
+                fab:fab_colorRipple="#ffee58"
+                fab:fab_shadowColor="#444"
+                fab:fab_label=""/>
 
-            </com.github.clans.fab.FloatingActionMenu>
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/menu_button_settings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_lock"
+                fab:fab_size="@dimen/fb_button_size"
+                fab:fab_colorNormal="@color/colorAppGrey"
+                fab:fab_colorPressed="@color/colorAppRed"
+                fab:fab_colorRipple="#ffee58"
+                fab:fab_shadowColor="#444"
+                fab:fab_label=""/>
 
-            <!-- BOX NUM WIDGET -->
+        </com.github.clans.fab.FloatingActionMenu>
+
+        <!-- BOX NUM WIDGET -->
             <LinearLayout
                 android:id="@+id/box_layout"
                 android:orientation="vertical"
                 android:layout_width="@dimen/box_num_layout_width"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|end"
-                android:layout_marginTop="@dimen/box_num_layout_margin_top"
-                android:layout_marginBottom="@dimen/box_num_layout_margin_bottom"
-                android:layout_marginStart="@dimen/box_num_layout_margin_start"
-                android:layout_marginEnd="@dimen/box_num_layout_margin_end">
+                android:layout_alignParentRight="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginBottom="10dp"
+                android:layout_marginRight="50dp">
 
                 <TextView
                     android:id="@+id/box_num_connected"
@@ -486,6 +511,38 @@
         </RelativeLayout>
 
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/localization_flag_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/ic_fr_flag"
+        android:layout_marginTop="7dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="7dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="5dp"
+        android:gravity="center">
+        <TextView
+            android:id="@+id/sms_message_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@+string/no_pending_message_string"
+            android:textColor="@color/colorAppRed"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textSize="20sp"
+            android:singleLine="true"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:scrollHorizontally="true"/>
+    </LinearLayout>
+
 
 </RelativeLayout>
 

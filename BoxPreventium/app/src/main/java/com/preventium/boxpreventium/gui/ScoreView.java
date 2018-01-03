@@ -110,6 +110,7 @@ public class ScoreView implements Parcelable {
 
             if (hide) {
 
+                //view.setVisibility(View.INVISIBLE);
                 view.setVisibility(View.INVISIBLE);
             }
             else {
@@ -154,6 +155,32 @@ public class ScoreView implements Parcelable {
         drawable.setColorFilter(appColor.getColor(levelAvg), PorterDuff.Mode.SRC_ATOP);
         viewMap.get(SCORE_t.FINAL).setBackground(drawable);
     }
+
+    public void hideNote(boolean bol){
+        if(bol){
+        viewMap.get(SCORE_t.FINAL).setVisibility(View.INVISIBLE);
+        }else {
+            viewMap.get(SCORE_t.FINAL).setVisibility(View.VISIBLE);
+        }
+
+    }
+
+    public void hideFAMV(boolean bol){
+        if(bol){
+            viewMap.get(SCORE_t.CORNERING).setVisibility(View.INVISIBLE);
+            viewMap.get(SCORE_t.BRAKING).setVisibility(View.INVISIBLE);
+            viewMap.get(SCORE_t.ACCELERATING).setVisibility(View.INVISIBLE);
+            viewMap.get(SCORE_t.AVERAGE).setVisibility(View.INVISIBLE);
+
+        }else {
+            viewMap.get(SCORE_t.CORNERING).setVisibility(View.VISIBLE);
+            viewMap.get(SCORE_t.BRAKING).setVisibility(View.VISIBLE);
+            viewMap.get(SCORE_t.ACCELERATING).setVisibility(View.VISIBLE);
+            viewMap.get(SCORE_t.AVERAGE).setVisibility(View.VISIBLE);
+        }
+
+    }
+
 
     @Override
     public int describeContents() {

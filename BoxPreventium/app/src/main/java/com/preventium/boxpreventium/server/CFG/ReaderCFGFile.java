@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.preventium.boxpreventium.utils.BytesUtils;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 
@@ -55,10 +56,8 @@ public class ReaderCFGFile {
             if( in.read( data ) == total_size ){
                 String txt = BytesUtils.dataToString(data);
                 String[] split = txt.split(",");
-
-                Log.e("taille f : ", String.valueOf(split));
-
-                if( split.length == 18 ) {
+                Log.e("la taille : ", String.valueOf(split.length));
+                if( split.length == 17 ) {
                     int i = 5;
                     FTP = split[i++];
                     FTP_Login = split[i++];
@@ -71,10 +70,13 @@ public class ReaderCFGFile {
                     SMS_CALL_4 = split[i++];
                     SMS_CALL_5 = split[i++];
                     reception_trajet_en_temps_reel = split[i++].equals("1");
-                    envoi_de_tous_les_points_gps = split[i++].equals("1");
+                    //envoi_de_tous_les_points_gps = split[i].equals("1");
                     SERVER_URL = split[i];
                     ret = true;
                 }
+
+
+
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -84,7 +86,7 @@ public class ReaderCFGFile {
 
     public String getServerUrl(){
 
-        return FTP;
+        return SERVER_URL;
 
     }
 

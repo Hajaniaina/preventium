@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="com.vanniktech:vntnumberpickerpreference-1.0.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.android/build-cache/134c177d574c631fb2e6ccc532fe5500a0caccbc/output/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.android/build-cache/134c177d574c631fb2e6ccc532fe5500a0caccbc/output/res" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.vanniktech/vntnumberpickerpreference/1.0.0/b350f85a0ad1b15b2235e5c1f4a34bbe41d0e80a/vntnumberpickerpreference-1.0.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

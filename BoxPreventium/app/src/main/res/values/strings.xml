@@ -137,6 +137,15 @@
     <string name="template_route_name_string">Template route name</string>
     <string name="template_route_title_string">Next route will be used as template route</string>
     <string name="driver_score_tooltip_string">It is a score of 20 at max</string>
+    <string name="progress_cfg_opt_string">No configuration found. Please contact Preventium service</string>
+
+    <string name="localization_string">Language choice</string>
+    <string name="language_string">Language</string>
+    <string name="languages_string">Languages</string>
+    <string name="pref_title_english_string">English</string>
+    <string name="pref_title_spanish_string">Spanish</string>
+    <string name="pref_title_french_string">French</string>
+    <string name="pref_title_polish_string">Polish</string>
 
     <string name="pref_title_sms_sos_string">SMS SOS</string>
     <string name="pref_title_sms_shock_string">SMS Shocks</string>
@@ -221,5 +230,21 @@
     <string name="phone_select_sms_qr">phone_select_sms_qr</string>
     <string name="stop_trigger_time">stop_trigger_time</string>
     <string name="tracking_activated">tracking_activated</string>
+
+
+    <string name="no_pending_message_string">You don\'t have any pending messages</string>
+    <string name="sms_message"><![CDATA[ From : %1$s %2$s]]></string>
+
+
+    <string name="form_string">Fill blank field above</string>
+    <string name="form_name_string">Firstname and Lastname</string>
+    <string name="form_phone_string">Phone number</string>
+    <string name="form_email_string">Email</string>
+    <string name="form_titulaire_string">Titulaire *</string>
+    <string name="form_titue_string">* Entrepise, collectivité, personne, ...</string>
+    <string name="form_submit_string">Valid</string>
+    <string name="form_invalid_string">Fill all blank field</string>
+    <string name="form_valid_string">Data sent</string>
+    <string name="form_ok_string">ok</string>
 
 </resources>

@@ -1,5 +1,13 @@
 <resources>
 
+    <!-- pref laod cfg-->
+    <bool name="load_alert_cfg_val">true</bool>
+    <string name="load_alert_cfg_key" translatable="false">load_alert_cfg_key</string>
+
+    <!-- pref form first run-->
+    <bool name="firstrun_val">true</bool>
+    <string name="firstrun_key" translatable="false">firstrun_key</string>
+
     <!-- Selected EPC file, values: 1, 2, 3, 4 ou 5, default: 0-->
     <string name="epc_selected_key" translatable="false">epc_selected_key</string>
     <integer name="epc_selected_def_key">1</integer>
@@ -45,5 +53,6 @@
     <string name="pin_code_key" translatable="false">pin_code_key</string>
     <string name="driver_id_key" translatable="false">driver_id_key</string>
     <string name="driver_name_key" translatable="false">driver_name_key</string>
+    <string name="select_language_key" translatable="false">select_language_key</string>
 
 </resources>

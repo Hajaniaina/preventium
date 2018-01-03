@@ -33,9 +33,11 @@ import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
 import com.preventium.boxpreventium.utils.ThreadDefault;
+import com.preventium.boxpreventium.utils.Zipper;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPClientIO;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
@@ -77,6 +79,8 @@ public class AppManager extends ThreadDefault
         void onShock(double mG, short raw);
         void onRecommendedSpeedChanged(SPEED_t speed_t, int kmh, LEVEL_t level, boolean valid);
         void onInternetConnectionChanged();
+        //void setRepeatingAsyncTask();
+
 
         void onCalibrateOnConstantSpeed();
         void onCalibrateOnAcceleration();
@@ -132,6 +136,7 @@ public class AppManager extends ThreadDefault
         database.clear_obselete_data();
 
         IMEI_is_actif();
+        //listener.setRepeatingAsyncTask();
         download_cfg();
         download_shared_pos();
         download_epc();
@@ -399,7 +404,9 @@ public class AppManager extends ThreadDefault
     private final static FTPConfig FTP_POS = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM,"/POSS");
     private final static FTPConfig FTP_EPC = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
     private final static FTPConfig FTP_DOBJ = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
+    private final static FTPConfig FTP_NAME = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
 
+    private final static FTPConfig FTP_FORM = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM, "/FORM");
 
     /// ============================================================================================
     /// .CFG
@@ -442,9 +449,10 @@ public class AppManager extends ThreadDefault
                             String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
                             if (ftp.ftpDownload(srcFileName, desFileName)) {
                                 cfg = reader.read(desFileName);  // santooo
-                                String serv = reader.getServerUrl();
-                                Log.e("FTP azo : ", serv);
+                                Log.e("FTP cfg : ", String.valueOf(cfg));
                                 if (cfg) {
+                                    String serv = reader.getServerUrl();
+                                    Log.e("FTP azo : ", serv);
                                     reader.applyToApp(ctx);
                                     // envoi acknowledge
                                     try {
@@ -455,7 +463,7 @@ public class AppManager extends ThreadDefault
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                     }
-                                    new File(desFileName).delete();
+                                   // new File(desFileName).delete();  //delete source cfg santoni
                                 }
                             }
                         }
@@ -545,10 +553,13 @@ public class AppManager extends ThreadDefault
                     Log.w(TAG, "EPC: Error while trying to change working directory to \"" + FTP_EPC.getWorkDirectory() + "\"");
                 } else {
                     boolean epc;
+                    boolean epc_name;
                     boolean exist_server_epc = false;
                     boolean exist_server_ack = false;
+                    boolean exist_server_name = false;
                     String srcFileName = "";
                     String srcAckName = "";
+                    String srcNameName = "";
                     String desFileName = "";
                     int i = 1;
                     while( i <= 5 && isRunning() ) {
@@ -556,8 +567,10 @@ public class AppManager extends ThreadDefault
                         // Checking if .EPC file is in FTP server ?
                         srcFileName = reader.getEPCFileName(ctx, i, false);
                         srcAckName = reader.getEPCFileName(ctx, i, true);
+                        srcNameName = reader.getNameFileName(ctx);
                         exist_server_epc = ftp.checkFileExists( srcFileName );
                         exist_server_ack = ftp.checkFileExists( srcAckName );
+                        exist_server_name = ftp.checkFileExists( srcNameName );
 
                         // If .EPC file exist in the FTP server
                         epc = ( exist_server_ack && reader.loadFromApp(ctx,i) );
@@ -585,6 +598,28 @@ public class AppManager extends ThreadDefault
                                             new File(desFileName).delete();
                                         }
                                     }
+                                    //get the EPC.NAME info in server
+                                    if (exist_server_name) {
+                                        if (!folder.exists())
+                                            if (!folder.mkdirs())
+                                                Log.w(TAG, "Error while trying to create new folder!");
+                                        if (folder.exists()) {
+                                            // Trying to download EPC.NAME file...
+                                            desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcNameName);
+                                            if (ftp.ftpDownload(srcNameName, desFileName)) {
+                                                epc_name = reader.readname(desFileName);
+                                                if( epc_name ) {
+                                                    reader.applyNameToApp(ctx);
+
+                                                    new File(desFileName).delete();
+                                                }
+                                            }
+                                        }
+
+                                    }else{
+                                        reader.loadNameFromApp(ctx);
+                                    }
+
                                 }
                             }
                         } else {
@@ -593,6 +628,9 @@ public class AppManager extends ThreadDefault
 
                         i++;
                     }
+
+
+
                 }
                 // Disconnect from FTP server.
                 ftp.ftpDisconnect();
@@ -2276,5 +2314,77 @@ active = true;
         log += txt;
         if( listener != null ) listener.onDebugLog( log );
     }
+
+
+
+    /// OPEN FORM
+    /// ============================================================================================
+    private Thread thread;
+    public void OpenForm (String[] form) {
+        // recuperer les valeurs
+
+        final String header = "imei;nometprenom;telephone;email;titulaire;latitude;longitude;date\n";
+        final String imei = StatsLastDriving.getIMEI(ctx);
+        final String content = imei + ";" + form[0] + ";" + form[1] + ";" + form[2] + ";" + form[3] + ";" + form[4] + ";" + form[5] + ";" + form[6];
+        Log.w("content", content);
+
+        // mettre dans un fichiers
+        thread = new Thread() {
+            private FTPClientIO ftp = new FTPClientIO();
+            private String zipfile = null;
+            private boolean sent = false;
+
+            @Override
+            public void run () {
+                while(!sent) {
+                    Log.w("loop", "looping");
+                    if( zipfile == null ) {
+                        try {
+                            File tmp = File.createTempFile(imei, ".tmp");
+                            File file = new File(tmp.getParent() + File.separator + imei + ".FORM");
+
+                            Log.w("path file", file.getAbsolutePath());
+                            //write it
+                            BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+                            bw.write(header);
+                            bw.append(content);
+                            bw.close();
+
+                            if (file.isFile()) {
+                                // archiver zip le fichiers
+                                String[] fileList = {file.getAbsolutePath()};
+                                Zipper zip = new Zipper(fileList);
+                                zipfile = zip.putSample();
+                                file.delete();
+                                tmp.delete();
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    if (zipfile != null) {
+                        if( ftp.ftpConnect(FTP_FORM, 3000) && ftp.changeWorkingDirectory(FTP_FORM.getWorkDirectory()) ) {
+                            ftp.ftpUpload(zipfile, imei + ".FORM.zip");
+                            sent = true;
+                            break;
+                        }
+                    }
+
+                    try {
+                        if(!sent) { Thread.sleep(5000); }
+                    }catch(InterruptedException ie) {
+                        ie.printStackTrace();
+                    }
+                }
+                Log.w("terminé", "terms");
+                thread.interrupt();
+            }
+        };
+        thread.start();
+    }
+
+
 
 }

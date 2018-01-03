@@ -68,7 +68,7 @@ public class AccForceView implements Parcelable {
 
         if (hide) {
 
-            accForceView.setVisibility(View.INVISIBLE);
+            accForceView.setVisibility(View.GONE);
         }
         else {
 

@@ -147,6 +147,7 @@
     <string name="brake_note_string">F</string>
     <string name="acc_note_string">A</string>
     <string name="avg_note_string">M</string>
+    <string name="progress_cfg_opt_string">Aucune configuration trouvée. Veuillez contacter le service Preventium</string>
 
 
     <string name="opt_desactivated_global">, Veuillez contacter le service Preventium</string>
@@ -168,5 +169,29 @@
     <string name="opt_langue_activated">L\'option langue est maintenant activée</string>
     <string name="opt_carte_activated">L\'option carte est maintenant activée</string>
     <string name="opt_carte_desactivated">L\'option carte est maintenant désactivée</string>
+
+    <string name="localization_string">Choix de langue</string>
+    <string name="language_string">Langue</string>
+    <string name="languages_string">Langues</string>
+    <string name="pref_title_english_string">Anglais</string>
+    <string name="pref_title_spanish_string">Espagnol</string>
+    <string name="pref_title_french_string">Français</string>
+    <string name="pref_title_polish_string">Polonais</string>
+
+
+    <string name="no_pending_message_string">Vous n\' avez pas de message en attente</string>
+    <string name="sms_message"><![CDATA[ De : %1$s %2$s]]></string>
+
+
+    <string name="form_string">Veulliez remplir les champs ci-dessous</string>
+    <string name="form_name_string">Nom et Prénom</string>
+    <string name="form_phone_string">Téléphone</string>
+    <string name="form_email_string">Email</string>
+    <string name="form_titulaire_string">Titulaire de l\'abonnement *</string>
+    <string name="form_titue_string">* Entrepise, collectivité, personne, ...</string>
+    <string name="form_submit_string">Valider</string>
+    <string name="form_invalid_string">Tous les champs sont obligatoire</string>
+    <string name="form_valid_string">Votre application sera activé d\'ici quelques minutes. Au prochain démarrage, vous verrez qu\'elle charge des fichiers de configuration.\n Dans le cas contraire, appelez votre interlocuteur Preventium.fr</string>
+    <string name="form_ok_string">ok</string>
 
 </resources>

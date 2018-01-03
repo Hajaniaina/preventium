@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Box-Preventium</string>
+    <string name="title_activity_maps">Preventium</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- (FRANCK) -->
+
+    <string name="unknown_device">Unknown device</string>
+    <string name="bluetooth_not_supported">The \"Bluetooth\" is not supported by the device</string>
+    <string name="bluetooth_low_energy_not_supported">The \"Bluetooth Low Energy\" is not supported by the device</string>
+    <string name="bluetooth_disable">The \"Bluetooth\" is disable!</string>
+    <string name="location_disable">The \"Location service\" is disable!</string>
+    <string name="enable">ENABLE</string>
+
+    <!-- MODULE SCAN (FRANCK) -->
+
+    <string name="quit_scan">Quit</string>
+    <string name="apply_scan">Apply</string>
+    <string name="bluetooth_selected_inf">You must select a box Preventium !</string>
+    <string name="bluetooth_selected_sup">You can not select more than two box Preventium</string>
+    <string name="next">Next</string>
+
+    <!-- VLAD -->
+    <!-- Main GUI -->
+
+    <string name="number_1_string">Number 1</string>
+    <string name="number_2_string">Number 2</string>
+    <string name="number_3_string">Number 3</string>
+    <string name="number_4_string">Number 4</string>
+    <string name="number_5_string">Number 5</string>
+    <string name="alarm_string">Alarm</string>
+    <string name="network_string">Network</string>
+    <string name="create_string">Create</string>
+    <string name="activate_string">Activate</string>
+    <string name="delete_string">Delete</string>
+    <string name="empty_string">Empty</string>
+    <string name="yes_string">Yes</string>
+    <string name="no_string">No</string>
+    <string name="cancel_string">Cancel</string>
+    <string name="quit_string">Quit</string>
+    <string name="obj_string">Objective</string>
+    <string name="results_string">Result</string>
+    <string name="acc_string">Acceleration</string>
+    <string name="brakes_string">Braking</string>
+    <string name="corners_string">Corners</string>
+    <string name="number_string">Number</string>
+    <string name="open_string">Open</string>
+    <string name="pause_string">Pause</string>
+    <string name="call_string">Call</string>
+    <string name="unknown_string">Unknown</string>
+    <string name="enable_string">Enable</string>
+    <string name="enabled_string">Enabled</string>
+    <string name="disable_string">Disable</string>
+    <string name="disabled_string">Disabled</string>
+    <string name="permissions_string">Permissions</string>
+    <string name="permissions_retry_string">Retry</string>
+    <string name="start_string">Start</string>
+    <string name="stop_string">Stop</string>
+    <string name="finish_marker_string">Finish</string>
+    <string name="action_settings">Settings</string>
+    <string name="distance_string">Distance</string>
+    <string name="route_string">Route</string>
+    <string name="speed_string">Speed</string>
+    <string name="shock_string">Shock</string>
+    <string name="shocks_string">Shocks</string>
+    <string name="share_string">Share</string>
+    <string name="tracking_string">Tracking</string>
+    <string name="corners_caps_string">CORNER</string>
+    <string name="straights_caps_string">STRAIGHT</string>
+    <string name="hello_string">Hello</string>
+    <string name="driver_id_string">Driver ID</string>
+    <string name="driver_name_string">Driver name</string>
+    <string name="phone_number_string">Phone number</string>
+    <string name="sms_notifications_string">SMS Notifications</string>
+    <string name="on_departure_string">On departure</string>
+    <string name="on_arrival_string">On arrival</string>
+    <string name="front_only_string">Front only</string>
+    <string name="front_back_string">Front and Back</string>
+    <string name="not_used_string">Not used</string>
+    <string name="template_route_string">Template route</string>
+    <string name="avg_speed_time_string">Time for avg speed calculation</string>
+    <string name="send_sms_after_pause_string">Send notification after pause more than</string>
+    <string name="marker_tittle_invalid_string">Invalid name</string>
+    <string name="new_marker_string">Marker name</string>
+    <string name="marker_edit_string">Edit marker</string>
+    <string name="marker_create_string">Create marker</string>
+    <string name="marker_snippet_string">Tap here to edit this marker</string>
+    <string name="validate_marker_create_string">Create a marker at this location?</string>
+    <string name="validate_marker_delete_string">Delete this marker?</string>
+    <string name="make_call_confirma_string">Make a voice call?</string>
+    <string name="pin_code_string">PIN code</string>
+    <string name="pin_short_string">Should be 4 digits</string>
+    <string name="pin_invalid_string">Invalid PIN code</string>
+    <string name="end_day_confirm_string">Have you finished your work day?</string>
+    <string name="permissions_enable_string">This application need all permissions to be enabled</string>
+    <string name="location_settings_string">Location settings</string>
+    <string name="location_rationale_string">Location service is disabled. Activate High Precision mode in the Android settings to continue</string>
+    <string name="activity_quit_alert">You have not finished reading all of the documents. Are you sure you want to leave?</string>
+    <string name="bluetooth_rationale_string">Bluetooth is disabled. Activate it to continue</string>
+    <string name="qr_rationale_string">One or more QR scans are pending</string>
+    <string name="force_permissions_string">To continue please activate all permissions in the settings menu</string>
+    <string name="network_alert_string">No active internet connection. Make sure that 3G/4G is activated</string>
+    <string name="enable_tracking_string">Enable tracking</string>
+    <string name="tracking_enabled_string">Tracking enabled</string>
+    <string name="disable_tracking_string">Disable tracking</string>
+    <string name="tracking_disabled_string">Tracking disabled</string>
+    <string name="progress_loading_string">Loading…</string>
+    <string name="progress_map_string">Loading Google Maps</string>
+    <string name="progress_location_string">Waiting for GPS data</string>
+    <string name="progress_check_imei_string">Checking IMEI activation: </string>
+    <string name="progress_inactive_imei_string">Connection error. Please contact Preventium sales service</string>
+    <string name="progress_cfg_string">Downloading CFG data for IMEI: </string>
+    <string name="progress_epc_string">Downloading EPC data for IMEI: </string>
+    <string name="progress_obj_string">Downloading OBJ datafor IMEI: </string>
+    <string name="progress_send_string">Sendind route data to the server</string>
+    <string name="progress_ready_string">Ready</string>
+    <string name="scan_qr_ok_string">Code OK</string>
+    <string name="scan_qr_error_string">Wrong QR code. Try again</string>
+    <string name="scan_qr_driver_id_string">Driver identificator</string>
+    <string name="scan_qr_vehicle_front_string">Vehicle front</string>
+    <string name="scan_qr_vehicle_back_string">Vehicle back</string>
+    <string name="send_sos_string">Sending SOS in</string>
+    <string name="start_time_string">Start time</string>
+    <string name="time_elapsed_string">Time elapsed</string>
+    <string name="avg_speed_string">Average speed</string>
+    <string name="avg_score_string">Average score</string>
+    <string name="select_epc_string">Select EPC file</string>
+    <string name="epc_missing_string">No EPC files available</string>
+    <string name="voice_calls_string">Voice calls</string>
+    <string name="title_activity_info">InfoActivity</string>
+    <string name="template_route_name_string">Template route name</string>
+    <string name="template_route_title_string">Next route will be used as template route</string>
+    <string name="driver_score_tooltip_string">It is a score of 20 at max</string>
+    <string name="close_string">Close</string>
+    <string name="progress_inactive_opt_string">Option disabled. Please contact Preventium sales service</string>
+    <string name="opt_desactivated_global">, Please contact the Preventium service</string>
+    <string name="opt_qrcod_activated">Qrcode option is now enabled</string>
+    <string name="opt_qrcod_desactivated">Qrcode option is now disabled</string>
+    <string name="opt_note_activated">Note 20 option is now enabled</string>
+    <string name="opt_note_desactivated">Note 20 option is now disabled</string>
+    <string name="opt_VFAM_desactivated">VFAM option is now disabled</string>
+    <string name="opt_VFAM_activated">VFAM option is now enabled</string>
+    <string name="opt_panneau_activated">The speed panel option is now enabled</string>
+    <string name="opt_panneau_desactivated">The speed panel option is now disabled</string>
+    <string name="opt_duree_desactivated">The duration option is now disabled</string>
+    <string name="opt_duree_activated">The duration option is now enabled</string>
+    <string name="opt_seulforce_activated">Force threshold option is now enabled</string>
+    <string name="opt_seulforce_desactivated">Force threshold option is now disabled</string>
+    <string name="opt_config_type_desactivated">The configuration option is now disabled</string>
+    <string name="opt_config_type_activated">The configuration option is now enabled</string>
+    <string name="opt_langue_desactivated">The language option is now disabled</string>
+    <string name="opt_langue_activated">The language option is now enabled</string>
+    <string name="opt_carte_activated">The map option is now enabled</string>
+    <string name="opt_carte_desactivated">The map option is now disabled</string>
+    <string name="corner_note_string">V</string>
+    <string name="brake_note_string">F</string>
+    <string name="acc_note_string">A</string>
+    <string name="avg_note_string">M</string>
+    <string name="progress_cfg_opt_string">No configuration found. Please contact Preventium service</string>
+
+    <string name="localization_string">Language choice</string>
+    <string name="language_string">Language</string>
+    <string name="languages_string">Languages</string>
+    <string name="pref_title_english_string">English</string>
+    <string name="pref_title_spanish_string">Spanish</string>
+    <string name="pref_title_french_string">French</string>
+    <string name="pref_title_polish_string">Polish</string>
+
+    <string name="pref_title_sms_sos_string">SMS SOS</string>
+    <string name="pref_title_sms_shock_string">SMS Shocks</string>
+    <string name="pref_title_sms_tracking_string">SMS Tracking On/Off</string>
+    <string name="pref_title_sms_qr_string">SMS QR code</string>
+    <string name="pref_title_voice_call_string">Voice calls</string>
+    <string name="pref_trigger_time_string">Trigger timeout</string>
+    <string name="pref_header_qr_scan_string">QR Scan</string>
+    <string name="pref_title_qr_mode_string">Vehicle scan mode</string>
+
+    <string name="sms_sos_msg_string">SOS</string>
+    <string name="sms_shock_msg_string">SHOCK</string>
+    <string name="sms_pause_msg_string">PAUSE TOO LONG</string>
+
+    <string name="title_activity_web_view">WebViewActivity</string>
+
+    <string name="epc_selected">epc_selected</string>
+    <string name="parcours_type_name">parcours_type_name</string>
+    <string name="phone_select_sms_pause">phone_select_sms_pause</string>
+    <string name="phone_select_sms_qr">phone_select_sms_qr</string>
+    <string name="stop_trigger_time">stop_trigger_time</string>
+    <string name="tracking_activated">tracking_activated</string>
+
+    <string name="return_location_string">Return to the current location</string>
+
+    <string name="no_pending_message_string">You don\'t have any pending messages</string>
+    <string name="sms_message"><![CDATA[ From : %1$s %2$s]]></string>
+
+
+    <string name="form_string">Please fill in the fields below</string>
+    <string name="form_name_string">First name and Last name</string>
+    <string name="form_phone_string">Phone</string>
+    <string name="form_email_string">Email</string>
+    <string name="form_titulaire_string">Subscription holder *</string>
+    <string name="form_titue_string">* Enterprise, community, person, ...</string>
+    <string name="form_submit_string">Validate</string>
+    <string name="form_invalid_string">All fields are mandatory</string>
+    <string name="form_valid_string">Your application will be activated within a few minutes. At the next boot, you will see that it loads configuration files. \nOtherwise, call your Preventium.fr contact.</string>
+    <string name="form_ok_string">ok</string>
+
+
+
+</resources>

@@ -1,7 +1,10 @@
 package com.preventium.boxpreventium.gui;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
@@ -17,9 +20,11 @@ import com.pavelsikun.seekbarpreference.SeekBarPreference;
 import com.preventium.boxpreventium.R;
 
 import java.util.List;
+import java.util.Locale;
 
 public class SettingsActivity extends AppCompatPreferenceActivity {
 
+    private static final String APPPREFERENCES = "AppPrefs" ;
     private static final String TAG = "SettingsActivity";
 
     private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = new Preference.OnPreferenceChangeListener() {
@@ -376,6 +381,66 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     }
                 }
             });
+        }
+
+        @Override
+        public boolean onOptionsItemSelected (MenuItem item) {
+
+            int id = item.getItemId();
+
+            if (id == android.R.id.home) {
+
+                startActivity(new Intent(getActivity(), SettingsActivity.class));
+                return true;
+            }
+
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
+    /**********************************************************************************************/
+
+    public static class LocalizationPreferenceFragment extends PreferenceFragment {
+
+        @Override
+        public void onCreate (Bundle savedInstanceState) {
+
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.pref_localization);
+            setHasOptionsMenu(true);
+
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.select_language_key)));
+
+            ListPreference listPreference = (ListPreference) findPreference(getString(R.string.select_language_key));
+            final PreferenceFragment fragment = this;
+
+            Preference.OnPreferenceChangeListener listener = new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    SharedPreferences preferences = fragment.getActivity().getSharedPreferences(APPPREFERENCES, Context.MODE_PRIVATE);
+                    String languageToLoad = newValue.toString(); // your language
+                    Locale locale = new Locale(languageToLoad);
+                    Locale.setDefault(locale);
+
+                    Resources resources = fragment.getActivity().getBaseContext().getResources();
+
+                    Configuration configuration = resources.getConfiguration();
+                    configuration.locale = locale;
+
+                    resources.updateConfiguration(configuration, resources.getDisplayMetrics());
+
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putString("language", languageToLoad);
+                    editor.commit();
+
+                    fragment.getActivity().startActivity(new Intent(fragment.getActivity(), MainActivity.class));
+                    fragment.getActivity().finish();
+                    return true;
+                }
+            };
+
+            listPreference.setOnPreferenceChangeListener(listener);
+
         }
 
         @Override

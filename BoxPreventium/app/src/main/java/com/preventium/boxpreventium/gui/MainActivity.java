@@ -13,6 +13,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -46,6 +47,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.firetrap.permissionhelper.action.OnDenyAction;
 import com.firetrap.permissionhelper.action.OnGrantAction;
@@ -55,6 +57,7 @@ import com.github.clans.fab.FloatingActionMenu;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
@@ -74,7 +77,9 @@ import com.preventium.boxpreventium.location.MarkerManager;
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.manager.AppManager;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
+import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
+import com.preventium.boxpreventium.server.EPC.NameEPC;
 import com.preventium.boxpreventium.server.JSON.ParseJsonData;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
@@ -82,8 +87,10 @@ import com.preventium.boxpreventium.utils.Connectivity;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
@@ -92,6 +99,8 @@ import java.util.TimerTask;
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
 
     private static final String TAG = "MainActivity";
+    private static final String APPPREFERENCES = "AppPrefs" ;
+    private final long DURATION = 3000L;
 
     private static final boolean DEBUG_UI_ON      = false;
     private static final boolean DEBUG_LOGVIEW_ON = false;
@@ -118,7 +127,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private TextView boxNumView;
     private TextView drivingTimeView;
 
+    private TextView corner_n_v;
+    private TextView brake_n_v;
+    private TextView acc_n_v;
+    private TextView avg_n_v;
+    private TextView drive_n_v;
+
     private ImageView backgroundView;
+    private ImageView flagView;
+    private ImageView no_map;
 
     private FloatingActionMenu optMenu;
     private FloatingActionButton infoButton;
@@ -127,8 +144,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton epcSettingsButton;
     private FloatingActionButton stopButton;
     private FloatingActionButton menuButtonSos;
+    private FloatingActionButton menuButtonMapRecenter;
     private FloatingActionButton menuButtonResetCalib;
-    private FloatingActionButton menuButtonTracking;
+    //private FloatingActionButton menuButtonTracking;
     private FloatingActionButton menuButtonSettings;
 
     private GoogleMap googleMap;
@@ -136,6 +154,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private Location lastLocation = null;
     private AppColor appColor;
     private ProgressDialog progress;
+    private ProgressDialog progressOPT;
     private boolean toggle = false;
     List<Polyline> mapPolylineList = new ArrayList<>();
     private Marker startMarker = null, stopMarker = null;
@@ -153,6 +172,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private int selectedEpcFile = 0;
     private boolean trackingActivated = true;
     private int locFilterTimeout = 0;
+
 
     private int opt_panneau = 99;
     private int opt_carte = 99;
@@ -178,53 +198,43 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int id_notif_duree = 16;
     private static final int id_notif_pan = 17;
     private static final int id_notif_map = 18;
+    private SupportMapFragment mapFrag;
+    private boolean internet_activeopt = true;
 
-   private TextView corner_n_v ;
-   private TextView brake_n_v ;
-   private TextView acc_n_v ;
-   private TextView avg_n_v ;
-   private TextView drive_n_v;
 
-    //FTPConfig configa = DataCFG.getFptConfig(MainActivity.this);
-    //String FTP = configa.getFtpServer();
-
-    /*
-    String serveur;
+    String serveur="tsis";
     ReaderCFGFile reader1 = new ReaderCFGFile();
-    String srcFileName;
-    String desFileName;
-*/
+    String srcFileName="";
+    String desFileName="";
+
+    boolean cfgi = false;
 
 
-    // -------------------------------------------------------------------------------------------- //
+    private String epcname = "";
+
+
+    private final long MESSAGE_DURATION = 10800000L;
+    private TextView smsMessageView;
+    private static MainActivity activity;
+    private boolean flag_run_once = false;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
 
-       // corner_n_v = (TextView) findViewById(R.id.corner_note_view);
-        brake_n_v =(TextView) findViewById(R.id.brake_note_view);
-        acc_n_v =(TextView) findViewById(R.id.acc_note_view);
-        avg_n_v =(TextView) findViewById(R.id.avg_note_view);
-        drive_n_v =(TextView) findViewById(R.id.driving_score_view);
 
-       /* boolean cfg = false;
-        FTPClientIO ftp = new FTPClientIO();
-        srcFileName = ComonUtils.getIMEInumber(getApplicationContext()) + ".CFG";
-        desFileName = String.format(Locale.getDefault(), "%s/%s", getApplicationContext().getFilesDir(), srcFileName);
-        reader1.read(desFileName);
-        serveur = reader1.getServerUrl();
-*/
-
-
-
+        //setRepeatingAsyncTask();
 
         super.onCreate(savedInstanceState);
+
+        activity = this;
+
         setContentView(R.layout.activity_main);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+
         if (checkPermissions() > 0) {
 
-            setRepeatingAsyncTask();
+
 
             if (savedInstanceState == null) {
 
@@ -233,6 +243,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 notif = new NotificationCompat.Builder(this);
                 notif.setAutoCancel(true);
+
+                localizationFlag();
             }
             else {
 
@@ -247,7 +259,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     protected void onResume() {
-
+        //cfgi= reader1.read(desFileName);
+        setRepeatingAsyncTask();
         if (!PositionManager.isLocationEnabled(getApplicationContext())) {
 
             showLocationAlert();
@@ -277,6 +290,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             if (progress != null) {
 
                 progress.setMessage(getString(R.string.network_alert_string));
+            }else {
+
             }
         }
 
@@ -691,7 +706,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             stopMarker = markerManager.addMarker(googleMap, getString(R.string.stop_string), lastPos, CustomMarker.MARKER_RED, false);
                         }
 
-                        routeActive = false;
+                        routeActive = false;   //santo routeLine
                         routeInPause = false;
 
                         break;
@@ -993,6 +1008,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         });
+
+
     }
 
     @Override
@@ -1069,6 +1086,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void init (boolean firstLaunch) {
 
+        smsMessageView = (TextView) findViewById(R.id.sms_message_text);
+
+
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         mapReady = false;
@@ -1079,6 +1099,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         qrRequest = new QrScanRequest();
 
+        progressOPT = new ProgressDialog(this, R.style.InfoDialogStyle);
         progress = new ProgressDialog(this, R.style.InfoDialogStyle);
         progress.setMessage(getString(R.string.progress_map_string));
         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
@@ -1096,6 +1117,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             progress.show();
         }
 
+
+        runOnce();
         markerManager = new MarkerManager(getApplicationContext());
         speedView = new SpeedView(this);
         scoreView = new ScoreView(this);
@@ -1105,6 +1128,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         backgroundView = (ImageView) findViewById(R.id.background_image);
         boxNumView = (TextView) findViewById(R.id.box_num_connected);
         drivingTimeView = (TextView) findViewById(R.id.driving_time_text);
+        flagView = (ImageView) findViewById(R.id.localization_flag_image);
+        no_map = (ImageView) findViewById(R.id.no_map);
+
+
+
+
+
+
+        corner_n_v = ((TextView) findViewById(R.id.corner_note_view));
+        brake_n_v =((TextView) findViewById(R.id.brake_note_view));
+        acc_n_v =((TextView) findViewById(R.id.acc_note_view));
+        avg_n_v =((TextView) findViewById(R.id.avg_note_view));
+        drive_n_v =(TextView) findViewById(R.id.driving_score_view);
 
         infoButton = (FloatingActionButton) findViewById(R.id.button_info);
         callButton = (FloatingActionButton) findViewById(R.id.button_call);
@@ -1116,12 +1152,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         optMenu = (FloatingActionMenu) findViewById(R.id.opt_menu);
         optMenu.setClosedOnTouchOutside(false);
         menuButtonSos = (FloatingActionButton) findViewById(R.id.menu_button_sos);
+        menuButtonMapRecenter = (FloatingActionButton) findViewById(R.id.menu_button_map_recenter);
         menuButtonResetCalib = (FloatingActionButton) findViewById(R.id.menu_button_reset_calibration);
-        menuButtonTracking = (FloatingActionButton) findViewById(R.id.menu_button_tracking);
+        //menuButtonTracking = (FloatingActionButton) findViewById(R.id.menu_button_tracking);
         menuButtonSettings = (FloatingActionButton) findViewById(R.id.menu_button_settings);
 
         trackingActivated = sharedPref.getBoolean(getString(R.string.tracking_activated_key), true);
-
+/*
         if (trackingActivated) {
 
             menuButtonTracking.setColorNormal(appColor.getColor(AppColor.GREEN));
@@ -1133,13 +1170,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             menuButtonTracking.setColorPressed(appColor.getColor(AppColor.GREEN));
         }
 
+        */  //btn -------tracking ----
+
         if (DEBUG_LOGVIEW_ON){
 
             debugLayout = (LinearLayout) findViewById(R.id.debug_layout);
             debugView = (TextView) findViewById(R.id.debug_view);
         }
 
-        SupportMapFragment mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+            mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+
 
         if (firstLaunch) {
 
@@ -1176,6 +1216,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 ok = 0;
             }
+
+            if (!PermissionHelper.checkPermissions(this, Manifest.permission.RECEIVE_SMS)) {
+
+                ok = 0;
+            }
+
+            if (!PermissionHelper.checkPermissions(this, Manifest.permission.READ_SMS)) {
+
+                ok = 0;
+            }
         }
         else {
 
@@ -1189,10 +1239,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         permissionRequest = PermissionHelper.with(this)
                 .build(Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                       Manifest.permission.ACCESS_FINE_LOCATION,
-                       Manifest.permission.CALL_PHONE,
-                       Manifest.permission.SEND_SMS,
-                       Manifest.permission.CAMERA).onPermissionsDenied(new OnDenyAction() {
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.CALL_PHONE,
+                        Manifest.permission.SEND_SMS,
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.RECEIVE_SMS,
+                        Manifest.permission.READ_SMS).onPermissionsDenied(new OnDenyAction() {
 
                     @Override
                     public void call (int requestCode, boolean shouldShowRequestPermissionRationale) {
@@ -1395,86 +1447,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         alertBuilder.create().show();
     }
 
-    protected void askTrackingConfirm() {
-
-        trackingActivated = sharedPref.getBoolean(getString(R.string.tracking_activated), true);
-
-        final AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
-        alertBuilder.setCancelable(false);
-
-        String actionStr = "";
-
-        actionStr = getString(R.string.yes_string);
-        alertBuilder.setMessage(getString(R.string.return_location_string) + " ?");
-
-        alertBuilder.setNegativeButton(getString(R.string.cancel_string), null);
-        alertBuilder.setPositiveButton(actionStr, new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick (DialogInterface dialogInterface, int i) {
-
-                if (lastLocation != null) {
-
-                    lastPos = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
-                    CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_PAUSE).bearing(0).tilt(0).build();
-                    googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-
-                    menuButtonTracking.setColorNormal(appColor.getColor(AppColor.GREEN));
-                    menuButtonTracking.setColorPressed(appColor.getColor(AppColor.ORANGE));
-
-                   // googleMap.animateCamera(CameraUpdateFactory.newLatLng(lastPos));
-                }
-
-            }
-        });
-
-        alertBuilder.create().show();
-    }
-
-    public void ParseJsonaa() {
-     /*   String bol="";
-        String imei = StatsLastDriving.getIMEI(MainActivity.this);
-        ParseJsonData jsonData = new ParseJsonData();
-        String jsonString = jsonData.makeServiceCall("http://test.preventium.fr/index.php/get_config/"+imei);
-
-        try {
-            JSONObject conf;
-            conf = new JSONObject(jsonString).getJSONObject("config");
-            bol = conf.optString(str);
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        return Boolean.parseBoolean(bol);
-*/
-  /*      String imei = StatsLastDriving.getIMEI(MainActivity.this);
-        ParseJsonData jsonData = new ParseJsonData();
-        String jsonString = jsonData.makeServiceCall("http://test.preventium.fr/index.php/get_config/"+imei);
-
-        try {
-           JSONObject config = (new JSONObject(jsonString)).getJSONObject("config");
-     /*        opt_carte = Boolean.parseBoolean(config.optString( "affiche_carte"));
-            opt_panneau = Boolean.parseBoolean(config.optString( "paneau_vitesse_droite"));
-            opt_note = Boolean.parseBoolean(config.optString( "note_sur_20"));
-            opt_VFAM = Boolean.parseBoolean(config.optString( "VFAM"));
-            opt_duree = Boolean.parseBoolean(config.optString( "duree"));
-            opt_seulforce = Boolean.parseBoolean(config.optString( "seulforce"));
-            opt_qrcode = Integer.parseInt(config.optString( "qrcode"));
-            opt_config_type = Boolean.parseBoolean(config.optString( "config_type"));
-            opt_langue = Boolean.parseBoolean(config.optString( "opt_langue"));
-            opt_screen_size = Integer.parseInt(config.optString( "taille_ecran"));
-            opt_test = config.optString( "nom_boitier");
-*/
-     /*       opt_qrcode = config.getString( "qrcode");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-*/
-
-
-    }
 
     protected void showMarkerEditDialog (final Marker marker, final boolean creation) {
 
@@ -1702,7 +1674,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             for (int i = 0; i < epcStrList.length; i++) {
 
-                epcStrList[i] = "Seuils de force " + String.valueOf(i + 1);
+                epcname = NameEPC.get_EPC_Name(this,i + 1);
+
+                epcStrList[i] = epcname; //"Seuils de force " + String.valueOf(i + 1);
 
                 boolean exist = false;
 
@@ -1867,6 +1841,40 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }.start();
     }
 
+
+    private void recenterMap(){
+
+        //get the center coordinates of the current displayed screen
+        int mWidth= this.getResources().getDisplayMetrics().widthPixels/2;
+        int mHeight= this.getResources().getDisplayMetrics().heightPixels/2;
+
+        if (lastPos == null) {
+
+            CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_PAUSE).bearing(0).tilt(0).build();
+            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+            if (progress != null && progress.isShowing()) {
+
+                progress.setMessage(getString(R.string.progress_loading_string));
+            }
+        }
+        //Get current tracker position in the screen
+        Projection projection = googleMap.getProjection();
+        Point markerPoint = projection.toScreenLocation(lastPos);
+
+        //Gets the offset x and y (the distance you want that point to move to the right and to the left)
+        int offsetX = mWidth - markerPoint.x;
+        int offsetY = mHeight - markerPoint.y;
+
+        //The new position
+        Point targetPoint = new Point(mWidth - offsetX , mHeight - offsetY);
+        LatLng targetPosition = projection.fromScreenLocation(targetPoint);
+        googleMap.animateCamera(CameraUpdateFactory.newLatLng(targetPosition), 1000, null);
+    }
+
+
+
+
     private void disableActionButtons (boolean disable) {
 
         FloatingActionButton[] actionBtnArray = {infoButton, callButton, scanQrCodeButton, epcSettingsButton};
@@ -1892,11 +1900,23 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             if (hide) {
 
+
+
                 actionBtnArray[i].hide(true);
             }
             else {
+                if(i==2 && opt_qrcode== 0){
+                    //qrcode
+                        actionBtnArray[i].hide(true);
 
-                actionBtnArray[i].show(true);
+                } else if(i==3 && opt_seulforce== 0){
+                    //epcbtn
+                        actionBtnArray[i].hide(true);
+                }else {
+                    actionBtnArray[i].show(true);
+                }
+
+
             }
         }
     }
@@ -1959,6 +1979,141 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         vibrator.vibrate((seconds * 1000));
     }
 
+//################# form on start #########################
+    private void runOnce () {
+       // boolean isFirstRun = sharedPref.getBoolean("FIRSTRUN", true);
+        boolean isFirstRun = sharedPref.getBoolean(getString(R.string.firstrun_key), true);
+
+        Log.e("isFirstRun val : ", String.valueOf(isFirstRun));
+        Log.e("FIRSTRUN val : ", String.valueOf(sharedPref.getBoolean(getString(R.string.firstrun_key), true)));
+        if (isFirstRun)
+        {
+            // load and sent
+            if( !flag_run_once ) {
+                progressOPT.hide();
+                progress.hide();
+                OpenForm();
+                flag_run_once = true;
+            }
+
+        }
+    }
+
+    //==============================================================================================
+    private AlertDialog dialog;
+    private void MessageWait () {
+        AlertDialog.Builder bd = new AlertDialog.Builder(MainActivity.this);
+        View mV = getLayoutInflater().inflate(R.layout.openform_valid_activity, null);
+        bd.setView(mV);
+        dialog = bd.create();
+        Button close = (Button) mV.findViewById(R.id.form_valid_close);
+        close.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.hide();
+                MainActivity.this.finish();
+                System.exit(0);
+            }
+        });
+        dialog.setCancelable(false);
+        dialog.show();
+        Log.w("Wait message", "in waiting response");
+    }
+
+    protected void OpenForm () {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final View mView = getLayoutInflater().inflate(R.layout.openform_activity, null);
+        builder.setView(mView);
+        final AlertDialog di = builder.create();
+        di.setCancelable(false);
+
+        Button form_submit = (Button) mView.findViewById(R.id.form_submit);
+        form_submit.setOnClickListener(new View.OnClickListener() {
+
+            private TextView form_name_id;
+            private TextView form_phone_id;
+            private TextView form_email_id;
+            private TextView form_titulaire_id;
+
+            @Override
+            public void onClick(View view) {
+                form_name_id = (TextView) mView.findViewById(R.id.form_name_id);
+                form_phone_id = (TextView) mView.findViewById(R.id.form_phone_id);
+                form_email_id = (TextView) mView.findViewById(R.id.form_email_id);
+                form_titulaire_id = (TextView) mView.findViewById(R.id.form_titulaire_id);
+
+                if( form_name_id.getText().toString().isEmpty() ||
+                        form_phone_id.getText().toString().isEmpty() ||
+                        form_email_id.getText().toString().isEmpty() ||
+                        form_titulaire_id.getText().toString().isEmpty()) {
+                    Toast.makeText(MainActivity.this, getString(R.string.form_invalid_string), Toast.LENGTH_SHORT).show();
+                } else {
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            boolean location = false;
+
+                            while( !location ) {
+                                if( lastLocation == null ) {
+                                    try {
+                                        Thread.sleep(500);
+                                    }catch(InterruptedException ie) {}
+                                } else {
+                                    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+                                    Date date = new Date();
+                                    String[] form = {
+                                            form_name_id.getText().toString(),
+                                            form_phone_id.getText().toString(),
+                                            form_email_id.getText().toString(),
+                                            form_titulaire_id.getText().toString(),
+                                            String.valueOf(lastLocation.getLatitude()),
+                                            String.valueOf(lastLocation.getLongitude()),
+                                            dateFormat.format(date)
+                                    };
+                                    appManager.OpenForm(form);
+                                    MessageWait();
+                                    di.hide();
+
+
+//############# annulation du formulaire
+                                    SharedPreferences.Editor editor1 = sharedPref.edit();
+                                    //editor.putBoolean("FIRSTRUN", false);
+                                    editor1.putBoolean(getString(R.string.firstrun_key), false);
+
+                                    editor1.apply();
+
+
+                                    Log.e("AFTERRUN val : ", String.valueOf(sharedPref.getBoolean(getString(R.string.firstrun_key), true)));
+
+                                    SharedPreferences.Editor editor = sharedPref.edit();
+                                    //editor.putBoolean("FIRSTRUN", false);
+                                    editor.putBoolean(getString(R.string.load_alert_cfg_key), false);
+
+                                    editor.apply();
+
+                                    Log.e("AFTERRUN valcfg : ", String.valueOf(sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true)));
+//############# annulation du formulaire
+
+                                    break;
+                                }
+                            }
+                        }
+                    });
+
+                }
+            }
+        });
+        di.show();
+    }
+
+
+
+
+
+
+
+
     private String getPhoneNumber (int key) {
 
         String[] numberList = new String[5];
@@ -1978,6 +2133,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         return "";
     }
+
 
     private void setPositionListeners() {
 
@@ -2117,11 +2273,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onMenuToggle(boolean opened) {
 
                 if (optMenu.isOpened()) {
+                    if(opt_config_type==0){
+
+                        menuButtonSettings.setVisibility(View.GONE);
+                    }
+
 
                     hideActionButtons(true);
                 }
                 else {
 
+                    menuButtonSettings.setVisibility(View.GONE);
                     hideActionButtons(false);
                 }
             }
@@ -2136,6 +2298,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+        menuButtonMapRecenter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                recenterMap();
+            }
+        });
+
+
+
         menuButtonResetCalib.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -2145,14 +2316,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        menuButtonTracking.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick (View v) {
-
-                askTrackingConfirm();
-            }
-        });
 
         menuButtonSettings.setOnClickListener(new View.OnClickListener() {
 
@@ -2176,54 +2339,198 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     // -------------------------------------------------------------------------------------------- //
 
+
     private void hideOPT(){
+
+
    //-----VFAM
         if(opt_VFAM==0){
-           // corner_n_v.setVisibility(View.GONE);
-            brake_n_v.setVisibility(View.GONE);
-            acc_n_v.setVisibility(View.GONE);
-            avg_n_v.setVisibility(View.GONE);
+            corner_n_v.setVisibility(View.INVISIBLE);
+            brake_n_v.setVisibility(View.INVISIBLE);
+            acc_n_v.setVisibility(View.INVISIBLE);
+            avg_n_v.setVisibility(View.INVISIBLE);
         }else {
-           // corner_n_v.setVisibility(View.VISIBLE);
+            corner_n_v.setVisibility(View.VISIBLE);
             brake_n_v.setVisibility(View.VISIBLE);
             acc_n_v.setVisibility(View.VISIBLE);
             avg_n_v.setVisibility(View.VISIBLE);
         }
+        /*
+        if(opt_VFAM == 1){
+
+
+            scoreView.hideFAMV(false);
+        }
+        else {
+
+            scoreView.hideFAMV(true);
+        }
+*/
 
         //----- drive_note
         if(opt_note==0){
-            drive_n_v.setVisibility(View.GONE);
+            drive_n_v.setVisibility(View.INVISIBLE);
         }else {
             drive_n_v.setVisibility(View.VISIBLE);
         }
+        /*
+        if(opt_note == 1){
+            // onNoteChanged (0, LEVEL_t.LEVEL_UNKNOW,LEVEL_t.LEVEL_UNKNOW);
+            scoreView.hideNote(false);
+        }else {
+            //onNoteChanged(20,LEVEL_t.LEVEL_1,LEVEL_t.LEVEL_1);
+            scoreView.hideNote(true);
+        }
+        */
 
         //---- qrcode
         if(opt_qrcode==0){
-            scanQrCodeButton.setVisibility(View.GONE);
+
+            scanQrCodeButton.hide(true);
+            //scanQrCodeButton.setVisibility(View.GONE);
+            //hideActionButtons(true);
         }else{
-            scanQrCodeButton.setVisibility(View.VISIBLE);
+            if (!optMenu.isOpened()){
+                scanQrCodeButton.show(true);
+                //scanQrCodeButton.setVisibility(View.GONE);
+            }
         }
 
+
+   /*     if(opt_qrcode==0){
+
+            scanQrCodeButton.setVisibility(View.GONE);
+            //hideActionButtons(true);
+        }else{
+            //hideActionButtons(false);
+           if (optMenu.isOpened()){
+                 hideActionButtons(true);
+                //scanQrCodeButton.setVisibility(View.GONE);
+            }else{
+               hideActionButtons(false);
+                //scanQrCodeButton.setVisibility(View.VISIBLE);
+            }
+
+        }
+        */
+      /*  if(opt_qrcode==1){
+            scanQrCodeButton.setVisibility(View.VISIBLE);
+        }else{
+            scanQrCodeButton.setVisibility(View.GONE);
+        }
+*/
         //---- durree
         if(opt_duree==0){
-            drivingTimeView.setVisibility(View.GONE);
+            drivingTimeView.setVisibility(View.INVISIBLE);
         }else{
             drivingTimeView.setVisibility(View.VISIBLE);
         }
 
         //------ Seuille frc
-        if(opt_seulforce== 0){
+        if(opt_seulforce==0){
+
+            epcSettingsButton.hide(true);
+            //scanQrCodeButton.setVisibility(View.GONE);
+            //hideActionButtons(true);
+        }else{
+            if (!optMenu.isOpened()){
+                epcSettingsButton.show(true);
+                //scanQrCodeButton.setVisibility(View.GONE);
+            }
+        }
+     /*   if(opt_seulforce== 1){
+            epcSettingsButton.setVisibility(View.VISIBLE);
+        }else{
+            epcSettingsButton.setVisibility(View.GONE);
+        }
+*/
+  /*      if(opt_seulforce== 0){
             epcSettingsButton.setVisibility(View.GONE);
         }else{
-            epcSettingsButton.setVisibility(View.VISIBLE);
+            if (optMenu.isOpened()){
+                hideActionButtons(true);
+                //epcSettingsButton.setVisibility(View.GONE);
+            }else{
+                hideActionButtons(false);
+                //epcSettingsButton.setVisibility(View.VISIBLE);
+            }
+
+
+        }
+*/
+        //--pin btn
+
+        if(opt_config_type==0){
+
+            menuButtonSettings.setVisibility(View.GONE);
+            //scanQrCodeButton.setVisibility(View.GONE);
+            //hideActionButtons(true);
+        }else{
+            if (optMenu.isOpened()){
+                menuButtonSettings.setVisibility(View.VISIBLE);
+                //menuButtonSettings.show(true);
+                //scanQrCodeButton.setVisibility(View.GONE);
+            }
         }
 
-        //--pin btn
-        if(opt_config_type== 0){
-            menuButtonSettings.setVisibility(View.GONE);
+      //  if(opt_config_type== 0){
+            //menuButtonSettings.setVisibility(View.INVISIBLE);
+          //  menuButtonSettings.hide(true);
+      //  }else{
+            //menuButtonSettings.show(true);
+           // menuButtonSettings.setVisibility(View.VISIBLE);
+         /*   if (!optMenu.isOpened()){
+                //hideActionButtons(true);
+                menuButtonSettings.setVisibility(View.VISIBLE);
+            }else{
+                //hideActionButtons(false);
+                menuButtonSettings.setVisibility(View.INVISIBLE);
+            }*/
+
+     //   }
+
+        //--langue opt
+        if(opt_langue== 1){
+
+            flagView.setVisibility(View.VISIBLE);
         }else{
-            menuButtonSettings.setVisibility(View.VISIBLE);
+            flagView.setVisibility(View.GONE);
+            localizationFlag();
         }
+
+        //---paneau vitesse
+
+        if(opt_panneau== 1){
+            //accForceView.hide(false);
+            speedView.hide(false);
+        }else{
+            //accForceView.hide(true);
+            speedView.hide(true);
+        }
+
+        //------carte opt ----
+        if(opt_carte== 1){
+
+           // nomapFrag.getView().setVisibility(View.GONE);
+            no_map.setVisibility(View.GONE);
+            mapFrag.getView().setVisibility(View.VISIBLE);
+
+
+        }else{
+            mapFrag.getView().setVisibility(View.GONE);
+            no_map.setVisibility(View.VISIBLE);
+           // nomapFrag.getView().setVisibility(View.VISIBLE);
+        }
+
+        //------carte opt ----
+        if(opt_screen_size== 4){
+            //scanQrCodeButton.layout();
+
+        }else{
+
+        }
+
+
 
     }
 
@@ -2304,7 +2611,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-    private void setRepeatingAsyncTask() {
+    ///######
+    public void setRepeatingAsyncTask() {
 
         final Handler handler = new Handler();
         Timer timer = new Timer();
@@ -2316,18 +2624,81 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     public void run() {
                         try {
 
+  /*      runOnUiThread(new Runnable() {
+                          @Override
+                          public void run() {
+*/
+                              boolean load_cfg = sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true);
+                              boolean activeopt = Connectivity.isConnected(getApplicationContext());
+                              Log.e("connect za : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
+                              if( activeopt != internet_activeopt ) {
+                                  internet_activeopt = activeopt;
+                              }
+
+                              Log.e("connect zaInter : ", String.valueOf(internet_activeopt));
+
+                              if (internet_activeopt) {
+
+                                  srcFileName = ComonUtils.getIMEInumber(getApplicationContext()) + ".CFG";
+                                  desFileName = String.format(Locale.getDefault(), "%s/%s", getApplicationContext().getFilesDir(), srcFileName);
+                                  cfgi = reader1.read(desFileName);  // santooo
+                                  Log.e("FTP cfgBol : ", String.valueOf(cfgi));
+
+                                  Log.e("connect : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
+
+                                  //reader1.read(desFileName);
+                                  if(cfgi){
 
 
-                             new ParseJson().execute();
+                                      //URL uValide = new URL(serveur);
+                                      //Log.e("protocole : ",String.valueOf(uValide.getProtocol()));
+                                      serveur = reader1.getServerUrl();
+                                      if(serveur != "" && serveur!="tsis"){
+
+                                          // serveur = encode(serveur, "UTF-8");
+
+                                          Log.e("url boucle : ",serveur);
+
+                                          new ParseJson().execute();
 
 
-                            hideOPT();
+                                          hideOPT();
+
+                                          if (progressOPT != null) {
+                                              progressOPT.hide();
+                                          }
+
+                                      }
+                                  }else{
+                                      //progresse fichier cfg introuvable
+
+
+                                      if(!load_cfg){
+
+                                          if (progressOPT != null) {
+
+                                              progressOPT.show();
+                                              progressOPT.setMessage(getString(R.string.progress_cfg_opt_string) );
+                                          }
+                                      }
+
+
+
+                                  }
+                              }
+/*
+                          }
+
+        });
+*/
+
 
 
 
                         } catch (Exception e) {
                             // error, do something
                         }
+
                     }
                 });
             }
@@ -2347,39 +2718,26 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
          protected Integer doInBackground(String... param) {
 
 
+//--------debut
 
+
+
+             Log.e("CFG ok","Chargement sur le sous-domaine "+serveur+" ...");
 
          String imei = StatsLastDriving.getIMEI(MainActivity.this);
              ParseJsonData jsonData = new ParseJsonData();
-             String  jsonString1 = jsonData.makeServiceCall("https://test.preventium.fr/index.php/get_config/"+imei);
+            // String  jsonString1 = jsonData.makeServiceCall("https://test.preventium.fr/index.php/get_config/"+imei);
+             String  jsonString1 = jsonData.makeServiceCall(serveur+"/index.php/get_config/"+imei);
 
-            // Log.e("Imei azo : ",imei);
-            // Log.e("objet jsonSring azo : ",jsonString);
 
              try {
-                // String url = new String(param[0]);
-               //  ParseJsonData jsonData = new ParseJsonData();
-                 //String jsonString = jsonData.makeServiceCall(url);
+
 
 
                  JSONObject conf = new JSONObject(jsonString1);
 
 
                  JSONObject config = conf.getJSONObject("config");
-
-      //------------------        test ---------------
-/*
-                 opt_screen_size = Integer.parseInt(config.optString( "taille_ecran"));
-                 opt_qrcode = Integer.parseInt(config.optString( "qrcode"));
-
-                 Log.e("av @class  : ", String.valueOf(config));
-                 Log.e("av @class  : ", String.valueOf(opt_screen_size));
-                 Log.e("av @class  : ", String.valueOf(opt_qrcode));
-
-  */
-      //-------------------------------------
-
-
 
                  int opt_qrcode_web = Integer.parseInt(config.optString( "qrcode"));
                  int opt_carte_web      = Integer.parseInt(config.optString(  "affiche_carte"));
@@ -2390,20 +2748,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                  int opt_seulforce_web  = Integer.parseInt(config.optString(  "seulforce"));
                  int opt_config_type_web = Integer.parseInt(config.optString(  "config_type"));
                  int opt_langue_web     = Integer.parseInt(config.optString(  "langue"));
-                 //int opt_screen_size_web = Integer.parseInt(config.optString( "taille_ecran"));
-
-
-
-/*
-                 Log.e("opt_carte: ", String.valueOf(opt_carte_web));
-                 Log.e("opt_panneau: ", String.valueOf(opt_panneau_web));
-                 Log.e("opt_note: ", String.valueOf(opt_note_web));
-                 Log.e("opt_VFAM  : ", String.valueOf(opt_VFAM_web));
-                 Log.e("opt_duree  : ", String.valueOf(opt_seulforce_web));
-                 Log.e("opt_config  : ", String.valueOf(opt_config_type_web));
-                 Log.e("opt_langu  : ", String.valueOf(opt_langue_web));
-                 Log.e("opt_qrcode  : ", String.valueOf(opt_qrcode_web));
-*/
+                 int opt_screen_size_web = Integer.parseInt(config.optString( "taille_ecran"));
 
 
                  compare(opt_qrcode,opt_qrcode_web, getString(R.string.opt_qrcod_activated)+"\n" ,getString(R.string.opt_qrcod_desactivated), id_notif_qr);
@@ -2425,61 +2770,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                  opt_config_type = opt_config_type_web;
                  opt_langue = opt_langue_web;
                  opt_duree = opt_duree_web;
+                 opt_screen_size = opt_screen_size_web;
 
 
-
-                 if(opt_VFAM == 0){
-/*
-                     onScoreChanged (SCORE_t.CORNERING,LEVEL_t.LEVEL_UNKNOW);
-                     onScoreChanged (SCORE_t.BRAKING,LEVEL_t.LEVEL_UNKNOW);
-                     onScoreChanged (SCORE_t.ACCELERATING,LEVEL_t.LEVEL_UNKNOW);
-                     onScoreChanged (SCORE_t.AVERAGE,LEVEL_t.LEVEL_UNKNOW);
-*/
-
-                     scoreView.hide(true);
-                 }
-                 else {
-                    // scoreView.restore(MainActivity.this);
-                    // onNoteChanged(20,LEVEL_t.LEVEL_1,LEVEL_t.LEVEL_1);
-                 /*    onScoreChanged(SCORE_t.ACCELERATING,LEVEL_t.LEVEL_1);
-                     onScoreChanged(SCORE_t.BRAKING,LEVEL_t.LEVEL_1);
-                     onScoreChanged(SCORE_t.CORNERING,LEVEL_t.LEVEL_1);
-                     onScoreChanged(SCORE_t.AVERAGE,LEVEL_t.LEVEL_1);
-                     */
-                     scoreView.hide(false);
-                 }
-
-                 if(opt_note == 0){
-                     onNoteChanged (0, LEVEL_t.LEVEL_UNKNOW,LEVEL_t.LEVEL_UNKNOW);
-                 }else {
-                     onNoteChanged(20,LEVEL_t.LEVEL_1,LEVEL_t.LEVEL_1);
-                 }
-
-
-
-
-
-              //   onScoreChanged (final SCORE_t type, final LEVEL_t level);
-
-               //  compare(opt_screen_size,opt_screen_size_web,"","");
-
-
-/*
-                 opt_carte = Boolean.parseBoolean(config.optString( "affiche_carte"));
-                 opt_panneau = Boolean.parseBoolean(config.optString( "paneau_vitesse_droite"));
-                 opt_note = Boolean.parseBoolean(config.optString( "note_sur_20"));
-                 opt_VFAM = Boolean.parseBoolean(config.optString( "VFAM"));
-                 opt_duree = Boolean.parseBoolean(config.optString( "duree"));
-                 opt_seulforce = Boolean.parseBoolean(config.optString( "seulforce"));
-                // opt_qrcode = config.optString( "qrcode");
-                 opt_config_type = Boolean.parseBoolean(config.optString( "config_type"));
-                 opt_langue = Boolean.parseBoolean(config.optString( "opt_langue"));
-                 opt_screen_size = Integer.parseInt(config.optString( "taille_ecran"));
-                 //opt_test = config.optString( "nom_boitier");
-*/
-
-
-                // opt_screen_size = Integer.parseInt(config.optString( "taille_ecran"));
 
 
                 return opt_qrcode;
@@ -2488,29 +2781,92 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                  e.printStackTrace();
              }
 
-
            return null;
-         }
+
+
+
+         }  ///-----faran doInBack
 
 
          @Override
          protected void onPostExecute(Integer result) {
              super.onPostExecute(result);
-             //JSONObject config = new JSONObject(result);
-             // JSONObject conf = config.getJSONObject("config");
-             // String res = conf.getString("taille_ecran");
-             //opt_qrcode = result;
 
-             //compare(opt_qrcode,1, getString(R.string.opt_qrcod_activated) ,getString(R.string.opt_qrcod_desactivated));
-           //Log.e("rah qr : ", String.valueOf(result));
-            // Log.e("av @FTP  : ", FTP);
-             //Log.e("Url server val : ",serveur);
-            // Log.e("Url src : ",srcFileName);
-            // Log.e("Url src ful : ",desFileName);
+
+             cfgi= reader1.read(desFileName);
+             if (cfgi){
+                 serveur = reader1.getServerUrl();
+                 Log.e("server rep1: ", String.valueOf(serveur));
+             }
+             Log.e("server url post: ", String.valueOf(serveur));
+
 
          }
      }
 
 
     // -------------------------------------------------------------------------------------------- //
+//=======
+
+    //############### Language manager #################
+    private void localizationFlag(){
+
+        SharedPreferences preferences = getSharedPreferences(APPPREFERENCES, Context.MODE_PRIVATE);
+        String language = preferences.getString("language", null);
+        if(language==null){
+            language = Locale.getDefault().getLanguage();
+        }
+        switch (language){
+            case "en":
+                flagView.setImageResource(R.drawable.ic_us_flag);
+                break;
+            case "fr":
+                flagView.setImageResource(R.drawable.ic_fr_flag);
+                break;
+            case "es":
+                flagView.setImageResource(R.drawable.ic_es_flag);
+                break;
+            case "pl":
+                flagView.setImageResource(R.drawable.ic_pl_flag);
+                break;
+        }
+
+        Runnable displayFlag = new Runnable() {
+            @Override
+            public void run() {
+                flagView.setVisibility(View.INVISIBLE);
+            }
+        };
+        Handler handler = new Handler();
+        handler.postDelayed(displayFlag, DURATION);
+
+    }
+
+
+    public static MainActivity instance() {
+        return activity;
+    }
+
+    public void updateText(final String newSms){
+        smsMessageView.setVisibility(View.VISIBLE);
+
+        if(smsMessageView.getText().toString().equals(getString(R.string.no_pending_message_string))){
+            smsMessageView.setText(newSms);
+        }
+        else{
+            smsMessageView.setText(smsMessageView.getText().toString() + "            " + newSms);
+        }
+
+        smsMessageView.setSelected(true);
+
+        Runnable dismissMessage = new Runnable() {
+            @Override
+            public void run() {
+                smsMessageView.setVisibility(View.INVISIBLE);
+            }
+        };
+        Handler handler = new Handler();
+        handler.postDelayed(dismissMessage, MESSAGE_DURATION);
+    }
+
 }
