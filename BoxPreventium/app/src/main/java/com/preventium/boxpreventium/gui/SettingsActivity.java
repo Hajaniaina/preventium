@@ -430,8 +430,11 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     resources.updateConfiguration(configuration, resources.getDisplayMetrics());
 
                     SharedPreferences.Editor editor = preferences.edit();
-                    editor.putString("language", languageToLoad);
-                    editor.commit();
+                    //editor.putString("language", languageToLoad);
+                    //editor.commit();
+                    editor.putString(getString(R.string.select_language_key), languageToLoad);
+
+                    editor.apply();
 
                     fragment.getActivity().startActivity(new Intent(fragment.getActivity(), MainActivity.class));
                     fragment.getActivity().finish();

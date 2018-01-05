@@ -8,7 +8,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 25
         versionCode 4
-        versionName "2.0.0"
+        versionName "2.1.0"
         multiDexEnabled true
     }
     buildTypes {
@@ -37,7 +37,8 @@ dependencies {
     compile 'com.github.firetrap:permissionHelper:1.0.1'
     compile('com.github.KingsMentor:MobileVisionBarcodeScanner:v1.2') { transitive = true; }
     compile 'com.vanniktech:vntnumberpickerpreference:1.0.0'
-    compile 'com.pavelsikun:material-seekbar-preference:2.3.0+'
+    //compile 'com.pavelsikun:material-seekbar-preference:2.3.0+'
+    compile 'com.pavelsikun:material-seekbar-preference:2.3.0'
     compile 'com.devs:acr:1.0.1'
     compile 'com.gregacucnik:editableseekbar:1.2'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'

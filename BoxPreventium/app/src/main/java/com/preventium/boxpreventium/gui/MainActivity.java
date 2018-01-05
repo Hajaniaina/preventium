@@ -2013,6 +2013,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 dialog.hide();
                 MainActivity.this.finish();
                 System.exit(0);
+
+ //############---------- Annulation du load config blue screen ###################
+                SharedPreferences.Editor editor = sharedPref.edit();
+                //editor.putBoolean("FIRSTRUN", false);
+                editor.putBoolean(getString(R.string.load_alert_cfg_key), false);
+
+                editor.apply();
+
+                Log.e("AFTERRUN valcfg : ", String.valueOf(sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true)));
+
             }
         });
         dialog.setCancelable(false);
@@ -2086,13 +2096,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                                     Log.e("AFTERRUN val : ", String.valueOf(sharedPref.getBoolean(getString(R.string.firstrun_key), true)));
 
-                                    SharedPreferences.Editor editor = sharedPref.edit();
-                                    //editor.putBoolean("FIRSTRUN", false);
-                                    editor.putBoolean(getString(R.string.load_alert_cfg_key), false);
-
-                                    editor.apply();
-
-                                    Log.e("AFTERRUN valcfg : ", String.valueOf(sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true)));
 //############# annulation du formulaire
 
                                     break;
@@ -2495,7 +2498,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             flagView.setVisibility(View.VISIBLE);
         }else{
             flagView.setVisibility(View.GONE);
-            localizationFlag();
+           
         }
 
         //---paneau vitesse
@@ -2812,7 +2815,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private void localizationFlag(){
 
         SharedPreferences preferences = getSharedPreferences(APPPREFERENCES, Context.MODE_PRIVATE);
-        String language = preferences.getString("language", null);
+       // String language = preferences.getString("language", null);
+        String language = preferences.getString(getString(R.string.select_language_key), null);
+
+        Log.e("langue azo : ", String.valueOf(language));
+
         if(language==null){
             language = Locale.getDefault().getLanguage();
         }
