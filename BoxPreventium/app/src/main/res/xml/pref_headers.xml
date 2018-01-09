@@ -49,4 +49,12 @@
         android:title="@string/pin_code_string">
     </header>
 
+
+    <!-- for staut list-->
+    <header
+        android:fragment="com.preventium.boxpreventium.gui.SettingsActivity$ModulePreferenceFragment"
+        android:icon="@drawable/ic_module"
+        android:title="@string/module_string">
+    </header>
+
 </preference-headers>

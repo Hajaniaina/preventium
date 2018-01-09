@@ -80,6 +80,13 @@
             android:screenOrientation="sensorLandscape">
         </activity>
 
+        <activity
+            android:name=".gui.ModuleActivity"
+            android:keepScreenOn="true"
+            android:label="@string/module_string"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/AppTheme" />
+
         <receiver android:name=".receiver.SMSReceiver">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />

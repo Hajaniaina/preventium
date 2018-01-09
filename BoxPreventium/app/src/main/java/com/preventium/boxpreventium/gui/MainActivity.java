@@ -358,6 +358,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
+
     @Override
     protected void onActivityResult (int requestCode, int resultCode, Intent data) {
 
@@ -385,6 +386,23 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
     }
+
+   //######qrcod test
+/*
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 0 && resultCode == -1 && data.hasExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM)) {
+            this.qrRequest = (QrScanRequest) data.getParcelableExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM);
+            if (this.qrRequest.driverIdReq == 1) {
+                this.appManager.set_driver_id(this.qrRequest.driverId);
+            }
+            if (this.qrRequest.vehicleFrontReq == 1) {
+            }
+            if (this.qrRequest.vehicleBackReq != 1) {
+            }
+        }
+    }
+*/
+
 
     // -------------------------------------------------------------------------------------------- //
 
@@ -935,8 +953,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                //scoreView.setScore(type, level);
-                scoreView.hide(true);
+                scoreView.setScore(type, level);
+                //scoreView.hide(true);
             }
         });
     }
@@ -1097,7 +1115,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         appManager = new AppManager(this, this);
 
+        //qrRequest = new QrScanRequest();
         qrRequest = new QrScanRequest();
+
 
         progressOPT = new ProgressDialog(this, R.style.InfoDialogStyle);
         progress = new ProgressDialog(this, R.style.InfoDialogStyle);
@@ -2059,17 +2079,28 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     Toast.makeText(MainActivity.this, getString(R.string.form_invalid_string), Toast.LENGTH_SHORT).show();
                 } else {
 
-                    runOnUiThread(new Runnable() {
+               /*     runOnUiThread(new Runnable() {
                         @Override
-                        public void run() {
-                            boolean location = false;
+                        public void run() { */
+                          //  boolean location = false;
 
-                            while( !location ) {
-                                if( lastLocation == null ) {
+                         //   while( !location ) {
+                            /*    if( lastLocation == null ) {
                                     try {
                                         Thread.sleep(500);
                                     }catch(InterruptedException ie) {}
-                                } else {
+                              */  //} else {
+
+                    boolean activeopt = Connectivity.isConnected(getApplicationContext());
+                    Log.e("connect za form : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
+                    if( activeopt != internet_activeopt ) {
+                        internet_activeopt = activeopt;
+                    }
+
+                    Log.e("connect zaInterForm : ", String.valueOf(internet_activeopt));
+
+                    if (internet_activeopt) {
+
                                     DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
                                     Date date = new Date();
                                     String[] form = {
@@ -2081,7 +2112,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                             String.valueOf(lastLocation.getLongitude()),
                                             dateFormat.format(date)
                                     };
-                                    appManager.OpenForm(form);
+
+                                        appManager.OpenForm(form);
+
+
                                     MessageWait();
                                     di.hide();
 
@@ -2097,12 +2131,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                     Log.e("AFTERRUN val : ", String.valueOf(sharedPref.getBoolean(getString(R.string.firstrun_key), true)));
 
 //############# annulation du formulaire
-
-                                    break;
-                                }
-                            }
-                        }
-                    });
+                }else {
+                    //Toast.makeText(MainActivity.this, getString(R.string.form_invalid_string), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, getString(R.string.erreur_connect), Toast.LENGTH_SHORT).show();
+                }
+                                  //  break;
+                               // }
+                          //  }
+                       // }
+                  //  });
 
                 }
             }
@@ -2498,7 +2535,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             flagView.setVisibility(View.VISIBLE);
         }else{
             flagView.setVisibility(View.GONE);
-           
+
         }
 
         //---paneau vitesse
@@ -2614,7 +2651,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-    ///######
+    ///###### chek protocol
+  /*  public boolean checkProtocol(String url){
+     String http = (url.substring(0, 4)).trim();
+        Log.e("Protocol za : ", String.valueOf(http));
+        if (http== "http"){
+            return true;
+
+        }
+        else {
+            return false;
+        }
+
+
+    }
+*/
+
     public void setRepeatingAsyncTask() {
 
         final Handler handler = new Handler();
@@ -2658,6 +2710,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                       serveur = reader1.getServerUrl();
                                       if(serveur != "" && serveur!="tsis"){
 
+                                        // boolean check=  checkProtocol(serveur);
+                                         // Log.e("akor vrai : ", String.valueOf(check));
+
+                                       //  if (check){
+
+
+
                                           // serveur = encode(serveur, "UTF-8");
 
                                           Log.e("url boucle : ",serveur);
@@ -2670,6 +2729,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                           if (progressOPT != null) {
                                               progressOPT.hide();
                                           }
+
+                            /*             }else {
+                                             //#### Erreur protocol
+                                             if(!load_cfg){
+
+                                                 if (progressOPT != null) {
+
+                                                     progressOPT.show();
+                                                     progressOPT.setMessage(getString(R.string.erreur_protocol) );
+                                                 }
+                                             }
+                                         }
+*/
 
                                       }
                                   }else{

@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:background="#ffffffff">
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="10dp"
+        >
+
+        <TextView
+            android:id="@+id/module_mesureView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#b08a0f"
+            android:padding="0dp"
+            android:text="@string/module_mesure_string"
+            android:textColor="#fff"
+            android:textSize="16sp" />
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#fbf4da">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:text="@string/module_avfm_string"
+                    android:textColor="#777" />
+
+                <TextView
+                    android:id="@+id/module_avfm"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginLeft="75dp"
+                    android:padding="3dp"
+                    android:text="active" />
+            </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#fff">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:text="@string/module_vitesse_string"
+                    android:textColor="#777" />
+
+                <TextView
+                    android:id="@+id/module_vitesse"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginLeft="75dp"
+                    android:padding="3dp"
+                    android:text="active"
+                    android:textColor="@color/material_redA700" />
+            </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#fbf4da">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:text="@string/module_duree_string"
+                    android:textColor="#777" />
+
+                <TextView
+                    android:id="@+id/module_duree"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginLeft="75dp"
+                    android:padding="3dp" />
+            </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:text="@string/module_note_string"
+                    android:textColor="#777" />
+
+                <TextView
+                    android:id="@+id/module_note"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginLeft="75dp"
+                    android:padding="3dp"
+                    android:text="active"
+                    android:textColor="@color/material_redA700" />
+            </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#fbf4da">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:text="@string/module_force_string"
+                    android:textColor="#777" />
+
+                <TextView
+                    android:id="@+id/module_force"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginLeft="75dp"
+                    android:padding="3dp"
+                    android:text="active"
+                    android:textColor="@color/material_redA700" />
+            </TableRow>
+        </TableLayout>
+
+        <TextView
+            android:id="@+id/module_affichageView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#b08a0f"
+            android:padding="0dp"
+            android:text="@string/module_affichage_string"
+            android:textColor="#fff"
+            android:textSize="16sp" />
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#fbf4da">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:padding="0dp"
+                    android:text="@string/module_ecran_string"
+                    android:textColor="#777" />
+
+                <TextView
+                    android:id="@+id/module_ecran"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginLeft="75dp"
+                    android:padding="3dp"
+                    android:text="active"
+                    android:textColor="@color/material_green500" />
+            </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#fff">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:text="@string/module_carte_string"
+                    android:textColor="#777" />
+
+                <TextView
+                    android:id="@+id/module_carte"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginLeft="75dp"
+                    android:padding="3dp"
+                    android:text="active"
+                    android:textColor="@color/material_redA700" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#fbf4da">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:text="@string/module_langue_string"
+                    android:textColor="#777" />
+
+                <TextView
+                    android:id="@+id/module_langue"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginLeft="75dp"
+                    android:padding="3dp"
+                    android:text="active"
+                    android:textColor="@color/material_redA700" />
+            </TableRow>
+        </TableLayout>
+
+        <TextView
+            android:id="@+id/module_buttonView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#b08a0f"
+            android:padding="0dp"
+            android:text="@string/module_bouton_string"
+            android:textColor="#fff"
+            android:textSize="16sp" />
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#fbf4da">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:text="@string/module_qr_code_string"
+                    android:textColor="#777" />
+
+                <TextView
+                    android:id="@+id/module_qr_code"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginLeft="70dp"
+                    android:padding="3dp" />
+            </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#fff">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:text="@string/module_epc_string"
+                    android:textColor="#777" />
+
+                <TextView
+                    android:id="@+id/module_epc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginLeft="70dp"
+                    android:padding="3dp"
+                    android:text="active"
+                    android:textColor="@color/material_redA700" />
+            </TableRow>
+        </TableLayout>
+
+    </LinearLayout>
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/module_close"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_gravity="bottom|end"
+        android:src="@drawable/mr_ic_close_dark"
+        fab:fab_colorNormal="@color/colorAppRed"
+        fab:fab_colorPressed="#ff5252"
+        fab:fab_shadowColor="#444"
+        fab:fab_size="@dimen/fb_button_size" />
+
+</android.support.design.widget.CoordinatorLayout>

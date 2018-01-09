@@ -247,4 +247,28 @@
     <string name="form_valid_string">Data sent</string>
     <string name="form_ok_string">ok</string>
 
+
+    <!-- for staut list-->
+    <string name="module_activity_view">ModuleActivity</string>
+    <string name="module_string">Features</string>
+    <string name="module_epc_string">Thresholds</string>
+    <string name="module_qr_code_string">QRCode</string>
+    <string name="module_mesure_string">Module features</string>
+    <string name="module_affichage_string">Display module</string>
+    <string name="module_bouton_string">Button module</string>
+    <string name="module_avfm_string">AFVM</string>
+    <string name="module_vitesse_string">Speed</string>
+    <string name="module_duree_string">Duration</string>
+    <string name="module_note_string">Note</string>
+    <string name="module_force_string">Strength</string>
+    <string name="module_ecran_string">Screen</string>
+    <string name="module_carte_string">Map</string>
+    <string name="module_langue_string">Language</string>
+    <string name="module_simple_string">Simplified</string>
+    <string name="module_complete_string">Large</string>
+    <string name="loading_string">Loading ...</string>
+
+    <string name="erreur_connect">Connection problem, please try again</string>
+    <string name="erreur_protocol">No protocol found, please contact the Preventium service</string>
+
 </resources>

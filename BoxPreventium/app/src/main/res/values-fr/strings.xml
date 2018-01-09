@@ -194,4 +194,31 @@
     <string name="form_valid_string">Votre application sera activée d\'ici quelques minutes. Au prochain démarrage, vous verrez qu\'elle charge des fichiers de configuration.\n Dans le cas contraire, appelez votre interlocuteur Preventium.fr</string>
     <string name="form_ok_string">ok</string>
 
+
+    <!-- for staut list-->
+    <string name="module_activity_view">ModuleActivity</string>
+    <string name="module_string">Fonctionnalités</string>
+    <string name="module_epc_string">Seuils</string>
+    <string name="module_qr_code_string">QRCode</string>
+    <string name="module_mesure_string">Module mesure</string>
+    <string name="module_affichage_string">Module affichage</string>
+    <string name="module_bouton_string">Module bouton</string>
+    <string name="module_avfm_string">AFVM</string>
+    <string name="module_vitesse_string">Vitesse</string>
+    <string name="module_duree_string">Durée</string>
+    <string name="module_note_string">Note</string>
+    <string name="module_force_string">Force</string>
+    <string name="module_ecran_string">Ecran</string>
+    <string name="module_carte_string">Carte</string>
+    <string name="module_langue_string">Langue</string>
+    <string name="module_simple_string">Simplifié</string>
+    <string name="module_complete_string">Large</string>
+
+    <string name="loading_string">Chargement ...</string>
+
+    <string name="erreur_connect">Probleme de connection, Veuillez réessayer</string>
+    <string name="erreur_protocol">Aucun protocol trouvé, Veuillez contacter le service Preventium</string>
+
+
+
 </resources>

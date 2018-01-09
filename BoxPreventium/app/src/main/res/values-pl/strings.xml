@@ -194,4 +194,29 @@
     <string name="form_ok_string">W porządku</string>
 
 
+    <!-- for staut list-->
+    <string name="module_activity_view">ModuleActivity</string>
+    <string name="module_string">Cechy</string>
+    <string name="module_epc_string">Progi</string>
+    <string name="module_qr_code_string">QRCode</string>
+    <string name="module_mesure_string">Funkcje modułu</string>
+    <string name="module_affichage_string">Moduł wyświetlacza</string>
+    <string name="module_bouton_string">Moduł przycisku</string>
+    <string name="module_avfm_string">AFVM</string>
+    <string name="module_vitesse_string">Prędkość</string>
+    <string name="module_duree_string">Trwanie</string>
+    <string name="module_note_string">Uwaga</string>
+    <string name="module_force_string">Siła</string>
+    <string name="module_ecran_string">Ekran</string>
+    <string name="module_carte_string">Mapa</string>
+    <string name="module_langue_string">Język</string>
+    <string name="module_simple_string">Uproszczony</string>
+    <string name="module_complete_string">Large</string>
+
+    <string name="loading_string">Ładuję ...</string>
+
+    <string name="erreur_connect">Problem z połączeniem, spróbuj ponownie</string>
+    <string name="erreur_protocol">Nie znaleziono żadnego protokołu, skontaktuj się z serwisem Preventium</string>
+
+
 </resources>

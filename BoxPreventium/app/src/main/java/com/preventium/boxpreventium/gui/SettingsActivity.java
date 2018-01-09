@@ -398,7 +398,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         }
     }
 
-    /**********************************************************************************************/
+    /**********************************for language************************************************************/
 
     public static class LocalizationPreferenceFragment extends PreferenceFragment {
 
@@ -460,4 +460,51 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             return super.onOptionsItemSelected(item);
         }
     }
+
+
+    /**********************************for status list ***********************************************************/
+
+
+    public static class ModulePreferenceFragment extends PreferenceFragment {
+
+        @Override
+        public void onCreate (Bundle savedInstanceState) {
+
+            super.onCreate(savedInstanceState);
+            // addPreferencesFromResource(R.xml.pref_module);
+            // setHasOptionsMenu(true);
+
+            Intent intent = new Intent(getActivity(), ModuleActivity.class);
+            startActivityForResult(intent, 0);
+        }
+
+        @Override
+        public void onActivityResult(int requestCode, int resultCode, Intent data)
+        {
+            super.onActivityResult(requestCode, resultCode, data);
+            // check if the request code is same as what is passed  here it is 0
+            if(requestCode == 0)
+            {
+                String message = data.getStringExtra("MESSAGE");
+                if( message.equals("close") ) {
+                    getActivity().onBackPressed();
+                }
+            }
+        }
+
+        @Override
+        public boolean onOptionsItemSelected (MenuItem item) {
+
+            int id = item.getItemId();
+
+            if (id == android.R.id.home) {
+
+                startActivity(new Intent(getActivity(), SettingsActivity.class));
+                return true;
+            }
+
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
 }
