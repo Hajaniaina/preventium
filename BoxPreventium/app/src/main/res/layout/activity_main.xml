@@ -312,6 +312,19 @@
                     android:background="@android:drawable/dialog_holo_light_frame"
                     android:backgroundTint="@color/colorAppGrey"/>
 
+                <TextView
+                    android:textSize="24.0sp"
+                    android:textColor="@android:color/white"
+                    android:gravity="center"
+                    android:id="@id/mark"
+                    android:background="@drawable/rounded_textview"
+                    android:visibility="invisible"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+
+
+
             </LinearLayout>
 
             <!-- BUTTONS -->

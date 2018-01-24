@@ -3,6 +3,7 @@ package com.preventium.boxpreventium.utils;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
@@ -11,10 +12,8 @@ import android.net.Network;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
-import android.provider.Settings;
 import android.support.annotation.RequiresPermission;
 import android.telephony.TelephonyManager;
-import android.text.format.DateFormat;
 import android.util.Log;
 
 import java.math.BigDecimal;
@@ -243,4 +242,35 @@ public class ComonUtils {
         bd = bd.setScale(2, BigDecimal.ROUND_HALF_EVEN);
         return bd.floatValue();
     }
+
+
+    //######### Older paste
+
+    public static void SavePreferences(String key, String name, int value, Context c) {
+        SharedPreferences.Editor editor = c.getSharedPreferences(key, 0).edit();
+        editor.putInt(name, value);
+        editor.commit();
+    }
+
+    public static int LoadPreferences(String key, String name, Context c) {
+        return c.getSharedPreferences(key, 0).getInt(name, 0);
+    }
+
+    public static void SaveStringPreferences(String key, String name, String value, Context c) {
+        SharedPreferences.Editor editor = c.getSharedPreferences(key, 0).edit();
+        editor.putString(name, value);
+        editor.commit();
+    }
+
+    public static String LoadStringPreferences(String key, String name, Context c) {
+        String val = "";
+        return c.getSharedPreferences(key, 0).getString(name, "");
+    }
+
+    public static String currentTime() {
+        return new SimpleDateFormat("d-MM-yy HH:mm:ss", Locale.getDefault()).format(Long.valueOf(System.currentTimeMillis()));
+    }
+
+    //######### Older paste
+
 }

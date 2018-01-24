@@ -12,12 +12,15 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.location.LocationListener;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.media.RingtoneManager;
 import android.media.ToneGenerator;
 import android.net.Uri;
@@ -34,6 +37,7 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AlertDialog;
 import android.telephony.SmsManager;
+import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -59,11 +63,14 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.gson.Gson;
 import com.gregacucnik.EditableSeekBar;
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.FORCE_t;
@@ -76,6 +83,9 @@ import com.preventium.boxpreventium.location.CustomMarkerData;
 import com.preventium.boxpreventium.location.MarkerManager;
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.manager.AppManager;
+import com.preventium.boxpreventium.manager.Force;
+import com.preventium.boxpreventium.manager.SpeedCorner;
+import com.preventium.boxpreventium.manager.SpeedLine;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
@@ -95,8 +105,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
+//public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
+public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener, LocationListener {
 
     private static final String TAG = "MainActivity";
     private static final String APPPREFERENCES = "AppPrefs" ;
@@ -212,11 +225,104 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private String epcname = "";
 
+//##### add old veer
+    private SharedPreferences force_pref;
+    private Marker forceMarker = null;
+    private List<Force> posList = new ArrayList();
+    private Marker pauseMarker = null;
+    private Marker resumeMarker = null;
+    private List<SpeedCorner> speed_corner = new ArrayList();
+    private List<SpeedLine> speed_line = new ArrayList();
+    private TextView forceView;
+    private SharedPreferences speedCorner;
+    private SharedPreferences speedLine;
+    private MediaPlayer mediaPlayer;
+    private LatLng firstPos;
+    private Lock lock;
+    boolean gps;
+
+
 
     private final long MESSAGE_DURATION = 10800000L;
     private TextView smsMessageView;
     private static MainActivity activity;
     private boolean flag_run_once = false;
+
+    @Override
+    public void onLocationChanged(Location location) {
+        this.googleMap.animateCamera(CameraUpdateFactory.newLatLng(this.lastPos));
+
+    }
+
+    @Override
+    public void onStatusChanged(String s, int i, Bundle bundle) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String s) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String s) {
+
+    }
+
+
+    //###santo
+    class C00322 implements GoogleMap.OnMapLongClickListener {
+        C00322() {
+        }
+
+        public void onMapLongClick(final LatLng latLng) {
+            AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
+            alertBuilder.setMessage(MainActivity.this.getString(R.string.validate_marker_create_string));
+            alertBuilder.setNegativeButton(MainActivity.this.getString(R.string.cancel_string), null);
+            alertBuilder.setPositiveButton(MainActivity.this.getString(R.string.create_string), new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    MainActivity.this.showMarkerEditDialog(MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, "", "", latLng, 13, false), true);
+                }
+            });
+            alertBuilder.create().show();
+        }
+    }
+
+    class C00333 implements GoogleMap.OnMapClickListener {
+        C00333() {
+        }
+
+        public void onMapClick(LatLng latLng) {
+            MainActivity.this.markerManager.hideAllAlertCircles();
+        }
+    }
+
+    class C00414 implements GoogleMap.OnInfoWindowClickListener {
+        C00414() {
+        }
+
+        public void onInfoWindowClick(Marker marker) {
+            if (MainActivity.this.markerManager.getMarker(marker).isEditable()) {
+                MainActivity.this.showInfoDialog(marker);
+            }
+        }
+    }
+
+    class C00465 implements GoogleMap.OnMarkerClickListener {
+        C00465() {
+        }
+
+        public boolean onMarkerClick(Marker marker) {
+            CustomMarker customMarker = MainActivity.this.markerManager.getMarker(marker);
+            if (customMarker.isAlertEnabled()) {
+                MainActivity.this.markerManager.showAlertCircle(customMarker, true);
+            }
+            if (customMarker.isEditable()) {
+                marker.setSnippet(MainActivity.this.getResources().getString(R.string.more_string));
+            }
+            return false;
+        }
+    }
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -358,7 +464,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-
+/*
     @Override
     protected void onActivityResult (int requestCode, int resultCode, Intent data) {
 
@@ -386,9 +492,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
     }
-
+*/
    //######qrcod test
-/*
+
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == 0 && resultCode == -1 && data.hasExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM)) {
             this.qrRequest = (QrScanRequest) data.getParcelableExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM);
@@ -401,7 +507,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
     }
-*/
+
 
 
     // -------------------------------------------------------------------------------------------- //
@@ -413,6 +519,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         this.googleMap.getUiSettings().setMyLocationButtonEnabled(false);
         this.googleMap.getUiSettings().setAllGesturesEnabled(true);
+//##santo
+        this.googleMap.getUiSettings().setMapToolbarEnabled(false);
+        this.googleMap.getUiSettings().setRotateGesturesEnabled(false);
 
         mapReady = true;
 
@@ -445,6 +554,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         setPositionListeners();
     }
 
+    /* //###santo
     private void setMapListeners() {
 
         googleMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
@@ -509,12 +619,20 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
     }
+*/
+    private void setMapListeners() {
+        this.googleMap.setOnMapLongClickListener(new C00322());
+        this.googleMap.setOnMapClickListener(new C00333());
+        this.googleMap.setOnInfoWindowClickListener(new C00414());
+        this.googleMap.setOnMarkerClickListener(new C00465());
+    }
 
     private void drawMapLine (LatLng startPoint, LatLng endPoint) {
 
         PolylineOptions opt = new PolylineOptions();
 
-        opt.width(3);
+        //opt.width(3);
+        opt.width(3.0f);
         opt.geodesic(true);
         opt.color(Color.rgb(0, 160, 255));
         opt.add(startPoint, endPoint);
@@ -523,7 +641,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     // -------------------------------------------------------------------------------------------- //
-
+/*
     @Override
     public void onStatusChanged (final STATUS_t status) {
 
@@ -736,6 +854,301 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
+   */ //######santo rep
+    @Override
+    public void onStatusChanged(final STATUS_t status) {
+
+
+        if (DEBUG_UI_ON) {
+
+            if (status != STATUS_t.PAR_STARTED &&
+                    status != STATUS_t.PAR_PAUSING &&
+                    status != STATUS_t.PAR_PAUSING_WITH_STOP &&
+                    status != STATUS_t.PAR_RESUME &&
+                    status != STATUS_t.PAR_STOPPED) {
+
+                return;
+            }
+        }
+
+        runOnUiThread(new Runnable() {
+            public void run() {
+                Force[] force;
+                int i;
+                MainActivity mainActivity;
+                MainActivity mainActivity2;
+
+
+
+                switch (status) {
+                    case CHECK_ACTIF:
+                        MainActivity.this.googleMap.clear();
+                        try {
+                            MainActivity.this.force_pref = MainActivity.this.getSharedPreferences("", 0);
+                            force = (Force[]) new Gson().fromJson(MainActivity.this.force_pref.getString("force", ""), Force[].class);
+                            if (force != null) {
+                                for (i = 0; i < force.length; i++) {
+                                    if (i != 0) {
+                                        mainActivity = MainActivity.this;
+                                        mainActivity2 = mainActivity;
+                                        mainActivity2.forceMarker = MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, force[i].getForce(), "<body> Force: " + force[i].getForce() + "<br>" + "Vitesse en ligne droite: " + force[i].getSpeed_l() + "<br>" + "Vitesse dans virage: " + force[i].getSpeed_c() + "<br>" + "Ecart forces: " + (Integer.valueOf(force[i].getForce()).intValue() - Integer.valueOf(force[i - 1].getForce()).intValue()) + "<br>" + "Ecart vitesses en ligne droite: " + (Integer.valueOf(force[i].getSpeed_l()).intValue() - Integer.valueOf(force[i - 1].getSpeed_l()).intValue()) + "<br>" + "Ecart vitesses dans virage: " + (Integer.valueOf(force[i].getSpeed_c()).intValue() - Integer.valueOf(force[i - 1].getSpeed_c()).intValue()) + "<br>" + "</body>", new LatLng(force[i].getLoc().latitude, force[i].getLoc().longitude), MainActivity.this.getForceCode(force[i].getType_X(), force[i].getLevel_X()), true);
+                                    } else {
+                                        mainActivity = MainActivity.this;
+                                        mainActivity2 = mainActivity;
+                                        mainActivity2.forceMarker = MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, force[i].getForce(), "<body> Force: " + force[i].getForce() + "<br>" + "Vitesse en ligne droite: " + force[i].getSpeed_l() + "<br>" + "Vitesse dans virage: " + force[i].getSpeed_c() + "<br>" + "</body>", new LatLng(force[i].getLoc().latitude, force[i].getLoc().longitude), MainActivity.this.getForceCode(force[i].getType_X(), force[i].getLevel_X()), true);
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                        }
+                        if (MainActivity.this.progress != null) {
+                            MainActivity.this.progress.show();
+                            MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.progress_check_imei_string) + StatsLastDriving.getIMEI(MainActivity.this));
+                            return;
+                        }
+                        return;
+                    case IMEI_INACTIF:
+                        if (MainActivity.this.progress != null) {
+                            MainActivity.this.progress.show();
+                            MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.progress_inactive_imei_string));
+                            return;
+                        }
+                        return;
+                    case GETTING_CFG:
+                        if (MainActivity.this.progress != null) {
+                            MainActivity.this.progress.show();
+                            if (Connectivity.isConnected(MainActivity.this.getApplicationContext())) {
+                                MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.progress_cfg_string) + StatsLastDriving.getIMEI(MainActivity.this));
+                                return;
+                            } else {
+                                MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.network_alert_string));
+                                return;
+                            }
+                        }
+                        return;
+                    case GETTING_EPC:
+                        if (MainActivity.this.progress != null) {
+                            MainActivity.this.progress.show();
+                            MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.progress_epc_string) + StatsLastDriving.getIMEI(MainActivity.this));
+                            return;
+                        }
+                        return;
+
+                    case GETTING_DOBJ:
+                    if (progress != null) {
+
+                        progress.show();
+                        progress.setMessage((getString(R.string.progress_obj_string) + StatsLastDriving.getIMEI(MainActivity.this)));
+
+                        return;
+                    }
+
+                        return;
+                    case SETTING_CEP:
+                    case SETTING_MARKERS:
+                    case SETTING_PARCOUR_TYPE:
+                        if (MainActivity.this.progress != null) {
+                            MainActivity.this.progress.show();
+                            MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.progress_send_string));
+                            return;
+                        }
+                        return;
+                    case PAR_STARTED:
+                        ComonUtils.SavePreferences("moved", "moved", 1, MainActivity.this);
+                        MainActivity.this.routeActive = true;
+                        MainActivity.this.routeInPause = false;
+                        MainActivity.this.googleMap.clear();
+                        MainActivity.this.posList.clear();
+                        MainActivity.this.force_pref.edit().clear().commit();
+                        if (MainActivity.this.qrRequest.isAnyReqPending(0)) {
+                            MainActivity.this.appManager.add_ui_timer(120, 0);
+                        }
+                        MainActivity.this.trackingActivated = MainActivity.this.sharedPref.getBoolean(MainActivity.this.getString(R.string.tracking_activated), true);
+                        if (MainActivity.this.mapReady) {
+                            for (Polyline line : MainActivity.this.mapPolylineList) {
+                                line.remove();
+                            }
+                            MainActivity.this.mapPolylineList.clear();
+                            if (MainActivity.this.startMarker != null) {
+                                MainActivity.this.markerManager.removeMarker(MainActivity.this.startMarker);
+                                MainActivity.this.startMarker = null;
+                            }
+                            if (MainActivity.this.forceMarker != null) {
+                                MainActivity.this.markerManager.removeMarker(MainActivity.this.forceMarker);
+                                MainActivity.this.forceMarker = null;
+                            }
+                            if (MainActivity.this.pauseMarker != null) {
+                                MainActivity.this.markerManager.removeMarker(MainActivity.this.pauseMarker);
+                                MainActivity.this.pauseMarker = null;
+                            }
+                            if (MainActivity.this.resumeMarker != null) {
+                                MainActivity.this.markerManager.removeMarker(MainActivity.this.resumeMarker);
+                                MainActivity.this.resumeMarker = null;
+                            }
+                            if (MainActivity.this.stopMarker != null) {
+                                MainActivity.this.markerManager.removeMarker(MainActivity.this.stopMarker);
+                                MainActivity.this.stopMarker = null;
+                            }
+                            MainActivity.this.googleMap.getUiSettings().setAllGesturesEnabled(false);
+                            if (MainActivity.this.startMarker == null) {
+                                MainActivity.this.startMarker = MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, "" + ComonUtils.currentTime(), "", MainActivity.this.lastPos, 15, false);
+                            }
+                        }
+                        MainActivity.this.speed_line.clear();
+                        MainActivity.this.speed_corner.clear();
+                        return;
+                    case PAR_RESUME:
+                        MainActivity.this.routeActive = true;
+                        MainActivity.this.routeInPause = false;
+                        if (MainActivity.this.mapReady) {
+                            MainActivity.this.googleMap.getUiSettings().setAllGesturesEnabled(false);
+                            if (MainActivity.this.resumeMarker == null) {
+                                MainActivity.this.resumeMarker = MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, "" + ComonUtils.currentTime(), "", MainActivity.this.lastPos, 18, false);
+                                return;
+                            }
+                            return;
+                        }
+                        return;
+                    case PAR_PAUSING:
+                        if (MainActivity.this.pauseMarker == null) {
+                            MainActivity.this.pauseMarker = MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, "" + ComonUtils.currentTime(), "", MainActivity.this.lastPos, 17, false);
+                            break;
+                        }
+                        break;
+                    case PAR_PAUSING_WITH_STOP:
+                        break;
+                    case PAR_STOPPED:
+                        ComonUtils.SavePreferences("moved", "moved", 0, MainActivity.this);
+                        if (MainActivity.this.progress != null) {
+                            MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.progress_ready_string));
+                            MainActivity.this.progress.dismiss();
+                        }
+                        if (MainActivity.this.mapReady) {
+                            MainActivity.this.googleMap.getUiSettings().setAllGesturesEnabled(true);
+                            MainActivity.this.googleMap.getUiSettings().setRotateGesturesEnabled(false);
+                            if (MainActivity.this.forceMarker == null) {
+                                try {
+                                    MainActivity.this.force_pref = MainActivity.this.getSharedPreferences("", 0);
+                                    force = (Force[]) new Gson().fromJson(MainActivity.this.force_pref.getString("force", ""), Force[].class);
+                                    if (force != null) {
+                                        for (i = 0; i < force.length; i++) {
+                                            mainActivity = MainActivity.this;
+                                            mainActivity2 = mainActivity;
+                                            mainActivity2.forceMarker = MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, force[i].getForce(), "", new LatLng(force[i].getLoc().latitude, force[i].getLoc().longitude), MainActivity.this.getForceCode(force[i].getType_X(), force[i].getLevel_X()), false);
+                                            double lat1 = force[i].getLoc().latitude;
+                                            double lng1 = force[i].getLoc().longitude;
+                                            double lat2 = force[i + 1].getLoc().latitude;
+                                            double dLon = force[i + 1].getLoc().longitude - lng1;
+                                            MainActivity.this.googleMap.addMarker(new MarkerOptions().position(force[i + 1].getLoc()).rotation((float) Math.toDegrees(Math.atan2(Math.sin(dLon) * Math.cos(lat2), (Math.cos(lat1) * Math.sin(lat2)) - ((Math.sin(lat1) * Math.cos(lat2)) * Math.cos(dLon))))).anchor(-0.65f, 0.5f).icon(BitmapDescriptorFactory.fromBitmap(BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.arrow_head))));
+                                        }
+                                    }
+                                } catch (Exception e2) {
+                                }
+                            }
+                            if (MainActivity.this.stopMarker == null) {
+                                MainActivity.this.stopMarker = MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, "" + ComonUtils.currentTime(), "", MainActivity.this.lastPos, 16, false);
+                            }
+                        }
+                        if (MainActivity.this.routeActive) {
+                            MainActivity.this.qrRequest.resetVehicleReq();
+                            MainActivity.this.appManager.add_ui_timer(180, 1);
+                        }
+                        MainActivity.this.routeActive = false;
+                        MainActivity.this.routeInPause = false;
+                        return;
+                    default:
+                        return;
+                }
+                if (status == STATUS_t.PAR_PAUSING_WITH_STOP) {
+                    MainActivity.this.askEndDayConfirm();
+                }
+                System.gc();
+                MainActivity.this.routeInPause = true;
+                MainActivity.this.qrSmsTimeout = MainActivity.this.sharedPref.getInt(MainActivity.this.getString(R.string.phone_select_sms_qr_timeout_key), 0);
+                MainActivity.this.qrSmsTimeout = MainActivity.this.qrSmsTimeout * 60;
+                if (MainActivity.this.mapReady) {
+                    MainActivity.this.googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition.Builder().target(MainActivity.this.lastPos).zoom(15.0f).bearing(0.0f).tilt(0.0f).build()));
+                    MainActivity.this.googleMap.getUiSettings().setAllGesturesEnabled(true);
+                }
+                MainActivity.this.accForceView.hide(true, getMap(), getScreen(), getSeuil());
+                int pauseNotifTimeout = MainActivity.this.sharedPref.getInt(MainActivity.this.getString(R.string.phone_select_sms_pause_timeout_key), 0);
+                if (pauseNotifTimeout > 0) {
+                    MainActivity.this.appManager.add_ui_timer((long) pauseNotifTimeout, 5);
+                }
+            }
+        });
+    }
+
+
+    private int getForceCode(FORCE_t type, LEVEL_t level) {
+        switch (type) {
+            case TURN_LEFT:
+                switch (level) {
+                    case LEVEL_1:
+                        return 20;
+                    case LEVEL_2:
+                        return 21;
+                    case LEVEL_3:
+                        return 22;
+                    case LEVEL_4:
+                        return 23;
+                    case LEVEL_5:
+                        return 24;
+                    default:
+                        return 0;
+                }
+            case TURN_RIGHT:
+                switch (level) {
+                    case LEVEL_1:
+                        return 25;
+                    case LEVEL_2:
+                        return 26;
+                    case LEVEL_3:
+                        return 27;
+                    case LEVEL_4:
+                        return 28;
+                    case LEVEL_5:
+                        return 29;
+                    default:
+                        return 0;
+                }
+            case ACCELERATION:
+                switch (level) {
+                    case LEVEL_1:
+                        return 30;
+                    case LEVEL_2:
+                        return 31;
+                    case LEVEL_3:
+                        return 32;
+                    case LEVEL_4:
+                        return 33;
+                    case LEVEL_5:
+                        return 34;
+                    default:
+                        return 0;
+                }
+            case BRAKING:
+                switch (level) {
+                    case LEVEL_1:
+                        return 35;
+                    case LEVEL_2:
+                        return 36;
+                    case LEVEL_3:
+                        return 37;
+                    case LEVEL_4:
+                        return 38;
+                    case LEVEL_5:
+                        return 39;
+                    default:
+                        return 0;
+                }
+            default:
+                return 0;
+        }
+    }
+
+
+
     @Override
     public void onUiTimeout (final int timer_id, final STATUS_t status) {
 
@@ -866,6 +1279,24 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
+  /*  @Override
+    public void onForceChanged(FORCE_t type, LEVEL_t level) {
+
+    }
+*/
+    //##santo
+    public void onForceDisplayed(final double force) {
+        runOnUiThread(new Runnable() {
+            @SuppressLint("SetTextI18n")
+            public void run() {
+                MainActivity.this.forceView.setText("" + ((int) force));
+            }
+        });
+    }
+
+
+
+    /*
     @Override
     public void onForceChanged (final FORCE_t type, final LEVEL_t level) {
 
@@ -889,6 +1320,39 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
     }
+*/
+    public void onForceChanged(FORCE_t type, LEVEL_t level, double force, float speed_l, float speed_c) {
+        final FORCE_t fORCE_t = type;
+        final LEVEL_t lEVEL_t = level;
+        final double d = force;
+        final float f = speed_l;
+        final float f2 = speed_c;
+        runOnUiThread(new Runnable() {
+            public void run() {
+                if (MainActivity.this.routeActive && !MainActivity.this.routeInPause) {
+                    if (fORCE_t != FORCE_t.UNKNOW) {
+                        MainActivity.this.accForceView.hide(false, getMap(), getScreen(), getSeuil());
+                        MainActivity.this.accForceView.setValue(fORCE_t, lEVEL_t);
+                        Force strength = new Force(fORCE_t, lEVEL_t, MainActivity.this.lastPos, String.valueOf((int) d), String.valueOf((int) f), String.valueOf((int) f2));
+                        try {
+                            MainActivity.this.force_pref = MainActivity.this.getSharedPreferences("", 0);
+                            SharedPreferences.Editor editor = MainActivity.this.force_pref.edit();
+                            Gson gson = new Gson();
+                            MainActivity.this.posList.add(strength);
+                            editor.putString("force", gson.toJson(MainActivity.this.posList));
+                            editor.commit();
+                            return;
+                        } catch (Exception e) {
+                            return;
+                        }
+                    }
+                    MainActivity.this.accForceView.hide(true, getMap(), getScreen(), getSeuil());
+                }
+            }
+        });
+    }
+
+
 
     @Override
     public void onCustomMarkerDataListGet() {
@@ -903,7 +1367,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    @Override
+   // @Override
     public void onSharedPositionsChanged (final List<CustomMarkerData> list) {
 
         runOnUiThread(new Runnable() {
@@ -959,7 +1423,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    @Override
+ /*   @Override
     public void onShock (final double mG, final short raw) {
 
         runOnUiThread(new Runnable() {
@@ -991,16 +1455,133 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
     }
+*/
+ //##santo
+ public void onShock(final double mG, final short raw) {
+     runOnUiThread(new Runnable() {
+         public void run() {
+             if (!MainActivity.this.shockDetected) {
+                 MainActivity.this.shockDetected = true;
+                 new CountDownTimer(5000, 5000) {
+                     public void onTick(long millisUntilFinished) {
+                     }
+
+                     public void onFinish() {
+                         MainActivity.this.drawAttention(5);
+                         MainActivity.this.shockDetected = false;
+                         MainActivity.this.sendSms(MainActivity.this.getPhoneNumber(R.string.phone_select_sms_shock_key), MainActivity.this.getString(R.string.sms_shock_msg_string) + " " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")");
+                         MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, "Shock " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")", "", MainActivity.this.lastPos, 9, false);
+                     }
+                 }.start();
+             }
+         }
+     });
+ }
+
+
+    public void onSpeedLineKept(final int kmh, final LEVEL_t level) {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                SpeedLine speed_l = new SpeedLine(kmh, level);
+                try {
+                    MainActivity.this.speedLine = MainActivity.this.getSharedPreferences("", 0);
+                    SharedPreferences.Editor speed_line_editor = MainActivity.this.speedLine.edit();
+                    Gson gson_line = new Gson();
+                    MainActivity.this.speed_line.add(speed_l);
+                    speed_line_editor.putString("vitesse_ligne_droite", gson_line.toJson(MainActivity.this.speed_line));
+                    speed_line_editor.commit();
+                } catch (Exception e) {
+                }
+            }
+        });
+    }
+
+    public void onSpeedCornerKept(final int kmh, final LEVEL_t level) {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                SpeedCorner speed_c = new SpeedCorner(kmh, level);
+                try {
+                    MainActivity.this.speedCorner = MainActivity.this.getSharedPreferences("", 0);
+                    SharedPreferences.Editor speed_corner_editor = MainActivity.this.speedCorner.edit();
+                    Gson gson_corner = new Gson();
+                    MainActivity.this.speed_corner.add(speed_c);
+                    speed_corner_editor.putString("vitesse_virage", gson_corner.toJson(MainActivity.this.speed_corner));
+                    speed_corner_editor.commit();
+                } catch (Exception e) {
+                }
+            }
+        });
+    }
+
+    public void onSpeedLine() {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                try {
+                    MainActivity.this.speedLine = MainActivity.this.getSharedPreferences("", 0);
+                    SpeedLine[] speed_l = (SpeedLine[]) new Gson().fromJson(MainActivity.this.speedLine.getString("vitesse_ligne_droite", ""), SpeedLine[].class);
+                    if (speed_l != null) {
+                        MainActivity.this.speedView.setSpeed(SPEED_t.IN_STRAIGHT_LINE, speed_l[speed_l.length - 1].getLevel(), Integer.valueOf(speed_l[speed_l.length - 1].getSpeed_line()), true);
+                    } else {
+                        MainActivity.this.speedView.setSpeed(SPEED_t.IN_STRAIGHT_LINE, LEVEL_t.LEVEL_UNKNOW, Integer.valueOf(0), true);
+                    }
+                } catch (Exception e) {
+                }
+            }
+        });
+    }
+
+    public void onSpeedCorner() {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                try {
+                    MainActivity.this.speedCorner = MainActivity.this.getSharedPreferences("", 0);
+                    SpeedCorner[] speed_c = (SpeedCorner[]) new Gson().fromJson(MainActivity.this.speedCorner.getString("vitesse_virage", ""), SpeedCorner[].class);
+                    if (speed_c != null) {
+                        MainActivity.this.speedView.setSpeed(SPEED_t.IN_CORNERS, speed_c[speed_c.length - 1].getLevel(), Integer.valueOf(speed_c[speed_c.length - 1].getSpeed_corner()), true);
+                    } else {
+                        MainActivity.this.speedView.setSpeed(SPEED_t.IN_CORNERS, LEVEL_t.LEVEL_UNKNOW, Integer.valueOf(0), true);
+                    }
+                } catch (Exception e) {
+                }
+            }
+        });
+    }
+
+
+
 
     @Override
-    public void onRecommendedSpeedChanged (final SPEED_t speed_t, final int kmh, final LEVEL_t level, final boolean valid) {
-
+    public void onRecommendedSpeedChanged(SPEED_t speed_t, int kmh, LEVEL_t level, boolean valid) {
+        final SPEED_t sPEED_t = speed_t;
+        final LEVEL_t lEVEL_t = level;
+        final int i = kmh;
+        final boolean z = valid;
         runOnUiThread(new Runnable() {
-
-            @Override
             public void run() {
+                MainActivity.this.speedView.setSpeed(sPEED_t, lEVEL_t, Integer.valueOf(i), z);
+            }
+        });
+    }
 
-                speedView.setSpeed(speed_t, level, kmh, valid);
+    public void onLevelNotified(final LEVEL_t level) {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                switch (level) {
+                    case LEVEL_3:
+                        MainActivity.this.mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.yellow);
+                        MainActivity.this.mediaPlayer.start();
+                        return;
+                    case LEVEL_4:
+                        MainActivity.this.mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.orange);
+                        MainActivity.this.mediaPlayer.start();
+                        return;
+                    case LEVEL_5:
+                        MainActivity.this.mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.red);
+                        MainActivity.this.mediaPlayer.start();
+                        return;
+                    default:
+                        return;
+                }
             }
         });
     }
@@ -1100,9 +1681,46 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         */
     }
 
+    //##santoo
+
+
+
+    private void setPositionClient() {
+        this.posManager = new PositionManager(this);
+        if (ActivityCompat.checkSelfPermission(this, "android.permission.ACCESS_FINE_LOCATION") == 0 || ActivityCompat.checkSelfPermission(this, "android.permission.ACCESS_COARSE_LOCATION") == 0) {
+            this.posManager.setPositionChangedListener(new PositionManager.PositionListener() {
+                public void onRawPositionUpdate(Location location) {
+                    MainActivity.this.firstPos = new LatLng(location.getLatitude(), location.getLongitude());
+                }
+
+                public void onPositionUpdate(Location firstLoc, Location lastLoc) {
+                    LatLng posInitial = new LatLng(firstLoc.getLatitude(), lastLoc.getLongitude());
+                    LatLng posFinal = new LatLng(firstLoc.getLatitude(), lastLoc.getLongitude());
+                }
+
+                public void onGpsStatusChange(boolean gpsFix) {
+                    MainActivity.this.setGpsStatus(gpsFix);
+                }
+            });
+        }
+    }
+
+    public void setGpsStatus(boolean active) {
+        this.lock = new ReentrantLock();
+        this.lock.lock();
+        this.gps = true;
+        this.lock.unlock();
+    }
+
     // -------------------------------------------------------------------------------------------- //
 
     private void init (boolean firstLaunch) {
+     /*   if (getSharedPreferences("prime", 0).getInt("prime", 0) == 0) {
+            setPositionClient();
+
+            return;
+        }
+        */
 
         smsMessageView = (TextView) findViewById(R.id.sms_message_text);
 
@@ -1143,7 +1761,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         speedView = new SpeedView(this);
         scoreView = new ScoreView(this);
         accForceView = new AccForceView(this);
-        accForceView.hide(true);
+        accForceView.hide(true, getMap(), getScreen(), getSeuil());
 
         backgroundView = (ImageView) findViewById(R.id.background_image);
         boxNumView = (TextView) findViewById(R.id.box_num_connected);
@@ -1208,6 +1826,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         mapFrag.getMapAsync(this);
     }
+
+
+
+
+
 
     private int checkPermissions() {
 
@@ -1465,6 +2088,32 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         alertBuilder.create().show();
+    }
+
+    //####santo
+    protected void showInfoDialog(Marker marker) {
+        CustomMarker customMarker = this.markerManager.getMarker(marker);
+        if (customMarker != null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            View v = getLayoutInflater().inflate(R.layout.info_on_arrow, null);
+            TextView measure = (TextView) v.findViewById(R.id.measure);
+            ((TextView) v.findViewById(R.id.force)).setCompoundDrawablesWithIntrinsicBounds(this.markerManager.getTypeMarker(customMarker), 0, 0, 0);
+            measure.setText(Html.fromHtml(this.markerManager.getDataMarker(customMarker)));
+            builder.setView(v);
+            builder.setCancelable(false);
+            builder.setPositiveButton(R.string.close_string, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+            builder.setNegativeButton("Générer PDF", new DialogInterface.OnClickListener() {
+                @SuppressLint("WrongConstant")
+                public void onClick(DialogInterface dialog, int which) {
+                    Toast.makeText(MainActivity.this, "Aucune application de lecture PDF!", 1).show();
+                }
+            });
+            builder.show();
+        }
     }
 
 
@@ -2266,8 +2915,20 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (final View view) {
 
+
+
                 if(opt_qrcode== 1)
+                   // if(true)
                 {
+
+                    class C00431 implements DialogInterface.OnClickListener {
+                        C00431() {
+                        }
+
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                        }
+                    }
 
 
                 Intent intent = new Intent(MainActivity.this, QrScanActivity.class);
@@ -2667,6 +3328,50 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 */
 
+//##### Get screen size #######
+    public int getScreen() {
+
+        if (opt_screen_size==99){
+            return 4;
+        }else {
+
+            return opt_screen_size;
+        }
+
+    }
+
+    //##### Get seuil check value #######
+    public int getSeuil() {
+        if (opt_seulforce==99){
+            return 0;
+        }else {
+            return opt_seulforce;
+        }
+
+    }
+
+
+    //##### Get map check value #######
+    public int getMap() {
+        if(opt_carte==99){
+            return 0;
+        }else {
+            return opt_carte;
+        }
+
+    }
+
+    public void onForceView(){
+        MainActivity.this.forceView = (TextView) findViewById(R.id.mark);
+        if (ComonUtils.LoadPreferences("force", "force", this) == 0) {
+            MainActivity.this.forceView.setVisibility(View.INVISIBLE);
+        } else {
+            MainActivity.this.forceView.setVisibility(View.VISIBLE);
+        }
+    }
+
+
+    //####### Loop for check value web option ########
     public void setRepeatingAsyncTask() {
 
         final Handler handler = new Handler();
@@ -2683,6 +3388,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                           @Override
                           public void run() {
 */
+
+
                               boolean load_cfg = sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true);
                               boolean activeopt = Connectivity.isConnected(getApplicationContext());
                               Log.e("connect za : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
@@ -2693,6 +3400,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                               Log.e("connect zaInter : ", String.valueOf(internet_activeopt));
 
                               if (internet_activeopt) {
+
+                                  onForceView();
 
                                   srcFileName = ComonUtils.getIMEInumber(getApplicationContext()) + ".CFG";
                                   desFileName = String.format(Locale.getDefault(), "%s/%s", getApplicationContext().getFilesDir(), srcFileName);
@@ -2786,99 +3495,68 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     // -------------------------------------------------------------------------------------------- //
 
 
-     @SuppressLint("StaticFieldLeak")
-     class  ParseJson extends AsyncTask<String, String, Integer> {
+    @SuppressLint("StaticFieldLeak")
+    class ParseJson extends AsyncTask<String, String, Integer> {
 
-         @Override
-         protected Integer doInBackground(String... param) {
+        @Override
+        protected Integer doInBackground(String... param) {
 
+            //--------debut
+            Log.e("CFG ok","Chargement sur le sous-domaine "+serveur+" ...");
 
-//--------debut
+            String imei = StatsLastDriving.getIMEI(MainActivity.this);
+            ParseJsonData jsonData = new ParseJsonData();
 
+            boolean connected = Connectivity.isConnected(getApplicationContext());
+            if( connected ) {
+                String jsonString1 = jsonData.makeServiceCall(serveur + "/index.php/get_config/" + imei);
 
+                if( jsonString1 != null && jsonString1.toString().length() > 0) {
+                    try {
+                        JSONObject conf = new JSONObject(jsonString1);
+                        JSONObject config = conf.getJSONObject("config");
 
-             Log.e("CFG ok","Chargement sur le sous-domaine "+serveur+" ...");
-
-         String imei = StatsLastDriving.getIMEI(MainActivity.this);
-             ParseJsonData jsonData = new ParseJsonData();
-            // String  jsonString1 = jsonData.makeServiceCall("https://test.preventium.fr/index.php/get_config/"+imei);
-             String  jsonString1 = jsonData.makeServiceCall(serveur+"/index.php/get_config/"+imei);
-
-
-             try {
-
-
-
-                 JSONObject conf = new JSONObject(jsonString1);
-
-
-                 JSONObject config = conf.getJSONObject("config");
-
-                 int opt_qrcode_web = Integer.parseInt(config.optString( "qrcode"));
-                 int opt_carte_web      = Integer.parseInt(config.optString(  "affiche_carte"));
-                 int opt_panneau_web    = Integer.parseInt(config.optString(  "paneau_vitesse_droite"));
-                 int opt_note_web       = Integer.parseInt(config.optString(  "note_sur_20"));
-                 int opt_VFAM_web       = Integer.parseInt(config.optString(  "VFAM"));
-                 int opt_duree_web      = Integer.parseInt(config.optString(  "duree"));
-                 int opt_seulforce_web  = Integer.parseInt(config.optString(  "seulforce"));
-                 int opt_config_type_web = Integer.parseInt(config.optString(  "config_type"));
-                 int opt_langue_web     = Integer.parseInt(config.optString(  "langue"));
-                 int opt_screen_size_web = Integer.parseInt(config.optString( "taille_ecran"));
+                        int opt_qrcode_web = Integer.parseInt(config.optString("qrcode"));
+                        int opt_carte_web = Integer.parseInt(config.optString("affiche_carte"));
+                        int opt_panneau_web = Integer.parseInt(config.optString("paneau_vitesse_droite"));
+                        int opt_note_web = Integer.parseInt(config.optString("note_sur_20"));
+                        int opt_VFAM_web = Integer.parseInt(config.optString("VFAM"));
+                        int opt_duree_web = Integer.parseInt(config.optString("duree"));
+                        int opt_seulforce_web = Integer.parseInt(config.optString("seulforce"));
+                        int opt_config_type_web = Integer.parseInt(config.optString("config_type"));
+                        int opt_langue_web = Integer.parseInt(config.optString("langue"));
+                        int opt_screen_size_web = Integer.parseInt(config.optString("taille_ecran"));
 
 
-                 compare(opt_qrcode,opt_qrcode_web, getString(R.string.opt_qrcod_activated)+"\n" ,getString(R.string.opt_qrcod_desactivated), id_notif_qr);
-                 compare(opt_carte,opt_carte_web,getString(R.string.opt_carte_activated),getString(R.string.opt_carte_desactivated)+"\n", id_notif_map);
-                 compare(opt_panneau,opt_panneau_web,getString(R.string.opt_panneau_activated),getString(R.string.opt_panneau_desactivated)+"\n", id_notif_pan);
-                 compare(opt_note,opt_note_web,getString(R.string.opt_note_activated),getString(R.string.opt_note_desactivated)+"\n", id_notif_note);
-                 compare(opt_VFAM,opt_VFAM_web,getString(R.string.opt_VFAM_activated),getString(R.string.opt_VFAM_desactivated)+"\n", id_notif_avfm);
-                 compare(opt_duree,opt_duree_web,getString(R.string.opt_duree_activated),getString(R.string.opt_duree_desactivated)+"\n", id_notif_duree);
-                 compare(opt_seulforce,opt_seulforce_web,getString(R.string.opt_seulforce_activated),getString(R.string.opt_seulforce_desactivated)+"\n", id_notif_seuil);
-                 compare(opt_config_type,opt_config_type_web,getString(R.string.opt_config_type_activated),getString(R.string.opt_config_type_desactivated)+"\n", id_notif_conf);
-                 compare(opt_langue,opt_langue_web,getString(R.string.opt_langue_desactivated),getString(R.string.opt_langue_desactivated)+"\n", id_notif_lang);
+                        compare(opt_qrcode, opt_qrcode_web, getString(R.string.opt_qrcod_activated) + "\n", getString(R.string.opt_qrcod_desactivated), id_notif_qr);
+                        compare(opt_carte, opt_carte_web, getString(R.string.opt_carte_activated), getString(R.string.opt_carte_desactivated) + "\n", id_notif_map);
+                        compare(opt_panneau, opt_panneau_web, getString(R.string.opt_panneau_activated), getString(R.string.opt_panneau_desactivated) + "\n", id_notif_pan);
+                        compare(opt_note, opt_note_web, getString(R.string.opt_note_activated), getString(R.string.opt_note_desactivated) + "\n", id_notif_note);
+                        compare(opt_VFAM, opt_VFAM_web, getString(R.string.opt_VFAM_activated), getString(R.string.opt_VFAM_desactivated) + "\n", id_notif_avfm);
+                        compare(opt_duree, opt_duree_web, getString(R.string.opt_duree_activated), getString(R.string.opt_duree_desactivated) + "\n", id_notif_duree);
+                        compare(opt_seulforce, opt_seulforce_web, getString(R.string.opt_seulforce_activated), getString(R.string.opt_seulforce_desactivated) + "\n", id_notif_seuil);
+                        compare(opt_config_type, opt_config_type_web, getString(R.string.opt_config_type_activated), getString(R.string.opt_config_type_desactivated) + "\n", id_notif_conf);
+                        compare(opt_langue, opt_langue_web, getString(R.string.opt_langue_desactivated), getString(R.string.opt_langue_desactivated) + "\n", id_notif_lang);
 
-                 opt_qrcode = opt_qrcode_web;
-                 opt_carte = opt_carte_web;
-                 opt_panneau = opt_panneau_web;
-                 opt_note = opt_note_web;
-                 opt_VFAM = opt_VFAM_web;
-                 opt_seulforce = opt_seulforce_web;
-                 opt_config_type = opt_config_type_web;
-                 opt_langue = opt_langue_web;
-                 opt_duree = opt_duree_web;
-                 opt_screen_size = opt_screen_size_web;
+                        opt_qrcode = opt_qrcode_web;
+                        opt_carte = opt_carte_web;
+                        opt_panneau = opt_panneau_web;
+                        opt_note = opt_note_web;
+                        opt_VFAM = opt_VFAM_web;
+                        opt_seulforce = opt_seulforce_web;
+                        opt_config_type = opt_config_type_web;
+                        opt_langue = opt_langue_web;
+                        opt_duree = opt_duree_web;
+                        opt_screen_size = opt_screen_size_web;
 
+                        return opt_qrcode;
+                    } catch (JSONException e) {}
+                }
+            }
 
-
-
-                return opt_qrcode;
-
-             } catch (JSONException e) {
-                 e.printStackTrace();
-             }
-
-           return null;
-
-
-
-         }  ///-----faran doInBack
-
-
-         @Override
-         protected void onPostExecute(Integer result) {
-             super.onPostExecute(result);
-
-
-             cfgi= reader1.read(desFileName);
-             if (cfgi){
-                 serveur = reader1.getServerUrl();
-                 Log.e("server rep1: ", String.valueOf(serveur));
-             }
-             Log.e("server url post: ", String.valueOf(serveur));
-
-
-         }
-     }
-
+            return null;
+        }  ///-----faran doInBack
+    }
 
     // -------------------------------------------------------------------------------------------- //
 //=======

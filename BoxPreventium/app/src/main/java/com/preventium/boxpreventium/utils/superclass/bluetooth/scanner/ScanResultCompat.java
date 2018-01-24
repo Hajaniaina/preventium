@@ -3,120 +3,104 @@ package com.preventium.boxpreventium.utils.superclass.bluetooth.scanner;
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanResult;
-import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.Parcelable.Creator;
 import android.support.annotation.Nullable;
 
-/**
- * Created by Franck on 08/08/2016.
- */
-
 public class ScanResultCompat implements Parcelable {
-
-    // Remote bluetooth device.
+    public static final Creator<ScanResultCompat> CREATOR = new C01401();
     private BluetoothDevice mDevice;
-    // Scan record, including advertising data and scan response data.
+    private int mRssi;
     @Nullable
     private ScanRecordCompat mScanRecord;
-    // Received signal strength.
-    private int mRssi;
-    // Device timestamp when the result was last seen.
     private long mTimestampNanos;
 
-    /**
-     * Constructor of scan result.
-     *
-     * @param device         Remote bluetooth device that is found.
-     * @param scanRecord     Scan record including both advertising data and scan response data.
-     * @param rssi           Received signal strength.
-     * @param timestampNanos Device timestamp when the scan result was observed.
-     */
-    public ScanResultCompat(BluetoothDevice device, @Nullable ScanRecordCompat scanRecord, int rssi,
-                            long timestampNanos) {
-        mDevice = device;
-        mScanRecord = scanRecord;
-        mRssi = rssi;
-        mTimestampNanos = timestampNanos;
+    static class C01401 implements Creator<ScanResultCompat> {
+        C01401() {
+        }
+
+        public ScanResultCompat createFromParcel(Parcel source) {
+            return new ScanResultCompat(source);
+        }
+
+        public ScanResultCompat[] newArray(int size) {
+            return new ScanResultCompat[size];
+        }
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    public ScanResultCompat(BluetoothDevice device, @Nullable ScanRecordCompat scanRecord, int rssi, long timestampNanos) {
+        this.mDevice = device;
+        this.mScanRecord = scanRecord;
+        this.mRssi = rssi;
+        this.mTimestampNanos = timestampNanos;
+    }
+
+    @TargetApi(21)
     ScanResultCompat(ScanResult result) {
-        mDevice = result.getDevice();
-        mScanRecord = new ScanRecordCompat(result.getScanRecord());
-        mRssi = result.getRssi();
-        mTimestampNanos = result.getTimestampNanos();
+        this.mDevice = result.getDevice();
+        this.mScanRecord = new ScanRecordCompat(result.getScanRecord());
+        this.mRssi = result.getRssi();
+        this.mTimestampNanos = result.getTimestampNanos();
     }
 
     private ScanResultCompat(Parcel in) {
         readFromParcel(in);
     }
 
-    @Override
     public void writeToParcel(Parcel dest, int flags) {
-        if (mDevice != null) {
+        if (this.mDevice != null) {
             dest.writeInt(1);
-            mDevice.writeToParcel(dest, flags);
+            this.mDevice.writeToParcel(dest, flags);
         } else {
             dest.writeInt(0);
         }
-        if (mScanRecord != null) {
+        if (this.mScanRecord != null) {
             dest.writeInt(1);
-            dest.writeByteArray(mScanRecord.getBytes());
+            dest.writeByteArray(this.mScanRecord.getBytes());
         } else {
             dest.writeInt(0);
         }
-        dest.writeInt(mRssi);
-        dest.writeLong(mTimestampNanos);
+        dest.writeInt(this.mRssi);
+        dest.writeLong(this.mTimestampNanos);
     }
 
     private void readFromParcel(Parcel in) {
-        if (in.readInt() == 1) mDevice = BluetoothDevice.CREATOR.createFromParcel(in);
-        if (in.readInt() == 1) mScanRecord = ScanRecordCompat.parseFromBytes(in.createByteArray());
-        mRssi = in.readInt();
-        mTimestampNanos = in.readLong();
+        if (in.readInt() == 1) {
+            this.mDevice = (BluetoothDevice) BluetoothDevice.CREATOR.createFromParcel(in);
+        }
+        if (in.readInt() == 1) {
+            this.mScanRecord = ScanRecordCompat.parseFromBytes(in.createByteArray());
+        }
+        this.mRssi = in.readInt();
+        this.mTimestampNanos = in.readLong();
     }
 
-    @Override
     public int describeContents() {
         return 0;
     }
 
-    /**
-     * Returns the remote bluetooth device identified by the bluetooth device address.
-     */
     public BluetoothDevice getDevice() {
-        return mDevice;
+        return this.mDevice;
     }
 
-    /**
-     * Returns the scan record, which is a combination of advertisement and scan response.
-     */
     @Nullable
     public ScanRecordCompat getScanRecord() {
-        return mScanRecord;
+        return this.mScanRecord;
     }
 
-    /**
-     * Returns the received signal strength in dBm. The valid range is [-127, 127].
-     */
     public int getRssi() {
-        return mRssi;
+        return this.mRssi;
     }
 
-    /**
-     * Returns timestamp since boot when the scan record was observed.
-     */
     public long getTimestampNanos() {
-        return mTimestampNanos;
+        return this.mTimestampNanos;
     }
 
-    @Override
     public int hashCode() {
-        return ObjectsCompat.hash(mDevice, mRssi, mScanRecord, mTimestampNanos);
+        return ObjectsCompat.hash(this.mDevice, Integer.valueOf(this.mRssi), this.mScanRecord, Long.valueOf(this.mTimestampNanos));
     }
 
-    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -125,27 +109,13 @@ public class ScanResultCompat implements Parcelable {
             return false;
         }
         ScanResultCompat other = (ScanResultCompat) obj;
-        return ObjectsCompat.equals(mDevice, other.mDevice) && (mRssi == other.mRssi) &&
-                ObjectsCompat.equals(mScanRecord, other.mScanRecord)
-                && (mTimestampNanos == other.mTimestampNanos);
+        if (ObjectsCompat.equals(this.mDevice, other.mDevice) && this.mRssi == other.mRssi && ObjectsCompat.equals(this.mScanRecord, other.mScanRecord) && this.mTimestampNanos == other.mTimestampNanos) {
+            return true;
+        }
+        return false;
     }
 
-    @Override
     public String toString() {
-        return "ScanResult{" + "mDevice=" + mDevice + ", mScanRecord="
-                + ObjectsCompat.toString(mScanRecord) + ", mRssi=" + mRssi + ", mTimestampNanos="
-                + mTimestampNanos + '}';
+        return "ScanResult{mDevice=" + this.mDevice + ", mScanRecord=" + ObjectsCompat.toString(this.mScanRecord) + ", mRssi=" + this.mRssi + ", mTimestampNanos=" + this.mTimestampNanos + '}';
     }
-
-    public static final Creator<ScanResultCompat> CREATOR = new Creator<ScanResultCompat>() {
-        @Override
-        public ScanResultCompat createFromParcel(Parcel source) {
-            return new ScanResultCompat(source);
-        }
-
-        @Override
-        public ScanResultCompat[] newArray(int size) {
-            return new ScanResultCompat[size];
-        }
-    };
 }

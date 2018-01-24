@@ -57,21 +57,25 @@ public class ReaderCFGFile {
                 String txt = BytesUtils.dataToString(data);
                 String[] split = txt.split(",");
                 Log.e("la taille : ", String.valueOf(split.length));
-                if( split.length == 17 ) {
+                //if( split.length == 17 ) { //taill 17 pas d'url
+                 if( split.length == 17 ) { //taille 18 avec url
                     int i = 5;
-                    FTP = split[i++];
-                    FTP_Login = split[i++];
-                    FTP_pwd = split[i++];
-                    FTP_Port = Integer.parseInt( split[i++] );
-                    FTP_Path = split[i++];
-                    SMS_CALL_1 = split[i++];
-                    SMS_CALL_2 = split[i++];
-                    SMS_CALL_3 = split[i++];
-                    SMS_CALL_4 = split[i++];
-                    SMS_CALL_5 = split[i++];
-                    reception_trajet_en_temps_reel = split[i++].equals("1");
-                    //envoi_de_tous_les_points_gps = split[i].equals("1");
-                    SERVER_URL = split[i];
+                    FTP = split[i++];  //5
+                    FTP_Login = split[i++]; //6
+                    FTP_pwd = split[i++]; //7
+                    FTP_Port = Integer.parseInt( split[i++] ); //8
+                    FTP_Path = split[i++]; //9
+                    SMS_CALL_1 = split[i++];  //10
+                    SMS_CALL_2 = split[i++];  //11
+                    SMS_CALL_3 = split[i++];  //12
+                    SMS_CALL_4 = split[i++];  //13
+                    SMS_CALL_5 = split[i++];  //14
+                     envoi_de_tous_les_points_gps = split[i].equals("1"); //15
+                    reception_trajet_en_temps_reel = split[i++].equals("1"); //15
+                    //envoi_de_tous_les_points_gps = split[i].equals("1");  si existe //16 aussi
+                    //envoi_de_tous_les_points_gps = true; //supposition
+
+                    SERVER_URL = split[i]; //16
                     ret = true;
                 }
 

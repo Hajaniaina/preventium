@@ -1,5 +1,6 @@
 package com.preventium.boxpreventium.utils.superclass.bluetooth;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
@@ -12,43 +13,53 @@ import android.widget.Toast;
 
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.ScannerCallback;
-import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.SnackbarOnBluetoothAdapter;
+import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.SnackbarOnBluetoothAdapter.Builder;
 
-/**
- * Created by Franck on 08/08/2016.
- */
-
+@SuppressLint("Registered")
 public class ScanActivity extends Activity implements ScannerCallback {
-
     private BluetoothListAdapter bluetoothlistAdapter;
-    private BluetoothScanner scanner;
-    private Button buttonStart, buttonStop;
     private ProgressBar progressBar;
-    private ListView listview;
+    private BluetoothScanner scanner;
 
+    /*
+    class C01361 implements OnClickListener {
+        C01361() {
+        }
+
+        @Override
+        public void onClick(View view) {
+            ScanActivity.this.scanner.startLeScan();
+        }
+    }
+
+    class C01372 implements OnClickListener {
+        C01372() {
+        }
+
+        @Override
+        public void onClick(View view) {
+            ScanActivity.this.scanner.stopLeScan();
+        }
+    }
+*/
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.scan_activity_item_model);
-
-        buttonStart = (Button)findViewById(R.id.buttonStart);
-        buttonStop = (Button)findViewById(R.id.buttonStop);
-        progressBar = (ProgressBar)findViewById(R.id.progressBar);
-        listview = (ListView)findViewById(R.id.listView);
-
-        bluetoothlistAdapter = new BluetoothListAdapter(this.getLayoutInflater());
-        listview.setAdapter(bluetoothlistAdapter);
-
-        progressBar.setVisibility( View.GONE );
+        Button buttonStart = (Button) findViewById(R.id.buttonStart);
+        Button buttonStop = (Button) findViewById(R.id.buttonStop);
+        this.progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        ListView listview = (ListView) findViewById(R.id.listView);
+        this.bluetoothlistAdapter = new BluetoothListAdapter(getLayoutInflater());
+        listview.setAdapter(this.bluetoothlistAdapter);
+        this.progressBar.setVisibility(View.GONE);
+        //this.buttonStart.setOnClickListener(new C01361());
+        //this.buttonStop.setOnClickListener(new C01372());
 
         buttonStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                List<ScanFilterCompat> filters = new ArrayList<ScanFilterCompat>();
-//                filters.add( new ScanFilterCompat.Builder().setDeviceName("FPT").build() );
-//                filters.add( new ScanFilterCompat.Builder().setDeviceName("FPTLC").build() );
-//                ScanSettingsCompat settings = new ScanSettingsCompat.Builder().setScanMode(ScanSettingsCompat.SCAN_MODE_LOW_LATENCY).build();
-//                scanner.startLeScan(filters,settings);
+
                 scanner.startLeScan();
             }
         });
@@ -60,51 +71,48 @@ public class ScanActivity extends Activity implements ScannerCallback {
             }
         });
 
-        scanner = new BluetoothScanner(this,this);
 
-        if( !BluetoothScanner.hasBluetooth() ) {
+        this.scanner = new BluetoothScanner(this, this);
+        if (!BluetoothScanner.hasBluetooth()) {
             Toast.makeText(this, R.string.bluetooth_not_supported, Toast.LENGTH_SHORT).show();
             finish();
-            return;
-        }
-
-        if( !BluetoothScanner.hasBluetoothLE(ScanActivity.this) ) {
+        } else if (!BluetoothScanner.hasBluetoothLE(this)) {
             Toast.makeText(this, R.string.bluetooth_low_energy_not_supported, Toast.LENGTH_SHORT).show();
             finish();
-            return;
         }
     }
 
     @Override
     public void onScanState(boolean scanning) {
-        if( scanning ) {
-            bluetoothlistAdapter.clear();
-            progressBar.setVisibility(View.VISIBLE);
-        } else {
-            progressBar.setVisibility(View.GONE);
+        if (scanning) {
+            this.bluetoothlistAdapter.clear();
+            this.progressBar.setVisibility(View.VISIBLE);
+            return;
         }
+        this.progressBar.setVisibility(View.GONE);
     }
 
     @Override
     public void onScanResult(BluetoothDevice device, int rssi) {
-        bluetoothlistAdapter.addDevice(device, rssi);
+        this.bluetoothlistAdapter.addDevice(device, rssi);
     }
 
     @Override
     public void onBluetoothAdapterIsDisable() {
-        ViewGroup rootView = (ViewGroup)findViewById(android.R.id.content);
-        SnackbarOnBluetoothAdapter.Builder.with(rootView, R.string.bluetooth_disable).withEnableBluetoothButton(R.string.enable).build().showSnackbar();
+        //Builder.with((ViewGroup) findViewById(16908290), (int) R.string.bluetooth_disable).withEnableBluetoothButton((int) R.string.enable).build().showSnackbar();
+        Builder.with((ViewGroup) findViewById(android.R.id.content), (int) R.string.bluetooth_disable).withEnableBluetoothButton((int) R.string.enable).build().showSnackbar();
+
     }
 
     @Override
     public void onBluetoothAdapterIsNull() {
-        ViewGroup rootView = (ViewGroup)findViewById(android.R.id.content);
-        SnackbarOnBluetoothAdapter.Builder.with(rootView, R.string.bluetooth_not_supported).build().showSnackbar();
+        //Builder.with((ViewGroup) findViewById(16908290), (int) R.string.bluetooth_not_supported).build().showSnackbar();
+        Builder.with((ViewGroup) findViewById(android.R.id.content), (int) R.string.bluetooth_not_supported).build().showSnackbar();
+
     }
 
     @Override
     public void onLocationServiceIsDisable() {
-        ViewGroup rootView = (ViewGroup)findViewById(android.R.id.content);
-        SnackbarOnBluetoothAdapter.Builder.with(rootView, R.string.location_disable).withEnableLocationButton(R.string.enable).build().showSnackbar();
+        Builder.with((ViewGroup) findViewById(android.R.id.content), (int) R.string.location_disable).withEnableLocationButton((int) R.string.enable).build().showSnackbar();
     }
 }

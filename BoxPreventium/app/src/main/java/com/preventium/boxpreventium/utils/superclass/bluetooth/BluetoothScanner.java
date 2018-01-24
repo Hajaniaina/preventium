@@ -1,147 +1,145 @@
 package com.preventium.boxpreventium.utils.superclass.bluetooth;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.location.LocationManager;
-import android.os.Build;
+import android.os.Build.VERSION;
 import android.os.Handler;
 import android.util.Log;
-
+import com.google.firebase.analytics.FirebaseAnalytics.Param;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.BluetoothLeScannerCompat;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.ScanCallbackCompat;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.ScanFilterCompat;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.ScanResultCompat;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.ScanSettingsCompat;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.ScannerCallback;
-
 import java.util.List;
 
-/**
- * Created by Franck on 08/08/2016.
- */
-
 public class BluetoothScanner extends ScanCallbackCompat {
-
+    public static final long SCAN_PERIOD = 40000;
     private static final String TAG = "BluetoothScanner";
-    public static final long SCAN_PERIOD = 40000;// Stops scanning after 40 seconds.
+    private Context context;
+    private Handler handler;
     private long scan_period = SCAN_PERIOD;
     private ScannerCallback scannerCallback;
-    private Handler handler;
-    private Context context;
+
+    class C01341 implements Runnable {
+        C01341() {
+        }
+
+        public void run() {
+            BluetoothScanner.this.stopLeScan();
+        }
+    }
+
+    class C01352 implements Runnable {
+        C01352() {
+        }
+
+        public void run() {
+            BluetoothScanner.this.stopLeScan();
+        }
+    }
 
     public BluetoothScanner(Context context, ScannerCallback callback) {
         this.context = context;
-        scannerCallback = callback;
-        handler = new Handler();
+        this.scannerCallback = callback;
+        this.handler = new Handler();
     }
 
+    @SuppressLint("WrongConstant")
     public void startLeScan() {
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        if( null == adapter ) {
-            Log.w(TAG,"Bluetooth adapter is null");
-            if( scannerCallback != null ) scannerCallback.onBluetoothAdapterIsNull();
-            return;
-        }
-        if( !adapter.isEnabled() ){
-            Log.d(TAG,"Bluetooth adapter is disable");
-            if( scannerCallback != null ) scannerCallback.onBluetoothAdapterIsDisable();
-            return;
-        }
-
-        final int version = Build.VERSION.SDK_INT;
-        if (version >= Build.VERSION_CODES.M) {
-            LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-            if( !locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ) {
-                Log.d(TAG,"Location service is disable!");
-                if( scannerCallback != null ) scannerCallback.onLocationServiceIsDisable();
-                return;
+        if (adapter == null) {
+            Log.w(TAG, "Bluetooth adapter is null");
+            if (this.scannerCallback != null) {
+                this.scannerCallback.onBluetoothAdapterIsNull();
+            }
+        } else if (!adapter.isEnabled()) {
+            Log.d(TAG, "Bluetooth adapter is disable");
+            if (this.scannerCallback != null) {
+                this.scannerCallback.onBluetoothAdapterIsDisable();
+            }
+        } else if (VERSION.SDK_INT < 23 || ((LocationManager) this.context.getSystemService(Param.LOCATION)).isProviderEnabled("gps")) {
+            this.handler.postDelayed(new C01341(), this.scan_period);
+            BluetoothLeScannerCompat.startScan(adapter, this);
+            if (this.scannerCallback != null) {
+                this.scannerCallback.onScanState(true);
+            }
+        } else {
+            Log.d(TAG, "Location service is disable!");
+            if (this.scannerCallback != null) {
+                this.scannerCallback.onLocationServiceIsDisable();
             }
         }
-
-        // Stops scanning after a pre-defined scan period.
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() { stopLeScan(); }
-        }, scan_period);
-        // Start scanning
-        BluetoothLeScannerCompat.startScan(adapter,this);
-        if( scannerCallback != null ) scannerCallback.onScanState(true);
     }
 
-    public void startLeScan(List<ScanFilterCompat> filters, ScanSettingsCompat settings ) {
+    public void startLeScan(List<ScanFilterCompat> filters, ScanSettingsCompat settings) {
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        if( null == adapter ) {
-            Log.w(TAG,"Bluetooth adapter is null");
-            if( scannerCallback != null ) scannerCallback.onBluetoothAdapterIsNull();
-            return;
-        }
-        if( !adapter.isEnabled() ){
-            Log.d(TAG,"Bluetooth adapter is disable");
-            if( scannerCallback != null ) scannerCallback.onBluetoothAdapterIsDisable();
-            return;
-        }
-
-        final int version = Build.VERSION.SDK_INT;
-        if (version >= Build.VERSION_CODES.M) {
-            LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-            if( !locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ) {
-                Log.d(TAG,"Location service is disable!");
-                if( scannerCallback != null ) scannerCallback.onLocationServiceIsDisable();
-                return;
+        if (adapter == null) {
+            Log.w(TAG, "Bluetooth adapter is null");
+            if (this.scannerCallback != null) {
+                this.scannerCallback.onBluetoothAdapterIsNull();
+            }
+        } else if (!adapter.isEnabled()) {
+            Log.d(TAG, "Bluetooth adapter is disable");
+            if (this.scannerCallback != null) {
+                this.scannerCallback.onBluetoothAdapterIsDisable();
+            }
+        } else if (VERSION.SDK_INT < 23 || ((LocationManager) this.context.getSystemService(Param.LOCATION)).isProviderEnabled("gps")) {
+            this.handler.postDelayed(new C01352(), this.scan_period);
+            BluetoothLeScannerCompat.startScan(adapter, filters, settings, this);
+            if (this.scannerCallback != null) {
+                this.scannerCallback.onScanState(true);
+            }
+        } else {
+            Log.d(TAG, "Location service is disable!");
+            if (this.scannerCallback != null) {
+                this.scannerCallback.onLocationServiceIsDisable();
             }
         }
-
-        // Stops scanning after a pre-defined scan period.
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() { stopLeScan(); }
-        }, scan_period);
-        // Start scanning
-        BluetoothLeScannerCompat.startScan(adapter, filters, settings ,this);
-        if( scannerCallback != null ) scannerCallback.onScanState(true);
     }
 
     public void stopLeScan() {
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        if( null == adapter ) {
-            Log.w(TAG,"Bluetooth adapter is null");
-            if( scannerCallback != null ) scannerCallback.onBluetoothAdapterIsNull();
+        if (adapter == null) {
+            Log.w(TAG, "Bluetooth adapter is null");
+            if (this.scannerCallback != null) {
+                this.scannerCallback.onBluetoothAdapterIsNull();
+                return;
+            }
             return;
         }
-        BluetoothLeScannerCompat.stopScan(adapter,this);
-        if( scannerCallback != null ) scannerCallback.onScanState(false);
+        BluetoothLeScannerCompat.stopScan(adapter, this);
+        if (this.scannerCallback != null) {
+            this.scannerCallback.onScanState(false);
+        }
     }
 
-    @Override
     public void onScanResult(int callbackType, ScanResultCompat result) {
         super.onScanResult(callbackType, result);
-        if( scannerCallback != null )
-            scannerCallback.onScanResult( result.getDevice(), result.getRssi() );
+        if (this.scannerCallback != null) {
+            this.scannerCallback.onScanResult(result.getDevice(), result.getRssi());
+        }
     }
 
-    @Override
     public void onScanFailed(int errorCode) {
         super.onScanFailed(errorCode);
     }
 
-    @Override
     public void onBatchScanResults(List<ScanResultCompat> results) {
         super.onBatchScanResults(results);
     }
 
-    public static boolean hasBluetooth(){
-        boolean hasBluetooth = false;
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        if( null != adapter ) {
-            hasBluetooth = true;
+    public static boolean hasBluetooth() {
+        if (BluetoothAdapter.getDefaultAdapter() != null) {
+            return true;
         }
-        return hasBluetooth;
+        return false;
     }
 
-    public static boolean hasBluetoothLE(Context context){
-        PackageManager pm = context.getPackageManager();
-        boolean hasBLE = pm.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
-        return hasBLE;
+    public static boolean hasBluetoothLE(Context context) {
+        return context.getPackageManager().hasSystemFeature("android.hardware.bluetooth_le");
     }
 }

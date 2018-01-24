@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:sample="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory android:title="@string/help_string">
+        <Preference android:title="@string/setting_string" android:key="@string/setting_key" />
+        <Preference android:title="@string/buttons_string" android:key="@string/buttons_key" />
+        <Preference android:title="@string/on_line_string" android:key="@string/on_line_key" />
+    </PreferenceCategory>
+</PreferenceScreen>

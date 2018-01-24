@@ -3,182 +3,192 @@ package com.preventium.boxpreventium.module.device;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.util.Log;
-
+import com.preventium.boxpreventium.module.device.BluetoothBoxIO.TramesNotifyListener;
 import com.preventium.boxpreventium.module.enums.CMD_t;
 import com.preventium.boxpreventium.module.enums.CONNEXION_STATE_t;
 import com.preventium.boxpreventium.module.trames.BatteryInfo;
 import com.preventium.boxpreventium.module.trames.SensorShockAccelerometerInfo;
 import com.preventium.boxpreventium.module.trames.SensorSmoothAccelerometerInfo;
-import com.preventium.boxpreventium.utils.BytesUtils;
-import com.preventium.boxpreventium.utils.ThreadDefault;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.device.ActionCallback;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.device.NotifyListener;
 
-/**
- * Created by Franck on 14/09/2016.
- */
-
-public class BluetoothBox
-        implements ActionCallback, BluetoothBoxIO.TramesNotifyListener, NotifyListener {
-
-    private final static String TAG = "BluetoothBox";
-    private final static boolean DEBUG = false;
+public class BluetoothBox implements ActionCallback, TramesNotifyListener, NotifyListener {
+    private static final boolean DEBUG = false;
+    private static final String TAG = "BluetoothBox";
+    private BluetoothBoxIO io = null;
     private BatteryInfo last_battery_info = null;
-    private SensorSmoothAccelerometerInfo last_smooth_info = null;
-    private SensorShockAccelerometerInfo last_shock_info = null;
     private Integer last_rssi = null;
-
+    private SensorShockAccelerometerInfo last_shock_info = null;
+    private SensorSmoothAccelerometerInfo last_smooth_info = null;
     private CONNEXION_STATE_t state = CONNEXION_STATE_t.DISCONNECTED;
 
-    private BluetoothBoxIO io = null;
+    class C01161 implements Runnable {
+        C01161() {
+        }
+
+        public void run() {
+            BluetoothBox.this.io.command(CmdBox.newInstance(CMD_t.PAUSE_MEASURING));
+            BluetoothBox.this.io.disconnect();
+        }
+    }
+
+    class C01172 implements Runnable {
+        C01172() {
+        }
+
+        public void run() {
+            BluetoothBox.this.io.command(CmdBox.newInstance(CMD_t.FIRST_CALIBRATION));
+        }
+    }
+
+    class C01183 implements Runnable {
+        C01183() {
+        }
+
+        public void run() {
+            BluetoothBox.this.io.command(CmdBox.newInstance(CMD_t.SECOND_CALIBRATION));
+        }
+    }
+
+    class C01194 implements Runnable {
+        C01194() {
+        }
+
+        public void run() {
+            BluetoothBox.this.io.command(CmdBox.newInstance(CMD_t.RAZ_CALIBRATION));
+        }
+    }
+
+    class C01205 implements Runnable {
+        C01205() {
+        }
+
+        public void run() {
+            BluetoothBox.this.io.setTramesListener(BluetoothBox.this);
+            BluetoothBox.this.io.command(CmdBox.newInstance(CMD_t.START_MEASURING));
+        }
+    }
+
+    class C01226 implements Runnable {
+
+        class C01211 implements ActionCallback {
+            C01211() {
+            }
+
+            public void onSuccess(Object data) {
+                BluetoothBox.this.last_rssi = (Integer) data;
+            }
+
+            public void onFail(int errorCode, String msg) {
+            }
+        }
+
+        C01226() {
+        }
+
+        public void run() {
+            BluetoothBox.this.io.readRssi(new C01211());
+        }
+    }
 
     public BluetoothBox(Context context) {
-        io = new BluetoothBoxIO(context);
-        io.setDisconnectedListener( this );
+        this.io = new BluetoothBoxIO(context);
+        this.io.setDisconnectedListener(this);
     }
 
-    public void connect(BluetoothDevice device){
-        updateState( CONNEXION_STATE_t.CONNECTING );
-        io.connect( device, this );
+    public void connect(BluetoothDevice device) {
+        updateState(CONNEXION_STATE_t.CONNECTING);
+        this.io.connect(device, (ActionCallback) this);
     }
 
-    public void connect(String address){
-        updateState( CONNEXION_STATE_t.CONNECTING );
-        io.connect( address, this );
+    public void connect(String address) {
+        updateState(CONNEXION_STATE_t.CONNECTING);
+        this.io.connect(address, (ActionCallback) this);
     }
 
-    public void close(){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                io.command(CmdBox.newInstance(CMD_t.PAUSE_MEASURING));
-                io.disconnect();
-            }
-        }).start();
-
+    public void close() {
+        new Thread(new C01161()).start();
     }
 
-    public void calibrate_if_constant_speed(){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                io.command(CmdBox.newInstance(CMD_t.FIRST_CALIBRATION));
-            }
-        }).start();
+    public void calibrate_if_constant_speed() {
+        new Thread(new C01172()).start();
     }
 
-    public void calibrate_if_acceleration(){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                io.command(CmdBox.newInstance(CMD_t.SECOND_CALIBRATION));
-            }
-        }).start();
+    public void calibrate_if_acceleration() {
+        new Thread(new C01183()).start();
     }
 
     public void calibrate_raz() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                io.command(CmdBox.newInstance(CMD_t.RAZ_CALIBRATION));
-            }
-        }).start();
+        new Thread(new C01194()).start();
     }
 
+    public CONNEXION_STATE_t getConnectionState() {
+        return this.state;
+    }
 
-    public CONNEXION_STATE_t getConnectionState(){ return state; }
-
-    public String getMacAddr(){
+    public String getMacAddr() {
         String ret = "";
-        if( io != null ) {
-            BluetoothDevice dev = io.getDevice();
-            if( dev != null ) ret = dev.getAddress();
+        if (this.io == null) {
+            return ret;
+        }
+        BluetoothDevice dev = this.io.getDevice();
+        if (dev != null) {
+            return dev.getAddress();
         }
         return ret;
     }
 
-    public Integer getRSSI(){
-        if( last_rssi == null ) {
+    public Integer getRSSI() {
+        if (this.last_rssi == null) {
             readRSSI();
         }
-        return last_rssi;
+        return this.last_rssi;
     }
 
-    public BatteryInfo getBat(){ return last_battery_info; };
+    public BatteryInfo getBat() {
+        return this.last_battery_info;
+    }
 
-    public SensorSmoothAccelerometerInfo getSmooth(){ return last_smooth_info; };
+    public SensorSmoothAccelerometerInfo getSmooth() {
+        return this.last_smooth_info;
+    }
 
-    public SensorShockAccelerometerInfo getShock(){ return last_shock_info; };
-    // CONNECTED
+    public SensorShockAccelerometerInfo getShock() {
+        return this.last_shock_info;
+    }
 
-    @Override
     public void onSuccess(Object data) {
-        updateState( CONNEXION_STATE_t.CONNECTED );
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                io.setTramesListener( BluetoothBox.this );
-                io.command(CmdBox.newInstance(CMD_t.START_MEASURING));
-            }
-        }).start();
+        updateState(CONNEXION_STATE_t.CONNECTED);
+        new Thread(new C01205()).start();
         readRSSI();
     }
 
-    @Override
     public void onFail(int errorCode, String msg) {
-        updateState( CONNEXION_STATE_t.DISCONNECTED );
+        updateState(CONNEXION_STATE_t.DISCONNECTED);
     }
 
-    // READ
-
-    @Override
     public void onBatteryInfoReceived(BatteryInfo info) {
-        if( DEBUG && info != null ) Log.d(TAG,info.toString());
-        last_battery_info = info;
+        this.last_battery_info = info;
     }
 
-    @Override
     public void onShockInfoReceived(SensorShockAccelerometerInfo info) {
-        if( DEBUG && info != null ) Log.d(TAG,info.toString());
-        last_shock_info = info;
+        this.last_shock_info = info;
     }
 
-    @Override
     public void onSmoothInfoReceived(SensorSmoothAccelerometerInfo info) {
-        if( DEBUG && info != null ) Log.d(TAG,info.toString());
-        last_smooth_info = info;
+        this.last_smooth_info = info;
     }
 
-    public void readRSSI(){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                io.readRssi(new ActionCallback() {
-                    @Override
-                    public void onSuccess(Object data) {
-                        BluetoothBox.this.last_rssi = (Integer)data;
-                    }
-
-                    @Override
-                    public void onFail(int errorCode, String msg) {}
-                });
-            }
-        }).start();
+    public void readRSSI() {
+        new Thread(new C01226()).start();
     }
 
-    // DISCONNECTED
-
-    @Override
     public void onNotify(byte[] data) {
-        updateState( CONNEXION_STATE_t.DISCONNECTED );
+        updateState(CONNEXION_STATE_t.DISCONNECTED);
     }
 
-    // STATUS CHANGED
-
-    private void updateState( CONNEXION_STATE_t state ) {
+    private void updateState(CONNEXION_STATE_t state) {
         this.state = state;
-        Log.d(TAG,"State changed: " + state );
+        Log.d(TAG, "State changed: " + state);
     }
-
-
 }

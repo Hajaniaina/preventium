@@ -5,35 +5,31 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.util.Log;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.UUID;
 
 public class BluetoothIO extends BluetoothGattCallback {
-
     private static final String TAG = "BluetoothIO";
-    public BluetoothGatt gatt;
     ActionCallback currentCallback;
-    HashMap<UUID, NotifyListener> notifyListeners = new HashMap<UUID, NotifyListener>();
     NotifyListener disconnectedListener = null;
+    public BluetoothGatt gatt;
+    HashMap<UUID, NotifyListener> notifyListeners = new HashMap();
 
-    public void connect(final Context context, BluetoothDevice device, final ActionCallback callback) {
-        BluetoothIO.this.currentCallback = callback;
-        device.connectGatt(context, false, BluetoothIO.this);
+    public void connect(Context context, BluetoothDevice device, ActionCallback callback) {
+        this.currentCallback = callback;
+        device.connectGatt(context, false, this);
     }
 
     public void disconnect() {
-        if (null == gatt) {
+        if (this.gatt == null) {
             Log.e(TAG, "Connect to device first");
-            return;
+        } else {
+            this.gatt.disconnect();
         }
-        this.gatt.disconnect();
     }
 
     public void setDisconnectedListener(NotifyListener disconnectedListener) {
@@ -41,75 +37,69 @@ public class BluetoothIO extends BluetoothGattCallback {
     }
 
     public BluetoothDevice getDevice() {
-        if (null == gatt) {
-            Log.e(TAG, "Connect to device first");
-            return null;
+        if (this.gatt != null) {
+            return this.gatt.getDevice();
         }
-        return gatt.getDevice();
+        Log.e(TAG, "Connect to device first");
+        return null;
     }
 
     public void writeAndRead(final UUID serviceUUID, final UUID uuid, byte[] valueToWrite, final ActionCallback callback) {
-        ActionCallback readCallback = new ActionCallback() {
-
-            @Override
+        writeCharacteristic(serviceUUID, uuid, valueToWrite, new ActionCallback() {
             public void onSuccess(Object characteristic) {
                 BluetoothIO.this.readCharacteristic(serviceUUID, uuid, callback);
             }
 
-            @Override
             public void onFail(int errorCode, String msg) {
                 callback.onFail(errorCode, msg);
             }
-        };
-        this.writeCharacteristic(serviceUUID, uuid, valueToWrite, readCallback);
+        });
     }
 
     public void writeCharacteristic(UUID serviceUUID, UUID characteristicUUID, byte[] value, ActionCallback callback) {
         try {
-            if (null == gatt) {
+            if (this.gatt == null) {
                 Log.e(TAG, "Connect to device first");
                 throw new Exception("Connect to device first");
             }
             this.currentCallback = callback;
-            BluetoothGattCharacteristic chara = gatt.getService(serviceUUID).getCharacteristic(characteristicUUID);
-            if (null == chara) {
-                this.onFail(-1, "BluetoothGattCharacteristic " + characteristicUUID + " is not exsit");
+            BluetoothGattCharacteristic chara = this.gatt.getService(serviceUUID).getCharacteristic(characteristicUUID);
+            if (chara == null) {
+                onFail(-1, "BluetoothGattCharacteristic " + characteristicUUID + " is not exsit");
                 return;
             }
             chara.setValue(value);
             if (!this.gatt.writeCharacteristic(chara)) {
-                this.onFail(-1, "gatt.writeCharacteristic() return false");
+                onFail(-1, "gatt.writeCharacteristic() return false");
             }
         } catch (Throwable tr) {
             Log.e(TAG, "writeCharacteristic", tr);
-            this.onFail(-1, tr.getMessage());
+            onFail(-1, tr.getMessage());
         }
     }
 
     public void readCharacteristic(UUID serviceUUID, UUID uuid, ActionCallback callback) {
         try {
-            if (null == gatt) {
+            if (this.gatt == null) {
                 Log.e(TAG, "Connect to device first");
                 throw new Exception("Connect to device first");
             }
             this.currentCallback = callback;
-            BluetoothGattCharacteristic chara = gatt.getService(serviceUUID).getCharacteristic(uuid);
-            if (null == chara) {
-                this.onFail(-1, "BluetoothGattCharacteristic " + uuid + " is not exsit");
-                return;
-            }
-            if (!this.gatt.readCharacteristic(chara)) {
-                this.onFail(-1, "gatt.readCharacteristic() return false");
+            BluetoothGattCharacteristic chara = this.gatt.getService(serviceUUID).getCharacteristic(uuid);
+            if (chara == null) {
+                onFail(-1, "BluetoothGattCharacteristic " + uuid + " is not exsit");
+            } else if (!this.gatt.readCharacteristic(chara)) {
+                onFail(-1, "gatt.readCharacteristic() return false");
             }
         } catch (Throwable tr) {
             Log.e(TAG, "readCharacteristic", tr);
-            this.onFail(-1, tr.getMessage());
+            onFail(-1, tr.getMessage());
         }
     }
 
     public void readRssi(ActionCallback callback) {
         try {
-            if (null == gatt) {
+            if (this.gatt == null) {
                 Log.e(TAG, "Connect to device first");
                 throw new Exception("Connect to device first");
             }
@@ -117,23 +107,20 @@ public class BluetoothIO extends BluetoothGattCallback {
             this.gatt.readRemoteRssi();
         } catch (Throwable tr) {
             Log.e(TAG, "readRssi", tr);
-            this.onFail(-1, tr.getMessage());
+            onFail(-1, tr.getMessage());
         }
-
     }
 
     public void setNotifyListener(UUID serviceUUID, UUID characteristicId, NotifyListener listener) {
-        if (null == gatt) {
+        if (this.gatt == null) {
             Log.e(TAG, "Connect to device first");
             return;
         }
-
-        BluetoothGattCharacteristic chara = gatt.getService(serviceUUID).getCharacteristic(characteristicId);
+        BluetoothGattCharacteristic chara = this.gatt.getService(serviceUUID).getCharacteristic(characteristicId);
         if (chara == null) {
             Log.e(TAG, "characteristicId " + characteristicId.toString() + " not found in service " + serviceUUID.toString());
             return;
         }
-
         this.gatt.setCharacteristicNotification(chara, true);
         BluetoothGattDescriptor descriptor = chara.getDescriptor(Profile.UUID_DESCRIPTOR_UPDATE_NOTIFICATION);
         descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
@@ -142,96 +129,92 @@ public class BluetoothIO extends BluetoothGattCallback {
     }
 
     public boolean serviceExist(UUID serviceUUID) {
-        boolean ret = false;
         try {
-            if (null == gatt) {
+            if (this.gatt == null) {
                 Log.e(TAG, "Connect to device first");
                 throw new Exception("Connect to device first");
+            } else if (this.gatt.getService(serviceUUID) != null) {
+                return true;
+            } else {
+                return false;
             }
-            BluetoothGattService serv = gatt.getService(serviceUUID);
-            if (serv != null) ret = true;
         } catch (Throwable tr) {
             Log.e(TAG, "serviceExist", tr);
-            this.onFail(-1, tr.getMessage());
+            onFail(-1, tr.getMessage());
+            return false;
         }
-        return ret;
     }
 
     public boolean characteristicExist(UUID serviceUUID, UUID characteristicId) {
-        boolean ret = false;
         try {
-            if (null == gatt) {
+            if (this.gatt == null) {
                 Log.e(TAG, "Connect to device first");
                 throw new Exception("Connect to device first");
+            } else if (this.gatt.getService(serviceUUID).getCharacteristic(characteristicId) != null) {
+                return true;
+            } else {
+                return false;
             }
-            BluetoothGattCharacteristic chara = gatt.getService(serviceUUID).getCharacteristic(characteristicId);
-            if (chara != null) ret = true;
         } catch (Throwable tr) {
             Log.e(TAG, "characteristicExist", tr);
-            this.onFail(-1, tr.getMessage());
+            onFail(-1, tr.getMessage());
+            return false;
         }
-        return ret;
     }
 
-    @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
         super.onConnectionStateChange(gatt, status, newState);
-
-        if (newState == BluetoothProfile.STATE_CONNECTED) {
+        if (newState == 2) {
             gatt.discoverServices();
-        } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+        } else if (newState == 0) {
             gatt.close();
-            if (this.disconnectedListener != null)
+            if (this.disconnectedListener != null) {
                 this.disconnectedListener.onNotify(null);
+            }
         }
     }
 
-    @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
-        if (BluetoothGatt.GATT_SUCCESS == status) {
-            this.onSuccess(characteristic);
+        if (status == 0) {
+            onSuccess(characteristic);
         } else {
-            this.onFail(status, "onCharacteristicRead fail");
+            onFail(status, "onCharacteristicRead fail");
         }
     }
 
-    @Override
     public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
-        if (BluetoothGatt.GATT_SUCCESS == status) {
-            this.onSuccess(characteristic);
+        if (status == 0) {
+            onSuccess(characteristic);
         } else {
-            this.onFail(status, "onCharacteristicWrite fail");
+            onFail(status, "onCharacteristicWrite fail");
         }
     }
 
-    @Override
     public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
         super.onReadRemoteRssi(gatt, rssi, status);
-        if (BluetoothGatt.GATT_SUCCESS == status) {
-            this.onSuccess(rssi);
+        if (status == 0) {
+            onSuccess(Integer.valueOf(rssi));
         } else {
-            this.onFail(status, "onCharacteristicRead fail");
+            onFail(status, "onCharacteristicRead fail");
         }
     }
 
-    @Override
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         super.onServicesDiscovered(gatt, status);
-        if (status == BluetoothGatt.GATT_SUCCESS) {
+        if (status == 0) {
             this.gatt = gatt;
-            this.onSuccess(null);
-        } else {
-            this.onFail(status, "onServicesDiscovered fail");
+            onSuccess(null);
+            return;
         }
+        onFail(status, "onServicesDiscovered fail");
     }
 
-    @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
         if (this.notifyListeners.containsKey(characteristic.getUuid())) {
-            this.notifyListeners.get(characteristic.getUuid()).onNotify(characteristic.getValue());
+            ((NotifyListener) this.notifyListeners.get(characteristic.getUuid())).onNotify(characteristic.getValue());
         }
     }
 
@@ -251,44 +234,43 @@ public class BluetoothIO extends BluetoothGattCallback {
         }
     }
 
-    // Change name
-
     public static boolean setAliasName(BluetoothDevice device, String alias) {
-
-        boolean ret = false;
         try {
-            Method method = device.getClass().getMethod("setAlias", String.class);
-            if (method != null) {
-                method.invoke(device, alias);
-                ret = true;
+            Method method = device.getClass().getMethod("setAlias", new Class[]{String.class});
+            if (method == null) {
+                return false;
             }
+            method.invoke(device, new Object[]{alias});
+            return true;
         } catch (IllegalAccessException e) {
             e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+            return false;
+        } catch (InvocationTargetException e2) {
+            e2.printStackTrace();
+            return false;
+        } catch (NoSuchMethodException e3) {
+            e3.printStackTrace();
+            return false;
         }
-
-
-        return ret;
     }
 
     public static String getAliasName(BluetoothDevice device) {
         String deviceAlias = device.getName();
         try {
-            Method method = device.getClass().getMethod("getAliasName");
+            Method method = device.getClass().getMethod("getAliasName", new Class[0]);
             if (method != null) {
-                deviceAlias = (String) method.invoke(device);
+                return (String) method.invoke(device, new Object[0]);
             }
+            return deviceAlias;
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            return deviceAlias;
+        } catch (InvocationTargetException e2) {
+            e2.printStackTrace();
+            return deviceAlias;
+        } catch (IllegalAccessException e3) {
+            e3.printStackTrace();
+            return deviceAlias;
         }
-        return deviceAlias;
     }
 }
-

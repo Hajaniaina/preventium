@@ -1,12 +1,11 @@
 package com.preventium.boxpreventium.utils.superclass.ftp;
 
-/**
- * Created by Franck on 21/09/2016.
- */
-
 public interface FileTransfertListener {
-    void onStart();
-    void onProgress(int percent);
-    void onByteTransferred(long totalBytesTransferred, long totalBytes);
+    void onByteTransferred(long j, long j2);
+
     void onFinish();
+
+    void onProgress(int i);
+
+    void onStart();
 }

@@ -7,134 +7,131 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.TextView;
-
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.device.BluetoothIO;
-
 import java.util.ArrayList;
 
-/**
- * Created by Franck on 08/08/2016.
- */
-
 public class BluetoothListAdapter extends BaseAdapter {
-
-
-    private ArrayList<BluetoothDevice> mBluetoothDevices;
-    private ArrayList<Integer> mBluetoothRssi;
-    private ArrayList<Boolean> mBluetoothChecked;
-    private LayoutInflater mInflater;
+    private ArrayList<Boolean> mBluetoothChecked = new ArrayList();
+    private ArrayList<BluetoothDevice> mBluetoothDevices = new ArrayList();
+    private ArrayList<Integer> mBluetoothRssi = new ArrayList();
     private boolean mCkeckable;
+    private LayoutInflater mInflater;
 
+    static class ViewHolder {
+        TextView deviceAddress;
+        CheckBox deviceChecked;
+        TextView deviceName;
+        TextView deviceRssi;
 
-    public BluetoothListAdapter(LayoutInflater layoutinflater) {
-        super();
-        mBluetoothDevices = new ArrayList<BluetoothDevice>();
-        mBluetoothRssi = new ArrayList<Integer>();
-        mBluetoothChecked = new ArrayList<Boolean>();
-        mInflater = layoutinflater;
-        mCkeckable = false;
+        ViewHolder() {
+        }
     }
 
-    public void setCheckable(boolean checkable){
-        mCkeckable = checkable;
+    public BluetoothListAdapter(LayoutInflater layoutinflater) {
+        this.mInflater = layoutinflater;
+        this.mCkeckable = false;
+    }
+
+    public void setCheckable(boolean checkable) {
+        this.mCkeckable = checkable;
         notifyDataSetChanged();
     }
 
-    public void addDevice(BluetoothDevice device, int rssi) { addDevice( device, rssi, false ); }
+    public void addDevice(BluetoothDevice device, int rssi) {
+        addDevice(device, rssi, false);
+    }
 
-    public void addDevice(BluetoothDevice device, int rssi, boolean checked ) {
-
-        if( mBluetoothDevices.contains(device) )
-        {
-            int position = mBluetoothDevices.indexOf( device );
-            mBluetoothRssi.set( position, rssi );
-        }
-        else
-        {
-            mBluetoothDevices.add( device );
-            mBluetoothRssi.add( rssi );
-            mBluetoothChecked.add(
-                    mCkeckable && checked );
+    public void addDevice(BluetoothDevice device, int rssi, boolean checked) {
+        if (this.mBluetoothDevices.contains(device)) {
+            this.mBluetoothRssi.set(this.mBluetoothDevices.indexOf(device), Integer.valueOf(rssi));
+        } else {
+            this.mBluetoothDevices.add(device);
+            this.mBluetoothRssi.add(Integer.valueOf(rssi));
+            ArrayList arrayList = this.mBluetoothChecked;
+            boolean z = this.mCkeckable && checked;
+            arrayList.add(Boolean.valueOf(z));
         }
         notifyDataSetChanged();
     }
 
     public BluetoothDevice getDevice(int position) {
-        return mBluetoothDevices.get(position);
+        return (BluetoothDevice) this.mBluetoothDevices.get(position);
     }
 
-    public int getRssi(int position) { return mBluetoothRssi.get(position); }
+    public int getRssi(int position) {
+        return ((Integer) this.mBluetoothRssi.get(position)).intValue();
+    }
 
-    public boolean getChecked(int position) { return  mBluetoothChecked.get(position); }
+    public boolean getChecked(int position) {
+        return ((Boolean) this.mBluetoothChecked.get(position)).booleanValue();
+    }
 
     public ArrayList<BluetoothDevice> getCheckedDevices() {
-        ArrayList<BluetoothDevice> ret = new ArrayList<BluetoothDevice>();
-        if( mCkeckable ) {
-            for (int position = 0; position < mBluetoothChecked.size(); position++) {
-                if( mBluetoothChecked.get(position) ) ret.add( mBluetoothDevices.get(position) );
+        ArrayList<BluetoothDevice> ret = new ArrayList();
+        if (this.mCkeckable) {
+            for (int position = 0; position < this.mBluetoothChecked.size(); position++) {
+                if (((Boolean) this.mBluetoothChecked.get(position)).booleanValue()) {
+                    ret.add(this.mBluetoothDevices.get(position));
+                }
             }
         }
         return ret;
     }
 
     public void clear() {
-        mBluetoothDevices.clear();
-        mBluetoothRssi.clear();
-        mBluetoothChecked.clear();
+        this.mBluetoothDevices.clear();
+        this.mBluetoothRssi.clear();
+        this.mBluetoothChecked.clear();
         notifyDataSetChanged();
     }
 
-    @Override
-    public int getCount() { return mBluetoothDevices.size(); }
+    public int getCount() {
+        return this.mBluetoothDevices.size();
+    }
 
-    @Override
-    public Object getItem(int position) { return mBluetoothDevices.get(position); }
+    public Object getItem(int position) {
+        return this.mBluetoothDevices.get(position);
+    }
 
-    @Override
-    public long getItemId(int position) { return position; }
+    public long getItemId(int position) {
+        return (long) position;
+    }
 
-    @Override
     public View getView(final int position, View view, ViewGroup viewGroup) {
         ViewHolder viewHolder;
-        // General ListView optimization code.
         if (view == null) {
-            view = mInflater.inflate(R.layout.scan_activity_item_model, null);
+            view = this.mInflater.inflate(R.layout.scan_activity_item_model, null);
             viewHolder = new ViewHolder();
             viewHolder.deviceName = (TextView) view.findViewById(R.id.name);
             viewHolder.deviceAddress = (TextView) view.findViewById(R.id.address);
             viewHolder.deviceRssi = (TextView) view.findViewById(R.id.rssi);
             viewHolder.deviceChecked = (CheckBox) view.findViewById(R.id.checkbox);
-            viewHolder.deviceChecked.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
+            viewHolder.deviceChecked.setOnCheckedChangeListener(new OnCheckedChangeListener() {
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    mBluetoothChecked.set(position,isChecked);
+                    BluetoothListAdapter.this.mBluetoothChecked.set(position, Boolean.valueOf(isChecked));
                 }
             });
             view.setTag(viewHolder);
         } else {
             viewHolder = (ViewHolder) view.getTag();
         }
-        BluetoothDevice device = mBluetoothDevices.get(position);
-        int rssi = mBluetoothRssi.get(position);
-
+        BluetoothDevice device = (BluetoothDevice) this.mBluetoothDevices.get(position);
+        int rssi = ((Integer) this.mBluetoothRssi.get(position)).intValue();
         String deviceName = BluetoothIO.getAliasName(device);
-        if( deviceName == null || deviceName.length() == 0 || deviceName.isEmpty() ) deviceName = device.getName();
-        if( deviceName == null || deviceName.length() == 0 || deviceName.isEmpty() ) deviceName = "Unknow device";
-
+        if (deviceName == null || deviceName.length() == 0 || deviceName.isEmpty()) {
+            deviceName = device.getName();
+        }
+        if (deviceName == null || deviceName.length() == 0 || deviceName.isEmpty()) {
+            deviceName = "Unknow device";
+        }
         viewHolder.deviceName.setText(deviceName);
         viewHolder.deviceAddress.setText(device.getAddress());
-        viewHolder.deviceRssi.setText( Integer.toString( rssi ) );
-        viewHolder.deviceChecked.setVisibility( mCkeckable ? View.VISIBLE : View.GONE );
-        viewHolder.deviceChecked.setChecked( mBluetoothChecked.get(position) );
+        viewHolder.deviceRssi.setText(Integer.toString(rssi));
+        viewHolder.deviceChecked.setVisibility(this.mCkeckable ? View.VISIBLE : View.GONE);
+        viewHolder.deviceChecked.setChecked(((Boolean) this.mBluetoothChecked.get(position)).booleanValue());
         return view;
-    }
-
-    static class ViewHolder {
-        TextView deviceName;
-        TextView deviceAddress;
-        TextView deviceRssi;
-        CheckBox deviceChecked;
     }
 }

@@ -2,6 +2,12 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <header
+        android:icon="@drawable/ic_help_pref"
+        android:title="@string/help_string"
+        android:fragment="com.preventium.boxpreventium.gui.SettingsActivity$HelpPreferenceFragment" />
+
+
+    <header
         android:fragment="com.preventium.boxpreventium.gui.SettingsActivity$RoutePreferenceFragment"
         android:icon="@drawable/ic_road_pref"
         android:title="@string/route_string">
@@ -18,6 +24,13 @@
         android:icon="@drawable/ic_info_red"
         android:title="SOS">
     </header>
+
+    <!--
+    <header
+        android:icon="@drawable/ic_map_pref"
+        android:title="@string/module_carte_string"
+        android:fragment="com.preventium.boxpreventium.gui.SettingsActivity$MapPreferenceFragment" />
+-->
 
     <header
         android:fragment="com.preventium.boxpreventium.gui.SettingsActivity$ShocksPreferenceFragment"
@@ -48,6 +61,13 @@
         android:icon="@drawable/ic_lock_pref"
         android:title="@string/pin_code_string">
     </header>
+
+
+    <header
+        android:icon="@drawable/ic_force_pref"
+        android:title="@string/display_force_string"
+        android:fragment="com.preventium.boxpreventium.gui.SettingsActivity$ForcePreferenceFragment" />
+
 
 
     <!-- for staut list-->

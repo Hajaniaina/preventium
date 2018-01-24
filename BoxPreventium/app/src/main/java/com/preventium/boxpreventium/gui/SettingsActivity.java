@@ -1,23 +1,29 @@
 package com.preventium.boxpreventium.gui;
 
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
-import android.support.v7.app.ActionBar;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.preference.PreferenceScreen;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.pavelsikun.seekbarpreference.SeekBarPreference;
 import com.preventium.boxpreventium.R;
+import com.preventium.boxpreventium.utils.ComonUtils;
 
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +32,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
     private static final String APPPREFERENCES = "AppPrefs" ;
     private static final String TAG = "SettingsActivity";
+    private static ProgressDialog progress;
+    private static int forceEnabled;
+    private static int mapEnabled;
+
 
     private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = new Preference.OnPreferenceChangeListener() {
 
@@ -464,7 +474,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
     /**********************************for status list ***********************************************************/
 
-
     public static class ModulePreferenceFragment extends PreferenceFragment {
 
         @Override
@@ -506,5 +515,220 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             return super.onOptionsItemSelected(item);
         }
     }
+
+    /**********************************for help screen ***********************************************************/
+    public static class HelpPreferenceFragment extends PreferenceFragment {
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.pref_help);
+            setHasOptionsMenu(true);
+        }
+
+        public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
+            Intent intent;
+            if (preference.getKey().equalsIgnoreCase("setting_key")) {
+                intent = new Intent(getActivity(), SettingHelp.class);
+                intent.putExtra("help", 1);
+                startActivity(intent);
+            } else if (preference.getKey().equalsIgnoreCase("buttons_key")) {
+                intent = new Intent(getActivity(), SettingHelp.class);
+                intent.putExtra("help", 2);
+                startActivity(intent);
+            } else {
+                intent = new Intent(getActivity(), SettingHelp.class);
+                intent.putExtra("help", 3);
+                startActivity(intent);
+            }
+            return true;
+        }
+    }
+
+
+    /**********************************for Force wiew***********************************************************/
+    public static class ForcePreferenceFragment extends PreferenceFragment {
+
+        class C00761 implements Preference.OnPreferenceClickListener {
+
+            class C00741 implements DialogInterface.OnClickListener {
+
+                class C00731 implements Runnable {
+                    C00731() {
+                    }
+
+                    public void run() {
+                        SettingsActivity.progress.cancel();
+                    }
+                }
+
+                C00741() {
+                }
+
+                public void onClick(DialogInterface dialog, int which) {
+                    if (SettingsActivity.forceEnabled == 1) {
+                        ComonUtils.SavePreferences("force", "force", 0, ForcePreferenceFragment.this.getActivity());
+                    } else {
+                        ComonUtils.SavePreferences("force", "force", 1, ForcePreferenceFragment.this.getActivity());
+                    }
+                    SettingsActivity.progress = new ProgressDialog(ForcePreferenceFragment.this.getActivity(), R.style.InfoDialogStyle);
+                    SettingsActivity.progress.setMessage(ForcePreferenceFragment.this.getString(R.string.reboot_alert_string));
+                    SettingsActivity.progress.setCancelable(false);
+                    SettingsActivity.progress.show();
+                    new Handler().postDelayed(new C00731(), 4000);
+                }
+            }
+
+            class C00752 implements DialogInterface.OnClickListener {
+                C00752() {
+                }
+
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            }
+
+            C00761() {
+            }
+
+            public boolean onPreferenceClick(Preference arg0) {
+                AlertDialog.Builder alertDialog = new AlertDialog.Builder(ForcePreferenceFragment.this.getActivity());
+                alertDialog.setCancelable(false);
+                String actionStr = "";
+                if (SettingsActivity.forceEnabled == 1) {
+                    actionStr = ForcePreferenceFragment.this.getString(R.string.disable_string);
+                    alertDialog.setMessage(ForcePreferenceFragment.this.getString(R.string.disable_force_message_string) + "?");
+                } else {
+                    actionStr = ForcePreferenceFragment.this.getString(R.string.enable_string);
+                    alertDialog.setMessage(ForcePreferenceFragment.this.getString(R.string.enable_force_message_string) + "?");
+                }
+                alertDialog.setPositiveButton(actionStr, new C00741());
+                alertDialog.setNegativeButton(R.string.cancel_string, new C00752());
+                alertDialog.show();
+                return false;
+            }
+        }
+
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            setHasOptionsMenu(true);
+            addPreferencesFromResource(R.xml.pref_force);
+            SettingsActivity.forceEnabled = ComonUtils.LoadPreferences("force", "force", getActivity());
+            findPreference(getString(R.string.force_key)).setOnPreferenceClickListener(new C00761());
+        }
+    }
+
+
+
+    /**********************************for map wiew***********************************************************/
+  /*  public static class MapPreferenceFragment extends PreferenceFragment {
+
+        MainActivity mainActivity;
+        class C00851 implements Preference.OnPreferenceClickListener {
+
+            class C00801 implements DialogInterface.OnClickListener {
+                C00801() {
+                }
+
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            }
+
+            class C00812 implements DialogInterface.OnClickListener {
+                C00812() {
+                }
+
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            }
+
+            class C00833 implements DialogInterface.OnClickListener {
+
+                class C00821 implements Runnable {
+                    C00821() {
+                    }
+
+                    public void run() {
+                        SettingsActivity.progress.cancel();
+                    }
+                }
+
+                C00833() {
+                }
+
+                public void onClick(DialogInterface dialog, int which) {
+                    if (SettingsActivity.mapEnabled == 1) {
+                        if (ComonUtils.LoadPreferences("map_local", "mapLocal", MapPreferenceFragment.this.getActivity()) == 0) {
+                            ComonUtils.SavePreferences("map_local", "mapLocal", 1, MapPreferenceFragment.this.getActivity());
+                        } else {
+                            ComonUtils.SavePreferences("map_local", "mapLocal", 0, MapPreferenceFragment.this.getActivity());
+                        }
+                    }
+                    SettingsActivity.progress = new ProgressDialog(MapPreferenceFragment.this.getActivity(), R.style.InfoDialogStyle);
+                    SettingsActivity.progress.setMessage(MapPreferenceFragment.this.getString(R.string.reboot_alert_string));
+                    SettingsActivity.progress.setCancelable(false);
+                    SettingsActivity.progress.show();
+                    new Handler().postDelayed(new C00821(), 4000);
+                }
+            }
+
+            class C00844 implements DialogInterface.OnClickListener {
+                C00844() {
+                }
+
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            }
+
+            C00851() {
+            }
+
+            public boolean onPreferenceClick(Preference arg0) {
+                AlertDialog.Builder builder;
+                if (SettingsActivity.mapEnabled == 0) {
+                    builder = new AlertDialog.Builder(MapPreferenceFragment.this.getActivity(), R.style.InfoDialogStyle);
+                    builder.setMessage(R.string.subscriber_string);
+                    builder.setCancelable(false);
+                    builder.setPositiveButton("Ok", new C00801());
+                    builder.show();
+                } else if (new DeviceScreen().getDeviceScreen(MapPreferenceFragment.this.getActivity()) <= 4.0d) {
+                    builder = new AlertDialog.Builder(MapPreferenceFragment.this.getActivity(), R.style.InfoDialogStyle);
+                    builder.setCancelable(false);
+                    builder.setMessage(R.string.screen_alert_string);
+                    builder.setPositiveButton("Ok", new C00812());
+                    builder.show();
+                } else {
+                    AlertDialog.Builder alertDialog = new AlertDialog.Builder(MapPreferenceFragment.this.getActivity());
+                    alertDialog.setCancelable(false);
+                    String actionStr = "";
+                    if (SettingsActivity.mapEnabled == 1) {
+                        if (ComonUtils.LoadPreferences("map_local", "mapLocal", MapPreferenceFragment.this.getActivity()) == 0) {
+                            actionStr = MapPreferenceFragment.this.getString(R.string.disable_string);
+                            alertDialog.setMessage(MapPreferenceFragment.this.getString(R.string.disable_map_displaying_string) + "?");
+                        } else {
+                            actionStr = MapPreferenceFragment.this.getString(R.string.enable_string);
+                            alertDialog.setMessage(MapPreferenceFragment.this.getString(R.string.enable_map_displaying_string) + "?");
+                        }
+                    }
+                    alertDialog.setPositiveButton(actionStr, new C00833());
+                    alertDialog.setNegativeButton(R.string.cancel_string, new C00844());
+                    alertDialog.show();
+                }
+                return false;
+            }
+        }
+
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.pref_map);
+            setHasOptionsMenu(true);
+            //JSONManager jSONManager = new JSONManager(getActivity());
+            SettingsActivity.mapEnabled = this.mainActivity.getMap();
+
+            findPreference(getString(R.string.map_key)).setOnPreferenceClickListener(new C00851());
+        }
+    }
+*/
 
 }

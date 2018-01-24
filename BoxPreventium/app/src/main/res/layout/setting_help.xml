@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout android:background="#ffffffff" android:fitsSystemWindows="true" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:back="http://schemas.android.com/apk/res-auto">
+    <ScrollView android:id="@id/scrollview" android:layout_width="fill_parent" android:layout_height="wrap_content"
+      xmlns:android="http://schemas.android.com/apk/res/android">
+        <LinearLayout android:layout_width="fill_parent" android:layout_height="fill_parent"
+          xmlns:android="http://schemas.android.com/apk/res/android">
+            <TextView android:id="@id/html_text" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="10.0dip" />
+            <RelativeLayout android:gravity="center" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="fill_parent"
+              xmlns:android="http://schemas.android.com/apk/res/android">
+                <TextView android:textSize="16.0dip" android:textColor="#ff26abad" android:id="@id/help_on_line" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_centerInParent="true" />
+            </RelativeLayout>
+        </LinearLayout>
+    </ScrollView>
+    <com.github.clans.fab.FloatingActionButton android:layout_gravity="end|bottom|center" android:id="@id/back" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="10.0dip" android:src="@drawable/mr_ic_close_dark" back:fab_colorNormal="@color/colorAppRed" back:fab_colorPressed="#ffff5252" back:fab_shadowColor="#ff444444" back:fab_size="@dimen/fb_button_size" />
+</android.support.design.widget.CoordinatorLayout>

@@ -1,6 +1,6 @@
 package com.preventium.boxpreventium.utils.superclass.bluetooth;
 
-import android.bluetooth.BluetoothAdapter;
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
@@ -8,68 +8,68 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.util.Log;
-
 import com.preventium.boxpreventium.utils.superclass.bluetooth.device.ActionCallback;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.device.BluetoothIO;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.device.NotifyListener;
-
 import java.util.UUID;
 
-/**
- * Created by Franck on 13/09/2016.
- */
-
 public class BluetoothDev {
-
     private static final String TAG = "BluetoothDev";
-    protected Context context;
-    protected BluetoothIO io;
-
     private ActionCallback connectedCallback = null;
+    protected Context context;
     private NotifyListener disconnectNotify = null;
+    protected BluetoothIO io;
 
     public BluetoothDev(Context context) {
         this.context = context;
         this.io = new BluetoothIO();
     }
 
-    public void connect(BluetoothDevice device, final ActionCallback callback) {
-        this.io.connect(context, device, callback);
+    public void connect(BluetoothDevice device, ActionCallback callback) {
+        this.io.connect(this.context, device, callback);
     }
 
-    public void connect(String address, final ActionCallback callback) {
-        final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        final BluetoothAdapter mBluetoothAdapter = bluetoothManager.getAdapter();
-        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-        connect(device, callback);
+    @SuppressLint("WrongConstant")
+    public void connect(String address, ActionCallback callback) {
+        connect(((BluetoothManager) this.context.getSystemService("bluetooth")).getAdapter().getRemoteDevice(address), callback);
     }
 
-    public void setDisconnectedListener(final NotifyListener disconnectedListener) {
+    public void setDisconnectedListener(NotifyListener disconnectedListener) {
         this.io.setDisconnectedListener(disconnectedListener);
     }
 
-    public void disconnect() { this.io.disconnect(); }
+    public void disconnect() {
+        this.io.disconnect();
+    }
 
-    public BluetoothDevice getDevice() { return this.io.getDevice(); }
+    public BluetoothDevice getDevice() {
+        return this.io.getDevice();
+    }
 
     public String readName() {
         String ret = "";
         BluetoothDevice device = getDevice();
-        if (null != device) ret = device.getName();
+        if (device != null) {
+            return device.getName();
+        }
         return ret;
     }
 
     public String readAlias() {
         String ret = "";
-        BluetoothDevice device = getDevice();
-        if (null != device) ret = this.io.getAliasName(getDevice());
-        return ret;
+        if (getDevice() == null) {
+            return ret;
+        }
+        BluetoothIO bluetoothIO = this.io;
+        return BluetoothIO.getAliasName(getDevice());
     }
 
     public String readAddress() {
         String ret = "";
         BluetoothDevice device = getDevice();
-        if (null != device) ret = device.getAddress();
+        if (device != null) {
+            return device.getAddress();
+        }
         return ret;
     }
 

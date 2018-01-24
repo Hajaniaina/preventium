@@ -2,6 +2,7 @@ package com.preventium.boxpreventium.manager;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.location.Location;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -20,6 +21,7 @@ import com.preventium.boxpreventium.enums.SPEED_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
 import com.preventium.boxpreventium.location.CustomMarkerData;
 import com.preventium.boxpreventium.module.HandlerBox;
+import com.preventium.boxpreventium.module.HandlerBox.NotifyListener;
 import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.DOBJ.DataDOBJ;
@@ -37,6 +39,8 @@ import com.preventium.boxpreventium.utils.Zipper;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPClientIO;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 
+import org.apache.commons.net.nntp.NNTPReply;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -44,132 +48,220 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Created by Franck on 23/09/2016.
- */
+public class AppManager extends ThreadDefault implements NotifyListener {
+    private static final boolean DEBUG = true;
 
-public class AppManager extends ThreadDefault
-        implements HandlerBox.NotifyListener{
-
-    private final static String TAG = "AppManager";
-    private final static boolean DEBUG = true;
+    private static final String HOSTNAME = "www.preventium.fr";
     private static final float MS_TO_KMH = 3.6f;
+    private static final String PASSWORD = "Box*16/64/prev";
+    private static final int PORTNUM = 21;
+    private static final int SECS_TO_SET_PARCOURS_PAUSE = 20;
+    private static final int SECS_TO_SET_PARCOURS_RESUME = 3;
     private static final int SECS_TO_SET_PARCOURS_START = 3;
-    private static final int SECS_TO_SET_PARCOURS_PAUSE = 20; // 4 minutes = 4 * 60 secs = 240 secs
-    private static final int SECS_TO_SET_PARCOURS_RESUME = SECS_TO_SET_PARCOURS_START;
-    private static final int SECS_TO_SET_PARCOURS_STOPPED = 25200; // 7 hours = 7 * 3600 secs = 25200 secs
+    private static final int SECS_TO_SET_PARCOURS_STOPPED = 25200;
+    private static final String TAG = "AppManager";
+    private static final String USERNAME = "box.preventium";
 
-    public interface AppManagerListener {
-        void onNumberOfBoxChanged( int nb );
-        void onDrivingTimeChanged(String txt );
-        void onForceChanged( FORCE_t type, LEVEL_t level );
-        void onDebugLog(String txt);
-        void onStatusChanged(STATUS_t status);
-        void onCustomMarkerDataListGet();
-        void onSharedPositionsChanged(List<CustomMarkerData> list);
-        void onUiTimeout(int timer_id, STATUS_t status);
+    private static final FTPConfig FTP_ACTIF = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/ACTIFS");
+    private static final FTPConfig FTP_CFG = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
+    private static final FTPConfig FTP_DOBJ = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
+    private static final FTPConfig FTP_EPC = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
+    private static final FTPConfig FTP_POS = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/POSS");
+    private final static FTPConfig FTP_NAME = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
 
-        void onNoteChanged( int note_par, LEVEL_t level_par, LEVEL_t level_5_days );
-        void onScoreChanged(SCORE_t type, LEVEL_t level);
-        void onShock(double mG, short raw);
-        void onRecommendedSpeedChanged(SPEED_t speed_t, int kmh, LEVEL_t level, boolean valid);
-        void onInternetConnectionChanged();
-        //void setRepeatingAsyncTask();
-
-
-        void onCalibrateOnConstantSpeed();
-        void onCalibrateOnAcceleration();
-        void onCalibrateRAZ();
-    }
-
-    /// ============================================================================================
-    /// AppManager
-    /// ============================================================================================
-
+    private static long duration = 0;
+    private static int nb_box = 0;
+    private static float speed_H = 0.0f;
+    private static float speed_V = 0.0f;
+    private long Tavg = System.currentTimeMillis();
+    private float Vavg = 0.0f;
+    private long[] f6X = new long[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    private double XmG = 0.0d;
+    private long[] f7Y = new long[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    private boolean _tracking = DEBUG;
+    private long alertPos_add_at = 0;
+    private long alertUI_add_at = 0;
+    private long alertX_add_at = 0;
+    private long alertX_add_id = -1;
+    private long alertY_add_at = 0;
+    private long alertY_add_id = -1;
+    private boolean button_stop = false;
+    //private String chronoRideTxt = "";
+    private Chrono chrono_ready_to_start = Chrono.newInstance();
+    private Context ctx = null;
+    private ArrayList<CustomMarkerData> customMarkerList = null;
+    private boolean customMarkerList_Received = false;
+    private Database database = null;
+    private long driver_id = 0;
     private ENGINE_t engine_t = ENGINE_t.UNKNOW;
     private long engine_t_changed_at = 0;
-    private Context ctx = null;
+    private FilesSender fileSender = null;
+    private boolean gps = false;
+    //private boolean internet_active = DEBUG;
+    private Location lastLocSend = null;
     private AppManagerListener listener = null;
+    private List<Location> locations = new ArrayList();
+    private final Lock lock = new ReentrantLock();
+    private final Lock lock_timers = new ReentrantLock();
+    private String log = "";
     private HandlerBox modules = null;
-    private Database database = null;
+    private Chrono mov_chrono = new Chrono();
+    private MOVING_t mov_t = MOVING_t.STP;
+    private MOVING_t mov_t_last = MOVING_t.UNKNOW;
+    private Chrono mov_t_last_chrono = new Chrono();
+    private long note_forces_update_at = 0;
+    private long note_parcour_update_at = 0;
+    private long parcour_id = 0;
+    private String parcoursTypeName = null;
+
+    private long recommended_speed_update_at = 0;
+
+    private Chrono seuil_chrono_x = new Chrono();
+    private Chrono seuil_chrono_y = new Chrono();
+    private ForceSeuil seuil_last_x = null;
+    private ForceSeuil seuil_last_y = null;
+    private ForceSeuil seuil_ui = null;
+    Pair<Double, Short> shock = Pair.create(Double.valueOf(0.0d), Short.valueOf((short) 0));
+    Pair<Double, Short> smooth = Pair.create(Double.valueOf(0.0d), Short.valueOf((short) 0));
+    private float speed_max = 0.0f;
+    private long try_send_eca_at = 0;
+    private List<Pair<Long, Integer>> ui_timers = new ArrayList();
+
+    private final static FTPConfig FTP_FORM = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM, "/FORM");
+
+    public interface AppManagerListener {
+        void onCalibrateOnAcceleration();
+
+        void onCalibrateOnConstantSpeed();
+
+        void onCalibrateRAZ();
+
+        void onCustomMarkerDataListGet();
+
+        void onDebugLog(String str);
+
+        void onDrivingTimeChanged(String str);
+
+        void onForceChanged(FORCE_t fORCE_t, LEVEL_t lEVEL_t, double d, float f, float f2);
+
+        void onForceDisplayed(double d);
+
+        void onInternetConnectionChanged();
+
+        void onLevelNotified(LEVEL_t lEVEL_t);
+
+        void onNoteChanged(int i, LEVEL_t lEVEL_t, LEVEL_t lEVEL_t2);
+
+        void onNumberOfBoxChanged(int i);
+
+        void onRecommendedSpeedChanged(SPEED_t sPEED_t, int i, LEVEL_t lEVEL_t, boolean z);
+
+        void onScoreChanged(SCORE_t sCORE_t, LEVEL_t lEVEL_t);
+
+        void onShock(double d, short s);
+
+        void onSpeedCorner();
+
+        void onSpeedCornerKept(int i, LEVEL_t lEVEL_t);
+
+        void onSpeedLine();
+
+        void onSpeedLineKept(int i, LEVEL_t lEVEL_t);
+
+        void onStatusChanged(STATUS_t sTATUS_t);
+
+        void onUiTimeout(int i, STATUS_t sTATUS_t);
+    }
+
+    class C01051 implements Runnable {
+        C01051() {
+        }
+
+        public void run() {
+            AppManager.this.run();
+        }
+    }
+
+    class C01062 implements FilenameFilter {
+        C01062() {
+        }
+
+        public boolean accept(File dir, String name) {
+            return name.toUpperCase().endsWith(".CEP");
+        }
+    }
+
+    class C01073 implements FilenameFilter {
+        C01073() {
+        }
+
+        public boolean accept(File dir, String name) {
+            return name.toUpperCase().endsWith(".SHARE");
+        }
+    }
+
+    class C01084 implements FilenameFilter {
+        C01084() {
+        }
+
+        public boolean accept(File dir, String name) {
+            return name.toUpperCase().endsWith(".PT");
+        }
+    }
 
     public AppManager(Context ctx, AppManagerListener listener) {
         super(null);
         this.ctx = ctx;
         this.listener = listener;
-        this.modules = new HandlerBox(ctx,this);
+        this.modules = new HandlerBox(ctx, this);
         this.database = new Database(ctx);
         this.fileSender = new FilesSender(ctx);
     }
 
-    private void switchON( boolean on ){
-        if( on ) {
-            if (!isRunning()) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        AppManager.this.run();
-                    }
-                }).start();
-            }
-        } else {
+    private void switchON(boolean on) {
+        if (!on) {
             setStop();
+        } else if (!isRunning()) {
+            new Thread(new C01051()).start();
         }
     }
 
-    public void raz_calibration(){
-        if( modules != null ) {
-             modules.on_raz_calibration();
+    public void raz_calibration() {
+        if (this.modules != null) {
+            this.modules.on_raz_calibration();
         }
     }
 
-    @Override
     public void myRun() throws InterruptedException {
         super.myRun();
         setLog("");
-
-        database.clear_obselete_data();
-
+        this.database.clear_obselete_data();
         IMEI_is_actif();
-        //listener.setRepeatingAsyncTask();
         download_cfg();
-        download_shared_pos();
         download_epc();
         download_dobj();
-        modules.setActive( true );
+
+        this.modules.setActive(DEBUG);
 
         STATUS_t status = first_init();
-        upload_eca(true);
 
-        while( isRunning() ) {
+        upload_eca(DEBUG);
+
+        while (isRunning()) {
             check_internet_is_active();
             update_tracking_status();
-
-            modules.setActive( true );
+            this.modules.setActive(DEBUG);
             sleep(500);
-            database.clear_obselete_data();
+            this.database.clear_obselete_data();
             upload_eca(false);
             update_driving_time();
             calc_movements();
-
-            // DEBUG ==============
-//            Log.d("AAAA","TEST CALCULATE +++ ");
-//            parcour_id = database.get_last_parcours_id();
-//            loading_epc( database.get_num_epc(parcour_id) );
-//            update_parcour_note(true);
-//            update_force_note(true);
-//            update_recommended_speed(true);
-//            Log.d("AAAA","--- TEST CALCULATE ");
-//            while( isRunning() ) {
-//                sleep(1000);
-//            }
-            // ====================
-
 
             switch ( status ) {
                 case GETTING_CFG:
@@ -188,62 +280,70 @@ public class AppManager extends ThreadDefault
                     status = on_paused(status);
                     break;
             }
-
-            listen_timers( status );
+            listen_timers(status);
         }
-        modules.setActive(false);
-
+        this.modules.setActive(false);
     }
 
     // HANDLER BOX
 
     @Override
     public void onScanState(boolean scanning) {
-        if( DEBUG ) Log.d(TAG,"Searching preventium box is enable: " + scanning );
+        Log.d(TAG, "Searching preventium box is enable: " + scanning);
     }
 
-    @Override
     public void onDeviceState(String device_mac, boolean connected) {
-        if( connected ) addLog( "Device " + device_mac + " connected.");
-        else  addLog( "Device " + device_mac + " disconnected.");
-
+        if (connected) {
+            addLog("Device " + device_mac + " connected.");
+        } else {
+            addLog("Device " + device_mac + " disconnected.");
+        }
         Location location = get_last_location();
-        database.addCEP( location, device_mac, connected );
+        int note = (int) calc_note(this.parcour_id);
+        int vitesse_ld = (int) (speed_H * 3.6f);
+        int vitesse_vr = (int) (speed_V * 3.6f);
+        int nbBox = nb_box;
+        long distance_covered = this.database.get_distance(this.parcour_id);
+        long parcour_duration = (long) (((double) duration) * 0.001d);
+        Database database = this.database;
+        this.database.addCEP(location, device_mac, note, vitesse_ld, vitesse_vr, distance_covered, parcour_duration, Database.get_eca_counter(this.ctx, this.parcour_id), nbBox, connected);
     }
 
-    @Override
     public void onNumberOfBox(int nb) {
-        if( DEBUG ) Log.d(TAG,"Number of preventium device connected changed: " + nb );
-        if( listener != null ) listener.onNumberOfBoxChanged( nb );
-        //if( nb <= 0 ) engine_t = ENGINE_t.OFF;
+        nb_box = nb;
+        Log.d(TAG, "Number of preventium device connected changed: " + nb);
+        if (this.listener != null) {
+            this.listener.onNumberOfBoxChanged(nb);
+        }
     }
 
-    @Override
     public void onForceChanged(Pair<Double, Short> smooth, Pair<Double, Short> shock) {
         this.smooth = smooth;
         this.shock = shock;
     }
 
-    @Override
-    synchronized public void onEngineStateChanged(ENGINE_t state) {
+    public synchronized void onEngineStateChanged(ENGINE_t state) {
         this.engine_t = state;
-        engine_t_changed_at = System.currentTimeMillis();
+        this.engine_t_changed_at = System.currentTimeMillis();
     }
 
-    @Override
     public void onCalibrateOnConstantSpeed() {
-        if( listener != null ) listener.onCalibrateOnConstantSpeed();
+        if (this.listener != null) {
+            this.listener.onCalibrateOnConstantSpeed();
+        }
     }
 
-    @Override
     public void onCalibrateOnAcceleration() {
-        if( listener != null ) listener.onCalibrateOnAcceleration();
+        if (this.listener != null) {
+            this.listener.onCalibrateOnAcceleration();
+        }
     }
 
-    @Override
     public void onCalibrateRAZ() {
-        onForceChanged( Pair.create(0.0,(short)0),Pair.create(0.0,(short)0));
-        if( listener != null ) listener.onCalibrateRAZ();
+        onForceChanged(Pair.create(Double.valueOf(0.0d), Short.valueOf((short) 0)), Pair.create(Double.valueOf(0.0d), Short.valueOf((short) 0)));
+        if (this.listener != null) {
+            this.listener.onCalibrateRAZ();
+        }
     }
 
     // PRIVATE
@@ -255,130 +355,133 @@ public class AppManager extends ThreadDefault
     private String chronoRideTxt = "";
 
     private STATUS_t first_init() throws InterruptedException {
-        button_stop = false;
-        internet_active = true;
-        mov_t_last = MOVING_t.UNKNOW;
-        mov_t = MOVING_t.UNKNOW;
+        this.button_stop = false;
+        this.internet_active = DEBUG;
+        this.mov_t_last = MOVING_t.UNKNOW;
+        this.mov_t = MOVING_t.UNKNOW;
         onEngineStateChanged(ENGINE_t.OFF);
-        chronoRideTxt = "0:00";
+        this.chronoRideTxt = "0:00";
+        if (this.listener != null) {
 
-        if( listener != null ){
-            // For update UI correctly
-            listener.onDebugLog("");
+            this.listener.onDebugLog("");
+
+            //####santo
             listener.onStatusChanged( STATUS_t.PAR_PAUSING );
             listener.onStatusChanged( STATUS_t.PAR_STOPPED );
-            listener.onDrivingTimeChanged(chronoRideTxt);
-            listener.onNoteChanged(20,LEVEL_t.LEVEL_1,LEVEL_t.LEVEL_1);
-            listener.onScoreChanged(SCORE_t.ACCELERATING,LEVEL_t.LEVEL_1);
-            listener.onScoreChanged(SCORE_t.BRAKING,LEVEL_t.LEVEL_1);
-            listener.onScoreChanged(SCORE_t.CORNERING,LEVEL_t.LEVEL_1);
-            listener.onScoreChanged(SCORE_t.AVERAGE,LEVEL_t.LEVEL_1);
-        }
-        alertX_add_at = 0;
-        alertY_add_at = 0;
-        alertPos_add_at = 0;
-        lastLocSend = null;
-        try_send_eca_at  = 0;
-        parcour_id = get_current_parcours_id(true);
 
+
+
+            this.listener.onDrivingTimeChanged(this.chronoRideTxt);
+            this.listener.onNoteChanged(20, LEVEL_t.LEVEL_1, LEVEL_t.LEVEL_1);
+            this.listener.onScoreChanged(SCORE_t.ACCELERATING, LEVEL_t.LEVEL_1);
+            this.listener.onScoreChanged(SCORE_t.BRAKING, LEVEL_t.LEVEL_1);
+            this.listener.onScoreChanged(SCORE_t.CORNERING, LEVEL_t.LEVEL_1);
+            this.listener.onScoreChanged(SCORE_t.AVERAGE, LEVEL_t.LEVEL_1);
+        }
+        this.alertX_add_at = 0;
+        this.alertY_add_at = 0;
+        this.alertPos_add_at = 0;
+        this.lastLocSend = null;
+        this.try_send_eca_at = 0;
+        this.parcour_id = get_current_parcours_id(DEBUG);
         STATUS_t ret = STATUS_t.PAR_STOPPED;
-        if( parcour_id > 0 ) {
-            loading_epc( database.get_num_epc(parcour_id) );
-            update_parcour_note(true);
-            update_force_note(true);
-            update_recommended_speed(true);
+        if (this.parcour_id > 0) {
+            loading_epc(this.database.get_num_epc(this.parcour_id));
+            update_parcour_note(DEBUG);
+            update_force_note(DEBUG);
+            update_recommended_speed(DEBUG);
             ret = STATUS_t.PAR_PAUSING;
-            addLog( "Phone launch: Resume parcours with status PAUSE.");
-            addLog( "Status change to PAUSE. (" + ComonUtils.currentDateTime() + ")" );
-        } else {
-            loading_epc();
-            addLog( "Phone launch: No parcours.");
-            addLog( "Status change to STOP. (" + ComonUtils.currentDateTime() + ")" );
+            addLog("Phone launch: Resume parcours with status PAUSE.");
+            addLog("Status change to PAUSE. (" + ComonUtils.currentDateTime() + ")");
+            return ret;
         }
+        loading_epc();
+        addLog("Phone launch: No parcours.");
+        addLog("Status change to STOP. (" + ComonUtils.currentDateTime() + ")");
 
+        //####vao santo
         if (listener != null) listener.onStatusChanged(ret);
 
         return ret;
     }
 
     private void update_driving_time() {
-        if( listener != null ) {
+        if (this.listener != null) {
             long id = get_current_parcours_id(false);
-            long ms = (id > 0) ? System.currentTimeMillis() - id : 0;
-            String txt = String.format(Locale.getDefault(), "%02d:%02d", 0, 0);
+            long ms = id > 0 ? System.currentTimeMillis() - id : 0;
+            duration = ms;
+            String txt = String.format(Locale.getDefault(), "%02d:%02d", new Object[]{Integer.valueOf(0), Integer.valueOf(0)});
             if (ms > 0) {
                 long h = ms / 3600000;
-                long m = (ms % 3600000) > 0 ? (ms % 3600000) / 60000 : 0;
-                txt = String.format(Locale.getDefault(), "%02d:%02d", h, m);
-                StatsLastDriving.set_times(ctx, (long) (ms * 0.001));
+                long m = ms % 3600000 > 0 ? (ms % 3600000) / 60000 : 0;
+                txt = String.format(Locale.getDefault(), "%02d:%02d", new Object[]{Long.valueOf(h), Long.valueOf(m)});
+                StatsLastDriving.set_times(this.ctx, (long) (((double) ms) * 0.001d));
             }
-            if( !chronoRideTxt.equals(txt) ) {
-                listener.onDrivingTimeChanged( txt );
-                chronoRideTxt = txt;
+            if (!this.chronoRideTxt.equals(txt)) {
+                this.listener.onDrivingTimeChanged(txt);
+                this.chronoRideTxt = txt;
             }
         }
     }
 
-    private void clear_force_ui(){
-        if( seuil_ui != null
-                && seuil_chrono_x.getSeconds() > 3 && seuil_chrono_y.getSeconds() > 3 ){
-            if( listener != null ) listener.onForceChanged( FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW );
-            seuil_ui = null;
+    private void clear_force_ui() {
+        if (this.seuil_ui != null && this.seuil_chrono_x.getSeconds() > 3.0d && this.seuil_chrono_y.getSeconds() > 3.0d) {
+            if (this.listener != null) {
+                this.listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0.0d, 0.0f, 0.0f);
+            }
+            this.seuil_ui = null;
         }
     }
-
     /// ============================================================================================
     /// Driver ID
-    /// ============================================================================================
+    /// ===========================================================================================
+    public long get_driver_id() {
+        return this.driver_id;
+    }
 
-    private long driver_id = 0;
 
-    public long get_driver_id(){ return driver_id; }
 
-    public void set_driver_id( long driver_id ){ this.driver_id = driver_id; }
+    public void set_driver_id(long driver_id) {
+        this.driver_id = driver_id;
+    }
+
 
     /// ============================================================================================
     /// UI Timers
     /// ============================================================================================
 
-    // Timers list -> Long: timestamp, Integer: timer id
-    private List<Pair<Long,Integer>> ui_timers = new ArrayList<>();
-    private final Lock lock_timers = new ReentrantLock();
-
-    /// Add timer to timer list
-    public void add_ui_timer(long secs, int timer_id){
-        long timestamp = System.currentTimeMillis() + (secs*1000);
-        lock_timers.lock();
-        ui_timers.add( Pair.create(timestamp,timer_id) );
-        lock_timers.unlock();
+    public void add_ui_timer(long secs, int timer_id) {
+        long timestamp = System.currentTimeMillis() + (1000 * secs);
+        this.lock_timers.lock();
+        this.ui_timers.add(Pair.create(Long.valueOf(timestamp), Integer.valueOf(timer_id)));
+        this.lock_timers.unlock();
     }
 
     /// Remove all timers
-    public void clear_ui_timer(){
-        lock_timers.lock();
-        ui_timers.clear();
-        lock_timers.unlock();
+    public void clear_ui_timer() {
+        this.lock_timers.lock();
+        this.ui_timers.clear();
+        this.lock_timers.unlock();
     }
 
     /// Listening timeout
-    synchronized private void listen_timers(STATUS_t status){
+    private synchronized void listen_timers(STATUS_t status) {
         long timestamp = System.currentTimeMillis();
-        lock_timers.lock();
-        if( !ui_timers.isEmpty() ) {
-            Pair<Long, Integer> timer;
-            long timeout_at;
-            int timer_id;
-            for (int i = ui_timers.size() - 1; i >= 0; i--) {
-                timer = ui_timers.get(i);
-                timeout_at = timer.first;
-                timer_id = timer.second;
-                if( timestamp >= timeout_at ){
-                    if( listener != null ) listener.onUiTimeout( timer_id, status );
-                    ui_timers.remove(i);
+        this.lock_timers.lock();
+        if (!this.ui_timers.isEmpty()) {
+            for (int i = this.ui_timers.size() - 1; i >= 0; i--) {
+                Pair<Long, Integer> timer = (Pair) this.ui_timers.get(i);
+                long timeout_at = ((Long) timer.first).longValue();
+                int timer_id = ((Integer) timer.second).intValue();
+                if (timestamp >= timeout_at) {
+                    if (this.listener != null) {
+                        this.listener.onUiTimeout(timer_id, status);
+                    }
+                    this.ui_timers.remove(i);
                 }
             }
         }
-        lock_timers.unlock();
+        this.lock_timers.unlock();
     }
 
     /// ============================================================================================
@@ -387,26 +490,15 @@ public class AppManager extends ThreadDefault
 
     private boolean internet_active = true;
 
-    private void check_internet_is_active(){
-        boolean active = Connectivity.isConnected(ctx);
-        if( active != internet_active ) {
-            internet_active = active;
-            if( listener != null ) listener.onInternetConnectionChanged();
+    private void check_internet_is_active() {
+        boolean active = Connectivity.isConnected(this.ctx);
+        if (active != this.internet_active) {
+            this.internet_active = active;
+            if (this.listener != null) {
+                this.listener.onInternetConnectionChanged();
+            }
         }
     }
-
-    private final static String HOSTNAME = "www.preventium.fr";
-    private final static String USERNAME = "box.preventium";
-    private final static String PASSWORD = "Box*16/64/prev";
-    private final static int PORTNUM = 21;
-    private final static FTPConfig FTP_CFG = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
-    private final static FTPConfig FTP_ACTIF = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM,"/ACTIFS");
-    private final static FTPConfig FTP_POS = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM,"/POSS");
-    private final static FTPConfig FTP_EPC = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
-    private final static FTPConfig FTP_DOBJ = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
-    private final static FTPConfig FTP_NAME = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
-
-    private final static FTPConfig FTP_FORM = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM, "/FORM");
 
     /// ============================================================================================
     /// .CFG
@@ -463,7 +555,7 @@ public class AppManager extends ThreadDefault
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                     }
-                                   // new File(desFileName).delete();  //delete source cfg santoni
+                                    // new File(desFileName).delete();  //delete source cfg santoni
                                 }
                             }
                         }
@@ -485,41 +577,39 @@ public class AppManager extends ThreadDefault
 
     private boolean IMEI_is_actif() {
         boolean exist_actif = false;
-
-        if( listener != null ) listener.onStatusChanged( STATUS_t.CHECK_ACTIF );
-
+        if (this.listener != null) {
+            this.listener.onStatusChanged(STATUS_t.CHECK_ACTIF);
+        }
         FTPClientIO ftp = new FTPClientIO();
-
         do {
-            // Trying to connect to FTP server...
-            if( !ftp.ftpConnect(FTP_ACTIF, 5000) ) {
-                check_internet_is_active();
-            } else {
+            if (ftp.ftpConnect(FTP_ACTIF, 5000)) {
                 exist_actif = false;
-                if (!ftp.changeWorkingDirectory(FTP_ACTIF.getWorkDirectory())) {
-                    Log.d(TAG, "ACTIFS: Error while trying to change working directory to \""+FTP_ACTIF.getWorkDirectory()+"\"");
-                } else {
-                    // Checking if .ACTIVE file is in FTP server ?
-                    String srcFileName = ComonUtils.getIMEInumber(ctx);
-                    exist_actif = ftp.checkFileExists(srcFileName);
-                    if( !exist_actif ) {
+                if (ftp.changeWorkingDirectory(FTP_ACTIF.getWorkDirectory())) {
+                    exist_actif = ftp.checkFileExists(ComonUtils.getIMEInumber(this.ctx));
+                    if (exist_actif) {
                         try {
                             sleep(3000);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        if( listener != null ) listener.onStatusChanged( STATUS_t.IMEI_INACTIF );
+                        if (this.listener != null) {
+                            this.listener.onStatusChanged(STATUS_t.IMEI_INACTIF);
+                        }
                     }
+                } else {
+                    Log.d(TAG, "ACTIFS: Error while trying to change working directory to \"" + FTP_ACTIF.getWorkDirectory() + "\"");
                 }
+            } else {
+                check_internet_is_active();
             }
-
-        } while (!exist_actif && isRunning() );
-
-
+            if (exist_actif) {
+                break;
+            }
+        } while (isRunning());
         return exist_actif;
     }
 
-    /// ============================================================================================
+/// ============================================================================================
     /// .EPC
     /// ============================================================================================
 
@@ -680,6 +770,7 @@ public class AppManager extends ThreadDefault
         return ready;
     }
 
+
     /// ============================================================================================
     /// .DOBJ
     /// ============================================================================================
@@ -763,658 +854,594 @@ public class AppManager extends ThreadDefault
     /// .ECA
     /// ============================================================================================
 
-    private FilesSender fileSender = null;
-    private long try_send_eca_at  = 0;
 
-    /// Uploading .ECA file if is needed
-    private boolean upload_eca( boolean now ){
-        boolean ret = false;
-
-        // If now is true or elapsed time > 1 minutes
-        if( now
-                || try_send_eca_at + 60000 < System.currentTimeMillis() ){
-
-            // Update driver id table if necessary
-            database.add_driver(parcour_id,driver_id);
-
-            // Trying to send file
-            fileSender.startThread();
-            try_send_eca_at = System.currentTimeMillis();
-            ret = true;
+    private boolean upload_eca(boolean now) {
+        if (!now && this.try_send_eca_at + 60000 >= System.currentTimeMillis()) {
+            return false;
         }
-        return ret;
+        this.database.add_driver(this.parcour_id, this.driver_id);
+        this.fileSender.startThread();
+        this.try_send_eca_at = System.currentTimeMillis();
+        return DEBUG;
     }
+
 
     /// ============================================================================================
     /// .CEP
     /// ============================================================================================
 
     /// Create .CEP file (Connections Events of Preventium's devices) and uploading to the server.
-    private void upload_cep(){
-        if( isRunning() ) {
-            if (listener != null) listener.onStatusChanged(STATUS_t.SETTING_CEP);
 
-            if (parcour_id > 0) {
-                database.create_cep_file(parcour_id);
-                database.clear_cep_data();
+    private void upload_cep() {
+        if (isRunning()) {
+            if (this.listener != null) {
+                this.listener.onStatusChanged(STATUS_t.SETTING_CEP);
             }
-
+            if (this.parcour_id > 0) {
+                this.database.create_cep_file(this.parcour_id);
+                this.database.clear_cep_data();
+            }
             // UPLOAD .CEP FILES
-            File folder = new File(ctx.getFilesDir(), "CEP");
+            File folder = new File(this.ctx.getFilesDir(), "CEP");
             if (folder.exists()) {
-                File[] listOfFiles = folder.listFiles(new FilenameFilter() {
-                    public boolean accept(File dir, String name) {
-                        return name.toUpperCase().endsWith(".CEP");
-                    }
-                });
+                File[] listOfFiles = folder.listFiles(new C01062());
                 if (listOfFiles != null && listOfFiles.length > 0) {
-                    FTPConfig config = DataCFG.getFptConfig(ctx);
+                    FTPConfig config = DataCFG.getFptConfig(this.ctx);
                     FTPClientIO ftp = new FTPClientIO();
                     if (config != null && ftp.ftpConnect(config, 5000)) {
-                        boolean change_directory = true;
-                        if (config.getWorkDirectory() != null && !config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                        boolean change_directory = DEBUG;
+                        if (!(config.getWorkDirectory() == null || config.getWorkDirectory().isEmpty() || config.getWorkDirectory().equals("/"))) {
                             change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
-                        if (!change_directory) {
-                            Log.w(TAG, "CEP: Error while trying to change working directory to \"" + config.getWorkDirectory() + "\"!");
-                        } else {
+                        }
+                        if (change_directory) {
                             for (File file : listOfFiles) {
                                 if (ftp.ftpUpload(file.getAbsolutePath(), file.getName())) {
                                     file.delete();
                                 }
                             }
+                        } else {
+                            Log.w(TAG, "CEP: Error while trying to change working directory to \"" + config.getWorkDirectory() + "\"!");
                         }
                     }
                 }
             }
-
-            if (listener != null) listener.onStatusChanged(STATUS_t.PAR_STOPPED);
+            if (this.listener != null) {
+                this.listener.onStatusChanged(STATUS_t.PAR_STOPPED);
+            }
         }
     }
+
 
     /// ============================================================================================
     /// .POS (Map markers)
     /// ============================================================================================
-
-    private boolean customMarkerList_Received = false;
-    private ArrayList<CustomMarkerData> customMarkerList = null;
-
-    // Set list of map markers
-    public void setCustomMarkerDataList(ArrayList<CustomMarkerData> list){
-        customMarkerList = list;
-        customMarkerList_Received = true;
+// Set list of map markers
+    public void setCustomMarkerDataList(ArrayList<CustomMarkerData> list) {
+        this.customMarkerList = list;
+        this.customMarkerList_Received = DEBUG;
     }
 
+
     // Create .SHARE file (Position of map markers) and uploading to the server.
+
     private void upload_shared_pos() throws InterruptedException {
-        if( isRunning() ) {
-            if (listener != null) {
-
-                customMarkerList_Received = false;
-                customMarkerList = null;
-                listener.onCustomMarkerDataListGet();
-                Chrono chrono = Chrono.newInstance();
-                chrono.start();
-                while (isRunning() && chrono.getSeconds() < 10 && !customMarkerList_Received) {
-                    sleep(500);
-                }
-                listener.onStatusChanged(STATUS_t.SETTING_MARKERS);
-
-                // CREATE FILE
-                File folder = new File(ctx.getFilesDir(), "SHARE");
-
-                if (customMarkerList_Received) {
-                    if (parcour_id > 0 && customMarkerList != null && customMarkerList.size() > 0) {
-                        // Create folder if not exist
-                        if (!folder.exists())
-                            if (!folder.mkdirs())
-                                Log.w(TAG, "Error while trying to create new folder!");
-                        if (folder.exists()) {
-                            String filename = String.format(Locale.getDefault(), "%s.SHARE",
-                                    ComonUtils.getIMEInumber(ctx));
-                            File file = new File(folder.getAbsolutePath(), filename);
-                            try {
-                                if (file.createNewFile()) {
-                                    FileWriter fileWriter = new FileWriter(file);
-                                    String line = "";
-                                    for (CustomMarkerData mk : customMarkerList) {
-                                        line = String.format(Locale.getDefault(),
-                                                "%f;%f;%d;%d;%d;%s;%d;%d;%s;%s;%s;\n",
-                                                mk.position.longitude,  // Longitude position
-                                                mk.position.latitude,   // Latitude position
-                                                mk.type,                // Type de position
-                                                (mk.alert ? 1 : 0),     // Alert de proximité
-                                                mk.alertRadius,         // Périmètre de déclenchement
-                                                mk.title,               // Titre de la position
-                                                (mk.shared ? 1 : 0),    // Partager cette position
-                                                0,                      // Require une signature sur cette position
-                                                ( (mk.alertMsg != null && mk.alertMsg.isEmpty() ) ? mk.alertMsg : ""),            // Message
-                                                ComonUtils.getIMEInumber(ctx), // Liste des IMEI qui partage la position
-                                                ""                      // Pieces jointes
-                                        );
-                                        fileWriter.write(line);
-                                    }
-                                    fileWriter.flush();
-                                    fileWriter.close();
-                                } else {
-                                    Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
-                                }
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-
-                // UPLOAD .SHARE FILES
-
-                if (folder.exists()) {
-                    File[] listOfFiles = folder.listFiles(new FilenameFilter() {
-                        public boolean accept(File dir, String name) {
-                            return name.toUpperCase().endsWith(".SHARE");
-                        }
-                    });
-                    if (listOfFiles != null && listOfFiles.length > 0) {
-                        FTPClientIO ftp = new FTPClientIO();
-                        if (ftp.ftpConnect(FTP_POS, 5000)) {
-                            boolean change_directory = true;
-                            if ( FTP_POS.getWorkDirectory() != null && !FTP_POS.getWorkDirectory().isEmpty() && !FTP_POS.getWorkDirectory().equals("/"))
-                                change_directory = ftp.changeWorkingDirectory(FTP_POS.getWorkDirectory());
-                            if (!change_directory) {
-                                Log.w(TAG, "SHARE: Error while trying to change working directory to \"" + FTP_POS.getWorkDirectory() + "\"!");
-                            } else {
-                                for (File file : listOfFiles) {
-                                    if (ftp.ftpUpload(file.getAbsolutePath(), file.getName())) {
-                                        file.delete();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                listener.onStatusChanged(STATUS_t.PAR_STOPPED);
+        if (isRunning() && this.listener != null) {
+            File file;
+            this.customMarkerList_Received = false;
+            this.customMarkerList = null;
+            this.listener.onCustomMarkerDataListGet();
+            Chrono chrono = Chrono.newInstance();
+            chrono.start();
+            while (isRunning() && chrono.getSeconds() < 10.0d && !this.customMarkerList_Received) {
+                sleep(500);
             }
+            this.listener.onStatusChanged(STATUS_t.SETTING_MARKERS);
+
+            // CREATE FILE
+            File folder = new File(this.ctx.getFilesDir(), "SHARE");
+            if (this.customMarkerList_Received && this.parcour_id > 0 && this.customMarkerList != null && this.customMarkerList.size() > 0) {
+                if (!(folder.exists() || folder.mkdirs())) {
+                    Log.w(TAG, "Error while trying to create new folder!");
+                }
+                if (folder.exists()) {
+                    file = new File(folder.getAbsolutePath(), String.format(Locale.getDefault(), "%s.SHARE", new Object[]{ComonUtils.getIMEInumber(this.ctx)}));
+                    try {
+                        if (file.createNewFile()) {
+                            FileWriter fileWriter = new FileWriter(file);
+                            String line = "";
+                            Iterator it = this.customMarkerList.iterator();
+                            while (it.hasNext()) {
+                                CustomMarkerData mk = (CustomMarkerData) it.next();
+                                Locale locale = Locale.getDefault();
+                                String str = "%f;%f;%d;%d;%d;%s;%d;%d;%s;%s;%s;\n";
+                                Object[] objArr = new Object[11];
+                                objArr[0] = Double.valueOf(mk.position.longitude);
+                                objArr[1] = Double.valueOf(mk.position.latitude);
+                                objArr[2] = Integer.valueOf(mk.type);
+                                objArr[3] = Integer.valueOf(mk.alert ? 1 : 0);
+                                objArr[4] = Integer.valueOf(mk.alertRadius);
+                                objArr[5] = mk.title;
+                                objArr[6] = Integer.valueOf(mk.shared ? 1 : 0);
+                                objArr[7] = Integer.valueOf(0);
+                                String str2 = (mk.alertMsg == null || !mk.alertMsg.isEmpty()) ? "" : mk.alertMsg;
+                                objArr[8] = str2;
+                                objArr[9] = ComonUtils.getIMEInumber(this.ctx);
+                                objArr[10] = "";
+                                fileWriter.write(String.format(locale, str, objArr));
+                            }
+                            fileWriter.flush();
+                            fileWriter.close();
+                        } else {
+                            Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            // UPLOAD .SHARE FILES
+            if (folder.exists()) {
+                File[] listOfFiles = folder.listFiles(new C01073());
+                if (listOfFiles != null && listOfFiles.length > 0) {
+                    FTPClientIO ftp = new FTPClientIO();
+                    if (ftp.ftpConnect(FTP_POS, 5000)) {
+                        boolean change_directory = DEBUG;
+                        if (!(FTP_POS.getWorkDirectory() == null || FTP_POS.getWorkDirectory().isEmpty() || FTP_POS.getWorkDirectory().equals("/"))) {
+                            change_directory = ftp.changeWorkingDirectory(FTP_POS.getWorkDirectory());
+                        }
+                        if (change_directory) {
+                            for (File file2 : listOfFiles) {
+                                if (ftp.ftpUpload(file2.getAbsolutePath(), file2.getName())) {
+                                    file2.delete();
+                                }
+                            }
+                        } else {
+                            Log.w(TAG, "SHARE: Error while trying to change working directory to \"" + FTP_POS.getWorkDirectory() + "\"!");
+                        }
+                    }
+                }
+            }
+            this.listener.onStatusChanged(STATUS_t.PAR_STOPPED);
         }
     }
 
     // Dowloading shared positions
-    private boolean download_shared_pos()  throws InterruptedException {
-
+    private boolean download_shared_pos() throws InterruptedException {
         boolean ready = false;
-
-        if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_MARKERS_SHARED );
-
-        File folder = new File(ctx.getFilesDir(), "");
+        if (this.listener != null) {
+            this.listener.onStatusChanged(STATUS_t.GETTING_MARKERS_SHARED);
+        }
+        File folder = new File(this.ctx.getFilesDir(), "");
         FTPClientIO ftp = new FTPClientIO();
-
-        while( isRunning() && !ready ) {
-            if (listener != null) listener.onStatusChanged( STATUS_t.GETTING_MARKERS_SHARED );
-
-            // Trying to connect to FTP server...
-            if( !ftp.ftpConnect(FTP_POS, 5000) ) {
-                check_internet_is_active();
-            } else {
-                // Changing working directory if needed
-                boolean change_directory = true;
-                if ( FTP_POS.getWorkDirectory() != null && !FTP_POS.getWorkDirectory().isEmpty() && !FTP_POS.getWorkDirectory().equals("/"))
+        while (isRunning() && !ready) {
+            if (this.listener != null) {
+                this.listener.onStatusChanged(STATUS_t.GETTING_MARKERS_SHARED);
+            }
+            if (ftp.ftpConnect(FTP_POS, 5000)) {
+                boolean change_directory = DEBUG;
+                if (!(FTP_POS.getWorkDirectory() == null || FTP_POS.getWorkDirectory().isEmpty() || FTP_POS.getWorkDirectory().equals("/"))) {
                     change_directory = ftp.changeWorkingDirectory(FTP_POS.getWorkDirectory());
-
-                if( !change_directory ) {
-                    Log.w(TAG, "POSS: Error while trying to change working directory to \"" + FTP_POS + "\"!");
-                } else {
-
-                    // Checking if .POSS file is in FTP server ?
-                    String srcFileName = ReaderPOSSFile.getFileName(ctx, false);
-                    String srcAckName = ReaderPOSSFile.getFileName(ctx, true);
-                    boolean exist_server_poss = ftp.checkFileExists( srcFileName );
-                    boolean exist_server_ack = ftp.checkFileExists( srcAckName );
-                    boolean exist_local_poss = ReaderPOSSFile.existLocalFile(ctx);
-
-                    boolean need_download = ( (exist_server_poss && !exist_server_ack) || (exist_server_poss && !exist_local_poss) );
-
-                    // Create folder if not exist
-                    if ( !folder.exists() )
-                        if ( !folder.mkdirs() )
-                            Log.w(TAG, "Error while trying to create new folder!");
-                    String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
-
-                    if( need_download ) {
-                        try{
+                }
+                if (change_directory) {
+                    String srcFileName = ReaderPOSSFile.getFileName(this.ctx, false);
+                    String srcAckName = ReaderPOSSFile.getFileName(this.ctx, DEBUG);
+                    boolean exist_server_poss = ftp.checkFileExists(srcFileName);
+                    boolean exist_server_ack = ftp.checkFileExists(srcAckName);
+                    boolean need_download = ((!exist_server_poss || exist_server_ack) && (!exist_server_poss || ReaderPOSSFile.existLocalFile(this.ctx))) ? false : DEBUG;
+                    if (!(folder.exists() || folder.mkdirs())) {
+                        Log.w(TAG, "Error while trying to create new folder!");
+                    }
+                    String desFileName = String.format(Locale.getDefault(), "%s/%s", new Object[]{this.ctx.getFilesDir(), srcFileName});
+                    if (need_download) {
+                        try {
                             File local_file = new File(desFileName);
-                            if(local_file.delete()) {
+                            if (local_file.delete()) {
                                 System.out.println(local_file.getName() + " is deleted!");
                             } else {
                                 System.out.println("Delete operation is failed.");
                             }
-                        }catch(Exception e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
-
                         if (ftp.ftpDownload(srcFileName, desFileName)) {
                             need_download = false;
-                            // envoi acknowledge
                             try {
                                 File temp = File.createTempFile("temp-file-name", ".tmp");
                                 ftp.ftpUpload(temp.getPath(), srcAckName);
                                 temp.delete();
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
                             }
                         }
                     }
-
-                    if( !need_download )
-                    {
-                        exist_local_poss = ReaderPOSSFile.existLocalFile(ctx);
-                        if( !exist_local_poss || (!exist_server_poss && !exist_server_ack) ) {
-                            ready = true;
-                            if (listener != null) listener.onSharedPositionsChanged(new ArrayList<CustomMarkerData>());
-                        } else {
-
-                            List<CustomMarkerData> list = ReaderPOSSFile.readFile(desFileName);
-
-                            if (list != null) {
-                                ready = true;
-                                if (listener != null) listener.onSharedPositionsChanged(list);
-                            }
+                    if (!need_download) {
+                        if (!ReaderPOSSFile.existLocalFile(this.ctx) || (!exist_server_poss && !exist_server_ack)) {
+                            ready = DEBUG;
+                        } else if (ReaderPOSSFile.readFile(desFileName) != null) {
+                            ready = DEBUG;
                         }
                     }
+                } else {
+                    Log.w(TAG, "POSS: Error while trying to change working directory to \"" + FTP_POS + "\"!");
                 }
+            } else {
+                check_internet_is_active();
             }
-            // Disconnect from FTP server.
             ftp.ftpDisconnect();
-
-            if( isRunning() && !ready ) sleep(1000);
+            if (isRunning() && !ready) {
+                sleep(1000);
+            }
         }
         return ready;
     }
 
+
     /// ============================================================================================
     /// PARCOURS TYPE
     /// ============================================================================================
-
-    private String parcoursTypeName = null;
-
-    // Set current parcours is a parcours type,
+// Set current parcours is a parcours type,
     // if parcoursName is null, do not set this parcours is a parcours type
-    public void set_parcours_type(@Nullable  String parcoursName ){
-        if( parcoursName == null ) parcoursName = "";
-        parcoursTypeName = parcoursName;
+
+    public void set_parcours_type(@Nullable String parcoursName) {
+        if (parcoursName == null) {
+            parcoursName = "";
+        }
+        this.parcoursTypeName = parcoursName;
     }
 
     // Create .PT file (Parcours type) and uploading to the server.
     private void upload_parcours_type() throws InterruptedException {
-
-        if( listener != null ){
-
-            parcoursTypeName = null;
-            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-            String key = ctx.getResources().getString(R.string.parcours_type_enabled_key);
-            if( sp.getBoolean(key,false) ){
-                SharedPreferences.Editor editor = sp.edit();
-                editor.putBoolean(key,false);
+        if (this.listener != null) {
+            File folder;
+            File file;
+            this.parcoursTypeName = null;
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this.ctx);
+            String key = this.ctx.getResources().getString(R.string.parcours_type_enabled_key);
+            if (sp.getBoolean(key, false)) {
+                Editor editor = sp.edit();
+                editor.putBoolean(key, false);
                 editor.apply();
-                parcoursTypeName = sp.getString(key,"");
+                this.parcoursTypeName = sp.getString(key, "");
             }
-
-            listener.onStatusChanged(STATUS_t.SETTING_PARCOUR_TYPE);
-
-            if( parcoursTypeName != null ){
-                if( parcour_id > 0 && !parcoursTypeName.isEmpty() ){
-
-                    // CREATE FILE
-                    File folder = new File(ctx.getFilesDir(), "PT");
-                    // Create folder if not exist
-                    if (!folder.exists())
-                        if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
-                    if( folder.exists() ) {
-                        String filename = String.format(Locale.getDefault(), "%s_%d.PT",
-                                ComonUtils.getIMEInumber(ctx), parcour_id);
-                        File file = new File(folder.getAbsolutePath(), filename );
-                        try {
-                            if( file.createNewFile() ){
-                                FileWriter fileWriter = new FileWriter(file);
-                                fileWriter.write( String.format(Locale.getDefault(),
-                                        "%s;%d;%s",
-                                        ComonUtils.getIMEInumber(ctx), parcour_id, parcoursTypeName) );
-                                fileWriter.flush();
-                                fileWriter.close();
-                            } else {
-                                Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
+            this.listener.onStatusChanged(STATUS_t.SETTING_PARCOUR_TYPE);
+            if (!(this.parcoursTypeName == null || this.parcour_id <= 0 || this.parcoursTypeName.isEmpty())) {
+                folder = new File(this.ctx.getFilesDir(), "PT");
+                if (!(folder.exists() || folder.mkdirs())) {
+                    Log.w(TAG, "Error while trying to create new folder!");
+                }
+                if (folder.exists()) {
+                    file = new File(folder.getAbsolutePath(), String.format(Locale.getDefault(), "%s_%d.PT", new Object[]{ComonUtils.getIMEInumber(this.ctx), Long.valueOf(this.parcour_id)}));
+                    try {
+                        if (file.createNewFile()) {
+                            FileWriter fileWriter = new FileWriter(file);
+                            fileWriter.write(String.format(Locale.getDefault(), "%s;%d;%s", new Object[]{ComonUtils.getIMEInumber(this.ctx), Long.valueOf(this.parcour_id), this.parcoursTypeName}));
+                            fileWriter.flush();
+                            fileWriter.close();
+                        } else {
+                            Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
                         }
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             }
 
             // UPLOAD .PT FILES
-            File folder = new File(ctx.getFilesDir(), "PT");
-            if ( folder.exists() ){
-                File[] listOfFiles = folder.listFiles(new FilenameFilter() {
-                    public boolean accept(File dir, String name) {
-                        return name.toUpperCase().endsWith(".PT");
-                    }
-                });
-
-                if( listOfFiles != null && listOfFiles.length > 0 ){
-                    FTPConfig config = DataCFG.getFptConfig(ctx);
+            folder = new File(this.ctx.getFilesDir(), "PT");
+            if (folder.exists()) {
+                File[] listOfFiles = folder.listFiles(new C01084());
+                if (listOfFiles != null && listOfFiles.length > 0) {
+                    FTPConfig config = DataCFG.getFptConfig(this.ctx);
                     FTPClientIO ftp = new FTPClientIO();
-                    if( config != null && ftp.ftpConnect(config, 5000) ) {
-                        boolean change_directory = true;
-                        if ( config.getWorkDirectory() != null && !config.getWorkDirectory().isEmpty() && !config.getWorkDirectory().equals("/"))
+                    if (config != null && ftp.ftpConnect(config, 5000)) {
+                        boolean change_directory = DEBUG;
+                        if (!(config.getWorkDirectory() == null || config.getWorkDirectory().isEmpty() || config.getWorkDirectory().equals("/"))) {
                             change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
-                        if (!change_directory) {
-                            Log.w(TAG, "PT: Error while trying to change working directory to \"" + config.getWorkDirectory() + "\"!");
-                        } else {
-                            for ( File file : listOfFiles ) {
-                                if( ftp.ftpUpload(file.getAbsolutePath(),file.getName()) ){
-                                    file.delete();
+                        }
+                        if (change_directory) {
+                            for (File file2 : listOfFiles) {
+                                if (ftp.ftpUpload(file2.getAbsolutePath(), file2.getName())) {
+                                    file2.delete();
                                 }
                             }
+                        } else {
+                            Log.w(TAG, "PT: Error while trying to change working directory to \"" + config.getWorkDirectory() + "\"!");
                         }
                     }
                 }
             }
-
-            listener.onStatusChanged(STATUS_t.PAR_STOPPED);
+            this.listener.onStatusChanged(STATUS_t.PAR_STOPPED);
         }
     }
+
 
     /// ============================================================================================
     /// TRACKING
     /// ============================================================================================
 
-    private boolean _tracking = true;
-
-    private void update_tracking_status(){
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-        String key = ctx.getResources().getString(R.string.tracking_activated_key);
-        _tracking = sp.getBoolean(key,true);
+    private void update_tracking_status() {
+        this._tracking = PreferenceManager.getDefaultSharedPreferences(this.ctx).getBoolean(this.ctx.getResources().getString(R.string.tracking_activated_key), DEBUG);
     }
+
 
     /// ============================================================================================
     /// CALCUL
     /// ============================================================================================
 
-    private MOVING_t mov_t = MOVING_t.STP;
-    private MOVING_t mov_t_last = MOVING_t.UNKNOW;
-    private long alertX_add_at = 0;
-    private long alertX_add_id = -1;
-    private long alertY_add_at = 0;
-    private long alertY_add_id = -1;
-    private long alertPos_add_at = 0;
-    private Location lastLocSend = null;
-    private Chrono mov_chrono = new Chrono();
-    private Chrono mov_t_last_chrono = new Chrono();
-    private ForceSeuil seuil_ui = null;
-    private long alertUI_add_at = 0;
-    private Chrono seuil_chrono_x = new Chrono();
-    private Chrono seuil_chrono_y = new Chrono();
-    private ForceSeuil seuil_last_x = null;
-    private ForceSeuil seuil_last_y = null;
-    private double XmG = 0.0;
-    Pair<Double,Short> smooth = Pair.create(0.0,(short)0);
-    Pair<Double,Short> shock = Pair.create(0.0,(short)0);
-
-    private float Vavg = 0f;
-    private long Tavg = System.currentTimeMillis();
-
     private void calc_movements() {
+        if (System.currentTimeMillis() - this.Tavg >= 1000) {
+            float acceleration;
+            this.mov_t = MOVING_t.UNKNOW;
+            this.XmG = 0.0d;
+            boolean rightRoad = false;
 
-        if(  System.currentTimeMillis() - Tavg < 1000 ) return;
+            // Calculate Vavg and Acceleration (m/s)
+            List<Location> list = get_location_list(3, 5000);
+            if (list == null || list.size() < 3) {
+                acceleration = 0.0f;
+                this.Vavg = 0.0f;
+                this.Tavg = System.currentTimeMillis();
+            } else {
+                int i = list.size() - 1;
+                rightRoad = isRightRoad((Location) list.get(i - 2), (Location) list.get(i - 1), (Location) list.get(i));
+                float Vavg_next = (((Location) list.get(i)).getSpeed() + (((Location) list.get(i - 2)).getSpeed() + ((Location) list.get(i - 1)).getSpeed())) * 0.33333334f;
+                long Tavg_next = System.currentTimeMillis();
 
-        this.mov_t = MOVING_t.UNKNOW;
-        this.XmG = 0f;
-        boolean rightRoad = false;
+                // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
+                // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+                // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
 
-        // Calculate Vavg and Acceleration (m/s)
-        List<Location> list = get_location_list(3,5000);
-        float acceleration = 0f;
-        if( list != null && list.size() >= 3 ) {
-            int i = list.size()-1;
-            rightRoad = isRightRoad( list.get(i-2), list.get(i-1), list.get(i) );
-            float Vavg_next = ( list.get(i-2).getSpeed() + list.get(i-1).getSpeed() + list.get(i).getSpeed() ) * (1f/3f);
-            long Tavg_next = System.currentTimeMillis();
-
-            // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
-            // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
-            // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
-            XmG = SpeedToXmG(Vavg,Vavg_next,Tavg,Tavg_next);
-
-            acceleration = Vavg_next - Vavg ;
-            Vavg = Vavg_next;
-            Tavg = Tavg_next;
-        } else {
-            acceleration = 0f;
-            Vavg = 0f;
-            Tavg = System.currentTimeMillis();
-        }
-
-        // Set moving status
-        if (Vavg * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
-        else if ( Math.abs( 0f - (acceleration * MS_TO_KMH) ) < 2f ) mov_t = MOVING_t.CST;
-        else if (acceleration > 0f ) mov_t = MOVING_t.ACC;
-        else if (acceleration < 0f) mov_t = MOVING_t.BRK;
-        else mov_t = MOVING_t.NCS;
-
-        // Set move chrono and calibration if necessary
-        if ( mov_t != mov_t_last )
-        {
-            mov_t_last_chrono.start();
-            mov_chrono.start();
-            mov_t_last = mov_t;
-        }
-        else
-        {
-            if ( mov_chrono.isStarted() ) {
-                switch (mov_t_last) {
+                this.XmG = SpeedToXmG(this.Vavg, Vavg_next, this.Tavg, Tavg_next);
+                acceleration = Vavg_next - this.Vavg;
+                this.Vavg = Vavg_next;
+                this.Tavg = Tavg_next;
+            }
+            if (this.Vavg * 3.6f <= 3.0f) {
+                this.mov_t = MOVING_t.STP;
+            } else if (Math.abs(0.0f - (acceleration * 3.6f)) < 2.0f) {
+                this.mov_t = MOVING_t.CST;
+            } else if (acceleration > 0.0f) {
+                this.mov_t = MOVING_t.ACC;
+            } else if (acceleration < 0.0f) {
+                this.mov_t = MOVING_t.BRK;
+            } else {
+                this.mov_t = MOVING_t.NCS;
+            }
+            if (this.mov_t != this.mov_t_last) {
+                this.mov_t_last_chrono.start();
+                this.mov_chrono.start();
+                this.mov_t_last = this.mov_t;
+            } else if (this.mov_chrono.isStarted()) {
+                switch (this.mov_t_last) {
                     case ACC:
                         if (rightRoad) {
-                            mov_chrono.stop();
-                            modules.on_acceleration();
+                            this.mov_chrono.stop();
+                            this.modules.on_acceleration();
+                            return;
                         }
-                        break;
+                        return;
                     case BRK:
                         if (rightRoad) {
-                            mov_chrono.stop();
-                            modules.on_constant_speed();
+                            this.mov_chrono.stop();
+                            this.modules.on_constant_speed();
+                            return;
                         }
+                        return;
+                    default:
+                        return;
+                }
+            }
+        }
+    }
+
+    private double SpeedToXmG(@NonNull float v1, @NonNull float v2, @NonNull long t1, @NonNull long t2) {
+        // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
+        // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+        // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+
+        return (((double) (v2 - v1)) / (9.81d * (((double) (t2 - t1)) * 0.001d))) * 1000.0d;
+    }
+
+    private double LocationsToXmG(@NonNull Location l0, @NonNull Location l1) {
+        // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
+        // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+        // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+
+        return (((double) (l0.getSpeed() - l1.getSpeed())) / (9.81d * (((double) (l0.getTime() - l1.getTime())) * 0.001d))) * 1000.0d;
+    }
+
+    private boolean isRightRoad(Location location_1, Location location_2, Location location_3) {
+        double Lat_rad_2 = (location_2.getLatitude() * 3.141592653589793d) / 180.0d;
+        double Long_rad_1 = (location_1.getLongitude() * 3.141592653589793d) / 180.0d;
+        double Long_rad_2 = (location_2.getLongitude() * 3.141592653589793d) / 180.0d;
+        double Long_rad_3 = (location_3.getLongitude() * 3.141592653589793d) / 180.0d;
+        double Delta_L_rad_1 = Lat_rad_2 - ((location_1.getLatitude() * 3.141592653589793d) / 180.0d);
+        double Delta_L_rad_2 = ((location_3.getLatitude() * 3.141592653589793d) / 180.0d) - Lat_rad_2;
+        double A_deg_1 = (360.0d * Math.atan2(Math.cos(Long_rad_2) * Math.sin(Delta_L_rad_1), (Math.cos(Long_rad_1) * Math.sin(Long_rad_2)) - ((Math.sin(Long_rad_1) * Math.cos(Long_rad_2)) * Math.cos(Delta_L_rad_1)))) / 3.141592653589793d;
+        double A_deg_2 = (360.0d * Math.atan2(Math.cos(Long_rad_3) * Math.sin(Delta_L_rad_2), (Math.cos(Long_rad_2) * Math.sin(Long_rad_3)) - ((Math.sin(Long_rad_2) * Math.cos(Long_rad_3)) * Math.cos(Delta_L_rad_2)))) / 3.141592653589793d;
+        return Math.max(A_deg_1, A_deg_2) - Math.min(A_deg_1, A_deg_2) < 3.0d ? DEBUG : false;
+    }
+
+    private static void update_tab_X(long[] tab, FORCE_t t, LEVEL_t l, long s) {
+        int i1 = -1;
+        int i2 = -1;
+        switch (t) {
+            case ACCELERATION:
+                switch (l) {
+                    case LEVEL_UNKNOW:
+                        break;
+                    case LEVEL_1:
+                        i1 = 0;
+                        i2 = 0;
+                        break;
+                    case LEVEL_2:
+                        i1 = 0;
+                        i2 = 1;
+                        break;
+                    case LEVEL_3:
+                        i1 = 0;
+                        i2 = 2;
+                        break;
+                    case LEVEL_4:
+                        i1 = 0;
+                        i2 = 3;
+                        break;
+                    case LEVEL_5:
+                        i1 = 0;
+                        i2 = 4;
                         break;
                     default:
                         break;
                 }
-            }
+            case BRAKING:
+                switch (l) {
+                    case LEVEL_UNKNOW:
+                        break;
+                    case LEVEL_1:
+                        i1 = 5;
+                        i2 = 5;
+                        break;
+                    case LEVEL_2:
+                        i1 = 5;
+                        i2 = 6;
+                        break;
+                    case LEVEL_3:
+                        i1 = 5;
+                        i2 = 7;
+                        break;
+                    case LEVEL_4:
+                        i1 = 5;
+                        i2 = 8;
+                        break;
+                    case LEVEL_5:
+                        i1 = 5;
+                        i2 = 9;
+                        break;
+                    default:
+                        break;
+                }
         }
-
-
+        int i = 0;
+        while (i < 10) {
+            if (i < i1 || i > i2) {
+                tab[i] = 0;
+            } else if (tab[i] <= 0) {
+                tab[i] = s;
+            }
+            i++;
+        }
     }
 
-    private double SpeedToXmG( @NonNull float v1, @NonNull float v2, @NonNull long t1, @NonNull long t2 ) {
-        // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
-        // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
-        // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
-        return ((v2 - v1)
-                / (9.81 * ((t2 - t1) * 0.001)))
-                * 1000.0;
+    private ForceSeuil read_tab_X(long[] tab, long s) {
+        int a = -1;
+        int i = 0;
+        while (i < 10) {
+            if (tab[i] > 0 && s - tab[i] >= this.readerEPCFile.get_TPS_ms(i)) {
+                a = i;
+            }
+            i++;
+        }
+        if (a < 0 || a >= 10) {
+            return null;
+        }
+        return this.readerEPCFile.getForceSeuil(a);
     }
 
-    private double LocationsToXmG( @NonNull Location l0, @NonNull Location l1 ) {
-        // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
-        // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
-        // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
-        return ((l0.getSpeed() - l1.getSpeed())
-                / (9.81 * ((l0.getTime() - l1.getTime()) * 0.001)))
-                * 1000.0;
-    }
-
-    private boolean isRightRoad( Location location_1, Location location_2, Location location_3 ) {
-        double Lat_rad_1 = location_1.getLatitude() * Math.PI / 180.0;
-        double Lat_rad_2 = location_2.getLatitude() * Math.PI / 180.0;
-        double Lat_rad_3 = location_3.getLatitude() * Math.PI / 180.0;
-
-        double Long_rad_1 = location_1.getLongitude() * Math.PI / 180.0;
-        double Long_rad_2 = location_2.getLongitude() * Math.PI / 180.0;
-        double Long_rad_3 = location_3.getLongitude() * Math.PI / 180.0;
-
-        double Delta_L_rad_1 = Lat_rad_2 - Lat_rad_1;
-        double Delta_L_rad_2 = Lat_rad_3 - Lat_rad_2;
-
-        double X_1 = Math.cos(Long_rad_2) * Math.sin(Delta_L_rad_1);
-        double X_2 = Math.cos(Long_rad_3) * Math.sin(Delta_L_rad_2);
-
-        double Y_1 = (Math.cos(Long_rad_1) * Math.sin(Long_rad_2))
-                - (Math.sin(Long_rad_1) * Math.cos(Long_rad_2) * Math.cos(Delta_L_rad_1) );
-        double Y_2 = (Math.cos(Long_rad_2) * Math.sin(Long_rad_3))
-                - (Math.sin(Long_rad_2) * Math.cos(Long_rad_3) * Math.cos(Delta_L_rad_2) );
-
-        double A_rad_1 = Math.atan2( X_1, Y_1 );
-        double A_rad_2 = Math.atan2( X_2, Y_2 );
-
-        double A_deg_1 = A_rad_1 * 360.0 / Math.PI;
-        double A_deg_2 = A_rad_2 * 360.0 / Math.PI;
-
-        return ( (Math.max(A_deg_1,A_deg_2) - Math.min(A_deg_1,A_deg_2) ) < 3.0 );
-    }
-
-
-// ==============================================================
-
-    private long X[] = { 0,0,0,0,0,0,0,0,0,0 };
-    private static void update_tab_X( long tab[], FORCE_t t, LEVEL_t l, long s ){
+    private static void update_tab_Y(long[] tab, FORCE_t t, LEVEL_t l, long s) {
         int i1 = -1;
         int i2 = -1;
-
-        switch ( t ) {
-            case UNKNOW:
+        switch (t) {
             case TURN_LEFT:
+                switch (l) {
+                    case LEVEL_UNKNOW:
+                        break;
+                    case LEVEL_1:
+                        i1 = 5;
+                        i2 = 5;
+                        break;
+                    case LEVEL_2:
+                        i1 = 5;
+                        i2 = 6;
+                        break;
+                    case LEVEL_3:
+                        i1 = 5;
+                        i2 = 7;
+                        break;
+                    case LEVEL_4:
+                        i1 = 5;
+                        i2 = 8;
+                        break;
+                    case LEVEL_5:
+                        i1 = 5;
+                        i2 = 9;
+                        break;
+                    default:
+                        break;
+                }
             case TURN_RIGHT:
-                break;
-            case ACCELERATION:
-                switch ( l ) {
-                case LEVEL_UNKNOW: break;
-                case LEVEL_1: i1 = 0; i2 = 0; break;
-                case LEVEL_2: i1 = 0; i2 = 1; break;
-                case LEVEL_3: i1 = 0; i2 = 2; break;
-                case LEVEL_4: i1 = 0; i2 = 3; break;
-                case LEVEL_5: i1 = 0; i2 = 4; break;
+                switch (l) {
+                    case LEVEL_UNKNOW:
+                        break;
+                    case LEVEL_1:
+                        i1 = 0;
+                        i2 = 0;
+                        break;
+                    case LEVEL_2:
+                        i1 = 0;
+                        i2 = 1;
+                        break;
+                    case LEVEL_3:
+                        i1 = 0;
+                        i2 = 2;
+                        break;
+                    case LEVEL_4:
+                        i1 = 0;
+                        i2 = 3;
+                        break;
+                    case LEVEL_5:
+                        i1 = 0;
+                        i2 = 4;
+                        break;
+                    default:
+                        break;
                 }
-                break;
-            case BRAKING:
-                switch ( l ) {
-                    case LEVEL_UNKNOW: break;
-                    case LEVEL_1: i1 = 5; i2 = 5; break;
-                    case LEVEL_2: i1 = 5; i2 = 6; break;
-                    case LEVEL_3: i1 = 5; i2 = 7; break;
-                    case LEVEL_4: i1 = 5; i2 = 8; break;
-                    case LEVEL_5: i1 = 5; i2 = 9; break;
-                }
-                break;
         }
-        for( int i = 0; i < 10; i++ ) {
-            if( i >= i1 && i <= i2 ) {
-                if( tab[i] <= 0 ) tab[i] = s;
-            } else {
+        int i = 0;
+        while (i < 10) {
+            if (i < i1 || i > i2) {
                 tab[i] = 0;
+            } else if (tab[i] <= 0) {
+                tab[i] = s;
             }
+            i++;
         }
     }
-    private ForceSeuil read_tab_X( long tab[], long s ){
-        ForceSeuil ret = null;
-        // 0 to 4: LEVEL_1 to LEVEL_5 for A
-        // 5 to 9: LEVEL_1 to LEVEL_5 for F
+
+    private ForceSeuil read_tab_Y(long[] tab, long s) {
         int a = -1;
-        long tps;
-        for( int i = 0; i < 10; i++ ) {
-            if( tab[i] > 0 ) {
-                tps = s - tab[i];
-                if( tps >= readerEPCFile.get_TPS_ms(i) ) {
-                    a = i;
-                }
+        int i = 0;
+        while (i < 10) {
+            if (tab[i] > 0 && s - tab[i] >= this.readerEPCFile.get_TPS_ms(i + 10)) {
+                a = i;
             }
+            i++;
         }
-        if( a >= 0 && a < 10 ) {
-            ret = readerEPCFile.getForceSeuil(a);
+        if (a < 0 || a >= 10) {
+            return null;
         }
-        return ret;
-    }
-    private long Y[] = { 0,0,0,0,0,0,0,0,0,0 };
-    private static void update_tab_Y( long tab[], FORCE_t t, LEVEL_t l, long s ){
-        int i1 = -1;
-        int i2 = -1;
-
-        switch ( t ) {
-            case UNKNOW:
-            case ACCELERATION:
-            case BRAKING:
-                break;
-            case TURN_RIGHT:
-                switch ( l ) {
-                    case LEVEL_UNKNOW: break;
-                    case LEVEL_1: i1 = 0; i2 = 0; break;
-                    case LEVEL_2: i1 = 0; i2 = 1; break;
-                    case LEVEL_3: i1 = 0; i2 = 2; break;
-                    case LEVEL_4: i1 = 0; i2 = 3; break;
-                    case LEVEL_5: i1 = 0; i2 = 4; break;
-                }
-                break;
-            case TURN_LEFT:
-                switch ( l ) {
-                    case LEVEL_UNKNOW: break;
-                    case LEVEL_1: i1 = 5; i2 = 5; break;
-                    case LEVEL_2: i1 = 5; i2 = 6; break;
-                    case LEVEL_3: i1 = 5; i2 = 7; break;
-                    case LEVEL_4: i1 = 5; i2 = 8; break;
-                    case LEVEL_5: i1 = 5; i2 = 9; break;
-                }
-                break;
-        }
-        for( int i = 0; i < 10; i++ ) {
-            if( i >= i1 && i <= i2 ) {
-                if( tab[i] <= 0 ) tab[i] = s;
-            } else {
-                tab[i] = 0;
-            }
-        }
-    }
-    private ForceSeuil read_tab_Y( long tab[], long s ){
-        ForceSeuil ret = null;
-        // 0 to 4: LEVEL_1 to LEVEL_5 for A
-        // 5 to 9: LEVEL_1 to LEVEL_5 for F
-        int a = -1;
-        long tps;
-        for( int i = 0; i < 10; i++ ) {
-            if( tab[i] > 0 ) {
-                tps = s - tab[i];
-                if( tps >= readerEPCFile.get_TPS_ms(i+10) ) {
-                    a = i;
-                }
-            }
-        }
-        if( a >= 0 && a < 10 ) {
-            ret = readerEPCFile.getForceSeuil(a+10);
-        }
-        return ret;
+        return this.readerEPCFile.getForceSeuil(a + 10);
     }
 
-
-    synchronized private void calculate_eca() {
-
-        // Get seuils of runtime alert
+    private synchronized void calculate_eca() {
         long ST = System.currentTimeMillis();
         Location loc = get_last_location();
-
-        ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
-        ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(smooth.first);
-        // Get type and level of runtime alert
-        if( loc == null || (loc.getSpeed() * MS_TO_KMH) < 20.0 )
-        {
+        ForceSeuil seuil_x = this.readerEPCFile.getForceSeuilForX(this.XmG);
+        ForceSeuil seuil_y = this.readerEPCFile.getForceSeuilForY(((Double) this.smooth.first).doubleValue());
+        if (loc == null || ((double) (loc.getSpeed() * 3.6f)) < 20.0d) {
             seuil_x = null;
             seuil_y = null;
-        }
-        else
-        {
+        } else {
             FORCE_t type_X = FORCE_t.UNKNOW;
             FORCE_t type_Y = FORCE_t.UNKNOW;
             LEVEL_t level_X = LEVEL_t.LEVEL_UNKNOW;
@@ -1427,505 +1454,370 @@ public class AppManager extends ThreadDefault
                 type_Y = seuil_y.type;
                 level_Y = seuil_y.level;
             }
-            // Update start at for all alerts
-            update_tab_X(X, type_X, level_X, ST);
-            update_tab_Y(Y, type_Y, level_Y, ST);
-            // Gettings alerts
-            seuil_x = read_tab_X(X, ST);
-            seuil_y = read_tab_Y(Y, ST);
-            // ADD ECA? ( location with X alert )
-            if (seuil_x != null) {
-                if (_tracking) {
-                    if( alertX_add_id != seuil_x.IDAlert ||
-                            ST > alertX_add_at + (seuil_x.TPS * 1000)  ) {
-                        database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc, null));
-                        alertX_add_at = ST;
-                        alertX_add_id = seuil_x.IDAlert;
-                        lastLocSend = loc;
-                    }
-
-                }
+            update_tab_X(this.f6X, type_X, level_X, ST);
+            update_tab_Y(this.f7Y, type_Y, level_Y, ST);
+            seuil_x = read_tab_X(this.f6X, ST);
+            seuil_y = read_tab_Y(this.f7Y, ST);
+            if (seuil_x != null && this._tracking && (this.alertX_add_id != ((long) seuil_x.IDAlert) || ST > this.alertX_add_at + ((long) (seuil_x.TPS * 1000)))) {
+                this.database.addECA(this.parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc, null));
+                this.alertX_add_at = ST;
+                this.alertX_add_id = (long) seuil_x.IDAlert;
+                this.lastLocSend = loc;
             }
-            // ADD ECA? ( location with Y alert )
-            if (seuil_y != null) {
-                if (_tracking) {
-                    if( alertY_add_id != seuil_y.IDAlert ||
-                            ST > alertY_add_at + (seuil_y.TPS * 1000)  ) {
-                        database.addECA(parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc, null));
-                        //Log.d("AAA", "ADD ECA " + seuil_y.toString());
-                        alertY_add_at = ST;
-                        alertY_add_id = seuil_y.IDAlert;
-                        lastLocSend = loc;
-                    }
-                }
+            if (seuil_y != null && this._tracking && (this.alertY_add_id != ((long) seuil_y.IDAlert) || ST > this.alertY_add_at + ((long) (seuil_y.TPS * 1000)))) {
+                this.database.addECA(this.parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc, null));
+                this.alertY_add_at = ST;
+                this.alertY_add_id = (long) seuil_y.IDAlert;
+                this.lastLocSend = loc;
             }
-            // ADD ECA? (simple location without alert)
-            if (_tracking) {
+            if (this._tracking) {
                 List<Location> locations = get_location_list(1);
                 if (locations != null && locations.size() >= 1) {
-                    float min_meters = ((locations.get(0).getSpeed() * MS_TO_KMH) < 70f) ? 5f : 15f;
-                    if (lastLocSend == null
-                            || locations.get(0).distanceTo(lastLocSend) > min_meters) {
-
-                        if (lastLocSend == null) lastLocSend = new Location(locations.get(0));
-                        database.addECA(parcour_id, ECALine.newInstance(locations.get(0), lastLocSend));
-                        lastLocSend = new Location(locations.get(0));
+                    float min_meters = ((Location) locations.get(0)).getSpeed() * 3.6f < 70.0f ? 5.0f : 15.0f;
+                    if (this.lastLocSend == null || ((Location) locations.get(0)).distanceTo(this.lastLocSend) > min_meters) {
+                        if (this.lastLocSend == null) {
+                            this.lastLocSend = new Location((Location) locations.get(0));
+                        }
+                        this.database.addECA(this.parcour_id, ECALine.newInstance((Location) locations.get(0), this.lastLocSend));
+                        this.lastLocSend = new Location((Location) locations.get(0));
                     }
                 }
             }
         }
-
-        // Update UI interface
-        if( listener != null ) {
-
-            // Select seuil for ui
-            ForceSeuil seuil = null;
+        if (this.listener != null) {
+            ForceSeuil seuil;
+            double force;
             if (seuil_x == null) {
                 seuil = seuil_y;
+                force = ((Double) this.smooth.first).doubleValue();
             } else if (seuil_y == null) {
                 seuil = seuil_x;
+                force = this.XmG;
             } else {
-                seuil = (seuil_x.level.getValue() >= seuil_y.level.getValue()) ? seuil_x : seuil_y;
+                if (seuil_x.level.getValue() >= seuil_y.level.getValue()) {
+                    seuil = seuil_x;
+                } else {
+                    seuil = seuil_y;
+                }
+                force = seuil_x.level.getValue() >= seuil_y.level.getValue() ? this.XmG : ((Double) this.smooth.first).doubleValue();
             }
-
-            int t_ms = ( seuil_ui == null ) ? 0 : seuil_ui.level.get_ui_time_ms();
-
-            if( seuil_ui == null )
-            {
-                if( seuil == null )
-                {
-                    alertUI_add_at = ST;
+            int t_ms = this.seuil_ui == null ? 0 : this.seuil_ui.level.get_ui_time_ms();
+            if (this.seuil_ui == null) {
+                if (seuil == null) {
+                    this.alertUI_add_at = ST;
+                } else {
+                    this.alertUI_add_at = ST;
+                    this.seuil_ui = seuil;
+                    this.listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
+                    this.listener.onLevelNotified(seuil.level);
+                    this.listener.onForceDisplayed(force);
                 }
-                else
-                {
-                    alertUI_add_at = ST;
-                    seuil_ui = seuil;
-                    listener.onForceChanged(seuil.type,seuil.level);
+            } else if (seuil == null) {
+                if (this.alertUI_add_at + ((long) t_ms) < ST) {
+                    this.alertUI_add_at = ST;
+                    this.seuil_ui = null;
+                    this.listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0.0d, 0.0f, 0.0f);
                 }
-            }
-            else
-            {
-                if( seuil == null )
-                {
-                    if( alertUI_add_at + t_ms < ST )
-                    {
-                        alertUI_add_at = ST;
-                        seuil_ui = null;
-                        listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW);
-                    }
-                }
-                else
-                {
-                    if( (seuil.type.getAxe() == seuil_ui.type.getAxe())
-                        && (seuil.level.getValue() > seuil_ui.level.getValue()) )
-                    {
-                        alertUI_add_at = ST;
-                        seuil_ui = seuil;
-                        listener.onForceChanged(seuil.type, seuil.level);
-                    }
-                    else
-                    {
-                        if( alertUI_add_at + t_ms < ST )
-                        {
-                            alertUI_add_at = ST;
-                            seuil_ui = seuil;
-                            listener.onForceChanged(seuil.type, seuil.level);
-                        }
-                    }
-                }
+            } else if (seuil.type.getAxe() == this.seuil_ui.type.getAxe() && seuil.level.getValue() > this.seuil_ui.level.getValue()) {
+                this.alertUI_add_at = ST;
+                this.seuil_ui = seuil;
+                this.listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
+                this.listener.onLevelNotified(seuil.level);
+                this.listener.onForceDisplayed(force);
+            } else if (this.alertUI_add_at + ((long) t_ms) < ST) {
+                this.alertUI_add_at = ST;
+                this.seuil_ui = seuil;
+                this.listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
+                this.listener.onLevelNotified(seuil.level);
+                this.listener.onForceDisplayed(force);
             }
         }
-
     }
-
 
     /// ============================================================================================
     /// CALCUL COTATION
     /// ============================================================================================
 
-    private long note_parcour_update_at = 0;
-    private long note_forces_update_at = 0;
-
-    private float calc_note_by_force_type( String type, long parcour_id, long begin, long end ) {
-        float ret = 20f;
-        if( !DataDOBJ.ACCELERATIONS.equals(type)
-                && !DataDOBJ.FREINAGES.equals(type)
-                && !DataDOBJ.VIRAGES.equals(type) ) return ret;
-
-        // COEFFICIENTS
-        float coeff_general = DataDOBJ.get_coefficient_general(ctx, type);
-        int[] coeff_force = {
-                DataDOBJ.get_coefficient(ctx, type, DataDOBJ.VERT),
-                DataDOBJ.get_coefficient(ctx, type, DataDOBJ.BLEU),
-                DataDOBJ.get_coefficient(ctx, type, DataDOBJ.JAUNE),
-                DataDOBJ.get_coefficient(ctx, type, DataDOBJ.ORANGE),
-                DataDOBJ.get_coefficient(ctx, type, DataDOBJ.ROUGE)
-        };
-
-        // NUNBER OF EVENEMENTS
-        int[] nb_evt = new int[5];
-        if( DataDOBJ.ACCELERATIONS.equals(type) ){
-            nb_evt[0] = database.countNbEvent(readerEPCFile.getForceSeuil(0).IDAlert, parcour_id, begin, end);
-            nb_evt[1] = database.countNbEvent(readerEPCFile.getForceSeuil(1).IDAlert, parcour_id, begin, end);
-            nb_evt[2] = database.countNbEvent(readerEPCFile.getForceSeuil(2).IDAlert, parcour_id, begin, end);
-            nb_evt[3] = database.countNbEvent(readerEPCFile.getForceSeuil(3).IDAlert, parcour_id, begin, end);
-            nb_evt[4] = database.countNbEvent(readerEPCFile.getForceSeuil(4).IDAlert, parcour_id, begin, end);
-        } else if( DataDOBJ.FREINAGES.equals(type) ){
-            nb_evt[0] = database.countNbEvent(readerEPCFile.getForceSeuil(5).IDAlert, parcour_id, begin, end);
-            nb_evt[1] = database.countNbEvent(readerEPCFile.getForceSeuil(6).IDAlert, parcour_id, begin, end);
-            nb_evt[2] = database.countNbEvent(readerEPCFile.getForceSeuil(7).IDAlert, parcour_id, begin, end);
-            nb_evt[3] = database.countNbEvent(readerEPCFile.getForceSeuil(8).IDAlert, parcour_id, begin, end);
-            nb_evt[4] = database.countNbEvent(readerEPCFile.getForceSeuil(9).IDAlert, parcour_id, begin, end);
-        } else {//if( DataDOBJ.VIRAGES.equals(type) ){
-            nb_evt[0] = database.countNbEvent(readerEPCFile.getForceSeuil(10).IDAlert, parcour_id, begin, end)
-                    + database.countNbEvent(readerEPCFile.getForceSeuil(15).IDAlert, parcour_id, begin, end);
-            nb_evt[1] = database.countNbEvent(readerEPCFile.getForceSeuil(11).IDAlert, parcour_id, begin, end)
-                    + database.countNbEvent(readerEPCFile.getForceSeuil(16).IDAlert, parcour_id, begin, end);
-            nb_evt[2] = database.countNbEvent(readerEPCFile.getForceSeuil(12).IDAlert, parcour_id, begin, end)
-                    + database.countNbEvent(readerEPCFile.getForceSeuil(17).IDAlert, parcour_id, begin, end);
-            nb_evt[3] = database.countNbEvent(readerEPCFile.getForceSeuil(13).IDAlert, parcour_id, begin, end)
-                    + database.countNbEvent(readerEPCFile.getForceSeuil(18).IDAlert, parcour_id, begin, end);
-            nb_evt[4] = database.countNbEvent(readerEPCFile.getForceSeuil(14).IDAlert, parcour_id, begin, end)
-                    + database.countNbEvent(readerEPCFile.getForceSeuil(19).IDAlert, parcour_id, begin, end);
+    private float calc_note_by_force_type(String type, long parcour_id, long begin, long end) {
+        if (!"A".equals(type) && !"F".equals(type) && !"V".equals(type)) {
+            return 20.0f;
         }
-
-Log.d("AAA", "+++++ CALCUL FOR " + type + "+++++"  );
-Log.d("AAA", "COEFFICIENTS" );
-Log.d("AAA", "- General: " + coeff_general );
-Log.d("AAA", "- Vert: " + coeff_force[0] );
-Log.d("AAA", "- Bleu: " + coeff_force[1] );
-Log.d("AAA", "- Jaune: " + coeff_force[2] );
-Log.d("AAA", "- Orange: " + coeff_force[3] );
-Log.d("AAA", "- Rouge: " + coeff_force[4] );
-//Log.d("AAA", "OBJECTIS (%) " );
-//Log.d("AAA", "- General: " + coeff_general );
-//Log.d("AAA", "- Vert: " + coeff_force[0] );
-//Log.d("AAA", "- Bleu: " + coeff_force[1] );
-//Log.d("AAA", "- Jaune: " + coeff_force[2] );
-//Log.d("AAA", "- Orange: " + coeff_force[3] );
-//Log.d("AAA", "- Rouge: " + coeff_force[4] );
-Log.d("AAA", "EVENEMENTS CONSTATEES" );
-Log.d("AAA", "- Vert: " + nb_evt[0] );
-Log.d("AAA", "- Bleu: " + nb_evt[1] );
-Log.d("AAA", "- Jaune: " + nb_evt[2] );
-Log.d("AAA", "- Orange: " + nb_evt[3] );
-Log.d("AAA", "- Rouge: " + nb_evt[4] );
-Log.d("AAA", "ETAPES DE CALCULS" );
-        int evt_sum = nb_evt[0] + nb_evt[1] + nb_evt[2] + nb_evt[3] + nb_evt[4];
-Log.d("AAA", "Somme des evenements: " + evt_sum );
-        if( evt_sum <= 0 ) {
-            ret = 20f;
+        float ret;
+        float coeff_general = DataDOBJ.get_coefficient_general(this.ctx, type);
+        int[] coeff_force = new int[5];
+        coeff_force[0] = DataDOBJ.get_coefficient(this.ctx, type, "V");
+        coeff_force[1] = DataDOBJ.get_coefficient(this.ctx, type, "B");
+        coeff_force[2] = DataDOBJ.get_coefficient(this.ctx, type, "J");
+        coeff_force[3] = DataDOBJ.get_coefficient(this.ctx, type, "O");
+        coeff_force[4] = DataDOBJ.get_coefficient(this.ctx, type, "R");
+        int[] nb_evt = new int[5];
+        if ("A".equals(type)) {
+            nb_evt[0] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(0).IDAlert, parcour_id, begin, end);
+            nb_evt[1] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(1).IDAlert, parcour_id, begin, end);
+            nb_evt[2] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(2).IDAlert, parcour_id, begin, end);
+            nb_evt[3] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(3).IDAlert, parcour_id, begin, end);
+            nb_evt[4] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(4).IDAlert, parcour_id, begin, end);
+        } else if ("F".equals(type)) {
+            nb_evt[0] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(5).IDAlert, parcour_id, begin, end);
+            nb_evt[1] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(6).IDAlert, parcour_id, begin, end);
+            nb_evt[2] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(7).IDAlert, parcour_id, begin, end);
+            nb_evt[3] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(8).IDAlert, parcour_id, begin, end);
+            nb_evt[4] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(9).IDAlert, parcour_id, begin, end);
         } else {
-
-            // CALCUL
-            int coeff_sum = coeff_force[0] + coeff_force[1] + coeff_force[2] + coeff_force[3] + coeff_force[4];
+            nb_evt[0] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(15).IDAlert, parcour_id, begin, end) + this.database.countNbEvent(this.readerEPCFile.getForceSeuil(10).IDAlert, parcour_id, begin, end);
+            nb_evt[1] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(16).IDAlert, parcour_id, begin, end) + this.database.countNbEvent(this.readerEPCFile.getForceSeuil(11).IDAlert, parcour_id, begin, end);
+            nb_evt[2] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(17).IDAlert, parcour_id, begin, end) + this.database.countNbEvent(this.readerEPCFile.getForceSeuil(12).IDAlert, parcour_id, begin, end);
+            nb_evt[3] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(18).IDAlert, parcour_id, begin, end) + this.database.countNbEvent(this.readerEPCFile.getForceSeuil(13).IDAlert, parcour_id, begin, end);
+            nb_evt[4] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(19).IDAlert, parcour_id, begin, end) + this.database.countNbEvent(this.readerEPCFile.getForceSeuil(14).IDAlert, parcour_id, begin, end);
+        }
+        Log.d("AAA", "+++++ CALCUL FOR " + type + "+++++");
+        Log.d("AAA", "COEFFICIENTS");
+        Log.d("AAA", "- General: " + coeff_general);
+        Log.d("AAA", "- Vert: " + coeff_force[0]);
+        Log.d("AAA", "- Bleu: " + coeff_force[1]);
+        Log.d("AAA", "- Jaune: " + coeff_force[2]);
+        Log.d("AAA", "- Orange: " + coeff_force[3]);
+        Log.d("AAA", "- Rouge: " + coeff_force[4]);
+        Log.d("AAA", "EVENEMENTS CONSTATEES");
+        Log.d("AAA", "- Vert: " + nb_evt[0]);
+        Log.d("AAA", "- Bleu: " + nb_evt[1]);
+        Log.d("AAA", "- Jaune: " + nb_evt[2]);
+        Log.d("AAA", "- Orange: " + nb_evt[3]);
+        Log.d("AAA", "- Rouge: " + nb_evt[4]);
+        Log.d("AAA", "ETAPES DE CALCULS");
+        int evt_sum = (((nb_evt[0] + nb_evt[1]) + nb_evt[2]) + nb_evt[3]) + nb_evt[4];
+        Log.d("AAA", "Somme des evenements: " + evt_sum);
+        if (evt_sum <= 0) {
+            ret = 20.0f;
+        } else {
+            int coeff_sum = (((coeff_force[0] + coeff_force[1]) + coeff_force[2]) + coeff_force[3]) + coeff_force[4];
             float coeff_percent = (float) (coeff_sum * 0.01);
-            float[] interm_1 = {
-                    ( coeff_sum * coeff_force[0] ) / ( 100f * coeff_percent * coeff_general ),
-                    ( coeff_sum * coeff_force[1] ) / ( 100f * coeff_percent * coeff_general ),
-                    ( coeff_sum * coeff_force[2] ) / ( 100f * coeff_percent * coeff_general ),
-                    ( coeff_sum * coeff_force[3] ) / ( 100f * coeff_percent * coeff_general ),
-                    ( coeff_sum * coeff_force[4] ) / ( 100f * coeff_percent * coeff_general )
-            };
-
-Log.d("AAA", "coeff_sum: " + coeff_sum );
-Log.d("AAA", "coeff_percent: " + coeff_percent );
-Log.d("AAA", "interm_1:" );
-Log.d("AAA", "- Vert: " + interm_1[0] );
-Log.d("AAA", "- Bleu: " + interm_1[1] );
-Log.d("AAA", "- Jaune: " + interm_1[2] );
-Log.d("AAA", "- Orange: " + interm_1[3] );
-Log.d("AAA", "- Rouge: " + interm_1[4] );
-
+            float[] interm_1 = new float[]{((float) (coeff_force[0] * coeff_sum)) / ((100.0f * coeff_percent) * coeff_general), ((float) (coeff_force[1] * coeff_sum)) / ((100.0f * coeff_percent) * coeff_general), ((float) (coeff_force[2] * coeff_sum)) / ((100.0f * coeff_percent) * coeff_general), ((float) (coeff_force[3] * coeff_sum)) / ((100.0f * coeff_percent) * coeff_general), ((float) (coeff_force[4] * coeff_sum)) / ((100.0f * ((float) (((double) coeff_sum) * 0.01d))) * coeff_general)};
+            Log.d("AAA", "coeff_sum: " + coeff_sum);
+            Log.d("AAA", "coeff_percent: " + coeff_percent);
+            Log.d("AAA", "interm_1:");
+            Log.d("AAA", "- Vert: " + interm_1[0]);
+            Log.d("AAA", "- Bleu: " + interm_1[1]);
+            Log.d("AAA", "- Jaune: " + interm_1[2]);
+            Log.d("AAA", "- Orange: " + interm_1[3]);
+            Log.d("AAA", "- Rouge: " + interm_1[4]);
             float coeff_evt = (float) (evt_sum * 0.01);
-            float[] interm_2 = {
-                    (evt_sum * nb_evt[0]) / (100f * coeff_evt * coeff_evt),
-                    (evt_sum * nb_evt[1]) / (100f * coeff_evt * coeff_evt),
-                    (evt_sum * nb_evt[2]) / (100f * coeff_evt * coeff_evt),
-                    (evt_sum * nb_evt[3]) / (100f * coeff_evt * coeff_evt),
-                    (evt_sum * nb_evt[4]) / (100f * coeff_evt * coeff_evt)
-            };
-
-Log.d("AAA", "coeff_evt: " + coeff_evt );
-Log.d("AAA", "interm_2:" );
-Log.d("AAA", "- Vert: " + interm_2[0] );
-Log.d("AAA", "- Bleu: " + interm_2[1] );
-Log.d("AAA", "- Jaune: " + interm_2[2] );
-Log.d("AAA", "- Orange: " + interm_2[3] );
-Log.d("AAA", "- Rouge: " + interm_2[4] );
-
-            float[] interm_3 = {
-                    interm_1[0] * interm_2[0],
-                    interm_1[1] * interm_2[1],
-                    interm_1[2] * interm_2[2],
-                    interm_1[3] * interm_2[3],
-                    interm_1[4] * interm_2[4]
-            };
-
-Log.d("AAA", "interm_3:" );
-Log.d("AAA", "- Vert: " + interm_3[0] );
-Log.d("AAA", "- Bleu: " + interm_3[1] );
-Log.d("AAA", "- Jaune: " + interm_3[2] );
-Log.d("AAA", "- Orange: " + interm_3[3] );
-Log.d("AAA", "- Rouge: " + interm_3[4] );
-
+            float[] interm_2 = new float[]{((float) (nb_evt[0] * evt_sum)) / ((100.0f * coeff_evt) * coeff_evt), ((float) (nb_evt[1] * evt_sum)) / ((100.0f * coeff_evt) * coeff_evt), ((float) (nb_evt[2] * evt_sum)) / ((100.0f * coeff_evt) * coeff_evt), ((float) (nb_evt[3] * evt_sum)) / ((100.0f * coeff_evt) * coeff_evt), ((float) (nb_evt[4] * evt_sum)) / ((100.0f * ((float) (((double) evt_sum) * 0.01d))) * coeff_evt)};
+            Log.d("AAA", "coeff_evt: " + ((float) (((double) evt_sum) * 0.01d)));
+            Log.d("AAA", "interm_2:");
+            Log.d("AAA", "- Vert: " + interm_2[0]);
+            Log.d("AAA", "- Bleu: " + interm_2[1]);
+            Log.d("AAA", "- Jaune: " + interm_2[2]);
+            Log.d("AAA", "- Orange: " + interm_2[3]);
+            Log.d("AAA", "- Rouge: " + interm_2[4]);
+            float[] interm_3 = new float[]{interm_1[0] * interm_2[0], interm_1[1] * interm_2[1], interm_1[2] * interm_2[2], interm_1[3] * interm_2[3], interm_1[4] * interm_2[4]};
+            Log.d("AAA", "interm_3:");
+            Log.d("AAA", "- Vert: " + interm_3[0]);
+            Log.d("AAA", "- Bleu: " + interm_3[1]);
+            Log.d("AAA", "- Jaune: " + interm_3[2]);
+            Log.d("AAA", "- Orange: " + interm_3[3]);
+            Log.d("AAA", "- Rouge: " + interm_3[4]);
             float interm_3_sum = interm_3[0] + interm_3[1] + interm_3[2] + interm_3[3] + interm_3[4];
-            float[] interm_4 = {
-                    interm_3[0] / (interm_3_sum * 0.01f),
-                    interm_3[1] / (interm_3_sum * 0.01f),
-                    interm_3[2] / (interm_3_sum * 0.01f),
-                    interm_3[3] / (interm_3_sum * 0.01f),
-                    interm_3[4] / (interm_3_sum * 0.01f)
-            };
-Log.d("AAA", "interm_3_sum: " + interm_3_sum );
-Log.d("AAA", "interm_4:" );
-Log.d("AAA", "- Vert: " + interm_4[0] );
-Log.d("AAA", "- Bleu: " + interm_4[1] );
-Log.d("AAA", "- Jaune: " + interm_4[2] );
-Log.d("AAA", "- Orange: " + interm_4[3] );
-Log.d("AAA", "- Rouge: " + interm_4[4] );
-
-            ret = (interm_4[0] + interm_4[1] - interm_4[2] - interm_4[3] - interm_4[4]) * (1f / 5f);
-Log.d("AAA","RET = " + ret );
-            if (ret < 0f) ret = 0f;
-            if (ret > 20f) ret = 20f;
-
-            // Update statictics data
-            if( StatsLastDriving.get_start_at(ctx) == parcour_id ) {
-
-                if( DataDOBJ.ACCELERATIONS.equals(type) ) {
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_1, interm_4[0]);
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_2, interm_4[1]);
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_3, interm_4[2]);
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_4, interm_4[3]);
-                    StatsLastDriving.set_resultat_A(ctx, LEVEL_t.LEVEL_5, interm_4[4]);
-                } else if( DataDOBJ.FREINAGES.equals(type) ) {
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_1, interm_4[0]);
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_2, interm_4[1]);
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_3, interm_4[2]);
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_4, interm_4[3]);
-                    StatsLastDriving.set_resultat_F(ctx, LEVEL_t.LEVEL_5, interm_4[4]);
-                } else if( DataDOBJ.VIRAGES.equals(type) ) {
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_1, interm_4[0]);
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_2, interm_4[1]);
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_3, interm_4[2]);
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_4, interm_4[3]);
-                    StatsLastDriving.set_resultat_V(ctx, LEVEL_t.LEVEL_5, interm_4[4]);
+            float[] interm_4 = new float[]{interm_3[0] / (0.01f * interm_3_sum), interm_3[1] / (0.01f * interm_3_sum), interm_3[2] / (0.01f * interm_3_sum), interm_3[3] / (0.01f * interm_3_sum), interm_3[4] / (0.01f * ((((interm_3[0] + interm_3[1]) + interm_3[2]) + interm_3[3]) + interm_3[4]))};
+            Log.d("AAA", "interm_3_sum: " + ((((interm_3[0] + interm_3[1]) + interm_3[2]) + interm_3[3]) + interm_3[4]));
+            Log.d("AAA", "interm_4:");
+            Log.d("AAA", "- Vert: " + interm_4[0]);
+            Log.d("AAA", "- Bleu: " + interm_4[1]);
+            Log.d("AAA", "- Jaune: " + interm_4[2]);
+            Log.d("AAA", "- Orange: " + interm_4[3]);
+            Log.d("AAA", "- Rouge: " + interm_4[4]);
+            ret = ((((interm_4[0] + interm_4[1]) - interm_4[2]) - interm_4[3]) - interm_4[4]) * 0.2f;
+            Log.d("AAA", "RET = " + ret);
+            if (ret < 0.0f) {
+                ret = 0.0f;
+            }
+            if (ret > 20.0f) {
+                ret = 20.0f;
+            }
+            if (StatsLastDriving.get_start_at(this.ctx) == parcour_id) {
+                if ("A".equals(type)) {
+                    StatsLastDriving.set_resultat_A(this.ctx, LEVEL_t.LEVEL_1, interm_4[0]);
+                    StatsLastDriving.set_resultat_A(this.ctx, LEVEL_t.LEVEL_2, interm_4[1]);
+                    StatsLastDriving.set_resultat_A(this.ctx, LEVEL_t.LEVEL_3, interm_4[2]);
+                    StatsLastDriving.set_resultat_A(this.ctx, LEVEL_t.LEVEL_4, interm_4[3]);
+                    StatsLastDriving.set_resultat_A(this.ctx, LEVEL_t.LEVEL_5, interm_4[4]);
+                } else if ("F".equals(type)) {
+                    StatsLastDriving.set_resultat_F(this.ctx, LEVEL_t.LEVEL_1, interm_4[0]);
+                    StatsLastDriving.set_resultat_F(this.ctx, LEVEL_t.LEVEL_2, interm_4[1]);
+                    StatsLastDriving.set_resultat_F(this.ctx, LEVEL_t.LEVEL_3, interm_4[2]);
+                    StatsLastDriving.set_resultat_F(this.ctx, LEVEL_t.LEVEL_4, interm_4[3]);
+                    StatsLastDriving.set_resultat_F(this.ctx, LEVEL_t.LEVEL_5, interm_4[4]);
+                } else if ("V".equals(type)) {
+                    StatsLastDriving.set_resultat_V(this.ctx, LEVEL_t.LEVEL_1, interm_4[0]);
+                    StatsLastDriving.set_resultat_V(this.ctx, LEVEL_t.LEVEL_2, interm_4[1]);
+                    StatsLastDriving.set_resultat_V(this.ctx, LEVEL_t.LEVEL_3, interm_4[2]);
+                    StatsLastDriving.set_resultat_V(this.ctx, LEVEL_t.LEVEL_4, interm_4[3]);
+                    StatsLastDriving.set_resultat_V(this.ctx, LEVEL_t.LEVEL_5, interm_4[4]);
                 }
             }
         }
-Log.d("AAA", "----- CALCUL FOR " + type + "-----"  );
+        Log.d("AAA", "----- CALCUL FOR " + type + "-----");
         return ret;
     }
 
-    private float calc_note_by_force_type( String type, long parcour_id ) {
-        long begin = 0;
-        long end = System.currentTimeMillis() + 3600;
-        return calc_note_by_force_type( type, parcour_id, begin, end );
+    private float calc_note_by_force_type(String type, long parcour_id) {
+        return calc_note_by_force_type(type, parcour_id, 0, System.currentTimeMillis() + 3600);
     }
 
-    private float calc_note( long parcour_id, long begin, long end ) {
-        float Note_A = calc_note_by_force_type(DataDOBJ.ACCELERATIONS, parcour_id, begin, end);
-        float Note_F = calc_note_by_force_type(DataDOBJ.FREINAGES,parcour_id, begin, end);
-        float Note_V = calc_note_by_force_type(DataDOBJ.VIRAGES,parcour_id, begin, end);
-        float Coeff_General_A = DataDOBJ.get_coefficient_general(ctx, DataDOBJ.ACCELERATIONS);
-        float Coeff_General_F = DataDOBJ.get_coefficient_general(ctx, DataDOBJ.FREINAGES);
-        float Coeff_General_V = DataDOBJ.get_coefficient_general(ctx, DataDOBJ.VIRAGES);
-        return ( (Note_A*Coeff_General_A) + (Note_F*Coeff_General_F) + (Note_V*Coeff_General_V) )
-                / ( Coeff_General_A + Coeff_General_F + Coeff_General_V );
+    private float calc_note(long parcour_id, long begin, long end) {
+        float Note_A = calc_note_by_force_type("A", parcour_id, begin, end);
+        float Note_F = calc_note_by_force_type("F", parcour_id, begin, end);
+        float Note_V = calc_note_by_force_type("V", parcour_id, begin, end);
+        float Coeff_General_A = DataDOBJ.get_coefficient_general(this.ctx, "A");
+        float Coeff_General_F = DataDOBJ.get_coefficient_general(this.ctx, "F");
+        float Coeff_General_V = DataDOBJ.get_coefficient_general(this.ctx, "V");
+        return (((Note_A * Coeff_General_A) + (Note_F * Coeff_General_F)) + (Note_V * Coeff_General_V)) / ((Coeff_General_A + Coeff_General_F) + Coeff_General_V);
     }
 
-    private float calc_note( long parcour_id ) {
-        long begin = 0;
-        long end = System.currentTimeMillis() + 3600;
-        return calc_note( parcour_id, begin, end );
+    private float calc_note(long parcour_id) {
+        return calc_note(parcour_id, 0, System.currentTimeMillis() + 3600);
     }
 
     private void update_parcour_note(boolean force) {
-        // Every 3 minutes
-        if( force || note_parcour_update_at + (3 * 60 * 1000) < System.currentTimeMillis() )
-        {
-            note_parcour_update_at = System.currentTimeMillis();
-
-            float parcour_note = calc_note(parcour_id);
-
+        if (force || this.note_parcour_update_at + 180000 < System.currentTimeMillis()) {
+            this.note_parcour_update_at = System.currentTimeMillis();
+            float parcour_note = calc_note(this.parcour_id);
             LEVEL_t parcour_level = LEVEL_t.LEVEL_5;
-            if( parcour_note >= 16f ) parcour_level = LEVEL_t.LEVEL_1;
-            else if( parcour_note >= 13f ) parcour_level = LEVEL_t.LEVEL_2;
-            else if( parcour_note >= 9f ) parcour_level = LEVEL_t.LEVEL_3;
-            else if( parcour_note >= 6f ) parcour_level = LEVEL_t.LEVEL_4;
-
+            if (parcour_note >= 16.0f) {
+                parcour_level = LEVEL_t.LEVEL_1;
+            } else if (parcour_note >= 13.0f) {
+                parcour_level = LEVEL_t.LEVEL_2;
+            } else if (parcour_note >= 9.0f) {
+                parcour_level = LEVEL_t.LEVEL_3;
+            } else if (parcour_note >= 6.0f) {
+                parcour_level = LEVEL_t.LEVEL_4;
+            }
             long end = startOfDays(System.currentTimeMillis());
-            long begin = end - (5 * 24 * 3600 * 1000);
-            float last_5_days_note = calc_note( -1, begin, end );
-
+            float last_5_days_note = calc_note(-1, end - 432000000, end);
             LEVEL_t last_5_days_level = LEVEL_t.LEVEL_5;
-            if( last_5_days_note >= 16f ) last_5_days_level = LEVEL_t.LEVEL_1;
-            else if( last_5_days_note >= 13f ) last_5_days_level = LEVEL_t.LEVEL_2;
-            else if( last_5_days_note >= 9f ) last_5_days_level = LEVEL_t.LEVEL_3;
-            else if( last_5_days_note >= 6f ) last_5_days_level = LEVEL_t.LEVEL_4;
-
-            StatsLastDriving.set_note(ctx,SCORE_t.FINAL,parcour_note);
-            Log.d(TAG,"Parcours " + parcour_id + " note: " + parcour_note );
-            if( listener != null ) listener.onNoteChanged( (int)parcour_note, parcour_level, last_5_days_level );
+            if (last_5_days_note >= 16.0f) {
+                last_5_days_level = LEVEL_t.LEVEL_1;
+            } else if (last_5_days_note >= 13.0f) {
+                last_5_days_level = LEVEL_t.LEVEL_2;
+            } else if (last_5_days_note >= 9.0f) {
+                last_5_days_level = LEVEL_t.LEVEL_3;
+            } else if (last_5_days_note >= 6.0f) {
+                last_5_days_level = LEVEL_t.LEVEL_4;
+            }
+            StatsLastDriving.set_note(this.ctx, SCORE_t.FINAL, parcour_note);
+            Log.d(TAG, "Parcours " + this.parcour_id + " note: " + parcour_note);
+            if (this.listener != null) {
+                this.listener.onNoteChanged((int) parcour_note, parcour_level, last_5_days_level);
+                this.listener.onLevelNotified(parcour_level);
+            }
         }
     }
 
     private void update_force_note(boolean force) {
-
-        // Every 1 minutes
-        if( force || note_forces_update_at + (60 * 1000) < System.currentTimeMillis() ) {
-
-            note_forces_update_at = System.currentTimeMillis();
-
-            float Note_A = calc_note_by_force_type(DataDOBJ.ACCELERATIONS, parcour_id);
-            LEVEL_t level_A = note2level( Note_A );
-
-            float Note_F = calc_note_by_force_type(DataDOBJ.FREINAGES, parcour_id);
-            LEVEL_t level_F = note2level( Note_F );
-
-            float Note_V = calc_note_by_force_type(DataDOBJ.VIRAGES, parcour_id);
-            LEVEL_t level_V = note2level( Note_V );
-
-            float Note_M = (Note_A + Note_F + Note_V) * (1f / 3f);
-            LEVEL_t level_M = note2level( Note_M );
-
-            StatsLastDriving.set_note(ctx,SCORE_t.ACCELERATING,Note_A);
-            StatsLastDriving.set_note(ctx,SCORE_t.BRAKING,Note_F);
-            StatsLastDriving.set_note(ctx,SCORE_t.CORNERING,Note_V);
-
-            Log.d(TAG,"Parcours " + parcour_id + " note A: " + Note_A );
-            Log.d(TAG,"Parcours " + parcour_id + " note F: " + Note_F );
-            Log.d(TAG,"Parcours " + parcour_id + " note V: " + Note_V );
-            Log.d(TAG,"Parcours " + parcour_id + " note M: " + Note_M );
-
-            float speed_avg = database.speed_avg(parcour_id, System.currentTimeMillis(), 0f);
-            StatsLastDriving.set_speed_avg(ctx,speed_avg);
-
-            if (listener != null) {
-                listener.onScoreChanged(SCORE_t.ACCELERATING, level_A);
-                listener.onScoreChanged(SCORE_t.BRAKING, level_F);
-                listener.onScoreChanged(SCORE_t.CORNERING, level_V);
-                listener.onScoreChanged(SCORE_t.AVERAGE, level_M);
+        if (force || this.note_forces_update_at + 60000 < System.currentTimeMillis()) {
+            this.note_forces_update_at = System.currentTimeMillis();
+            float Note_A = calc_note_by_force_type("A", this.parcour_id);
+            LEVEL_t level_A = note2level(Note_A);
+            float Note_F = calc_note_by_force_type("F", this.parcour_id);
+            LEVEL_t level_F = note2level(Note_F);
+            float Note_V = calc_note_by_force_type("V", this.parcour_id);
+            LEVEL_t level_V = note2level(Note_V);
+            float Note_M = ((Note_A + Note_F) + Note_V) * 0.33333334f;
+            LEVEL_t level_M = note2level(Note_M);
+            StatsLastDriving.set_note(this.ctx, SCORE_t.ACCELERATING, Note_A);
+            StatsLastDriving.set_note(this.ctx, SCORE_t.BRAKING, Note_F);
+            StatsLastDriving.set_note(this.ctx, SCORE_t.CORNERING, Note_V);
+            Log.d(TAG, "Parcours " + this.parcour_id + " note A: " + Note_A);
+            Log.d(TAG, "Parcours " + this.parcour_id + " note F: " + Note_F);
+            Log.d(TAG, "Parcours " + this.parcour_id + " note V: " + Note_V);
+            Log.d(TAG, "Parcours " + this.parcour_id + " note M: " + Note_M);
+            StatsLastDriving.set_speed_avg(this.ctx, this.database.speed_avg(this.parcour_id, System.currentTimeMillis(), 0.0f, new int[0]));
+            if (this.listener != null) {
+                this.listener.onScoreChanged(SCORE_t.ACCELERATING, level_A);
+                this.listener.onScoreChanged(SCORE_t.BRAKING, level_F);
+                this.listener.onScoreChanged(SCORE_t.CORNERING, level_V);
+                this.listener.onScoreChanged(SCORE_t.AVERAGE, level_M);
             }
         }
-
     }
 
     private LEVEL_t note2level(float note) {
         LEVEL_t level = LEVEL_t.LEVEL_5;
-        if (note >= 16f) level = LEVEL_t.LEVEL_1;
-        else if (note >= 13f) level = LEVEL_t.LEVEL_2;
-        else if (note >= 9f) level = LEVEL_t.LEVEL_3;
-        else if (note >= 6f) level = LEVEL_t.LEVEL_4;
+        if (note >= 16.0f) {
+            return LEVEL_t.LEVEL_1;
+        }
+        if (note >= 13.0f) {
+            return LEVEL_t.LEVEL_2;
+        }
+        if (note >= 9.0f) {
+            return LEVEL_t.LEVEL_3;
+        }
+        if (note >= 6.0f) {
+            return LEVEL_t.LEVEL_4;
+        }
         return level;
     }
 
-    private long startOfDays(long timestamp){
+    private long startOfDays(long timestamp) {
         Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis( timestamp );
+        cal.setTimeInMillis(timestamp);
         cal.set(Calendar.HOUR_OF_DAY, 0); //set hours to zero
         cal.set(Calendar.MINUTE, 0); // set minutes to zero
         cal.set(Calendar.SECOND, 0); //set seconds to zero
         return cal.getTimeInMillis();
     }
 
-    /// ============================================================================================
+/// ============================================================================================
     /// CALCUL RECOMMENDED SPEED
     /// ============================================================================================
 
-    private long recommended_speed_update_at = 0;
-    private float speed_H = 0f;
-    private float speed_V = 0f;
-    private float speed_max = 0f;
-
-    /// Calculate recommended speed
     private void update_recommended_speed(boolean force) {
-
-        // Calculate recommended val and get speed maximum since XX secondes
-        // 10 minutes
-        if( force || recommended_speed_update_at + (600*1000) < System.currentTimeMillis()) {
-            if (readerEPCFile != null) {
-
-                // Period pour calucl: (utiliser les X derniere secondes)
-                SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-                String key = ctx.getResources().getString(R.string.recommended_speed_time_key);
-                long delay_sec = sp.getInt(key,30) * 60;
-
-                key = ctx.getResources().getString(R.string.stop_trigger_time_key);
-                long max_delay_sec = sp.getInt(key,7*60) * 60;
-
-
-//                // Get the horizontal maximum speed since
-//                speed_H = database.speed_max(parcour_id, delay_sec,
-//                        readerEPCFile.getForceSeuil(0).IDAlert, // IDAlert +X1
-//                        readerEPCFile.getForceSeuil(1).IDAlert, // IDAlert +X2
-//                        readerEPCFile.getForceSeuil(5).IDAlert, // IDAlert -X1
-//                        readerEPCFile.getForceSeuil(6).IDAlert  // IDAlert -X2
-//                );
-//
-//                // Get the vertical maximum speed since
-//                speed_V = database.speed_max(parcour_id, delay_sec,
-//                        readerEPCFile.getForceSeuil(10).IDAlert,    // IDAlert +Y1
-//                        readerEPCFile.getForceSeuil(11).IDAlert,    // IDAlert +Y2
-//                        readerEPCFile.getForceSeuil(15).IDAlert,    // IDAlert -Y1
-//                        readerEPCFile.getForceSeuil(16).IDAlert     // IDAlert -Y2
-//                );
-//
-//                // Get the max speed
-//                speed_max = database.speed_max(parcour_id, delay_sec);
-
-// TEST
-// Get the horizontal maximum speed since
-speed_H = database.speed_max_test(parcour_id, delay_sec, 50, max_delay_sec,
-        readerEPCFile.getForceSeuil(0).IDAlert, // IDAlert +X1
-        readerEPCFile.getForceSeuil(1).IDAlert, // IDAlert +X2
-        readerEPCFile.getForceSeuil(5).IDAlert, // IDAlert -X1
-        readerEPCFile.getForceSeuil(6).IDAlert  // IDAlert -X2
-);
-
-// Get the vertical maximum speed since
-speed_V = database.speed_max_test(parcour_id, delay_sec, 50, max_delay_sec,
-        readerEPCFile.getForceSeuil(10).IDAlert,    // IDAlert +Y1
-        readerEPCFile.getForceSeuil(11).IDAlert,    // IDAlert +Y2
-        readerEPCFile.getForceSeuil(15).IDAlert,    // IDAlert -Y1
-        readerEPCFile.getForceSeuil(16).IDAlert     // IDAlert -Y2
-);
-
-// Get the max speed
-speed_max = database.speed_max_test(parcour_id, delay_sec, 50, max_delay_sec, readerEPCFile.get_all_alertID() );
-
-                // Set calculate at
-                recommended_speed_update_at = System.currentTimeMillis();
-            }
+        if ((force || this.recommended_speed_update_at + 240000 < System.currentTimeMillis()) && this.readerEPCFile != null) {
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this.ctx);
+            long delay_sec = (long) (sp.getInt(this.ctx.getResources().getString(R.string.recommended_speed_time_key), 30) * 60);
+            long max_delay_sec = (long) (sp.getInt(this.ctx.getResources().getString(R.string.stop_trigger_time_key), NNTPReply.NO_CURRENT_ARTICLE_SELECTED) * 60);
+            speed_H = this.database.speed_max_test(this.parcour_id, delay_sec, 50, max_delay_sec, this.readerEPCFile.getForceSeuil(0).IDAlert, this.readerEPCFile.getForceSeuil(1).IDAlert, this.readerEPCFile.getForceSeuil(5).IDAlert, this.readerEPCFile.getForceSeuil(6).IDAlert);
+            speed_V = this.database.speed_max_test(this.parcour_id, delay_sec, 50, max_delay_sec, this.readerEPCFile.getForceSeuil(10).IDAlert, this.readerEPCFile.getForceSeuil(11).IDAlert, this.readerEPCFile.getForceSeuil(15).IDAlert, this.readerEPCFile.getForceSeuil(16).IDAlert);
+            this.speed_max = this.database.speed_max_test(this.parcour_id, delay_sec, 50, max_delay_sec, this.readerEPCFile.get_all_alertID());
+            this.recommended_speed_update_at = System.currentTimeMillis();
         }
-        // Update the UI
-        if( listener != null ) {
-            // Get the horizontal level
+        if (this.listener != null) {
             LEVEL_t level_H = LEVEL_t.LEVEL_UNKNOW;
-            if( speed_H > 0f ) {
-                if (speed_max < speed_H) level_H = LEVEL_t.LEVEL_1;
-                else if (speed_max < speed_H * 1.1) level_H = LEVEL_t.LEVEL_2;
-                else if (speed_max < speed_H * 1.2) level_H = LEVEL_t.LEVEL_3;
-                else if (speed_max < speed_H * 1.35) level_H = LEVEL_t.LEVEL_4;
-                else level_H = LEVEL_t.LEVEL_5;
+            if (speed_H > 0.0f) {
+                if (this.speed_max < speed_H) {
+                    level_H = LEVEL_t.LEVEL_1;
+                } else if (((double) this.speed_max) < ((double) speed_H) * 1.1d) {
+                    level_H = LEVEL_t.LEVEL_2;
+                } else if (((double) this.speed_max) < ((double) speed_H) * 1.2d) {
+                    level_H = LEVEL_t.LEVEL_3;
+                } else if (((double) this.speed_max) < ((double) speed_H) * 1.35d) {
+                    level_H = LEVEL_t.LEVEL_4;
+                } else {
+                    level_H = LEVEL_t.LEVEL_5;
+                }
             }
-            // Get the vertical level
             LEVEL_t level_V = LEVEL_t.LEVEL_UNKNOW;
-            if( speed_V > 0f ) {
-                if (speed_max < speed_V) level_V = LEVEL_t.LEVEL_1;
-                else if (speed_max < speed_V * 1.1) level_V = LEVEL_t.LEVEL_2;
-                else if (speed_max < speed_V * 1.2) level_V = LEVEL_t.LEVEL_3;
-                else if (speed_max < speed_V * 1.35) level_V = LEVEL_t.LEVEL_4;
-                else level_V = LEVEL_t.LEVEL_5;
+            if (speed_V > 0.0f) {
+                if (this.speed_max < speed_V) {
+                    level_V = LEVEL_t.LEVEL_1;
+                } else if (((double) this.speed_max) < ((double) speed_V) * 1.1d) {
+                    level_V = LEVEL_t.LEVEL_2;
+                } else if (((double) this.speed_max) < ((double) speed_V) * 1.2d) {
+                    level_V = LEVEL_t.LEVEL_3;
+                } else if (((double) this.speed_max) < ((double) speed_V) * 1.35d) {
+                    level_V = LEVEL_t.LEVEL_4;
+                } else {
+                    level_V = LEVEL_t.LEVEL_5;
+                }
             }
             Location location = get_last_location();
-            float speed_observed = ( location != null ) ?  location.getSpeed() : 0f;
-            // Send results to UI
-            listener.onRecommendedSpeedChanged( SPEED_t.IN_STRAIGHT_LINE, (int)(speed_H*MS_TO_KMH),
-                    level_H, speed_H <= speed_observed);
-            listener.onRecommendedSpeedChanged( SPEED_t.IN_CORNERS, (int)(speed_V*MS_TO_KMH),
-                    level_V, speed_V <= speed_observed);
+            float speed_observed = location != null ? location.getSpeed() : 0.0f;
+            this.listener.onRecommendedSpeedChanged(SPEED_t.IN_STRAIGHT_LINE, (int) (speed_H * 3.6f), level_H, speed_H <= speed_observed ? DEBUG : false);
+            this.listener.onLevelNotified(level_H);
+            this.listener.onRecommendedSpeedChanged(SPEED_t.IN_CORNERS, (int) (speed_V * 3.6f), level_V, speed_V <= speed_observed ? DEBUG : false);
+            this.listener.onLevelNotified(level_V);
+            this.listener.onSpeedLineKept((int) (speed_H * 3.6f), level_H);
+            this.listener.onSpeedCornerKept((int) (speed_V * 3.6f), level_V);
         }
     }
 
@@ -1935,20 +1827,18 @@ speed_max = database.speed_max_test(parcour_id, delay_sec, 50, max_delay_sec, re
 
     /// Check shock
     private void check_shock() {
-        if( listener != null ) {
-
-            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-            String key = ctx.getResources().getString(R.string.shock_trigger_mG_key);
-            int val = sp.getInt(key,1000);
-            if( interval(0.0, shock.first) > val ) {
-                listener.onShock( shock.first, shock.second );
+        if (this.listener != null) {
+            if (interval(0.0d, ((Double) this.shock.first).doubleValue()) > ((double) PreferenceManager.getDefaultSharedPreferences(this.ctx).getInt(this.ctx.getResources().getString(R.string.shock_trigger_mG_key), 1000))) {
+                this.listener.onShock(((Double) this.shock.first).doubleValue(), ((Short) this.shock.second).shortValue());
             }
         }
     }
 
-    private double interval(double d1, double d2){
+    private double interval(double d1, double d2) {
         double ret = d1 - d2;
-        if( ret < 0.0 ) ret = -ret;
+        if (ret < 0.0d) {
+            return -ret;
+        }
         return ret;
     }
 
@@ -1956,233 +1846,184 @@ speed_max = database.speed_max_test(parcour_id, delay_sec, 50, max_delay_sec, re
     /// PARCOUR
     /// ============================================================================================
 
-    private Chrono chrono_ready_to_start = Chrono.newInstance();
-    private long parcour_id = 0;
-    private boolean button_stop = false;
-
     public long get_current_parcours_id(boolean debug) {
-
-        long ret = -1;
-
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-        String key = ctx.getResources().getString(R.string.stop_trigger_time_key);
-        long delay = sp.getInt(key,420) * 60 * 1000;
-
-        ret = database.get_last_parcours_id();
-
-        if( ret == -1 ) {
-            if( debug ) Log.d(TAG, "Current parcours ID: empty. ");
-        } else if( database.parcour_is_closed(ret) ) {
-            if( debug ) Log.d(TAG, "Current parcours ID: " + ret + " is closed.");
-            ret = -1;
-        } else if( database.parcour_expired(ret,delay) ) {
-            if( debug ) Log.d(TAG, "Current parcours ID: " + ret + " expired.");
-            database.close_last_parcour();
-            ret = -1;
+        long delay = (long) ((PreferenceManager.getDefaultSharedPreferences(this.ctx).getInt(this.ctx.getResources().getString(R.string.stop_trigger_time_key), NNTPReply.NO_CURRENT_ARTICLE_SELECTED) * 60) * 1000);
+        long ret = this.database.get_last_parcours_id();
+        if (ret == -1) {
+            if (!debug) {
+                return ret;
+            }
+            Log.d(TAG, "Current parcours ID: empty. ");
+            return ret;
+        } else if (this.database.parcour_is_closed(ret)) {
+            if (debug) {
+                Log.d(TAG, "Current parcours ID: " + ret + " is closed.");
+            }
+            return -1;
+        } else if (this.database.parcour_expired(ret, delay)) {
+            if (debug) {
+                Log.d(TAG, "Current parcours ID: " + ret + " expired.");
+            }
+            this.database.close_last_parcour();
+            return -1;
+        } else if (!debug) {
+            return ret;
         } else {
-            if( debug ) Log.d(TAG, "Current parcours ID: " + ret + "." );
+            Log.d(TAG, "Current parcours ID: " + ret + ".");
+            return ret;
         }
-
-        return ret;
     }
 
     public boolean init_parcours_id() throws InterruptedException {
-        long id = get_current_parcours_id(true);
-        if( id > 0 )
-        {
-
-            parcour_id = id;
-            if( !loading_epc( database.get_num_epc(parcour_id) ) ) return false;
-            Log.d(TAG,"Initialize parcours ( Resume parcours " + parcour_id + " )" );
-            Log.d(TAG,"Add ECA to resume parcous.");
-            Location loc = get_last_location();
-            database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_RESUME, loc, null));
-
-        }
-        else
-        {
-            parcour_id = System.currentTimeMillis();
-            if( !loading_epc() ) return false;
-            database.set_num_epc(parcour_id, selected_epc);
-
-            Log.d(TAG, "Initialize parcours: Create parcours " + parcour_id + " )");
+        long id = get_current_parcours_id(DEBUG);
+        if (id > 0) {
+            this.parcour_id = id;
+            if (!loading_epc(this.database.get_num_epc(this.parcour_id))) {
+                return false;
+            }
+            Log.d(TAG, "Initialize parcours ( Resume parcours " + this.parcour_id + " )");
+            Log.d(TAG, "Add ECA to resume parcous.");
+            this.database.addECA(this.parcour_id, ECALine.newInstance(231, get_last_location(), null));
+        } else {
+            this.parcour_id = System.currentTimeMillis();
+            if (!loading_epc()) {
+                return false;
+            }
+            this.database.set_num_epc(this.parcour_id, this.selected_epc);
+            Log.d(TAG, "Initialize parcours: Create parcours " + this.parcour_id + " )");
             Log.d(TAG, "Add ECA to start parcous.");
-            Location loc = get_last_location();
-            database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_BEGIN, loc, null));
-
+            this.database.addECA(this.parcour_id, ECALine.newInstance(0, get_last_location(), null));
         }
-        StatsLastDriving.startDriving(ctx,parcour_id);
-        update_parcour_note(true);
-        update_force_note(true);
-        update_recommended_speed(true);
-
-        return true;
+        StatsLastDriving.startDriving(this.ctx, this.parcour_id);
+        update_parcour_note(DEBUG);
+        update_force_note(DEBUG);
+        update_recommended_speed(DEBUG);
+        return DEBUG;
     }
 
     public boolean close_parcours(boolean force) throws InterruptedException {
-
-        boolean ret = false;
-
         String reasons = " FORCED";
         boolean stop = force;
-        if( !stop ) {
-            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-            String key = ctx.getResources().getString(R.string.stop_trigger_time_key);
-            long delay_stop = sp.getInt(key, 420) * 60 * 1000;
-
-            // Checking if car is stopped
-            boolean is_closed = database.parcour_is_closed(parcour_id);
-            boolean has_expired  = database.parcour_expired(parcour_id,delay_stop);
-            stop = (button_stop || is_closed || has_expired);
-
+        if (!stop) {
+            long delay_stop = (long) ((PreferenceManager.getDefaultSharedPreferences(this.ctx).getInt(this.ctx.getResources().getString(R.string.stop_trigger_time_key), NNTPReply.NO_CURRENT_ARTICLE_SELECTED) * 60) * 1000);
+            boolean is_closed = this.database.parcour_is_closed(this.parcour_id);
+            boolean has_expired = this.database.parcour_expired(this.parcour_id, delay_stop);
+            stop = (this.button_stop || is_closed || has_expired) ? DEBUG : false;
             reasons = " ";
-            if( button_stop ) reasons += "Btn stp pressed; ";
-            if( is_closed ) reasons += "Already closed; ";
-            if( has_expired ) reasons += "Has expired; ";
-
+            if (this.button_stop) {
+                reasons = reasons + "Btn stp pressed; ";
+            }
+            if (is_closed) {
+                reasons = reasons + "Already closed; ";
+            }
+            if (has_expired) {
+                reasons = reasons + "Has expired; ";
+            }
         }
-
-        if( stop ) {
-
-            addLog( "Close parcours reasons:" + reasons );
-
-            // Force calcul note
-            update_parcour_note(true);
-            update_force_note(true);
-            update_recommended_speed(true);
-            // ADD ECA Line when stopped
-            Location loc = get_last_location();
-            database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_END, loc, null));
-            StatsLastDriving.set_distance(ctx, database.get_distance(parcour_id));
-            clear_force_ui();
-            // Sending files
-            upload_cep();
-            upload_shared_pos();
-            upload_parcours_type();
-            parcour_id = -1;
-
-            ret = true;
-
+        if (!stop) {
+            return false;
         }
-
-        return ret;
+        addLog("Close parcours reasons:" + reasons);
+        update_parcour_note(DEBUG);
+        update_force_note(DEBUG);
+        update_recommended_speed(DEBUG);
+        this.database.addECA(this.parcour_id, ECALine.newInstance(255, get_last_location(), null));
+        StatsLastDriving.set_distance(this.ctx, this.database.get_distance(this.parcour_id));
+        clear_force_ui();
+        upload_cep();
+        upload_shared_pos();
+        upload_parcours_type();
+        this.parcour_id = -1;
+        return DEBUG;
     }
 
-    public void setStopped(){ button_stop = true; }
+    public void setStopped() {
+        this.button_stop = DEBUG;
+    }
 
     private STATUS_t on_stopped() throws InterruptedException {
+        boolean ready_to_started = DEBUG;
         STATUS_t ret = STATUS_t.PAR_STOPPED;
-
-        // Clear UI
         clear_force_ui();
-
-        // Checking if ready to start a new parcours
-        boolean ready_to_started = (modules.getNumberOfBoxConnected() >= 1
-                && mov_t_last != MOVING_t.STP
-                && mov_t_last != MOVING_t.UNKNOW
-                && engine_t == ENGINE_t.ON
-        );
-
-        if ( !ready_to_started ) {
-            chrono_ready_to_start.stop();
-        } else {
-
-            if ( !chrono_ready_to_start.isStarted() ) chrono_ready_to_start.start();
-            if ( chrono_ready_to_start.getSeconds() > SECS_TO_SET_PARCOURS_START ) {
-
-                button_stop = false;
-                note_parcour_update_at = 0;
-                note_forces_update_at = 0;
-                alertX_add_at = 0;
-                alertY_add_at = 0;
-                alertPos_add_at = 0;
-                lastLocSend = null;
-                recommended_speed_update_at = 0;
-                download_shared_pos();
-
-                if( init_parcours_id() ) {
+        if (this.modules.getNumberOfBoxConnected() < 1 || this.mov_t_last == MOVING_t.STP || this.mov_t_last == MOVING_t.UNKNOW || this.engine_t != ENGINE_t.ON) {
+            ready_to_started = false;
+        }
+        if (ready_to_started) {
+            if (!this.chrono_ready_to_start.isStarted()) {
+                this.chrono_ready_to_start.start();
+            }
+            if (this.chrono_ready_to_start.getSeconds() > 3.0d) {
+                this.button_stop = false;
+                this.note_parcour_update_at = 0;
+                this.note_forces_update_at = 0;
+                this.alertX_add_at = 0;
+                this.alertY_add_at = 0;
+                this.alertPos_add_at = 0;
+                this.lastLocSend = null;
+                this.recommended_speed_update_at = 0;
+                if (init_parcours_id()) {
                     ret = STATUS_t.PAR_STARTED;
-                    if (listener != null) {
-                        listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW);
-                        listener.onRecommendedSpeedChanged(SPEED_t.IN_STRAIGHT_LINE, 0, LEVEL_t.LEVEL_UNKNOW, true);
-                        listener.onRecommendedSpeedChanged(SPEED_t.IN_CORNERS, 0, LEVEL_t.LEVEL_UNKNOW, true);
-                        listener.onStatusChanged(ret);
+                    if (this.listener != null) {
+                        this.listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0.0d, 0.0f, 0.0f);
+                        this.listener.onForceDisplayed(0.0d);
+                        this.listener.onSpeedLine();
+                        this.listener.onSpeedCorner();
+                        this.listener.onStatusChanged(ret);
                     }
                     addLog("Status change to START. (" + ComonUtils.currentDateTime() + ")");
                 }
             }
+        } else {
+            this.chrono_ready_to_start.stop();
         }
         return ret;
     }
 
     private STATUS_t on_paused(STATUS_t status) throws InterruptedException {
-
         STATUS_t ret = status;
-
-        if( status == STATUS_t.PAR_PAUSING ) {
-
-            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-            String key = ctx.getResources().getString(R.string.pause_trigger_time_key);
-            long delay_pause = sp.getInt(key,4) * 60 * 1000;
-            if( database.parcour_expired(parcour_id,delay_pause) ) {
+        if (status == STATUS_t.PAR_PAUSING) {
+            if (this.database.parcour_expired(this.parcour_id, (long) ((PreferenceManager.getDefaultSharedPreferences(this.ctx).getInt(this.ctx.getResources().getString(R.string.pause_trigger_time_key), 4) * 60) * 1000))) {
                 ret = STATUS_t.PAR_PAUSING_WITH_STOP;
-                if (listener != null) listener.onStatusChanged(ret);
-                addLog( "Status change to PAUSE (show button stop). (" + ComonUtils.currentDateTime() + ")" );
+                if (this.listener != null) {
+                    this.listener.onStatusChanged(ret);
+                }
+                addLog("Status change to PAUSE (show button stop). (" + ComonUtils.currentDateTime() + ")");
             }
         }
-
-        // Close parcours if neccessary
-        boolean stop = close_parcours(false);
-        if( stop ) {
+        if (close_parcours(false)) {
             ret = STATUS_t.PAR_STOPPED;
-            if (listener != null) listener.onStatusChanged(ret);
-            addLog( "Status change to STOP. (" + ComonUtils.currentDateTime() + ")" );
-        }
-        // Or checking if car re-moving
-        else if ( mov_t_last != MOVING_t.STP
-                && mov_t_last_chrono.getSeconds() > SECS_TO_SET_PARCOURS_RESUME
-                && engine_t == ENGINE_t.ON) {
+            if (this.listener != null) {
+                this.listener.onStatusChanged(ret);
+            }
+            addLog("Status change to STOP. (" + ComonUtils.currentDateTime() + ")");
+        } else if (this.mov_t_last != MOVING_t.STP && this.mov_t_last_chrono.getSeconds() > 3.0d && this.engine_t == ENGINE_t.ON) {
             ret = STATUS_t.PAR_RESUME;
-            if (listener != null) listener.onStatusChanged(ret);
-
-            // ADD ECA Line when resuming
-            Location loc = get_last_location();
-            database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_RESUME, loc, null));
-
+            if (this.listener != null) {
+                this.listener.onStatusChanged(ret);
+            }
+            this.database.addECA(this.parcour_id, ECALine.newInstance(231, get_last_location(), null));
             clear_force_ui();
-
-            addLog( "Status change to RESUME. (" + ComonUtils.currentDateTime() + ")" );
+            addLog("Status change to RESUME. (" + ComonUtils.currentDateTime() + ")");
         }
-
         return ret;
     }
 
-    private STATUS_t on_moved(STATUS_t status){
-
+    private STATUS_t on_moved(STATUS_t status) {
         STATUS_t ret = status;
-
-        //calc_eca();
         calculate_eca();
         update_parcour_note(false);
         update_force_note(false);
         check_shock();
         update_recommended_speed(false);
-
-        // Checking if car is in pause
-        if ( engine_t != ENGINE_t.ON ) {
-
+        if (this.engine_t != ENGINE_t.ON) {
             ret = STATUS_t.PAR_PAUSING;
-
-            // ADD ECA Line when pausing
-            Location loc = get_last_location();
-            database.addECA(parcour_id, ECALine.newInstance(ECALine.ID_PAUSE, loc, null));
-            if (listener != null) listener.onStatusChanged(ret);
-
+            this.database.addECA(this.parcour_id, ECALine.newInstance(230, get_last_location(), null));
+            if (this.listener != null) {
+                this.listener.onStatusChanged(ret);
+            }
             clear_force_ui();
-
-            addLog( "Status change to PAUSE. (" + ComonUtils.currentDateTime() + ")" );
+            addLog("Status change to PAUSE. (" + ComonUtils.currentDateTime() + ")");
         }
-
         return ret;
     }
 
@@ -2190,129 +2031,100 @@ speed_max = database.speed_max_test(parcour_id, delay_sec, 50, max_delay_sec, re
     /// LOCATIONS
     /// ============================================================================================
 
-    private final Lock lock = new ReentrantLock();
-
-    private List<Location> locations = new ArrayList<Location>();
-    private boolean gps = false;
-
-    public void setLocation( Location location ) {
-
-        // Clear obselete location and limit list size
+    public void setLocation(Location location) {
         clear_obselete_location();
-
-        if( location != null ) {
-
-            // Important, use systeme time
-            location.setTime( System.currentTimeMillis() );
-
-            lock.lock();
-
-            // Add new location
-            this.locations.add(0, new Location(location) );
-
-            lock.unlock();
-
-            switchON( true );
+        if (location != null) {
+            location.setTime(System.currentTimeMillis());
+            this.lock.lock();
+            this.locations.add(0, new Location(location));
+            this.lock.unlock();
+            switchON(DEBUG);
         }
     }
 
-    public void setGpsStatus( boolean active ) {
-active = true;
-        lock.lock();
-        gps = active;
-        lock.unlock();
+    public void setGpsStatus(boolean active) {
+        this.lock.lock();
+        this.gps = DEBUG;
+        this.lock.unlock();
     }
 
-    private synchronized  void clear_obselete_location() {
-        clear_location(50,15000);
+    private synchronized void clear_obselete_location() {
+        clear_location(50, 15000);
     }
 
     private synchronized void clear_location(int max, int ms) {
-
-        lock.lock();
-
-        long timeMS = System.currentTimeMillis() - ms;
-        int i;
-        for( i = 0; i < locations.size(); i++ ) {
-            if( i == max
-                    || locations.get(i).getTime() < timeMS )
-                break;
+        this.lock.lock();
+        long timeMS = System.currentTimeMillis() - ((long) ms);
+        int i = 0;
+        while (i < this.locations.size() && i != max && ((Location) this.locations.get(i)).getTime() >= timeMS) {
+            i++;
         }
-
-        locations.subList(i, locations.size()).clear();
-
-        lock.unlock();
-
+        this.locations.subList(i, this.locations.size()).clear();
+        this.lock.unlock();
     }
 
-    private synchronized List<Location> get_location_list(int length){
-        return  get_location_list(length,5000);
+    private synchronized List<Location> get_location_list(int length) {
+        return get_location_list(length, 5000);
     }
 
-    private synchronized List<Location> get_location_list(int length, int ms){
-
-        // Clear obselete location and limit list size
+    private synchronized List<Location> get_location_list(int length, int ms) {
+        List<Location> list;
         clear_obselete_location();
-
-        List<Location> list = null;
-        if( gps_is_ready() ) {
-
-            lock.lock();
-
-            long timeMS = System.currentTimeMillis() - ms;
-            int i;
-            for( i = 0; i < locations.size(); i++ ) {
-                if( i == length
-                        || locations.get(i).getTime() < timeMS )
-                    break;
+        list = null;
+        if (gps_is_ready()) {
+            this.lock.lock();
+            long timeMS = System.currentTimeMillis() - ((long) ms);
+            int i = 0;
+            while (i < this.locations.size() && i != length && ((Location) this.locations.get(i)).getTime() >= timeMS) {
+                i++;
             }
-
-            // Get sublist
-            if (locations.size() >= i) {
-                list = new ArrayList<Location>(this.locations.subList(0, i));
+            if (this.locations.size() >= i) {
+                list = new ArrayList(this.locations.subList(0, i));
             }
-
-            lock.unlock();
+            this.lock.unlock();
         }
         return list;
     }
 
-    private synchronized Location get_last_location(){
-        Location ret = null;
-        if( gps_is_ready() ) {
-            lock.lock();
-
-            if (locations.size() > 0) ret = new Location(locations.get(0));
-
-            lock.unlock();
+    private synchronized Location get_last_location() {
+        Location ret;
+        ret = null;
+        if (gps_is_ready()) {
+            this.lock.lock();
+            if (this.locations.size() > 0) {
+                ret = new Location((Location) this.locations.get(0));
+            }
+            this.lock.unlock();
         }
         return ret;
     }
 
     private boolean gps_is_ready() {
-        boolean ret;
-        lock.lock();
-        ret = gps;
-        lock.unlock();
-        ret = true;
-        return ret;
+        this.lock.lock();
+        boolean ret = this.gps;
+        this.lock.unlock();
+        return DEBUG;
     }
 
     /// ============================================================================================
     /// DEBUG
     /// ============================================================================================
 
-    private String log = "";
-
-    private void setLog( String txt ){
-        log = txt;
-        if( listener != null ) listener.onDebugLog( log );
+    private void setLog(String txt) {
+        this.log = txt;
+        if (this.listener != null) {
+            this.listener.onDebugLog(this.log);
+        }
     }
 
-    private void addLog( String txt ){
-        if( !log.isEmpty() ) log += System.getProperty("line.separator");
-        log += txt;
-        if( listener != null ) listener.onDebugLog( log );
+    private void addLog(String txt) {
+        if (!this.log.isEmpty()) {
+            this.log += System.getProperty("line.separator");
+        }
+        this.log += txt;
+        if (this.listener != null) {
+            this.listener.onDebugLog(this.log);
+        }
     }
 
 
@@ -2384,7 +2196,4 @@ active = true;
         };
         thread.start();
     }
-
-
-
 }

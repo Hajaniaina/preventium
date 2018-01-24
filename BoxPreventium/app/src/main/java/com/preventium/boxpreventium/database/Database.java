@@ -177,14 +177,24 @@ public class Database {
         return sp.getLong( KEY_LAST_eca_parcour, -1 );
     }
 
+
+
     /// Get the last number of ECA file was sent (for a parcours),
     /// return -1 if no file has been sent
-    private static int get_eca_counter(Context ctx, long parcour){
+    public static int get_eca_counter(Context ctx, long parcour) {
+        SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, 0);
+        if (parcour != get_eca_parcour_send(ctx)) {
+            return -1;
+        }
+        return sp.getInt(KEY_LAST_eca_counter, -1);
+    }
+
+   /* private static int get_eca_counter(Context ctx, long parcour){
         SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
         if( parcour != get_eca_parcour_send(ctx) ) return -1;
         return sp.getInt( KEY_LAST_eca_counter, -1 );
     }
-
+*/
     /// Get the last ECA timestamp who was sent.
     public static long get_last_eca_time_send(Context ctx){
         SharedPreferences sp = ctx.getSharedPreferences(KEY_LAST, Context.MODE_PRIVATE);
@@ -670,7 +680,35 @@ Log.d("AAAAA","NB POINTS " + nb);
     /// ============================================================================================
 
     /// Add an Preventium Box event (Connected/Disconnected)
-    public boolean addCEP(@Nullable Location location, @NonNull String device_mac, boolean connected ) {
+
+
+    public boolean addCEP(@Nullable Location location, @NonNull String device_mac, int note, int vitesse_ld, int vitesse_vr, long distance_covered, long parcour_duration, int nb_eca, int nb_box, boolean connected) {
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+        ContentValues contentValues = new ContentValues();
+        if (location != null) {
+            contentValues.put("time", Long.valueOf(location.getTime()));
+            contentValues.put("long_pos", Double.valueOf(location.getLongitude()));
+            contentValues.put("lat_pos", Double.valueOf(location.getLatitude()));
+        } else {
+            contentValues.put("time", Long.valueOf(System.currentTimeMillis()));
+            contentValues.put("long_pos", Float.valueOf(0.0f));
+            contentValues.put("lat_pos", Float.valueOf(0.0f));
+        }
+        contentValues.put(DatabaseHelper.COLUMN_CEP_MAC, device_mac);
+        contentValues.put(DatabaseHelper.COLUMN_CEP_NOTE, Integer.valueOf(note));
+        contentValues.put(DatabaseHelper.COLUMN_CEP_VITESSE_LD, Integer.valueOf(vitesse_ld));
+        contentValues.put(DatabaseHelper.COLUMN_CEP_VITESSE_VR, Integer.valueOf(vitesse_vr));
+        contentValues.put(DatabaseHelper.COLUMN_CEP_DIST_COV, Long.valueOf(distance_covered));
+        contentValues.put(DatabaseHelper.COLUMN_CEP_PAR_DUR, Long.valueOf(parcour_duration));
+        contentValues.put(DatabaseHelper.COLUMN_CEP_NB_ECA, Integer.valueOf(nb_eca));
+        contentValues.put(DatabaseHelper.COLUMN_CEP_NB_BOX, Integer.valueOf(nb_box));
+        contentValues.put("status", Integer.valueOf(connected ? 1 : 0));
+        db.insert(DatabaseHelper.TABLE_CEP, null, contentValues);
+        DatabaseManager.getInstance().closeDatabase();
+        return true;
+    }
+
+   /* public boolean addCEP(@Nullable Location location, @NonNull String device_mac, boolean connected ) {
         SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         ContentValues contentValues = new ContentValues();
         if( location != null ){
@@ -688,6 +726,7 @@ Log.d("AAAAA","NB POINTS " + nb);
         DatabaseManager.getInstance().closeDatabase();
         return true;
     }
+    */
 
     /// Clear all CEP records
     public void clear_cep_data() {

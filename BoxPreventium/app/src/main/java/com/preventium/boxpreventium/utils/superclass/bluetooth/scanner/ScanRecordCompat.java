@@ -2,297 +2,201 @@ package com.preventium.boxpreventium.utils.superclass.bluetooth.scanner;
 
 import android.annotation.TargetApi;
 import android.bluetooth.le.ScanRecord;
-import android.os.Build;
 import android.os.ParcelUuid;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
 import android.util.Log;
 import android.util.SparseArray;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-/**
- * Created by Franck on 08/08/2016.
- */
+import java.util.Map.Entry;
 
 public class ScanRecordCompat {
+    private static final int DATA_TYPE_FLAGS = 1;
+    private static final int DATA_TYPE_LOCAL_NAME_COMPLETE = 9;
+    private static final int DATA_TYPE_LOCAL_NAME_SHORT = 8;
+    private static final int DATA_TYPE_MANUFACTURER_SPECIFIC_DATA = 255;
+    private static final int DATA_TYPE_SERVICE_DATA = 22;
+    private static final int DATA_TYPE_SERVICE_UUIDS_128_BIT_COMPLETE = 7;
+    private static final int DATA_TYPE_SERVICE_UUIDS_128_BIT_PARTIAL = 6;
+    private static final int DATA_TYPE_SERVICE_UUIDS_16_BIT_COMPLETE = 3;
+    private static final int DATA_TYPE_SERVICE_UUIDS_16_BIT_PARTIAL = 2;
+    private static final int DATA_TYPE_SERVICE_UUIDS_32_BIT_COMPLETE = 5;
+    private static final int DATA_TYPE_SERVICE_UUIDS_32_BIT_PARTIAL = 4;
+    private static final int DATA_TYPE_TX_POWER_LEVEL = 10;
     private static final String TAG = "ScanRecordCompat";
-
-    // The following data type values are assigned by Bluetooth SIG.
-    // For more details refer to Bluetooth 4.1 specification, Volume 3, Part C, Section 18.
-    private static final int DATA_TYPE_FLAGS = 0x01;
-    private static final int DATA_TYPE_SERVICE_UUIDS_16_BIT_PARTIAL = 0x02;
-    private static final int DATA_TYPE_SERVICE_UUIDS_16_BIT_COMPLETE = 0x03;
-    private static final int DATA_TYPE_SERVICE_UUIDS_32_BIT_PARTIAL = 0x04;
-    private static final int DATA_TYPE_SERVICE_UUIDS_32_BIT_COMPLETE = 0x05;
-    private static final int DATA_TYPE_SERVICE_UUIDS_128_BIT_PARTIAL = 0x06;
-    private static final int DATA_TYPE_SERVICE_UUIDS_128_BIT_COMPLETE = 0x07;
-    private static final int DATA_TYPE_LOCAL_NAME_SHORT = 0x08;
-    private static final int DATA_TYPE_LOCAL_NAME_COMPLETE = 0x09;
-    private static final int DATA_TYPE_TX_POWER_LEVEL = 0x0A;
-    private static final int DATA_TYPE_SERVICE_DATA = 0x16;
-    private static final int DATA_TYPE_MANUFACTURER_SPECIFIC_DATA = 0xFF;
-
-    // Flags of the advertising data.
     private final int mAdvertiseFlags;
-
+    private final byte[] mBytes;
+    private final String mDeviceName;
+    private final SparseArray<byte[]> mManufacturerSpecificData;
+    private final Map<ParcelUuid, byte[]> mServiceData;
     @Nullable
     private final List<ParcelUuid> mServiceUuids;
-
-    private final SparseArray<byte[]> mManufacturerSpecificData;
-
-    private final Map<ParcelUuid, byte[]> mServiceData;
-
-    // Transmission power level(in dB).
     private final int mTxPowerLevel;
 
-    // Local name of the Bluetooth LE device.
-    private final String mDeviceName;
-
-    // Raw bytes of scan record.
-    private final byte[] mBytes;
-
-    /**
-     * Returns the advertising flags indicating the discoverable mode and capability of the device.
-     * Returns -1 if the flag field is not set.
-     */
     public int getAdvertiseFlags() {
-        return mAdvertiseFlags;
+        return this.mAdvertiseFlags;
     }
 
-    /**
-     * Returns a list of service UUIDs within the advertisement that are used to identify the
-     * bluetooth GATT services.
-     */
     public List<ParcelUuid> getServiceUuids() {
-        return mServiceUuids;
+        return this.mServiceUuids;
     }
 
-    /**
-     * Returns a sparse array of manufacturer identifier and its corresponding manufacturer specific
-     * data.
-     */
     public SparseArray<byte[]> getManufacturerSpecificData() {
-        return mManufacturerSpecificData;
+        return this.mManufacturerSpecificData;
     }
 
-    /**
-     * Returns the manufacturer specific data associated with the manufacturer id. Returns
-     * {@code null} if the {@code manufacturerId} is not found.
-     */
     @Nullable
     public byte[] getManufacturerSpecificData(int manufacturerId) {
-        return mManufacturerSpecificData.get(manufacturerId);
+        return (byte[]) this.mManufacturerSpecificData.get(manufacturerId);
     }
 
-    /**
-     * Returns a map of service UUID and its corresponding service data.
-     */
     public Map<ParcelUuid, byte[]> getServiceData() {
-        return mServiceData;
+        return this.mServiceData;
     }
 
-    /**
-     * Returns the service data byte array associated with the {@code serviceUuid}. Returns
-     * {@code null} if the {@code serviceDataUuid} is not found.
-     */
     @Nullable
     public byte[] getServiceData(ParcelUuid serviceDataUuid) {
         if (serviceDataUuid == null) {
             return null;
         }
-        return mServiceData.get(serviceDataUuid);
+        return (byte[]) this.mServiceData.get(serviceDataUuid);
     }
 
-    /**
-     * Returns the transmission power level of the packet in dBm. Returns {@link Integer#MIN_VALUE}
-     * if the field is not set. This value can be used to calculate the path loss of a received
-     * packet using the following equation:
-     * <p>
-     * <code>pathloss = txPowerLevel - rssi</code>
-     */
     public int getTxPowerLevel() {
-        return mTxPowerLevel;
+        return this.mTxPowerLevel;
     }
 
-    /**
-     * Returns the local name of the BLE device. The is a UTF-8 encoded string.
-     */
     @Nullable
     public String getDeviceName() {
-        return mDeviceName;
+        return this.mDeviceName;
     }
 
-    /**
-     * Returns raw bytes of scan record.
-     */
     public byte[] getBytes() {
-        return mBytes;
+        return this.mBytes;
     }
 
-    private ScanRecordCompat(@Nullable List<ParcelUuid> serviceUuids,
-                             SparseArray<byte[]> manufacturerData,
-                             Map<ParcelUuid, byte[]> serviceData,
-                             int advertiseFlags, int txPowerLevel,
-                             String localName, byte[] bytes) {
-        mServiceUuids = serviceUuids;
-        mManufacturerSpecificData = manufacturerData;
-        mServiceData = serviceData;
-        mDeviceName = localName;
-        mAdvertiseFlags = advertiseFlags;
-        mTxPowerLevel = txPowerLevel;
-        mBytes = bytes;
+    private ScanRecordCompat(@Nullable List<ParcelUuid> serviceUuids, SparseArray<byte[]> manufacturerData, Map<ParcelUuid, byte[]> serviceData, int advertiseFlags, int txPowerLevel, String localName, byte[] bytes) {
+        this.mServiceUuids = serviceUuids;
+        this.mManufacturerSpecificData = manufacturerData;
+        this.mServiceData = serviceData;
+        this.mDeviceName = localName;
+        this.mAdvertiseFlags = advertiseFlags;
+        this.mTxPowerLevel = txPowerLevel;
+        this.mBytes = bytes;
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @TargetApi(21)
     ScanRecordCompat(ScanRecord record) {
-        mServiceUuids = record.getServiceUuids();
-        mManufacturerSpecificData = record.getManufacturerSpecificData();
-        mServiceData = record.getServiceData();
-        mDeviceName = record.getDeviceName();
-        mAdvertiseFlags = record.getAdvertiseFlags();
-        mTxPowerLevel = record.getTxPowerLevel();
-        mBytes = record.getBytes();
+        this.mServiceUuids = record.getServiceUuids();
+        this.mManufacturerSpecificData = record.getManufacturerSpecificData();
+        this.mServiceData = record.getServiceData();
+        this.mDeviceName = record.getDeviceName();
+        this.mAdvertiseFlags = record.getAdvertiseFlags();
+        this.mTxPowerLevel = record.getTxPowerLevel();
+        this.mBytes = record.getBytes();
     }
 
-    /**
-     * Parse scan record bytes to {@link ScanRecordCompat}.
-     * <p>
-     * The format is defined in Bluetooth 4.1 specification, Volume 3, Part C, Section 11 and 18.
-     * <p>
-     * All numerical multi-byte entities and values shall use little-endian <strong>byte</strong>
-     * order.
-     *
-     * @param scanRecord The scan record of Bluetooth LE advertisement and/or scan response.
-     */
     public static ScanRecordCompat parseFromBytes(byte[] scanRecord) {
         if (scanRecord == null) {
             return null;
         }
-
-        int currentPos = 0;
+        int currentPos;
         int advertiseFlag = -1;
-        List<ParcelUuid> serviceUuids = new ArrayList<>();
+        List<ParcelUuid> serviceUuids = new ArrayList();
         String localName = null;
         int txPowerLevel = Integer.MIN_VALUE;
-
-        SparseArray<byte[]> manufacturerData = new SparseArray<>();
-        Map<ParcelUuid, byte[]> serviceData = new ArrayMap<>();
-
+        SparseArray<byte[]> manufacturerData = new SparseArray();
+        Map<ParcelUuid, byte[]> serviceData = new ArrayMap();
+        int currentPos2 = 0;
         try {
-            while (currentPos < scanRecord.length) {
-                // length is unsigned int.
-                int length = scanRecord[currentPos++] & 0xFF;
-                if (length == 0) {
-                    break;
+        while (currentPos2 < scanRecord.length) {
+            try {
+                currentPos = currentPos2 + 1;
+                try {
+                    int length = scanRecord[currentPos2] & 255;
+                    if (length == 0) {
+                        if (serviceUuids.isEmpty()) {
+                            serviceUuids = null;
+                        }
+                        return new ScanRecordCompat(serviceUuids, manufacturerData, serviceData, advertiseFlag, txPowerLevel, localName, scanRecord);
+                    }
+                    int dataLength = length - 1;
+                    currentPos2 = currentPos + 1;
+                    switch (scanRecord[currentPos] & 255) {
+                        case 1:
+                            advertiseFlag = scanRecord[currentPos2] & 255;
+                            break;
+                        case 2:
+                        case 3:
+                            parseServiceUuid(scanRecord, currentPos2, dataLength, 2, serviceUuids);
+                            break;
+                        case 4:
+                        case 5:
+                            parseServiceUuid(scanRecord, currentPos2, dataLength, 4, serviceUuids);
+                            break;
+                        case 6:
+                        case 7:
+                            parseServiceUuid(scanRecord, currentPos2, dataLength, 16, serviceUuids);
+                            break;
+                        case 8:
+                        case 9:
+                            localName = new String(extractBytes(scanRecord, currentPos2, dataLength));
+                            break;
+                        case 10:
+                            txPowerLevel = scanRecord[currentPos2];
+                            break;
+                        case 22:
+                            serviceData.put(BluetoothUuidCompat.parseUuidFrom(extractBytes(scanRecord, currentPos2, 2)), extractBytes(scanRecord, currentPos2 + 2, dataLength - 2));
+                            break;
+                        case 255:
+                            manufacturerData.put(((scanRecord[currentPos2 + 1] & 255) << 8) + (scanRecord[currentPos2] & 255), extractBytes(scanRecord, currentPos2 + 2, dataLength - 2));
+                            break;
+                        default:
+                            break;
+                    }
+                    currentPos2 += dataLength;
+                } catch (Exception e) {
                 }
-                // Note the length includes the length of the field type itself.
-                int dataLength = length - 1;
-                // fieldType is unsigned int.
-                int fieldType = scanRecord[currentPos++] & 0xFF;
-                switch (fieldType) {
-                    case DATA_TYPE_FLAGS:
-                        advertiseFlag = scanRecord[currentPos] & 0xFF;
-                        break;
-                    case DATA_TYPE_SERVICE_UUIDS_16_BIT_PARTIAL:
-                    case DATA_TYPE_SERVICE_UUIDS_16_BIT_COMPLETE:
-                        parseServiceUuid(scanRecord, currentPos,
-                                dataLength, BluetoothUuidCompat.UUID_BYTES_16_BIT, serviceUuids);
-                        break;
-                    case DATA_TYPE_SERVICE_UUIDS_32_BIT_PARTIAL:
-                    case DATA_TYPE_SERVICE_UUIDS_32_BIT_COMPLETE:
-                        parseServiceUuid(scanRecord, currentPos, dataLength,
-                                BluetoothUuidCompat.UUID_BYTES_32_BIT, serviceUuids);
-                        break;
-                    case DATA_TYPE_SERVICE_UUIDS_128_BIT_PARTIAL:
-                    case DATA_TYPE_SERVICE_UUIDS_128_BIT_COMPLETE:
-                        parseServiceUuid(scanRecord, currentPos, dataLength,
-                                BluetoothUuidCompat.UUID_BYTES_128_BIT, serviceUuids);
-                        break;
-                    case DATA_TYPE_LOCAL_NAME_SHORT:
-                    case DATA_TYPE_LOCAL_NAME_COMPLETE:
-                        localName = new String(
-                                extractBytes(scanRecord, currentPos, dataLength));
-                        break;
-                    case DATA_TYPE_TX_POWER_LEVEL:
-                        txPowerLevel = scanRecord[currentPos];
-                        break;
-                    case DATA_TYPE_SERVICE_DATA:
-                        // The first two bytes of the service data are service data UUID in little
-                        // endian. The rest bytes are service data.
-                        int serviceUuidLength = BluetoothUuidCompat.UUID_BYTES_16_BIT;
-                        byte[] serviceDataUuidBytes = extractBytes(scanRecord, currentPos,
-                                serviceUuidLength);
-                        ParcelUuid serviceDataUuid = BluetoothUuidCompat.parseUuidFrom(
-                                serviceDataUuidBytes);
-                        byte[] serviceDataArray = extractBytes(scanRecord,
-                                currentPos + serviceUuidLength, dataLength - serviceUuidLength);
-                        serviceData.put(serviceDataUuid, serviceDataArray);
-                        break;
-                    case DATA_TYPE_MANUFACTURER_SPECIFIC_DATA:
-                        // The first two bytes of the manufacturer specific data are
-                        // manufacturer ids in little endian.
-                        int manufacturerId = ((scanRecord[currentPos + 1] & 0xFF) << 8) +
-                                (scanRecord[currentPos] & 0xFF);
-                        byte[] manufacturerDataBytes = extractBytes(scanRecord, currentPos + 2,
-                                dataLength - 2);
-                        manufacturerData.put(manufacturerId, manufacturerDataBytes);
-                        break;
-                    default:
-                        // Just ignore, we don't handle such data type.
-                        break;
-                }
-                currentPos += dataLength;
+            } catch (Exception e2) {
+                currentPos = currentPos2;
             }
-
-            if (serviceUuids.isEmpty()) {
-                serviceUuids = null;
-            }
-            return new ScanRecordCompat(serviceUuids, manufacturerData, serviceData,
-                    advertiseFlag, txPowerLevel, localName, scanRecord);
-        } catch (Exception e) {
-            Log.e(TAG, "unable to parse scan record: " + Arrays.toString(scanRecord));
-            // As the record is invalid, ignore all the parsed results for this packet
-            // and return an empty record with raw scanRecord bytes in results
-            return new ScanRecordCompat(null, null, null, -1, Integer.MIN_VALUE, null, scanRecord);
         }
-    }
+        currentPos = currentPos2;
+        if (serviceUuids.isEmpty()) {
+            serviceUuids = null;
+        }
+        return new ScanRecordCompat(serviceUuids, manufacturerData, serviceData, advertiseFlag, txPowerLevel, localName, scanRecord);
+        } catch (Exception e) {
+        Log.e(TAG, "unable to parse scan record: " + Arrays.toString(scanRecord));
+        return new ScanRecordCompat(null, null, null, -1, Integer.MIN_VALUE, null, scanRecord);
 
-    @Override
+        }
+
+        }
+
     public String toString() {
-        return "ScanRecord [mAdvertiseFlags=" + mAdvertiseFlags + ", mServiceUuids=" + mServiceUuids
-                + ", mManufacturerSpecificData=" + toString(mManufacturerSpecificData)
-                + ", mServiceData=" + toString(mServiceData)
-                + ", mTxPowerLevel=" + mTxPowerLevel + ", mDeviceName=" + mDeviceName + "]";
+        return "ScanRecord [mAdvertiseFlags=" + this.mAdvertiseFlags + ", mServiceUuids=" + this.mServiceUuids + ", mManufacturerSpecificData=" + toString(this.mManufacturerSpecificData) + ", mServiceData=" + toString(this.mServiceData) + ", mTxPowerLevel=" + this.mTxPowerLevel + ", mDeviceName=" + this.mDeviceName + "]";
     }
 
-    // Parse service UUIDs.
-    private static int parseServiceUuid(byte[] scanRecord, int currentPos, int dataLength,
-                                        int uuidLength, List<ParcelUuid> serviceUuids) {
+    private static int parseServiceUuid(byte[] scanRecord, int currentPos, int dataLength, int uuidLength, List<ParcelUuid> serviceUuids) {
         while (dataLength > 0) {
-            byte[] uuidBytes = extractBytes(scanRecord, currentPos,
-                    uuidLength);
-            serviceUuids.add(BluetoothUuidCompat.parseUuidFrom(uuidBytes));
+            serviceUuids.add(BluetoothUuidCompat.parseUuidFrom(extractBytes(scanRecord, currentPos, uuidLength)));
             dataLength -= uuidLength;
             currentPos += uuidLength;
         }
         return currentPos;
     }
 
-    // Helper method to extract bytes from byte array.
     private static byte[] extractBytes(byte[] scanRecord, int start, int length) {
         byte[] bytes = new byte[length];
         System.arraycopy(scanRecord, start, bytes, 0, length);
         return bytes;
     }
 
-    /**
-     * Returns a string composed from a {@link SparseArray}.
-     */
     static String toString(SparseArray<byte[]> array) {
         if (array == null) {
             return "null";
@@ -302,16 +206,13 @@ public class ScanRecordCompat {
         }
         StringBuilder buffer = new StringBuilder();
         buffer.append('{');
-        for (int i = 0; i < array.size(); ++i) {
-            buffer.append(array.keyAt(i)).append("=").append(Arrays.toString(array.valueAt(i)));
+        for (int i = 0; i < array.size(); i++) {
+            buffer.append(array.keyAt(i)).append("=").append(Arrays.toString((byte[]) array.valueAt(i)));
         }
         buffer.append('}');
         return buffer.toString();
     }
 
-    /**
-     * Returns a string composed from a {@link Map}.
-     */
     static <T> String toString(Map<T, byte[]> map) {
         if (map == null) {
             return "null";
@@ -321,11 +222,10 @@ public class ScanRecordCompat {
         }
         StringBuilder buffer = new StringBuilder();
         buffer.append('{');
-        Iterator<Map.Entry<T, byte[]>> it = map.entrySet().iterator();
+        Iterator<Entry<T, byte[]>> it = map.entrySet().iterator();
         while (it.hasNext()) {
-            Map.Entry<T, byte[]> entry = it.next();
-            T key = entry.getKey();
-            buffer.append(key).append("=").append(Arrays.toString(map.get(key)));
+            T key = (T) ((Entry) it.next()).getKey();
+            buffer.append(key).append("=").append(Arrays.toString((byte[]) map.get(key)));
             if (it.hasNext()) {
                 buffer.append(", ");
             }

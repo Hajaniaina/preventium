@@ -1,7 +1,6 @@
 package com.preventium.boxpreventium.database;
 
 import android.content.Context;
-import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -10,6 +9,16 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 
 public class DatabaseHelper extends SQLiteOpenHelper {
+
+
+    public static final String COLUMN_CEP_NB_BOX = "nb_box";
+    public static final String COLUMN_CEP_NB_ECA = "nb_eca";
+    public static final String COLUMN_CEP_NOTE = "note";
+    public static final String COLUMN_CEP_PAR_DUR = "parcour_duration";
+    public static final String COLUMN_CEP_VITESSE_LD = "vitesse_ld";
+    public static final String COLUMN_CEP_VITESSE_VR = "vitesse_vr";
+    public static final String COLUMN_CEP_DIST_COV = "distance_covered";
+
 
     // Database Info
     private static final String DATABASE_NAME = "DatabaseHelper";

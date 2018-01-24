@@ -1,9 +1,8 @@
 package com.preventium.boxpreventium.gui;
 
-import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Intent;
-import android.content.res.ColorStateList;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -14,7 +13,6 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.github.clans.fab.FloatingActionButton;
-import android.content.SharedPreferences;
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
@@ -22,7 +20,6 @@ import com.preventium.boxpreventium.server.JSON.ParseJsonData;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Locale;
@@ -71,7 +68,7 @@ public class ModuleActivity extends AppCompatActivity {
         setContentView(R.layout.module_activity);
 
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        String module_dr_code = sharedPref.getString(getString(R.string.driver_id_key), "1");
+        //String module_dr_code = sharedPref.getString(getString(R.string.driver_id_key), "1");
 
         // module mesure
         module_avfm = (TextView) findViewById(R.id.module_avfm);

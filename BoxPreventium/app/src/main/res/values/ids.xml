@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="force">false</item>
+    <item type="id" name="measure">false</item>
+    
+    <item type="id" name="scrollview">false</item>
+    <item type="id" name="html_text">false</item>
+    <item type="id" name="help_on_line">false</item>
+    <item type="id" name="back">false</item>
+
+    <item type="id" name="mark">false</item>
+</resources>
