@@ -199,7 +199,7 @@
                 CircleProgressView:cpv_outerContourSize="1dp"
                 CircleProgressView:cpv_barColor="@color/colorAppGrey"
                 CircleProgressView:cpv_rimColor="#00000000"
-                CircleProgressView:cpv_fillColor="#a0ffffff"
+                CircleProgressView:cpv_fillColor="#4Dffffff"
                 CircleProgressView:cpv_outerContourColor="#00ffffff"
                 CircleProgressView:cpv_innerContourColor="#00ffffff"
                 CircleProgressView:cpv_rimWidth="@dimen/speed_rim_width"
@@ -226,7 +226,7 @@
                 CircleProgressView:cpv_outerContourSize="1dp"
                 CircleProgressView:cpv_barColor="@color/colorAppGrey"
                 CircleProgressView:cpv_rimColor="#00000000"
-                CircleProgressView:cpv_fillColor="#a0ffffff"
+                CircleProgressView:cpv_fillColor="#4Dffffff"
                 CircleProgressView:cpv_outerContourColor="#00ffffff"
                 CircleProgressView:cpv_innerContourColor="#00ffffff"
                 CircleProgressView:cpv_rimWidth="@dimen/speed_rim_width"
@@ -253,7 +253,7 @@
                 CircleProgressView:cpv_outerContourSize="1dp"
                 CircleProgressView:cpv_barColor="@color/colorAppGrey"
                 CircleProgressView:cpv_rimColor="#00000000"
-                CircleProgressView:cpv_fillColor="#a0ffffff"
+                CircleProgressView:cpv_fillColor="#4Dffffff"
                 CircleProgressView:cpv_outerContourColor="@color/material_grey500"
                 CircleProgressView:cpv_innerContourColor="@color/material_grey400"
                 CircleProgressView:cpv_rimWidth="@dimen/speed_rim_width"
@@ -340,16 +340,18 @@
                 android:layout_marginStart="@dimen/buttons_layout_margin_start">
 
                 <com.github.clans.fab.FloatingActionButton
-                    android:id="@+id/button_info"
+                    android:id="@+id/menu_button_sos"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/buttons_margin_top1"
-                    android:src="@drawable/ic_info"
+                    android:src="@drawable/ic_sos"
                     fab:fab_size="@dimen/fb_button_size"
-                    fab:fab_colorNormal="@color/colorAppGrey"
-                    fab:fab_colorPressed="@color/colorAppRed"
-                    fab:fab_colorRipple="#ff5252"
-                    fab:fab_shadowColor="#444" />
+                    fab:fab_colorNormal="@color/colorAppRed"
+                    fab:fab_colorPressed="@color/colorAppGreen"
+                    fab:fab_colorRipple="#ffee58"
+                    fab:fab_shadowColor="#444"
+                    fab:fab_label=""/>
+
+
 
                 <com.github.clans.fab.FloatingActionButton
                     android:id="@+id/button_call"
@@ -364,23 +366,23 @@
                     fab:fab_shadowColor="#444" />
 
                 <com.github.clans.fab.FloatingActionButton
-                    android:id="@+id/button_qrcode"
+                    android:id="@+id/menu_button_reset_calibration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/buttons_margin_top2"
-                    android:src="@drawable/ic_qrcode"
+                    android:src="@drawable/quantum_ic_refresh_white_24"
                     fab:fab_size="@dimen/fb_button_size"
                     fab:fab_colorNormal="@color/colorAppGrey"
                     fab:fab_colorPressed="@color/colorAppRed"
-                    fab:fab_colorRipple="#ff5252"
-                    fab:fab_shadowColor="#444" />
+                    fab:fab_colorRipple="#ffee58"
+                    fab:fab_shadowColor="#444"
+                    fab:fab_label=""/>
 
                 <com.github.clans.fab.FloatingActionButton
-                    android:id="@+id/button_epc_settings"
+                    android:id="@+id/menu_button_map_recenter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/buttons_margin_top2"
-                    android:src="@drawable/ic_settings"
+                    android:layout_marginTop="@dimen/buttons_margin_top1"
+                    android:src="@drawable/ic_map_marker"
                     fab:fab_size="@dimen/fb_button_size"
                     fab:fab_colorNormal="@color/colorAppGrey"
                     fab:fab_colorPressed="@color/colorAppRed"
@@ -426,30 +428,29 @@
                 fab:menu_shadowColor="#444">
 
                 <com.github.clans.fab.FloatingActionButton
-                    android:id="@+id/menu_button_sos"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/ic_sos"
-                    fab:fab_size="@dimen/fb_button_size"
-                    fab:fab_colorNormal="@color/colorAppRed"
-                    fab:fab_colorPressed="@color/colorAppGreen"
-                    fab:fab_colorRipple="#ffee58"
-                    fab:fab_shadowColor="#444"
-                    fab:fab_label=""/>
-
-
-                <com.github.clans.fab.FloatingActionButton
-                    android:id="@+id/menu_button_map_recenter"
+                    android:id="@+id/button_info"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/buttons_margin_top1"
-                    android:src="@drawable/ic_map_marker"
+                    android:src="@drawable/ic_info"
                     fab:fab_size="@dimen/fb_button_size"
                     fab:fab_colorNormal="@color/colorAppGrey"
                     fab:fab_colorPressed="@color/colorAppRed"
                     fab:fab_colorRipple="#ff5252"
                     fab:fab_shadowColor="#444" />
 
+
+                <com.github.clans.fab.FloatingActionButton
+                    android:id="@+id/menu_button_settings"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_lock"
+                    fab:fab_size="@dimen/fb_button_size"
+                    fab:fab_colorNormal="@color/colorAppGrey"
+                    fab:fab_colorPressed="@color/colorAppRed"
+                    fab:fab_colorRipple="#ffee58"
+                    fab:fab_shadowColor="#444"
+                    fab:fab_label=""/>
 
             <!-- #######-recenter santo
             <com.github.clans.fab.FloatingActionButton
@@ -464,29 +465,30 @@
                 fab:fab_shadowColor="#444"
                 fab:fab_label=""/>
 #######-recenter santo -->
-            <com.github.clans.fab.FloatingActionButton
-                android:id="@+id/menu_button_reset_calibration"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/quantum_ic_refresh_white_24"
-                fab:fab_size="@dimen/fb_button_size"
-                fab:fab_colorNormal="@color/colorAppGrey"
-                fab:fab_colorPressed="@color/colorAppRed"
-                fab:fab_colorRipple="#ffee58"
-                fab:fab_shadowColor="#444"
-                fab:fab_label=""/>
 
-            <com.github.clans.fab.FloatingActionButton
-                android:id="@+id/menu_button_settings"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_lock"
-                fab:fab_size="@dimen/fb_button_size"
-                fab:fab_colorNormal="@color/colorAppGrey"
-                fab:fab_colorPressed="@color/colorAppRed"
-                fab:fab_colorRipple="#ffee58"
-                fab:fab_shadowColor="#444"
-                fab:fab_label=""/>
+                <com.github.clans.fab.FloatingActionButton
+                    android:id="@+id/button_epc_settings"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/buttons_margin_top2"
+                    android:src="@drawable/ic_settings"
+                    fab:fab_size="@dimen/fb_button_size"
+                    fab:fab_colorNormal="@color/colorAppGrey"
+                    fab:fab_colorPressed="@color/colorAppRed"
+                    fab:fab_colorRipple="#ff5252"
+                    fab:fab_shadowColor="#444" />
+
+                <com.github.clans.fab.FloatingActionButton
+                    android:id="@+id/button_qrcode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/buttons_margin_top2"
+                    android:src="@drawable/ic_qrcode"
+                    fab:fab_size="@dimen/fb_button_size"
+                    fab:fab_colorNormal="@color/colorAppGrey"
+                    fab:fab_colorPressed="@color/colorAppRed"
+                    fab:fab_colorRipple="#ff5252"
+                    fab:fab_shadowColor="#444" />
 
         </com.github.clans.fab.FloatingActionMenu>
 

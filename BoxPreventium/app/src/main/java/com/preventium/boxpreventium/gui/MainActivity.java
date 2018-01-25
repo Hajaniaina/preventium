@@ -2546,7 +2546,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void disableActionButtons (boolean disable) {
 
-        FloatingActionButton[] actionBtnArray = {infoButton, callButton, scanQrCodeButton, epcSettingsButton};
+        FloatingActionButton[] actionBtnArray = {menuButtonSos, callButton, menuButtonResetCalib, menuButtonMapRecenter};
 
         for (int i = 0; i < actionBtnArray.length; i++) {
 
@@ -2563,7 +2563,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void hideActionButtons (boolean hide) {
 
-        FloatingActionButton[] actionBtnArray = {infoButton, callButton, scanQrCodeButton, epcSettingsButton};
+        FloatingActionButton[] actionBtnArray = {menuButtonSos, callButton, menuButtonResetCalib, menuButtonMapRecenter};
 
         for (int i = 0; i < actionBtnArray.length; i++) {
 
@@ -3092,7 +3092,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             //hideActionButtons(true);
         }else{
             if (!optMenu.isOpened()){
-                scanQrCodeButton.show(true);
+                //scanQrCodeButton.show(true);
                 //scanQrCodeButton.setVisibility(View.GONE);
             }
         }
@@ -3135,7 +3135,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             //hideActionButtons(true);
         }else{
             if (!optMenu.isOpened()){
-                epcSettingsButton.show(true);
+                //epcSettingsButton.show(true);
                 //scanQrCodeButton.setVisibility(View.GONE);
             }
         }
@@ -3621,6 +3621,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
                 smsMessageView.setVisibility(View.INVISIBLE);
+                smsMessageView.setTextColor(getResources().getColor(R.color.colorAppGrey));
             }
         };
         Handler handler = new Handler();
