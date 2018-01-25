@@ -308,6 +308,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
             bindPreferenceSummaryToValue(findPreference(getString(R.string.qr_select_start_mode_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.qr_select_stop_mode_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.qr_select_ic_mode_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.phone_select_sms_qr_timeout_key)));
 

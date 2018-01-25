@@ -256,6 +256,7 @@
     <string name="enable_map_displaying_string">Enable map display</string>
     <string name="map_key">map_key</string>
     <string name="map_string">Map options display</string>
-
+    <string name="info_conducteur_string">Identification Conducteur</string>
+    <string name="etat">Au depart</string>
 
 </resources>

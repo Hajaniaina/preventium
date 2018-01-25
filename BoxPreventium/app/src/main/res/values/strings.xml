@@ -78,6 +78,8 @@
     <string name="sms_notifications_string">SMS Notifications</string>
     <string name="on_departure_string">On departure</string>
     <string name="on_arrival_string">On arrival</string>
+    <string name="info_conducteur_string">Identification Conducteur</string>
+    <string name="qr_select_ic_mode_key" translatable="false">qr_select_ic_mode_key</string>
     <string name="front_only_string">Front only</string>
     <string name="front_back_string">Front and Back</string>
     <string name="not_used_string">Not used</string>
@@ -205,6 +207,16 @@
         <item>2</item>
     </string-array>
 
+    <string-array name="pref_qr_ic_mode_titles" translatable="false">
+                <item>@string/disabled_string</item>
+                <item>@string/enable_string</item>
+            </string-array>
+
+        <string-array name="pref_qr_ic_mode_values" translatable="false">
+            <item>0</item>
+            <item>1</item>
+        </string-array>
+
     <string-array name="pref_phone_numbers_titles" translatable="false">
         <item>@string/not_used_string</item>
         <item>@string/number_1_string</item>
@@ -308,5 +320,5 @@
     <string name="enable_map_displaying_string">Enable map display</string>
     <string name="map_key">map_key</string>
     <string name="map_string">Map options display</string>
-
+    <string name="etat">Au depart</string>
 </resources>
