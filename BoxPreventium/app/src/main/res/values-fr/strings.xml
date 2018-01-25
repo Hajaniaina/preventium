@@ -220,42 +220,42 @@
     <string name="erreur_protocol">Aucun protocol trouvé, Veuillez contacter le service Preventium</string>
 
     <string name="more_string">Plus...</string>
-    <string name="subscriber_string">You must be a subscriber for using this option</string>
+    <string name="subscriber_string">Vous devez être abonné pour utiliser cette option</string>
 
     <string name="help_string">Aide</string>
 
     <string name="setting_string">Acceuil</string>
 
-    <string name="buttons_string">Buttons</string>
-    <string name="on_line_string">Online</string>
+    <string name="buttons_string">Boutons</string>
+    <string name="on_line_string">En ligne</string>
 
-    <string name="avg_string">Average</string>
-    <string name="speed_corner_string">Speed in corner</string>
-    <string name="speed_line_string">Speed in line straight</string>
-    <string name="app_lang_string">Application language</string>
+    <string name="avg_string">Moyenne</string>
+    <string name="speed_corner_string">Vitesse en virage</string>
+    <string name="speed_line_string">Vitesse en ligne droite</string>
+    <string name="app_lang_string">Langage d\'application</string>
     <string name="display_force_string">Force</string>
     <string name="message_string">Message</string>
 
-    <string name="reboot_alert_string">Settings will be applied after reboot application</string>
+    <string name="reboot_alert_string">Les paramètres seront appliqués après l\'application de redémarrage</string>
 
-    <string name="disable_force_message_string">Disable force display</string>
+    <string name="disable_force_message_string">Désactiver l\'affichage de la force</string>
 
-    <string name="enable_force_message_string">Enable force display</string>
+    <string name="enable_force_message_string">Activer l\'affichage de la force</string>
 
     <string name="force_key">force_key</string>
 
     <string name="setting_key">setting_key</string>
     <string name="buttons_key">buttons_key</string>
     <string name="on_line_key">on_line_key</string>
-    <string name="force_string">Display force</string>
-    <string name="endis_advert_string">Enable/Disable</string>
+    <string name="force_string">Afficher les forces</string>
+    <string name="endis_advert_string">Activer/Désactiver</string>
 
 
-    <string name="screen_alert_string">This option is only for screen up to 4 inches</string>
-    <string name="disable_map_displaying_string">Disable map display</string>
-    <string name="enable_map_displaying_string">Enable map display</string>
+    <string name="screen_alert_string">Cette option est seulement pour l\'écran plus de 4 pouces</string>
+    <string name="disable_map_displaying_string">Désactiver l\'affichage de la carte</string>
+    <string name="enable_map_displaying_string">Activer l\'affichage de la carte</string>
     <string name="map_key">map_key</string>
-    <string name="map_string">Map options display</string>
+    <string name="map_string">Affichage des options de la carte</string>
 
 
 </resources>

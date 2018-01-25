@@ -220,41 +220,41 @@
 
 
     <string name="more_string">Jeszcze...</string>
-    <string name="subscriber_string">You must be a subscriber for using this option</string>
+    <string name="subscriber_string">Musisz być subskrybentem przy korzystaniu z tej opcji</string>
 
-    <string name="help_string">Help</string>
+    <string name="help_string">Wsparcie</string>
 
-    <string name="setting_string">Home</string>
-    <string name="buttons_string">Buttons</string>
+    <string name="setting_string">Powitanie</string>
+    <string name="buttons_string">Guziki</string>
     <string name="on_line_string">Online</string>
 
-    <string name="avg_string">Average</string>
-    <string name="speed_corner_string">Speed in corner</string>
-    <string name="speed_line_string">Speed in line straight</string>
-    <string name="app_lang_string">Application language</string>
-    <string name="display_force_string">Force</string>
-    <string name="message_string">Message</string>
+    <string name="avg_string">Średni</string>
+    <string name="speed_corner_string">Prędkość w rogu</string>
+    <string name="speed_line_string">Prędkość w linii prostej</string>
+    <string name="app_lang_string">Język aplikacji</string>
+    <string name="display_force_string">Siła</string>
+    <string name="message_string">Wiadomość</string>
 
-    <string name="reboot_alert_string">Settings will be applied after reboot application</string>
+    <string name="reboot_alert_string">Ustawienia zostaną zastosowane po ponownym uruchomieniu aplikacji</string>
 
-    <string name="disable_force_message_string">Disable force display</string>
+    <string name="disable_force_message_string">Wyłącz wyświetlanie siły</string>
 
-    <string name="enable_force_message_string">Enable force display</string>
+    <string name="enable_force_message_string">Włącz wyświetlanie siły</string>
 
     <string name="force_key">force_key</string>
 
     <string name="setting_key">setting_key</string>
     <string name="buttons_key">buttons_key</string>
     <string name="on_line_key">on_line_key</string>
-    <string name="force_string">Display force</string>
-    <string name="endis_advert_string">Enable/Disable</string>
+    <string name="force_string">Siła wyświetlania</string>
+    <string name="endis_advert_string">Włącz/Wyłącz</string>
 
 
 
-    <string name="screen_alert_string">This option is only for screen up to 4 inches</string>
-    <string name="disable_map_displaying_string">Disable map display</string>
-    <string name="enable_map_displaying_string">Enable map display</string>
+    <string name="screen_alert_string">Ta opcja dotyczy tylko ekranu o wielkości do 4 cali</string>
+    <string name="disable_map_displaying_string">Wyłącz wyświetlanie mapy</string>
+    <string name="enable_map_displaying_string">Włącz wyświetlanie mapy</string>
     <string name="map_key">map_key</string>
-    <string name="map_string">Map options display</string>
+    <string name="map_string">Wyświetlane są opcje mapy</string>
 
 </resources>

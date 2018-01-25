@@ -547,7 +547,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@+string/no_pending_message_string"
-            android:textColor="@color/colorAppRed"
+            android:textColor="@color/colorAppGrey"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:textSize="20sp"
             android:singleLine="true"

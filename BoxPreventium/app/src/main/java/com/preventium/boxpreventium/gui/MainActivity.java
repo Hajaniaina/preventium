@@ -3606,6 +3606,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void updateText(final String newSms){
         smsMessageView.setVisibility(View.VISIBLE);
+        smsMessageView.setTextColor(getResources().getColor(R.color.colorAppRed));
 
         if(smsMessageView.getText().toString().equals(getString(R.string.no_pending_message_string))){
             smsMessageView.setText(newSms);
