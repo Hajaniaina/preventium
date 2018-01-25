@@ -24,6 +24,19 @@
             android:negativeButtonText="@null"
             android:positiveButtonText="@null">
         </ListPreference>
+    </PreferenceCategory>
+
+        <PreferenceCategory
+            android:title="@string/scan_qr_driver_id_string">
+
+            <ListPreference
+                android:key="@string/qr_select_ic_mode_key"
+                android:title="@string/etat"
+                android:entries="@array/pref_qr_ic_mode_titles"
+                android:entryValues="@array/pref_qr_ic_mode_values"
+                android:defaultValue="0"
+                android:negativeButtonText="@null"
+                android:positiveButtonText="@null" />
 
     </PreferenceCategory>
 
