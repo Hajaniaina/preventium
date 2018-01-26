@@ -56,8 +56,8 @@ public class ReaderEPCFile {
                         seuil[s] = new ForceSeuil();
                         seuil[s].IDAlert = data[i++];
                         seuil[s].TPS = (short) data[i++];
-                        seuil[s].mG_low = (double) ( (data[i++] & 0xFF) | ((data[i++] << 8) & 0xFF00) );
-                        seuil[s].mG_high = (double) ( (data[i++] & 0xFF) | ((data[i++] << 8) & 0xFF00) );
+                        seuil[s].mG_low = (long) ( (data[i++] & 0xFF) | ((data[i++] << 8) & 0xFF00) );
+                        seuil[s].mG_high = (long) ( (data[i++] & 0xFF) | ((data[i++] << 8) & 0xFF00) );
                         switch ( s ) {
                             case 0: case 5: case 10: case 15:
                                 seuil[s].level = LEVEL_t.LEVEL_1; break;
@@ -116,12 +116,12 @@ public class ReaderEPCFile {
                 ? seuil[index] : null;
     }
 
-    public ForceSeuil getForceSeuil(double XmG, double YmG) {
-        return  ( ComonUtils.interval(0.0,XmG) >= ComonUtils.interval(0.0,YmG) )
+    public ForceSeuil getForceSeuil(long XmG, long YmG) {
+        return  ( ComonUtils.difference(0,XmG) >= ComonUtils.difference(0,YmG) )
                 ? getForceSeuilForX( XmG ) : getForceSeuilForY( YmG );
     }
 
-    public ForceSeuil getForceSeuilForX(double XmG) {
+    public ForceSeuil getForceSeuilForX(long XmG) {
         ForceSeuil ret = null;
         if( XmG >= 0.0 ) {
             for( int s = 0; s < 5; s++ ) {
@@ -141,7 +141,7 @@ public class ReaderEPCFile {
         return ret;
     }
 
-    public ForceSeuil getForceSeuilForY(double YmG) {
+    public ForceSeuil getForceSeuilForY(long YmG) {
         ForceSeuil ret = null;
         if( YmG >= 0.0 ) {
             for( int s = 10; s < 15; s++ ) {

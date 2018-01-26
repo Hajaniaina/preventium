@@ -16,13 +16,13 @@ public class ForceSeuil {
     public int index = -1;
     public short IDAlert = -1; // IDAlert.
     public short TPS = 0; // Temps de déclenchemnt en secondes.
-    public double mG_low = 0.0; // Seuil bas en mG.
-    public double mG_high = 0.0; // Seuil haut en mG.
+    public long mG_low = 0; // Seuil bas en mG.
+    public long mG_high = 0; // Seuil haut en mG.
     public LEVEL_t level = LEVEL_t.LEVEL_UNKNOW;
     public FORCE_t type = FORCE_t.UNKNOW;
 
     ForceSeuil(){};
-    public ForceSeuil(int index, short IDAlert, short secs, double mG_min, double mG_max) {
+    public ForceSeuil(int index, short IDAlert, short secs, long mG_min, long mG_max) {
         this.index = index;
         this.IDAlert = IDAlert;
         this.TPS = secs;

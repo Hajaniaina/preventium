@@ -19,7 +19,7 @@ public class SensorSmoothAccelerometerInfo {
     private byte aa = 0x00;
     private byte bb = 0x00;
     private short A1 = 0;
-    private double mG = 0.0;
+    private long mG = 0;
 
     public static SensorSmoothAccelerometerInfo fromData(byte[] data ) {
         SensorSmoothAccelerometerInfo info = new SensorSmoothAccelerometerInfo();
@@ -29,13 +29,13 @@ public class SensorSmoothAccelerometerInfo {
                 info.aa = data[1];
                 info.bb = data[2];
                 info.A1 = (short)((( info.aa & 0xFF) << 8) | ( info.bb & 0xFF));
-                info.mG = (double)info.A1 * 2000.0 / 32000.0;
+                info.mG = Math.round( (double)info.A1 * 2000.0 / 32000.0 );
             }
         }
         return info;
     }
     public short value_raw() { return A1; }
-    public double value() { return mG; }
+    public long value() { return mG; }
     public String toString() {
         return String.format(Locale.getDefault(),"Sensor smooth accelerometer { value: %s mG, data: %s }"
                 , mG, BytesUtils.dataToHex(data)); }

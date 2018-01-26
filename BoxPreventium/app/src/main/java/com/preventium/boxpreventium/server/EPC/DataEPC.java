@@ -65,8 +65,8 @@ public class DataEPC {
         seuil.index = i;
         seuil.IDAlert = (short)sp.getInt( String.format(Locale.getDefault(),KEY_IDAlert,i), -1 );
         seuil.TPS = (short)sp.getInt( String.format(Locale.getDefault(),KEY_Tps,i), -1 );
-        seuil.mG_low = (double)sp.getFloat( String.format(Locale.getDefault(),KEY_SeuilBas,i), 0f );
-        seuil.mG_high = (double)sp.getFloat( String.format(Locale.getDefault(),KEY_SeuilHaut,i), 0f );
+        seuil.mG_low = Math.round( sp.getFloat( String.format(Locale.getDefault(),KEY_SeuilBas,i), 0f ) );
+        seuil.mG_high = Math.round( (double)sp.getFloat( String.format(Locale.getDefault(),KEY_SeuilHaut,i), 0f ) );
         switch ( i ) {
             case 0: case 5: case 10: case 15:
                 seuil.level = LEVEL_t.LEVEL_1; break;

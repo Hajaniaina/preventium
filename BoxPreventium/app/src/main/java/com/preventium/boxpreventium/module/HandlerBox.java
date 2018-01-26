@@ -12,6 +12,7 @@ import com.preventium.boxpreventium.module.trames.BatteryInfo;
 import com.preventium.boxpreventium.module.trames.SensorShockAccelerometerInfo;
 import com.preventium.boxpreventium.module.trames.SensorSmoothAccelerometerInfo;
 import com.preventium.boxpreventium.utils.Chrono;
+import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.ThreadDefault;
 
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ public class HandlerBox extends ThreadDefault
         void onScanState(boolean scanning);
         void onDeviceState( String device_mac, boolean connected );
         void onNumberOfBox(int nb);
-        void onForceChanged(Pair<Double,Short> mG_smooth, Pair<Double,Short> mG_shock);
+        void onForceChanged(Pair<Long,Short> mG_smooth, Pair<Long,Short> mG_shock);
         void onEngineStateChanged(ENGINE_t state);
         void onCalibrateOnConstantSpeed();
         void onCalibrateOnAcceleration();
@@ -51,10 +52,10 @@ public class HandlerBox extends ThreadDefault
     private boolean calibrate_2 = false;
     private boolean calibrate_3 = false;
 
-    private Pair<Double,Short> last_smooth; // mG, RAW
-    private Pair<Double,Short> curr_smooth; // mG, RAW
-    private Pair<Double,Short> last_shock; // mG, RAW
-    private Pair<Double,Short> curr_shock; // mG, RAW
+    private Pair<Long,Short> last_smooth; // mG, RAW
+    private Pair<Long,Short> curr_smooth; // mG, RAW
+    private Pair<Long,Short> last_shock; // mG, RAW
+    private Pair<Long,Short> curr_shock; // mG, RAW
     private ENGINE_t last_engine_t = ENGINE_t.UNKNOW;
 
     public HandlerBox(Context ctx, NotifyListener listener) {
@@ -144,10 +145,10 @@ public class HandlerBox extends ThreadDefault
         chrono.start();
         discoverBox.scan();
 
-        curr_smooth = Pair.create(0.0,(short)0);
-        last_smooth = Pair.create(0.0,(short)0);
-        curr_shock = Pair.create(0.0,(short)0);
-        last_shock = Pair.create(0.0,(short)0);
+        curr_smooth = Pair.create((long)0,(short)0);
+        last_smooth = Pair.create((long)0,(short)0);
+        curr_shock = Pair.create((long)0,(short)0);
+        last_shock = Pair.create((long)0,(short)0);
         last_engine_t = ENGINE_t.UNKNOW;
 
         int nb = mBoxList.size();
@@ -167,8 +168,8 @@ public class HandlerBox extends ThreadDefault
                 chrono.start(); // Restart chrono who indicate the elapsed time since the last scan
             }
 
-            curr_smooth = Pair.create(0.0,(short)0);
-            curr_shock = Pair.create(0.0,(short)0);
+            curr_smooth = Pair.create((long)0,(short)0);
+            curr_shock = Pair.create((long)0,(short)0);
             for( int i = mBoxList.size()-1; i >= 0; i-- ) {
 
                 if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
@@ -178,14 +179,14 @@ public class HandlerBox extends ThreadDefault
                 } else {
                     SensorSmoothAccelerometerInfo smooth = mBoxList.get(i).getSmooth();
                     if( smooth != null ) {
-                        if( interval(0.0,smooth.value()) >= interval(0.0,curr_smooth.first) ) {
+                        if( ComonUtils.difference(0,smooth.value()) >= ComonUtils.difference(0,curr_smooth.first) ) {
                             curr_smooth = Pair.create(smooth.value(),smooth.value_raw());
                         }
                     }
 
                     SensorShockAccelerometerInfo shock = mBoxList.get(i).getShock();
                     if( shock != null ) {
-                        if( interval(0.0,shock.value()) >= interval(0.0,curr_shock.first) ) {
+                        if( ComonUtils.difference(0,shock.value()) >= ComonUtils.difference(0,curr_shock.first) ) {
                             curr_shock = Pair.create(shock.value(),shock.value_raw());
                         }
                     }
@@ -328,15 +329,15 @@ public class HandlerBox extends ThreadDefault
 
     private void orderBox() throws InterruptedException {
 
-        if( mBoxList.size() > 1 ){
+        if (mBoxList.size() > 1) {
 
             // Update RSSI if needed
             boolean rssi_ok = false;
-            while ( isRunning() && !rssi_ok ){
+            while (isRunning() && !rssi_ok) {
                 sleep(1000);
                 rssi_ok = true;
-                for(int i=0 ; i < mBoxList.size() ; i++){
-                    if( mBoxList.get(i).getRSSI() == null ){
+                for (int i = 0; i < mBoxList.size(); i++) {
+                    if (mBoxList.get(i).getRSSI() == null) {
                         rssi_ok = false;
                         mBoxList.get(i).readRSSI();
                     }
@@ -344,7 +345,7 @@ public class HandlerBox extends ThreadDefault
             }
 
             // Order device
-            if( isRunning() ) {
+            if (isRunning()) {
                 // ORDER RSSI BY asc ...
                 boolean tab_en_ordre = false;
                 int taille = mBoxList.size();
@@ -362,15 +363,5 @@ public class HandlerBox extends ThreadDefault
                 }
             }
         }
-
-//        for ( BluetoothBox b : mBoxList ) {
-//            Log.d("AAAAA","MAC: " + b.getMacAddr() + " RSSI: " + b.getRSSI() );
-//        }
-    }
-
-    private double interval(double d1, double d2){
-        double ret = d1 - d2;
-        if( ret < 0.0 ) ret = -ret;
-        return ret;
     }
 }

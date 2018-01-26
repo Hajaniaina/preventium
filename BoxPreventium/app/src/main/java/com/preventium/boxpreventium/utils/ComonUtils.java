@@ -227,10 +227,8 @@ public class ComonUtils {
 
     // === Other
 
-    public static double interval(double d1, double d2){
-        double ret = d1 - d2;
-        if( ret < 0.0 ) ret = -ret;
-        return ret;
+    public static long difference(long a, long b) {
+        return Math.abs(a - b);
     }
 
     public static String currentDateTime() {
