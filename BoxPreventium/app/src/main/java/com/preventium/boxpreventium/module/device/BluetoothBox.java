@@ -49,6 +49,21 @@ public class BluetoothBox implements ActionCallback, TramesNotifyListener, Notif
             BluetoothBox.this.io.command(CmdBox.newInstance(CMD_t.SECOND_CALIBRATION));
         }
     }
+    //By Francisco
+    public void connect_leurre(BluetoothDevice device){
+        updateState( CONNEXION_STATE_t.CONNECTED );
+        io.connect( device, this );
+       /* new Thread(new Runnable() {
+            @Override
+            public void run() {
+                io.setTramesListener( BluetoothBox.this );
+                io.command(CmdBox.newInstance(CMD_t.START_MEASURING));
+                Log.d("HandlerBox","Connect leurre");
+            }
+        }).start();
+        readRSSI();*/
+    }
+    //Fin Modif Francisco
 
     class C01194 implements Runnable {
         C01194() {
@@ -158,12 +173,23 @@ public class BluetoothBox implements ActionCallback, TramesNotifyListener, Notif
     }
 
     public void onSuccess(Object data) {
+        updateState( CONNEXION_STATE_t.CONNECTED );
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                io.setTramesListener( BluetoothBox.this );
+                io.command(CmdBox.newInstance(CMD_t.START_MEASURING));
+                Log.d("HandlerBox","succees");
+            }
+        }).start();
         updateState(CONNEXION_STATE_t.CONNECTED);
         new Thread(new C01205()).start();
         readRSSI();
     }
 
     public void onFail(int errorCode, String msg) {
+        updateState( CONNEXION_STATE_t.DISCONNECTED );
+        Log.d("HandlerBox","faill be:" + msg);
         updateState(CONNEXION_STATE_t.DISCONNECTED);
     }
 
@@ -190,5 +216,9 @@ public class BluetoothBox implements ActionCallback, TramesNotifyListener, Notif
     private void updateState(CONNEXION_STATE_t state) {
         this.state = state;
         Log.d(TAG, "State changed: " + state);
+    }
+
+    public void setConnectionState(CONNEXION_STATE_t state){
+        this.state=state;
     }
 }

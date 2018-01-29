@@ -87,6 +87,7 @@ import com.preventium.boxpreventium.manager.Force;
 import com.preventium.boxpreventium.manager.SpeedCorner;
 import com.preventium.boxpreventium.manager.SpeedLine;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
+import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.NameEPC;
@@ -1246,6 +1247,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onNumberOfBoxChanged (final int nb) {
+        HandlerBox box_leurre = new HandlerBox(this);
+        final int active_leurre =  box_leurre.get_active_from_serveur();
 
         runOnUiThread(new Runnable() {
 
@@ -1257,8 +1260,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     boxNumView.setTextColor(Color.GRAY);
                 }
                 else {
-
                     boxNumView.setTextColor(Color.RED);
+                    if(active_leurre == 1){
+                        boxNumView.setTextColor(Color.GREEN);
+                    }
                 }
 
                 boxNumView.setText(String.valueOf(nb));
@@ -3493,7 +3498,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     // -------------------------------------------------------------------------------------------- //
-
+    //instancier handler box
+    HandlerBox box_leurre = new HandlerBox(this);
+    //-------------------//
 
     @SuppressLint("StaticFieldLeak")
     class ParseJson extends AsyncTask<String, String, Integer> {
@@ -3527,6 +3534,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         int opt_langue_web = Integer.parseInt(config.optString("langue"));
                         int opt_screen_size_web = Integer.parseInt(config.optString("taille_ecran"));
 
+                        int opt_leurre = Integer.parseInt(config.optString("leurre"));
+
 
                         compare(opt_qrcode, opt_qrcode_web, getString(R.string.opt_qrcod_activated) + "\n", getString(R.string.opt_qrcod_desactivated), id_notif_qr);
                         compare(opt_carte, opt_carte_web, getString(R.string.opt_carte_activated), getString(R.string.opt_carte_desactivated) + "\n", id_notif_map);
@@ -3548,6 +3557,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         opt_langue = opt_langue_web;
                         opt_duree = opt_duree_web;
                         opt_screen_size = opt_screen_size_web;
+
+                        //get value of leurre by francisco
+
+                        box_leurre.set_active_from_serveur(opt_leurre);
+                        Log.d("HandlerBox","activation leurre  : " +opt_leurre);
 
                         return opt_qrcode;
                     } catch (JSONException e) {}

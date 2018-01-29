@@ -222,6 +222,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this.modules = new HandlerBox(ctx, this);
         this.database = new Database(ctx);
         this.fileSender = new FilesSender(ctx);
+
     }
 
     private void switchON(boolean on) {

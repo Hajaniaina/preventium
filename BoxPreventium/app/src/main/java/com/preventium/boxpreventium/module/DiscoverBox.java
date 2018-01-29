@@ -22,6 +22,7 @@ public class DiscoverBox implements ScannerCallback {
 
     public interface DiscoverBoxNotify {
         void onScanChanged(boolean scanning, ArrayList<BluetoothDevice> devices);
+        void nombreDiviceFound(int nombreDivice);//by francisco
 //        void onScanState( boolean scanning );
 //        void onDevicesResult( ArrayList<BluetoothDevice> devices );
     }
@@ -82,6 +83,11 @@ public class DiscoverBox implements ScannerCallback {
             }
 
             if( DEBUG ) Log.d(TAG,"Scanning finish," +  mBluetoothDevices.size() + " devices." );
+
+            //by francisco
+            if(notify!=null)notify.nombreDiviceFound( mBluetoothDevices.size());
+            //----------//
+
             for( int i = 0; i < mBluetoothDevices.size() && i < mBluetoothRssi.size(); i++ ) {
                 Log.d(TAG,String.format( Locale.getDefault(), "--> \"%s\" [%s] (%d)",
                         mBluetoothDevices.get(i).getName(),
