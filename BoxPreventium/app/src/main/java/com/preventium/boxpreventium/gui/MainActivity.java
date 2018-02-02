@@ -95,9 +95,15 @@ import com.preventium.boxpreventium.server.JSON.ParseJsonData;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
 
+import org.apache.commons.net.ftp.FTPClient;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -108,6 +114,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static android.provider.Telephony.Carriers.PASSWORD;
 
 //public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener, LocationListener {
@@ -199,6 +207,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private int opt_langue = 99;
     private int opt_screen_size = 99;
 
+    public int opt_panneau_speed;
+
     private String opt_test;
     String jsonString;
     NotificationCompat.Builder notif;
@@ -241,6 +251,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private LatLng firstPos;
     private Lock lock;
     boolean gps;
+
+    private String local_file;
+    private String[] epc_data = null;
+    private String remote_file;
+    private static final String USERNAME = "box.preventium";
+    private static final String HOSTNAME = "www.preventium.fr";
 
 
 
@@ -324,6 +340,29 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             return false;
         }
     }
+
+    //######donw s
+    @SuppressLint("StaticFieldLeak")
+    private class downloadAndSaveFile extends AsyncTask<String, Integer, Boolean> {
+        private downloadAndSaveFile() {
+        }
+
+        protected Boolean doInBackground(String... params) {
+            if (MainActivity.this.download().booleanValue()) {
+                return Boolean.valueOf(true);
+            }
+            return Boolean.valueOf(false);
+        }
+
+        protected void onPostExecute(Boolean sucess) {
+            if (sucess.booleanValue()) {
+                MainActivity.this.showEpcSelectDialog();
+            } else {
+                MainActivity.this.download();
+            }
+        }
+    }
+
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -1563,6 +1602,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         final boolean z = valid;
         runOnUiThread(new Runnable() {
             public void run() {
+                if(opt_panneau==1)
                 MainActivity.this.speedView.setSpeed(sPEED_t, lEVEL_t, Integer.valueOf(i), z);
             }
         });
@@ -2391,6 +2431,61 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         builder.show();
     }
 
+    //####santo epc
+ /*
+protected void showEpcSelectDialog() {
+    List<Integer> epcExistList = DataEPC.getAppEpcExist(this);
+    String[] epcStrList = new String[5];
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setTitle(getString(R.string.select_epc_string));
+    readFile();
+    if (epcExistList.size() > 0) {
+        epcStrList[0] = "" + this.epc_data[0];
+        epcStrList[1] = "" + this.epc_data[1];
+        epcStrList[2] = "" + this.epc_data[2];
+        epcStrList[3] = "" + this.epc_data[3];
+        epcStrList[4] = "" + this.epc_data[4];
+        this.selectedEpcFile = this.sharedPref.getInt(getString(R.string.epc_selected), 1) - 1;
+        builder.setSingleChoiceItems(epcStrList, this.selectedEpcFile, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                MainActivity.this.selectedEpcFile = which + 1;
+                SharedPreferences.Editor editor = MainActivity.this.sharedPref.edit();
+                editor.putInt(MainActivity.this.getString(R.string.epc_selected), MainActivity.this.selectedEpcFile);
+                editor.apply();
+            }
+        });
+    } else {
+        builder.setMessage(getString(R.string.epc_missing_string));
+    }
+    builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface dialog, int which) {
+            if (new File(MainActivity.this.local_file).exists()) {
+                new File(MainActivity.this.local_file).delete();
+            }
+            dialog.cancel();
+        }
+    });
+    builder.show();
+}
+
+
+    private void readFile() {
+        try {
+            DataInputStream in = new DataInputStream(new FileInputStream(this.local_file));
+            BufferedReader br = new BufferedReader(new InputStreamReader(in));
+            while (true) {
+                String strLine = br.readLine();
+                if (strLine != null) {
+                    this.epc_data = strLine.split(",");
+                } else {
+                    in.close();
+                    return;
+                }
+            }
+        } catch (Exception e) {
+        }
+    }
+*/
     private void changeViewColorFilter (View view, int color) {
 
         Drawable background = view.getBackground();
@@ -2949,6 +3044,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+        /*
         epcSettingsButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -2963,6 +3059,50 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             }
         });
+*/
+
+        //#### santo epc test
+        this.epcSettingsButton.setOnClickListener(new View.OnClickListener() {
+
+            class C00441 implements DialogInterface.OnClickListener {
+                C00441() {
+                }
+
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            }
+
+            public void onClick(View view) {
+               // JSONManager jSONManager = new JSONManager(MainActivity.this);
+                if (getSet() == Integer.valueOf(QrScanActivity.SCAN_MODE_VEHICLE_DISABLED).intValue()) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this, R.style.InfoDialogStyle);
+                    builder.setMessage(R.string.subscriber_string);
+                    builder.setCancelable(false);
+                    builder.setPositiveButton("Ok", new C00441());
+                    builder.show();
+                    return;
+                }
+                MainActivity.this.remote_file = "/" + ComonUtils.getIMEInumber(MainActivity.this) + "_EPC.NAME";
+                MainActivity.this.local_file = "/sdcard/" + ComonUtils.getIMEInumber(MainActivity.this) + "_EPC.NAME";
+               //### Chargement on load EPC
+                /* final ProgressDialog progress = new ProgressDialog(MainActivity.this, R.style.InfoDialogStyle);
+                progress.setMessage(MainActivity.this.getString(R.string.load_epc_string));
+                progress.setCancelable(false);
+                progress.show();
+                new Handler().postDelayed(new Runnable() {
+                    public void run() {
+                        progress.cancel();
+                    }
+                }, 3000);
+                */
+                new downloadAndSaveFile().execute();
+            }
+        });
+
+
+
+        
 
         stopButton.setOnClickListener(new View.OnClickListener() {
 
@@ -3045,6 +3185,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     // -------------------------------------------------------------------------------------------- //
 
+   /* public int get_paneau_option_web(){
+        return opt_panneau_speed;
+    }
+    public void set_paneau_web(int newpaneau_opt){
+        opt_panneau_speed = newpaneau_opt;
+    }*/
 
     private void hideOPT(){
 
@@ -3355,6 +3501,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    //##### Get config type check value #######
+    public int getSet() {
+        if (opt_config_type==99){
+            return 0;
+        }else {
+            return opt_config_type;
+        }
+
+    }
+
 
     //##### Get map check value #######
     public int getMap() {
@@ -3498,9 +3654,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     // -------------------------------------------------------------------------------------------- //
-    //instancier handler box
+//<<<<<<< HEAD
+
+//##### isntacier handler box
     HandlerBox box_leurre = new HandlerBox(this);
+    //--------------------------//
+//=======
+    //instancier handler box
+   // HandlerBox box_leurre = new HandlerBox(this);
     //-------------------//
+//>>>>>>> 30a59ebc4ffb09d220b0ca728e9e46e36b16028a
 
     @SuppressLint("StaticFieldLeak")
     class ParseJson extends AsyncTask<String, String, Integer> {
@@ -3533,6 +3696,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         int opt_config_type_web = Integer.parseInt(config.optString("config_type"));
                         int opt_langue_web = Integer.parseInt(config.optString("langue"));
                         int opt_screen_size_web = Integer.parseInt(config.optString("taille_ecran"));
+                        //int opt_leurre = Integer.parseInt(config.optString("leurre"));
 
                         int opt_leurre = Integer.parseInt(config.optString("leurre"));
 
@@ -3557,6 +3721,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         opt_langue = opt_langue_web;
                         opt_duree = opt_duree_web;
                         opt_screen_size = opt_screen_size_web;
+                        box_leurre.set_active_from_serveur(opt_leurre); //value affectation of leurre from web
 
                         //get value of leurre by francisco
 
@@ -3571,6 +3736,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             return null;
         }  ///-----faran doInBack
     }
+
 
     // -------------------------------------------------------------------------------------------- //
 //=======
@@ -3640,6 +3806,24 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         };
         Handler handler = new Handler();
         handler.postDelayed(dismissMessage, MESSAGE_DURATION);
+    }
+
+
+    private Boolean download() {
+        try {
+            FTPClient ftp = new FTPClient();
+            ftp.connect(HOSTNAME, 21);
+            ftp.login(USERNAME, PASSWORD);
+            ftp.enterLocalPassiveMode();
+            ftp.setFileType(2);
+            OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(new File(this.local_file)));
+            ftp.retrieveFile(this.remote_file, outputStream);
+            outputStream.close();
+            ftp.disconnect();
+            return Boolean.valueOf(true);
+        } catch (IOException e) {
+            return Boolean.valueOf(false);
+        }
     }
 
 }

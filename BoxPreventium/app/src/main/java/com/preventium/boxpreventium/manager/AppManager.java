@@ -79,18 +79,18 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private static int nb_box = 0;
     private static float speed_H = 0.0f;
     private static float speed_V = 0.0f;
-    private long Tavg = System.currentTimeMillis();
-    private float Vavg = 0.0f;
+    //private long Tavg = System.currentTimeMillis();
+    //private float Vavg = 0.0f;
     private long[] f6X = new long[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    private double XmG = 0.0d;
+    //private double XmG = 0.0d;
     private long[] f7Y = new long[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     private boolean _tracking = DEBUG;
-    private long alertPos_add_at = 0;
-    private long alertUI_add_at = 0;
-    private long alertX_add_at = 0;
-    private long alertX_add_id = -1;
-    private long alertY_add_at = 0;
-    private long alertY_add_id = -1;
+    //private long alertPos_add_at = 0;
+    //private long alertUI_add_at = 0;
+    //private long alertX_add_at = 0;
+    //private long alertX_add_id = -1;
+    //private long alertY_add_at = 0;
+    //private long alertY_add_id = -1;
     private boolean button_stop = false;
     //private String chronoRideTxt = "";
     private Chrono chrono_ready_to_start = Chrono.newInstance();
@@ -104,17 +104,17 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private FilesSender fileSender = null;
     private boolean gps = false;
     //private boolean internet_active = DEBUG;
-    private Location lastLocSend = null;
+    //private Location lastLocSend = null;
     private AppManagerListener listener = null;
     private List<Location> locations = new ArrayList();
     private final Lock lock = new ReentrantLock();
     private final Lock lock_timers = new ReentrantLock();
     private String log = "";
     private HandlerBox modules = null;
-    private Chrono mov_chrono = new Chrono();
-    private MOVING_t mov_t = MOVING_t.STP;
-    private MOVING_t mov_t_last = MOVING_t.UNKNOW;
-    private Chrono mov_t_last_chrono = new Chrono();
+    //private Chrono mov_chrono = new Chrono();
+    //private MOVING_t mov_t = MOVING_t.STP;
+    //private MOVING_t mov_t_last = MOVING_t.UNKNOW;
+    //private Chrono mov_t_last_chrono = new Chrono();
     private long note_forces_update_at = 0;
     private long note_parcour_update_at = 0;
     private long parcour_id = 0;
@@ -122,13 +122,13 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     private long recommended_speed_update_at = 0;
 
-    private Chrono seuil_chrono_x = new Chrono();
-    private Chrono seuil_chrono_y = new Chrono();
-    private ForceSeuil seuil_last_x = null;
-    private ForceSeuil seuil_last_y = null;
-    private ForceSeuil seuil_ui = null;
-    Pair<Double, Short> shock = Pair.create(Double.valueOf(0.0d), Short.valueOf((short) 0));
-    Pair<Double, Short> smooth = Pair.create(Double.valueOf(0.0d), Short.valueOf((short) 0));
+    //private Chrono seuil_chrono_x = new Chrono();
+    //private Chrono seuil_chrono_y = new Chrono();
+    //private ForceSeuil seuil_last_x = null;
+    //private ForceSeuil seuil_last_y = null;
+    //private ForceSeuil seuil_ui = null;
+    //Pair<Double, Short> shock = Pair.create(Double.valueOf(0.0d), Short.valueOf((short) 0));
+    //Pair<Double, Short> smooth = Pair.create(Double.valueOf(0.0d), Short.valueOf((short) 0));
     private float speed_max = 0.0f;
     private long try_send_eca_at = 0;
     private List<Pair<Long, Integer>> ui_timers = new ArrayList();
@@ -610,7 +610,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         return exist_actif;
     }
 
-/// ============================================================================================
+    /// ============================================================================================
     /// .EPC
     /// ============================================================================================
 
@@ -733,44 +733,48 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
         return ready;
     }
-
-    // Load EPC file
     private boolean loading_epc() throws InterruptedException {
         boolean ready = false;
-
-        while( isRunning() && !ready ) {
-            selected_epc = 0;
-            ready = readerEPCFile.loadFromApp(ctx);
-
-            if( ready )
-                selected_epc = readerEPCFile.selectedEPC(ctx);
-            else {
-                List<Integer> available = DataEPC.getAppEpcExist(ctx);
-                for (Integer i : available) {
-                    ready = readerEPCFile.loadFromApp(ctx, i);
-                    if( ready ){
-                        selected_epc = i;
+        while (isRunning() && !ready) {
+            this.selected_epc = 0;
+            ready = this.readerEPCFile.loadFromApp(this.ctx);
+            if (!ready) {
+                for (Integer i : DataEPC.getAppEpcExist(this.ctx)) {
+                    ready = this.readerEPCFile.loadFromApp(this.ctx, i.intValue());
+                    if (ready) {
+                        this.selected_epc = i.intValue();
                         break;
                     }
                 }
             }
-            if( !ready ) download_epc();
+            this.selected_epc = this.readerEPCFile.selectedEPC(this.ctx);
+            if (!ready) {
+                download_epc();
+            }
         }
         return ready;
     }
 
     private boolean loading_epc(int num) throws InterruptedException {
         boolean ready = false;
-        if( num < 1 ) num = 1;
-        if( num > 5 ) num = 5;
-        while( isRunning() && !ready ) {
-            ready = readerEPCFile.loadFromApp(ctx, num);
-            if( !ready ) download_epc();
+        if (num < 1) {
+            num = 1;
         }
-        selected_epc = ( ready ) ? num : 0;
+        if (num > 5) {
+            num = 5;
+        }
+        while (isRunning() && !ready) {
+            ready = this.readerEPCFile.loadFromApp(this.ctx, num);
+            if (!ready) {
+                download_epc();
+            }
+        }
+        if (!ready) {
+            num = 0;
+        }
+        this.selected_epc = num;
         return ready;
     }
-
 
     /// ============================================================================================
     /// .DOBJ
@@ -1170,70 +1174,97 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     /// CALCUL
     /// ============================================================================================
 
+    private MOVING_t mov_t = MOVING_t.STP;
+    private MOVING_t mov_t_last = MOVING_t.UNKNOW;
+    private long alertX_add_at = 0;
+    private long alertX_add_id = -1;
+    private long alertY_add_at = 0;
+    private long alertY_add_id = -1;
+    private long alertPos_add_at = 0;
+    private Location lastLocSend = null;
+    private Chrono mov_chrono = new Chrono();
+    private Chrono mov_t_last_chrono = new Chrono();
+    private ForceSeuil seuil_ui = null;
+    private long alertUI_add_at = 0;
+    private Chrono seuil_chrono_x = new Chrono();
+    private Chrono seuil_chrono_y = new Chrono();
+    private ForceSeuil seuil_last_x = null;
+    private ForceSeuil seuil_last_y = null;
+    private double XmG = 0.0;
+    Pair<Double,Short> smooth = Pair.create(0.0,(short)0);
+    Pair<Double,Short> shock = Pair.create(0.0,(short)0);
+
+    private float Vavg = 0f;
+    private long Tavg = System.currentTimeMillis();
+
     private void calc_movements() {
-        if (System.currentTimeMillis() - this.Tavg >= 1000) {
-            float acceleration;
-            this.mov_t = MOVING_t.UNKNOW;
-            this.XmG = 0.0d;
-            boolean rightRoad = false;
 
-            // Calculate Vavg and Acceleration (m/s)
-            List<Location> list = get_location_list(3, 5000);
-            if (list == null || list.size() < 3) {
-                acceleration = 0.0f;
-                this.Vavg = 0.0f;
-                this.Tavg = System.currentTimeMillis();
-            } else {
-                int i = list.size() - 1;
-                rightRoad = isRightRoad((Location) list.get(i - 2), (Location) list.get(i - 1), (Location) list.get(i));
-                float Vavg_next = (((Location) list.get(i)).getSpeed() + (((Location) list.get(i - 2)).getSpeed() + ((Location) list.get(i - 1)).getSpeed())) * 0.33333334f;
-                long Tavg_next = System.currentTimeMillis();
+        if(  System.currentTimeMillis() - Tavg < 1000 ) return;
 
-                // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
-                // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
-                // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+        this.mov_t = MOVING_t.UNKNOW;
+        this.XmG = 0f;
+        boolean rightRoad = false;
 
-                this.XmG = SpeedToXmG(this.Vavg, Vavg_next, this.Tavg, Tavg_next);
-                acceleration = Vavg_next - this.Vavg;
-                this.Vavg = Vavg_next;
-                this.Tavg = Tavg_next;
-            }
-            if (this.Vavg * 3.6f <= 3.0f) {
-                this.mov_t = MOVING_t.STP;
-            } else if (Math.abs(0.0f - (acceleration * 3.6f)) < 2.0f) {
-                this.mov_t = MOVING_t.CST;
-            } else if (acceleration > 0.0f) {
-                this.mov_t = MOVING_t.ACC;
-            } else if (acceleration < 0.0f) {
-                this.mov_t = MOVING_t.BRK;
-            } else {
-                this.mov_t = MOVING_t.NCS;
-            }
-            if (this.mov_t != this.mov_t_last) {
-                this.mov_t_last_chrono.start();
-                this.mov_chrono.start();
-                this.mov_t_last = this.mov_t;
-            } else if (this.mov_chrono.isStarted()) {
-                switch (this.mov_t_last) {
+        // Calculate Vavg and Acceleration (m/s)
+        List<Location> list = get_location_list(3,5000);
+        float acceleration = 0f;
+        if( list != null && list.size() >= 3 ) {
+            int i = list.size()-1;
+            rightRoad = isRightRoad( list.get(i-2), list.get(i-1), list.get(i) );
+            float Vavg_next = ( list.get(i-2).getSpeed() + list.get(i-1).getSpeed() + list.get(i).getSpeed() ) * (1f/3f);
+            long Tavg_next = System.currentTimeMillis();
+
+            // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
+            // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+            // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+            XmG = SpeedToXmG(Vavg,Vavg_next,Tavg,Tavg_next);
+
+            acceleration = Vavg_next - Vavg ;
+            Vavg = Vavg_next;
+            Tavg = Tavg_next;
+        } else {
+            acceleration = 0f;
+            Vavg = 0f;
+            Tavg = System.currentTimeMillis();
+        }
+
+        // Set moving status
+        if (Vavg * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
+        else if ( Math.abs( 0f - (acceleration * MS_TO_KMH) ) < 2f ) mov_t = MOVING_t.CST;
+        else if (acceleration > 0f ) mov_t = MOVING_t.ACC;
+        else if (acceleration < 0f) mov_t = MOVING_t.BRK;
+        else mov_t = MOVING_t.NCS;
+
+        // Set move chrono and calibration if necessary
+        if ( mov_t != mov_t_last )
+        {
+            mov_t_last_chrono.start();
+            mov_chrono.start();
+            mov_t_last = mov_t;
+        }
+        else
+        {
+            if ( mov_chrono.isStarted() ) {
+                switch (mov_t_last) {
                     case ACC:
                         if (rightRoad) {
-                            this.mov_chrono.stop();
-                            this.modules.on_acceleration();
-                            return;
+                            mov_chrono.stop();
+                            modules.on_acceleration();
                         }
-                        return;
+                        break;
                     case BRK:
                         if (rightRoad) {
-                            this.mov_chrono.stop();
-                            this.modules.on_constant_speed();
-                            return;
+                            mov_chrono.stop();
+                            modules.on_constant_speed();
                         }
-                        return;
+                        break;
                     default:
-                        return;
+                        break;
                 }
             }
         }
+
+
     }
 
     private double SpeedToXmG(@NonNull float v1, @NonNull float v2, @NonNull long t1, @NonNull long t2) {
@@ -1264,174 +1295,123 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         return Math.max(A_deg_1, A_deg_2) - Math.min(A_deg_1, A_deg_2) < 3.0d ? DEBUG : false;
     }
 
-    private static void update_tab_X(long[] tab, FORCE_t t, LEVEL_t l, long s) {
+// ==============================================================
+
+    private long X[] = { 0,0,0,0,0,0,0,0,0,0 };
+    private static void update_tab_X( long tab[], FORCE_t t, LEVEL_t l, long s ){
         int i1 = -1;
         int i2 = -1;
-        switch (t) {
-            case ACCELERATION:
-                switch (l) {
-                    case LEVEL_UNKNOW:
-                        break;
-                    case LEVEL_1:
-                        i1 = 0;
-                        i2 = 0;
-                        break;
-                    case LEVEL_2:
-                        i1 = 0;
-                        i2 = 1;
-                        break;
-                    case LEVEL_3:
-                        i1 = 0;
-                        i2 = 2;
-                        break;
-                    case LEVEL_4:
-                        i1 = 0;
-                        i2 = 3;
-                        break;
-                    case LEVEL_5:
-                        i1 = 0;
-                        i2 = 4;
-                        break;
-                    default:
-                        break;
-                }
-            case BRAKING:
-                switch (l) {
-                    case LEVEL_UNKNOW:
-                        break;
-                    case LEVEL_1:
-                        i1 = 5;
-                        i2 = 5;
-                        break;
-                    case LEVEL_2:
-                        i1 = 5;
-                        i2 = 6;
-                        break;
-                    case LEVEL_3:
-                        i1 = 5;
-                        i2 = 7;
-                        break;
-                    case LEVEL_4:
-                        i1 = 5;
-                        i2 = 8;
-                        break;
-                    case LEVEL_5:
-                        i1 = 5;
-                        i2 = 9;
-                        break;
-                    default:
-                        break;
-                }
-        }
-        int i = 0;
-        while (i < 10) {
-            if (i < i1 || i > i2) {
-                tab[i] = 0;
-            } else if (tab[i] <= 0) {
-                tab[i] = s;
-            }
-            i++;
-        }
-    }
 
-    private ForceSeuil read_tab_X(long[] tab, long s) {
-        int a = -1;
-        int i = 0;
-        while (i < 10) {
-            if (tab[i] > 0 && s - tab[i] >= this.readerEPCFile.get_TPS_ms(i)) {
-                a = i;
-            }
-            i++;
-        }
-        if (a < 0 || a >= 10) {
-            return null;
-        }
-        return this.readerEPCFile.getForceSeuil(a);
-    }
-
-    private static void update_tab_Y(long[] tab, FORCE_t t, LEVEL_t l, long s) {
-        int i1 = -1;
-        int i2 = -1;
-        switch (t) {
+        switch ( t ) {
+            case UNKNOW:
             case TURN_LEFT:
-                switch (l) {
-                    case LEVEL_UNKNOW:
-                        break;
-                    case LEVEL_1:
-                        i1 = 5;
-                        i2 = 5;
-                        break;
-                    case LEVEL_2:
-                        i1 = 5;
-                        i2 = 6;
-                        break;
-                    case LEVEL_3:
-                        i1 = 5;
-                        i2 = 7;
-                        break;
-                    case LEVEL_4:
-                        i1 = 5;
-                        i2 = 8;
-                        break;
-                    case LEVEL_5:
-                        i1 = 5;
-                        i2 = 9;
-                        break;
-                    default:
-                        break;
-                }
             case TURN_RIGHT:
-                switch (l) {
-                    case LEVEL_UNKNOW:
-                        break;
-                    case LEVEL_1:
-                        i1 = 0;
-                        i2 = 0;
-                        break;
-                    case LEVEL_2:
-                        i1 = 0;
-                        i2 = 1;
-                        break;
-                    case LEVEL_3:
-                        i1 = 0;
-                        i2 = 2;
-                        break;
-                    case LEVEL_4:
-                        i1 = 0;
-                        i2 = 3;
-                        break;
-                    case LEVEL_5:
-                        i1 = 0;
-                        i2 = 4;
-                        break;
-                    default:
-                        break;
+                break;
+            case ACCELERATION:
+                switch ( l ) {
+                    case LEVEL_UNKNOW: break;
+                    case LEVEL_1: i1 = 0; i2 = 0; break;
+                    case LEVEL_2: i1 = 0; i2 = 1; break;
+                    case LEVEL_3: i1 = 0; i2 = 2; break;
+                    case LEVEL_4: i1 = 0; i2 = 3; break;
+                    case LEVEL_5: i1 = 0; i2 = 4; break;
                 }
+                break;
+            case BRAKING:
+                switch ( l ) {
+                    case LEVEL_UNKNOW: break;
+                    case LEVEL_1: i1 = 5; i2 = 5; break;
+                    case LEVEL_2: i1 = 5; i2 = 6; break;
+                    case LEVEL_3: i1 = 5; i2 = 7; break;
+                    case LEVEL_4: i1 = 5; i2 = 8; break;
+                    case LEVEL_5: i1 = 5; i2 = 9; break;
+                }
+                break;
         }
-        int i = 0;
-        while (i < 10) {
-            if (i < i1 || i > i2) {
+        for( int i = 0; i < 10; i++ ) {
+            if( i >= i1 && i <= i2 ) {
+                if( tab[i] <= 0 ) tab[i] = s;
+            } else {
                 tab[i] = 0;
-            } else if (tab[i] <= 0) {
-                tab[i] = s;
             }
-            i++;
         }
     }
-
-    private ForceSeuil read_tab_Y(long[] tab, long s) {
+    private ForceSeuil read_tab_X( long tab[], long s ){
+        ForceSeuil ret = null;
+        // 0 to 4: LEVEL_1 to LEVEL_5 for A
+        // 5 to 9: LEVEL_1 to LEVEL_5 for F
         int a = -1;
-        int i = 0;
-        while (i < 10) {
-            if (tab[i] > 0 && s - tab[i] >= this.readerEPCFile.get_TPS_ms(i + 10)) {
-                a = i;
+        long tps;
+        for( int i = 0; i < 10; i++ ) {
+            if( tab[i] > 0 ) {
+                tps = s - tab[i];
+                if( tps >= readerEPCFile.get_TPS_ms(i) ) {
+                    a = i;
+                }
             }
-            i++;
         }
-        if (a < 0 || a >= 10) {
-            return null;
+        if( a >= 0 && a < 10 ) {
+            ret = readerEPCFile.getForceSeuil(a);
         }
-        return this.readerEPCFile.getForceSeuil(a + 10);
+        return ret;
+    }
+    private long Y[] = { 0,0,0,0,0,0,0,0,0,0 };
+    private static void update_tab_Y( long tab[], FORCE_t t, LEVEL_t l, long s ){
+        int i1 = -1;
+        int i2 = -1;
+
+        switch ( t ) {
+            case UNKNOW:
+            case ACCELERATION:
+            case BRAKING:
+                break;
+            case TURN_RIGHT:
+                switch ( l ) {
+                    case LEVEL_UNKNOW: break;
+                    case LEVEL_1: i1 = 0; i2 = 0; break;
+                    case LEVEL_2: i1 = 0; i2 = 1; break;
+                    case LEVEL_3: i1 = 0; i2 = 2; break;
+                    case LEVEL_4: i1 = 0; i2 = 3; break;
+                    case LEVEL_5: i1 = 0; i2 = 4; break;
+                }
+                break;
+            case TURN_LEFT:
+                switch ( l ) {
+                    case LEVEL_UNKNOW: break;
+                    case LEVEL_1: i1 = 5; i2 = 5; break;
+                    case LEVEL_2: i1 = 5; i2 = 6; break;
+                    case LEVEL_3: i1 = 5; i2 = 7; break;
+                    case LEVEL_4: i1 = 5; i2 = 8; break;
+                    case LEVEL_5: i1 = 5; i2 = 9; break;
+                }
+                break;
+        }
+        for( int i = 0; i < 10; i++ ) {
+            if( i >= i1 && i <= i2 ) {
+                if( tab[i] <= 0 ) tab[i] = s;
+            } else {
+                tab[i] = 0;
+            }
+        }
+    }
+    private ForceSeuil read_tab_Y( long tab[], long s ){
+        ForceSeuil ret = null;
+        // 0 to 4: LEVEL_1 to LEVEL_5 for A
+        // 5 to 9: LEVEL_1 to LEVEL_5 for F
+        int a = -1;
+        long tps;
+        for( int i = 0; i < 10; i++ ) {
+            if( tab[i] > 0 ) {
+                tps = s - tab[i];
+                if( tps >= readerEPCFile.get_TPS_ms(i+10) ) {
+                    a = i;
+                }
+            }
+        }
+        if( a >= 0 && a < 10 ) {
+            ret = readerEPCFile.getForceSeuil(a+10);
+        }
+        return ret;
     }
 
     private synchronized void calculate_eca() {

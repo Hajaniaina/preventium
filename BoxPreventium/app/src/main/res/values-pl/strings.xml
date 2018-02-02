@@ -257,4 +257,11 @@
     <string name="map_key">map_key</string>
     <string name="map_string">Wyświetlane są opcje mapy</string>
 
+
+
+    <string name="load_epc_string">Pobieranie danych ...</string>
+
+    <string name="info_conducteur_string">Identyfikacja kierowcy</string>
+    <string name="etat">Na starcie</string>
+
 </resources>

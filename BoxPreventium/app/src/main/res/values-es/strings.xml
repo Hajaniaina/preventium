@@ -219,44 +219,47 @@
     <string name="erreur_protocol">No se encontró ningún protocolo, póngase en contacto con el servicio de Preventium</string>
 
     <string name="more_string">Más...</string>
-    <string name="subscriber_string">You must be a subscriber for using this option</string>
+    <string name="subscriber_string">Debes ser un suscriptor para usar esta opción</string>
 
-    <string name="help_string">Help</string>
+    <string name="help_string">ayuda</string>
 
-    <string name="setting_string">Home</string>
+    <string name="setting_string">casa</string>
 
-    <string name="buttons_string">Buttons</string>
-    <string name="on_line_string">Online</string>
+    <string name="buttons_string">Botones</string>
+    <string name="on_line_string">En línea</string>
 
-    <string name="avg_string">Average</string>
-    <string name="speed_corner_string">Speed in corner</string>
-    <string name="speed_line_string">Speed in line straight</string>
-    <string name="app_lang_string">Application language</string>
-    <string name="display_force_string">Force</string>
-    <string name="message_string">Message</string>
+    <string name="avg_string">Promedio</string>
+    <string name="speed_corner_string">Velocidad en esquina</string>
+    <string name="speed_line_string">Velocidad en línea recta</string>
+    <string name="app_lang_string">Lenguaje de aplicación</string>
+    <string name="display_force_string">Fuerza</string>
+    <string name="message_string">Mensaje</string>
 
 
-    <string name="reboot_alert_string">Settings will be applied after reboot application</string>
+    <string name="reboot_alert_string">La configuración se aplicará después de la aplicación de reinicio</string>
 
-    <string name="disable_force_message_string">Disable force display</string>
+    <string name="disable_force_message_string">Desactivar visualización de fuerza</string>
 
-    <string name="enable_force_message_string">Enable force display</string>
+    <string name="enable_force_message_string">Habilitar visualización de fuerza</string>
 
     <string name="force_key">force_key</string>
 
     <string name="setting_key">setting_key</string>
     <string name="buttons_key">buttons_key</string>
     <string name="on_line_key">on_line_key</string>
-    <string name="force_string">Display force</string>
-    <string name="endis_advert_string">Enable/Disable</string>
+    <string name="force_string">Fuerza de visualización</string>
+    <string name="endis_advert_string">Habilitar/deshabilitar</string>
 
 
-    <string name="screen_alert_string">This option is only for screen up to 4 inches</string>
-    <string name="disable_map_displaying_string">Disable map display</string>
-    <string name="enable_map_displaying_string">Enable map display</string>
+    <string name="screen_alert_string">Esta opción es solo para pantallas de hasta 4 pulgadas</string>
+    <string name="disable_map_displaying_string">Desactivar visualización de mapa</string>
+    <string name="enable_map_displaying_string">Habilitar visualización de mapa</string>
     <string name="map_key">map_key</string>
-    <string name="map_string">Map options display</string>
+    <string name="map_string">Visualización de opciones de mapa</string>
 
+    <string name="load_epc_string">Obteniendo datos ...</string>
 
+    <string name="info_conducteur_string">Identificación del conductor</string>
+    <string name="etat">Al principio</string>
 
 </resources>

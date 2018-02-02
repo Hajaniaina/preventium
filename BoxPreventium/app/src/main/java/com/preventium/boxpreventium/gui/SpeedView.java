@@ -1,9 +1,12 @@
 package com.preventium.boxpreventium.gui;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 import android.view.View;
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.LEVEL_t;
@@ -22,10 +25,11 @@ public class SpeedView implements Parcelable {
     private HashMap<SPEED_t, LEVEL_t> levelMap;
     private HashMap<SPEED_t, Integer> speedMap;
 
+    private Context context;
+
     SpeedView (Activity activity) {
 
         init(activity);
-
         levelMap.put(SPEED_t.IN_STRAIGHT_LINE, null);
         levelMap.put(SPEED_t.IN_CORNERS, null);
         levelMap.put(SPEED_t.MAX_LIMIT, null);
@@ -35,6 +39,9 @@ public class SpeedView implements Parcelable {
         speedMap.put(SPEED_t.MAX_LIMIT, 0);
 
         viewMap.get(SPEED_t.MAX_LIMIT).setVisibility(View.GONE);
+    }
+    public  SpeedView(Context ctx,int iq){
+        context = ctx;
     }
 
     protected SpeedView (Parcel in) {
@@ -81,6 +88,7 @@ public class SpeedView implements Parcelable {
                 }
             });
         }
+
     }
 
     public void restore (Activity activity) {
@@ -102,9 +110,7 @@ public class SpeedView implements Parcelable {
     }
 
     public void hide (boolean hide) {
-
         for (CircleProgressView view : viewMap.values()) {
-
             if (!view.equals(viewMap.get(SPEED_t.MAX_LIMIT))) {
 
                 if (hide) {
@@ -129,8 +135,8 @@ public class SpeedView implements Parcelable {
         }
 
         if (!visible) {
-
             hide(false);
+
         }
 
         switch (speedId) {
@@ -155,7 +161,6 @@ public class SpeedView implements Parcelable {
 
             default: break;
         }
-
         levelMap.put(speedId, level);
         speedMap.put(speedId, speed);
     }
