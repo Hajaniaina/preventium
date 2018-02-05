@@ -11,7 +11,7 @@ import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 import java.util.Locale;
 
 /**
- * Created by Marino on 30/11/2016.
+ * Created by Marino on 30/11/2017.
  */
 
 public class NameEPC {

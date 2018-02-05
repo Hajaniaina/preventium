@@ -27,6 +27,7 @@ import xyz.belvi.mobilevisionbarcodescanner.BarcodeRetriever;
 
 public class QrScanActivity extends AppCompatActivity implements BarcodeRetriever {
     public static final String QR_SCAN_REQUEST_PARAM = "QR_REQUEST";
+    public static final String SCAN_MODE_DRIVER_DISABLED   = "0";
     public static final String SCAN_MODE_VEHICLE_DISABLED = "0";
     public static final String SCAN_MODE_VEHICLE_FRONT = "1";
     public static final String SCAN_MODE_VEHICLE_FRONT_BACK = "2";
@@ -82,6 +83,8 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
         this.sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         String scanModeOnStart = this.sharedPref.getString(getString(R.string.qr_select_start_mode_key), SCAN_MODE_VEHICLE_DISABLED);
         String scanModeOnStop = this.sharedPref.getString(getString(R.string.qr_select_stop_mode_key), SCAN_MODE_VEHICLE_DISABLED);
+        String scanModeIc = this.sharedPref.getString(getString(R.string.qr_select_ic_mode_key), SCAN_MODE_DRIVER_DISABLED);
+
         if (scanModeOnStart.equals(SCAN_MODE_VEHICLE_FRONT_BACK)) {
             this.qrRequest.vehicleFrontOnStartEnabled = true;
             this.qrRequest.vehicleBackOnStartEnabled = true;
@@ -102,15 +105,26 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
         if (scanModeOnStop.equals(SCAN_MODE_VEHICLE_FRONT)) {
             this.qrRequest.vehicleFrontOnStopEnabled = true;
         }
-        if (!this.qrRequest.driverIdEnabled) {
-            this.checkBoxDriverId.setVisibility(View.GONE);
+        if (scanModeIc.equals(SCAN_MODE_DRIVER_DISABLED)) {
+            Log.d(TAG, "qr_select_ic_mode_key: "+scanModeIc);
+            this.qrRequest.driverIdEnabled = false;
+        } else {
+
+            this.qrRequest.driverIdEnabled = true;
         }
+
         if (!this.qrRequest.vehicleFrontOnStartEnabled) {
             this.checkBoxVehicleFront.setVisibility(View.GONE);
         }
         if (!this.qrRequest.vehicleBackOnStartEnabled) {
             this.checkBoxVehicleBack.setVisibility(View.GONE);
         }
+
+
+        if (!this.qrRequest.driverIdEnabled) {
+            this.checkBoxDriverId.setVisibility(View.GONE);
+        }
+
         this.scannedOnce = false;
         updateCheckBoxes();
         this.barcodeCapture = (BarcodeCapture) getSupportFragmentManager().findFragmentById(R.id.qr_scanner);
@@ -138,27 +152,32 @@ public class QrScanActivity extends AppCompatActivity implements BarcodeRetrieve
                     }
                 } else if (!QrScanActivity.this.scannedOnce) {
                     QrScanActivity.this.scannedOnce = true;
+
                     if (code.contains("/")) {
-                        String[] subStrings = code.split("/");
-                        long driverId = QrScanActivity.this.parseDriverId(subStrings[0]);
-                        if (driverId > 0) {
-                            String driverName = subStrings[1];
-                            if (QrScanActivity.this.qrRequest.driverIdReq == 0) {
-                                QrScanActivity.this.qrRequest.driverIdReq = 1;
+                        if (QrScanActivity.this.qrRequest.driverIdEnabled ) {
+                            String[] subStrings = code.split("/");
+                            long driverId = QrScanActivity.this.parseDriverId(subStrings[0]);
+                            if (driverId > 0) {
+                                String driverName = subStrings[1];
+                                if (QrScanActivity.this.qrRequest.driverIdReq == 0) {
+                                    QrScanActivity.this.qrRequest.driverIdReq = 1;
+                                }
+                                QrScanActivity.this.qrRequest.driverId = driverId;
+                                QrScanActivity.this.qrRequest.driverName = driverName;
+                                Editor editor = QrScanActivity.this.sharedPref.edit();
+                                editor.putLong(QrScanActivity.this.getString(R.string.driver_id_key), driverId);
+                                editor.putString(QrScanActivity.this.getString(R.string.driver_name_key), driverName);
+                                editor.apply();
+
+                                Log.e("Drivename za : ", String.valueOf(driverName));
+                                Log.e("DriveId za : ", String.valueOf(driverId));
+
+                                QrScanActivity.this.showConfirmDialog(QrScanActivity.this.getString(R.string.hello_string) + " " + driverName.split(" ")[1], true);
+
+                            } else {
+                                QrScanActivity.this.showConfirmDialog(QrScanActivity.this.getString(R.string.scan_qr_error_string), false);
                             }
-                            QrScanActivity.this.qrRequest.driverId = driverId;
-                            QrScanActivity.this.qrRequest.driverName = driverName;
-                            Editor editor = QrScanActivity.this.sharedPref.edit();
-                            editor.putLong(QrScanActivity.this.getString(R.string.driver_id_key), driverId);
-                            editor.putString(QrScanActivity.this.getString(R.string.driver_name_key), driverName);
-                            editor.apply();
 
-                            Log.e("Drivename za : ", String.valueOf(driverName));
-                            Log.e("DriveId za : ", String.valueOf(driverId));
-
-                            QrScanActivity.this.showConfirmDialog(QrScanActivity.this.getString(R.string.hello_string) + " " + driverName.split(" ")[1], true);
-                        } else {
-                            QrScanActivity.this.showConfirmDialog(QrScanActivity.this.getString(R.string.scan_qr_error_string), false);
                         }
                     } else {
                         QrScanActivity.this.showConfirmDialog(QrScanActivity.this.getString(R.string.scan_qr_error_string), false);
