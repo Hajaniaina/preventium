@@ -1,13 +1,15 @@
 package com.preventium.boxpreventium.gui;
 
+import android.app.ActionBar;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
-import android.view.View;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
-import com.github.clans.fab.FloatingActionButton;
+
 import com.preventium.boxpreventium.R;
 
 import in.arjsna.passcodeview.PassCodeView;
@@ -19,6 +21,24 @@ public class PinLockActivity extends AppCompatActivity {
     private PassCodeView passCodeView;
     private Intent settingsIntent;
     private String pinCode;
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        ActionBar actionBar = getActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+        }
+        return true;
+    }
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -50,16 +70,6 @@ public class PinLockActivity extends AppCompatActivity {
                         Toast.makeText(PinLockActivity.this, getString(R.string.pin_invalid_string), Toast.LENGTH_SHORT).show();
                     }
                 }
-            }
-        });
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View view) {
-
-                onBackPressed();
             }
         });
     }
