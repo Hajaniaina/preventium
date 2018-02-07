@@ -10,16 +10,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
-
-    public static final String COLUMN_CEP_NB_BOX = "nb_box";
-    public static final String COLUMN_CEP_NB_ECA = "nb_eca";
-    public static final String COLUMN_CEP_NOTE = "note";
-    public static final String COLUMN_CEP_PAR_DUR = "parcour_duration";
-    public static final String COLUMN_CEP_VITESSE_LD = "vitesse_ld";
-    public static final String COLUMN_CEP_VITESSE_VR = "vitesse_vr";
-    public static final String COLUMN_CEP_DIST_COV = "distance_covered";
-
-
     // Database Info
     private static final String DATABASE_NAME = "DatabaseHelper";
     private static final int DATABASE_VERSION = 2;
@@ -59,7 +49,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CEP_LONG_POS = "long_pos";
     public static final String COLUMN_CEP_LAT_POS = "lat_pos";
     public static final String COLUMN_CEP_STATUS = "status";
-
+    public static final String COLUMN_CEP_NB_BOX = "nb_box";
+    public static final String COLUMN_CEP_NB_ECA = "nb_eca";
+    public static final String COLUMN_CEP_NOTE = "note";
+    public static final String COLUMN_CEP_PAR_DUR = "parcour_duration";
+    public static final String COLUMN_CEP_VITESSE_LD = "vitesse_ld";
+    public static final String COLUMN_CEP_VITESSE_VR = "vitesse_vr";
+    public static final String COLUMN_CEP_DIST_COV = "distance_covered";
 
 
     public DatabaseHelper(Context context) {
@@ -71,42 +67,49 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         String CREATE_ECA_TABLE =
-            "CREATE TABLE " + TABLE_ECA + " (" +
-            COLUMN_ECA_ID + " INTEGER PRIMARY KEY, " +
-            COLUMN_ECA_PARCOUR_ID + " INTEGER, " +
-            COLUMN_ECA_FILE_ID + " INTEGER, " +
-            COLUMN_ECA_TIME + " INTEGER, " +
-            COLUMN_ECA_ALERTID + " INTEGER, " +
-            COLUMN_ECA_PADDIND + " INTEGER, " +
-            COLUMN_ECA_LONG_POS + " FLOAT, " +
-            COLUMN_ECA_LAT_POS + " FLOAT, " +
-            COLUMN_ECA_LONG_POS_ORIENTATION + " INTEGER, " +
-            COLUMN_ECA_LAT_POS_ORIENTATION + " INTEGER, " +
-            COLUMN_ECA_SPEED + " FLOAT, " +
-            COLUMN_ECA_DISTANCE + " FLOAT);" ;
+                "CREATE TABLE " + TABLE_ECA + " (" +
+                        COLUMN_ECA_ID + " INTEGER PRIMARY KEY, " +
+                        COLUMN_ECA_PARCOUR_ID + " INTEGER, " +
+                        COLUMN_ECA_FILE_ID + " INTEGER, " +
+                        COLUMN_ECA_TIME + " INTEGER, " +
+                        COLUMN_ECA_ALERTID + " INTEGER, " +
+                        COLUMN_ECA_PADDIND + " INTEGER, " +
+                        COLUMN_ECA_LONG_POS + " FLOAT, " +
+                        COLUMN_ECA_LAT_POS + " FLOAT, " +
+                        COLUMN_ECA_LONG_POS_ORIENTATION + " INTEGER, " +
+                        COLUMN_ECA_LAT_POS_ORIENTATION + " INTEGER, " +
+                        COLUMN_ECA_SPEED + " FLOAT, " +
+                        COLUMN_ECA_DISTANCE + " FLOAT);";
         String CREATE_CEP_TABLE =
-            "CREATE TABLE " + TABLE_CEP + " (" +
-            COLUMN_CEP_ID + " INTEGER PRIMARY KEY, " +
-            COLUMN_CEP_TIME + " INTEGER, " +
-            COLUMN_CEP_MAC + " TEXT, " +
-            COLUMN_CEP_LONG_POS + " FLOAT, " +
-            COLUMN_CEP_LAT_POS + " FLOAT, " +
-            COLUMN_CEP_STATUS + " INTEGER);";
+                "CREATE TABLE " + TABLE_CEP + " (" +
+                        COLUMN_CEP_ID + " INTEGER PRIMARY KEY, " +
+                        COLUMN_CEP_TIME + " INTEGER, " +
+                        COLUMN_CEP_LONG_POS + " FLOAT, " +
+                        COLUMN_CEP_LAT_POS + " FLOAT, " +
+                        COLUMN_CEP_MAC + " TEXT, " +
+                        COLUMN_CEP_NOTE + " INTEGER, " +
+                        COLUMN_CEP_VITESSE_LD + " INTEGER, " +
+                        COLUMN_CEP_VITESSE_VR + " INTEGER, " +
+                        COLUMN_CEP_DIST_COV + " INTEGER, " +
+                        COLUMN_CEP_PAR_DUR + " INTEGER, " +
+                        COLUMN_CEP_NB_ECA + " INTEGER, " +
+                        COLUMN_CEP_NB_BOX + " INTEGER, " +
+                        COLUMN_CEP_STATUS + " INTEGER);";
         String CREATE_DRIVERID_TABLE =
-            "CREATE TABLE " + TABLE_DRIVER + " (" +
-            COLUMN_DRIVER_TIME+ " INTEGER PRIMARY KEY, " +
-            COLUMN_DRIVER_ID + " INTEGER, " +
-            COLUMN_DRIVER_PARCOUR_ID + " INTEGER );";
+                "CREATE TABLE " + TABLE_DRIVER + " (" +
+                        COLUMN_DRIVER_TIME + " INTEGER PRIMARY KEY, " +
+                        COLUMN_DRIVER_ID + " INTEGER, " +
+                        COLUMN_DRIVER_PARCOUR_ID + " INTEGER );";
         String CREATE_EPCID_TABLE =
-            "CREATE TABLE " + TABLE_EPC + " (" +
-            COLUMN_EPC_ID + " INTEGER PRIMARY KEY, " +
-            COLUMN_EPC_PARCOUR_ID + " INTEGER, " +
-            COLUMN_EPC_NUM_EPC + " INTEGER );";
+                "CREATE TABLE " + TABLE_EPC + " (" +
+                        COLUMN_EPC_ID + " INTEGER PRIMARY KEY, " +
+                        COLUMN_EPC_PARCOUR_ID + " INTEGER, " +
+                        COLUMN_EPC_NUM_EPC + " INTEGER );";
 
-        sqLiteDatabase.execSQL( CREATE_ECA_TABLE );
-        sqLiteDatabase.execSQL( CREATE_CEP_TABLE );
-        sqLiteDatabase.execSQL( CREATE_DRIVERID_TABLE );
-        sqLiteDatabase.execSQL( CREATE_EPCID_TABLE );
+        sqLiteDatabase.execSQL(CREATE_ECA_TABLE);
+        sqLiteDatabase.execSQL(CREATE_CEP_TABLE);
+        sqLiteDatabase.execSQL(CREATE_DRIVERID_TABLE);
+        sqLiteDatabase.execSQL(CREATE_EPCID_TABLE);
     }
 
     // Called when the database needs to be upgraded.

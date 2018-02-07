@@ -11,7 +11,7 @@ public class PreventiumApplication extends Application {
         super.onCreate();
 //#####report beug
         AutoErrorReporter.get(this)
-                .setEmailAddresses("foliosantoni@gmail.com")
+                .setEmailAddresses("soavydiane@gmail.com")
                 .setEmailSubject("Preventium Crash Report")
                 .start();
 //#####report beug

@@ -24,12 +24,19 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_DIST_COV;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_ID;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_LAT_POS;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_LONG_POS;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_MAC;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_NB_BOX;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_NB_ECA;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_NOTE;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_PAR_DUR;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_STATUS;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_TIME;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_VITESSE_LD;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_VITESSE_VR;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_DRIVER_ID;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_DRIVER_PARCOUR_ID;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_DRIVER_TIME;
@@ -695,13 +702,13 @@ Log.d("AAAAA","NB POINTS " + nb);
             contentValues.put("lat_pos", Float.valueOf(0.0f));
         }
         contentValues.put(DatabaseHelper.COLUMN_CEP_MAC, device_mac);
-        contentValues.put(DatabaseHelper.COLUMN_CEP_NOTE, Integer.valueOf(note));
-        contentValues.put(DatabaseHelper.COLUMN_CEP_VITESSE_LD, Integer.valueOf(vitesse_ld));
-        contentValues.put(DatabaseHelper.COLUMN_CEP_VITESSE_VR, Integer.valueOf(vitesse_vr));
-        contentValues.put(DatabaseHelper.COLUMN_CEP_DIST_COV, Long.valueOf(distance_covered));
-        contentValues.put(DatabaseHelper.COLUMN_CEP_PAR_DUR, Long.valueOf(parcour_duration));
-        contentValues.put(DatabaseHelper.COLUMN_CEP_NB_ECA, Integer.valueOf(nb_eca));
-        contentValues.put(DatabaseHelper.COLUMN_CEP_NB_BOX, Integer.valueOf(nb_box));
+        contentValues.put(COLUMN_CEP_NOTE, Integer.valueOf(note));
+        contentValues.put(COLUMN_CEP_VITESSE_LD, Integer.valueOf(vitesse_ld));
+        contentValues.put(COLUMN_CEP_VITESSE_VR, Integer.valueOf(vitesse_vr));
+        contentValues.put(COLUMN_CEP_DIST_COV, Long.valueOf(distance_covered));
+        contentValues.put(COLUMN_CEP_PAR_DUR, Long.valueOf(parcour_duration));
+        contentValues.put(COLUMN_CEP_NB_ECA, Integer.valueOf(nb_eca));
+        contentValues.put(COLUMN_CEP_NB_BOX, Integer.valueOf(nb_box));
         contentValues.put("status", Integer.valueOf(connected ? 1 : 0));
         db.insert(DatabaseHelper.TABLE_CEP, null, contentValues);
         DatabaseManager.getInstance().closeDatabase();
@@ -756,7 +763,7 @@ Log.d("AAAAA","NB POINTS " + nb);
                                     = new BufferedOutputStream(
                                     new FileOutputStream(file.getAbsolutePath()));
                             Calendar GMTCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-                            byte[] line = new byte[21];
+                            byte[] line = new byte[57];
                             byte[] b;
                             String[] macAddressParts;
                             int i;
@@ -764,6 +771,13 @@ Log.d("AAAAA","NB POINTS " + nb);
                             long time;
                             float long_pos;
                             float lat_pos;
+                            int note;
+                            int vitesseLd;
+                            int vitesseVr;
+                            long distanceCovered;
+                            long parcoursDuration;
+                            int nbEca;
+                            int nbBox;
                             String mac;
                             int status;
                             while (!cursor.isAfterLast()) {
@@ -773,30 +787,36 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 lat_pos = cursor.getFloat(cursor.getColumnIndex(COLUMN_CEP_LAT_POS));
                                 mac = cursor.getString(cursor.getColumnIndex(COLUMN_CEP_MAC));
                                 status = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_STATUS));
+                                note = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NOTE));
+                                vitesseLd = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_VITESSE_LD));
+                                vitesseVr = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_VITESSE_VR));
+                                distanceCovered = cursor.getLong(cursor.getColumnIndex(COLUMN_CEP_DIST_COV));
+                                parcoursDuration = cursor.getLong(cursor.getColumnIndex(COLUMN_CEP_PAR_DUR));
+                                nbEca = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NB_ECA));
+                                nbBox = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NB_BOX));
 
                                 i = 0;
-                                GMTCalendar.setTimeInMillis(time);
-                                line[i++] = (byte) GMTCalendar.get(Calendar.DAY_OF_MONTH);
+                                GMTCalendar.setTimeInMillis(time); //TIMESTAMP timestamp //6 bytes
+                                line[i++] = (byte) GMTCalendar.get(Calendar.DAY_OF_MONTH); //
                                 line[i++] = (byte) (GMTCalendar.get(Calendar.MONTH) + 1);
                                 line[i++] = (byte) (GMTCalendar.get(Calendar.YEAR) & 0xFF);
                                 line[i++] = (byte) GMTCalendar.get(Calendar.HOUR);
                                 line[i++] = (byte) GMTCalendar.get(Calendar.MINUTE);
                                 line[i++] = (byte) GMTCalendar.get(Calendar.SECOND);
-                                b = ByteBuffer.allocate(4).putFloat(long_pos).array();
+                                b = ByteBuffer.allocate(4).putFloat(long_pos).array(); //float long_pos //4 bytes
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
-                                b = ByteBuffer.allocate(4).putFloat(lat_pos).array();
+                                b = ByteBuffer.allocate(4).putFloat(lat_pos).array(); //float lat_pos //4 bytes
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
-                                macAddressParts = mac.split(":");
+                                macAddressParts = mac.split(":"); //unsigned char device_mac //6 bytes
                                 b = new byte[6];
                                 for (int m = 0; m < 6; m++) {
-                                    Integer hex = Integer.parseInt(macAddressParts[m], 16);
-                                    b[m] = hex.byteValue();
+                                    b[m] = (byte) 0;
                                 }
                                 line[i++] = b[0];
                                 line[i++] = b[1];
@@ -804,7 +824,51 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 line[i++] = b[3];
                                 line[i++] = b[4];
                                 line[i++] = b[5];
-                                line[i] = (byte) status;
+
+                                b = ByteBuffer.allocate(4).putInt(note).array(); //integer note //4 bytes
+                                line[i++] = b[0];
+                                line[i++] = b[1];
+                                line[i++] = b[2];
+                                line[i++] = b[3];
+                                b = ByteBuffer.allocate(4).putFloat(vitesseLd).array(); //integer vitesse_ld //4 bytes
+                                line[i++] = b[0];
+                                line[i++] = b[1];
+                                line[i++] = b[2];
+                                line[i++] = b[3];
+                                b = ByteBuffer.allocate(4).putFloat(vitesseVr).array(); //integer vitesse_vr //4 bytes
+                                line[i++] = b[0];
+                                line[i++] = b[1];
+                                line[i++] = b[2];
+                                line[i++] = b[3];
+                                b = ByteBuffer.allocate(8).putFloat(distanceCovered).array(); //long distance_covered //8 bytes
+                                line[i++] = b[0];
+                                line[i++] = b[1];
+                                line[i++] = b[2];
+                                line[i++] = b[3];
+                                line[i++] = b[4];
+                                line[i++] = b[5];
+                                line[i++] = b[6];
+                                line[i++] = b[7];
+                                b = ByteBuffer.allocate(8).putFloat(parcoursDuration).array(); //long parcour_duration //8 bytes
+                                line[i++] = b[0];
+                                line[i++] = b[1];
+                                line[i++] = b[2];
+                                line[i++] = b[3];
+                                line[i++] = b[4];
+                                line[i++] = b[5];
+                                line[i++] = b[6];
+                                line[i++] = b[7];
+                                b = ByteBuffer.allocate(4).putFloat(nbEca).array(); //integer nb_eca //4 bytes
+                                line[i++] = b[0];
+                                line[i++] = b[1];
+                                line[i++] = b[2];
+                                line[i++] = b[3];
+                                b = ByteBuffer.allocate(4).putFloat(nbBox).array(); //integer nb_box //4bytes
+                                line[i++] = b[0];
+                                line[i++] = b[1];
+                                line[i++] = b[2];
+                                line[i++] = b[3];
+                                line[i] = (byte) status;  //unsigned char device_status //1 byte
 
                                 output.write(line);
 
