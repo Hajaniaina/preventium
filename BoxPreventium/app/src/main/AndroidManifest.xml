@@ -100,6 +100,8 @@
         <activity
             android:theme="@style/Theme.AppCompat.Light"
             android:label="@string/help_string"
+            android:keepScreenOn="true"
+            android:parentActivityName=".gui.MainActivity"
             android:name="com.preventium.boxpreventium.gui.SettingHelp"
             android:screenOrientation="sensorLandscape" />
 
@@ -115,15 +117,17 @@
         <activity
             android:name=".gui.PinLockActivity"
             android:keepScreenOn="true"
+            android:parentActivityName=".gui.MainActivity"
             android:label="Pin code"
             android:screenOrientation="sensorLandscape"
-            android:theme="@style/AppTheme" />
+            android:theme="@style/Theme.AppCompat.Light" />
         <activity
             android:name=".gui.StatsActivity"
             android:keepScreenOn="true"
+            android:parentActivityName=".gui.MainActivity"
             android:label="@string/title_activity_info"
             android:screenOrientation="sensorLandscape"
-            android:theme="@style/AppTheme" />
+            android:theme="@style/Theme.AppCompat.Light" />
         <activity
             android:name=".gui.QrScanActivity"
             android:keepScreenOn="true"
@@ -136,19 +140,10 @@
             android:theme="@style/AppTheme"
             android:screenOrientation="sensorLandscape">
         </activity>
-
-       <!--
-        <activity
-            android:name=".gui.ModuleActivity"
-            android:keepScreenOn="true"
-            android:label="@string/module_string"
-            android:screenOrientation="sensorLandscape"
-            android:theme="@style/AppTheme" />
-       -->
-
        <activity
            android:label="@string/module_string"
            android:name="com.preventium.boxpreventium.gui.ModuleActivity"
+           android:parentActivityName=".gui.MainActivity"
            android:screenOrientation="sensorLandscape"
            android:theme="@style/Theme.AppCompat.Light"/>
 

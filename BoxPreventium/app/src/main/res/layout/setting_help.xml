@@ -12,5 +12,4 @@
             </RelativeLayout>
         </LinearLayout>
     </ScrollView>
-    <com.github.clans.fab.FloatingActionButton android:layout_gravity="end|bottom|center" android:id="@id/back" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="10.0dip" android:src="@drawable/mr_ic_close_dark" back:fab_colorNormal="@color/colorAppRed" back:fab_colorPressed="#ffff5252" back:fab_shadowColor="#ff444444" back:fab_size="@dimen/fb_button_size" />
 </android.support.design.widget.CoordinatorLayout>

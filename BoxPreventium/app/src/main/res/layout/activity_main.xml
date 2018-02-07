@@ -177,6 +177,23 @@
                       android:textStyle="bold"
                       android:text="0:00"/>
 
+            <TextView
+                android:id="@+id/box_num_connected"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:height="@dimen/score_layout_height"
+                android:gravity="center"
+                android:elevation="4dp"
+                android:textColor="#fafafa"
+                android:textSize="@dimen/box_num_text_size"
+                android:textStyle="bold"
+                android:shadowColor="#757575"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2"
+                android:text="0" />
+
         </LinearLayout>
 
         <!-- SPEED INFO/LIMIT WIDGETS -->
@@ -281,9 +298,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|end"
+                android:layout_alignParentRight="true"
                 android:layout_marginTop="@dimen/force_layout_margin_top"
                 android:layout_marginStart="@dimen/force_layout_margin_start"
-                android:layout_marginEnd="@dimen/force_layout_margin_end">
+                android:layout_marginEnd="35dp">
 
                 <TextView
                     android:id="@+id/driving_score_view"
@@ -491,37 +509,6 @@
                     fab:fab_shadowColor="#444" />
 
         </com.github.clans.fab.FloatingActionMenu>
-
-        <!-- BOX NUM WIDGET -->
-            <LinearLayout
-                android:id="@+id/box_layout"
-                android:orientation="vertical"
-                android:layout_width="@dimen/box_num_layout_width"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentBottom="true"
-                android:layout_marginBottom="10dp"
-                android:layout_marginRight="50dp">
-
-                <TextView
-                    android:id="@+id/box_num_connected"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/box_num_margin_top"
-                    android:height="@dimen/box_num_height"
-                    android:gravity="center"
-                    android:elevation="4dp"
-                    android:textColor="#fafafa"
-                    android:textSize="@dimen/box_num_text_size"
-                    android:textStyle="bold"
-                    android:shadowColor="#757575"
-                    android:shadowDx="1"
-                    android:shadowDy="1"
-                    android:shadowRadius="2"
-                    android:text="0" />
-
-            </LinearLayout>
 
         </RelativeLayout>
 

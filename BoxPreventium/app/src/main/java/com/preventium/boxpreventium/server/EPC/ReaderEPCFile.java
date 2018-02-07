@@ -125,6 +125,8 @@ public class ReaderEPCFile {
             if( in.read( data ) == total_size ){
                 String txt = BytesUtils.dataToString(data);
                 String[] split = txt.split(",");
+
+                //Log.d(TAG, "liste des seuil" + split);
                 if( split.length == 5 ) {
                     int i = 0;
                     EPC_name1 = split[i++];
