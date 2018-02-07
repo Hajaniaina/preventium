@@ -1,5 +1,6 @@
 package com.preventium.boxpreventium.gui;
 
+import android.app.ActionBar;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,10 +10,11 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
-import com.github.clans.fab.FloatingActionButton;
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
@@ -63,6 +65,30 @@ public class ModuleActivity extends AppCompatActivity {
     private static Timer timer = new Timer();
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        ActionBar actionBar = getActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                // onBackPressed();
+                String message = "close";
+                Intent intent = new Intent();
+                intent.putExtra("MESSAGE", message);
+                setResult(0, intent);
+                finish();//finishing activity
+                break;
+        }
+        return true;
+    }
+
+    @Override
     protected void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.module_activity);
@@ -85,20 +111,6 @@ public class ModuleActivity extends AppCompatActivity {
         // module bouton
         module_epc = (TextView) findViewById(R.id.module_epc);
         module_qr_code = (TextView) findViewById(R.id.module_qr_code);
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.module_close);
-        fab.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View view) {
-                // onBackPressed();
-                String message = "close";
-                Intent intent = new Intent();
-                intent.putExtra("MESSAGE", message);
-                setResult(0, intent);
-                finish();//finishing activity
-            }
-        });
     }
 
     @Override

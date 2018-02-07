@@ -264,6 +264,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private TextView smsMessageView;
     private static MainActivity activity;
     private boolean flag_run_once = false;
+    private boolean alertqrscan = false;
 
     @Override
     public void onLocationChanged(Location location) {
@@ -544,6 +545,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             if (this.qrRequest.vehicleFrontReq == 1) {
             }
             if (this.qrRequest.vehicleBackReq != 1) {
+            }
+            if(this.qrRequest.driverIdEnabled || this.qrRequest.vehicleFrontOnStartEnabled || this.qrRequest.vehicleFrontOnStopEnabled  ){
+                this.alertqrscan = true;
             }
         }
     }
@@ -1204,11 +1208,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (routeActive) {
 
                             if (qrRequest.isAnyReqPending(QrScanRequest.REQUEST_ON_START)) {
+                                    if(alertqrscan) {
+                                        drawAttention(5);
+                                        showQrRequestAlert();
 
-                                drawAttention(5);
-                                showQrRequestAlert();
+                                        appManager.add_ui_timer(qrSmsTimeout, QR_SEND_ON_START_SMS_TMR);
+                                    }
 
-                                appManager.add_ui_timer(qrSmsTimeout, QR_SEND_ON_START_SMS_TMR);
                             }
                         }
                         else {

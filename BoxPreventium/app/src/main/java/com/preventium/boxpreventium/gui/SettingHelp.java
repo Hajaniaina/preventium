@@ -1,21 +1,23 @@
 package com.preventium.boxpreventium.gui;
 
-import android.app.Activity;
+import android.app.ActionBar;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.text.SpannableString;
 import android.text.style.UnderlineSpan;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
 
-import com.github.clans.fab.FloatingActionButton;
 import com.preventium.boxpreventium.R;
 
-public class SettingHelp extends Activity {
+public class SettingHelp extends AppCompatActivity {
     private OnClickListener help_on_line = new C00672();
     private String htmlText1;
     private String htmlText2;
@@ -23,13 +25,22 @@ public class SettingHelp extends Activity {
     private String link = "www.preventium.fr";
     private int ref;
 
-    class C00661 implements OnClickListener {
-        C00661() {
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        ActionBar actionBar = getActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
         }
+        return true;
+    }
 
-        public void onClick(View view) {
-            SettingHelp.this.onBackPressed();
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
         }
+        return true;
     }
 
     class C00672 implements OnClickListener {
@@ -82,7 +93,6 @@ public class SettingHelp extends Activity {
             helpOnLine.setText(spanString);
             helpOnLine.setOnClickListener(this.help_on_line);
         }
-        ((FloatingActionButton) findViewById(R.id.back)).setOnClickListener(new C00661());
     }
 
     protected void onResume() {

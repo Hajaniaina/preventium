@@ -19,6 +19,7 @@ import com.preventium.boxpreventium.enums.MOVING_t;
 import com.preventium.boxpreventium.enums.SCORE_t;
 import com.preventium.boxpreventium.enums.SPEED_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
+import com.preventium.boxpreventium.gui.SettingsActivity;
 import com.preventium.boxpreventium.location.CustomMarkerData;
 import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.module.HandlerBox.NotifyListener;
@@ -1199,67 +1200,66 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     private void calc_movements() {
 
-        if(  System.currentTimeMillis() - Tavg < 1000 ) return;
+        if (System.currentTimeMillis() - this.Tavg >= 1000) {
+            float acceleration;
+            this.mov_t = MOVING_t.UNKNOW;
+            this.XmG = 0.0d;
+            boolean rightRoad = false;
 
-        this.mov_t = MOVING_t.UNKNOW;
-        this.XmG = 0f;
-        boolean rightRoad = false;
+            // Calculate Vavg and Acceleration (m/s)
+            List<Location> list = get_location_list(3, 5000);
+            if (list == null || list.size() < 3) {
+                acceleration = 0.0f;
+                this.Vavg = 0.0f;
+                this.Tavg = System.currentTimeMillis();
+            } else {
+                int i = list.size() - 1;
+                rightRoad = isRightRoad((Location) list.get(i - 2), (Location) list.get(i - 1), (Location) list.get(i));
+                float Vavg_next = (((Location) list.get(i)).getSpeed() + (((Location) list.get(i - 2)).getSpeed() + ((Location) list.get(i - 1)).getSpeed())) * 0.33333334f;
+                long Tavg_next = System.currentTimeMillis();
 
-        // Calculate Vavg and Acceleration (m/s)
-        List<Location> list = get_location_list(3,5000);
-        float acceleration = 0f;
-        if( list != null && list.size() >= 3 ) {
-            int i = list.size()-1;
-            rightRoad = isRightRoad( list.get(i-2), list.get(i-1), list.get(i) );
-            float Vavg_next = ( list.get(i-2).getSpeed() + list.get(i-1).getSpeed() + list.get(i).getSpeed() ) * (1f/3f);
-            long Tavg_next = System.currentTimeMillis();
+                // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
+                // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+                // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
 
-            // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
-            // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
-            // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
-            XmG = SpeedToXmG(Vavg,Vavg_next,Tavg,Tavg_next);
-
-            acceleration = Vavg_next - Vavg ;
-            Vavg = Vavg_next;
-            Tavg = Tavg_next;
-        } else {
-            acceleration = 0f;
-            Vavg = 0f;
-            Tavg = System.currentTimeMillis();
-        }
-
-        // Set moving status
-        if (Vavg * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
-        else if ( Math.abs( 0f - (acceleration * MS_TO_KMH) ) < 2f ) mov_t = MOVING_t.CST;
-        else if (acceleration > 0f ) mov_t = MOVING_t.ACC;
-        else if (acceleration < 0f) mov_t = MOVING_t.BRK;
-        else mov_t = MOVING_t.NCS;
-
-        // Set move chrono and calibration if necessary
-        if ( mov_t != mov_t_last )
-        {
-            mov_t_last_chrono.start();
-            mov_chrono.start();
-            mov_t_last = mov_t;
-        }
-        else
-        {
-            if ( mov_chrono.isStarted() ) {
-                switch (mov_t_last) {
+                this.XmG = SpeedToXmG(this.Vavg, Vavg_next, this.Tavg, Tavg_next);
+                acceleration = Vavg_next - this.Vavg;
+                this.Vavg = Vavg_next;
+                this.Tavg = Tavg_next;
+            }
+            if (this.Vavg * 3.6f <= 3.0f) {
+                this.mov_t = MOVING_t.STP;
+            } else if (Math.abs(0.0f - (acceleration * 3.6f)) < 2.0f) {
+                this.mov_t = MOVING_t.CST;
+            } else if (acceleration > 0.0f) {
+                this.mov_t = MOVING_t.ACC;
+            } else if (acceleration < 0.0f) {
+                this.mov_t = MOVING_t.BRK;
+            } else {
+                this.mov_t = MOVING_t.NCS;
+            }
+            if (this.mov_t != this.mov_t_last) {
+                this.mov_t_last_chrono.start();
+                this.mov_chrono.start();
+                this.mov_t_last = this.mov_t;
+            } else if (this.mov_chrono.isStarted()) {
+                switch (this.mov_t_last) {
                     case ACC:
                         if (rightRoad) {
-                            mov_chrono.stop();
-                            modules.on_acceleration();
+                            this.mov_chrono.stop();
+                            this.modules.on_acceleration();
+                            return;
                         }
-                        break;
+                        return;
                     case BRK:
                         if (rightRoad) {
-                            mov_chrono.stop();
-                            modules.on_constant_speed();
+                            this.mov_chrono.stop();
+                            this.modules.on_constant_speed();
+                            return;
                         }
-                        break;
+                        return;
                     default:
-                        break;
+                        return;
                 }
             }
         }
