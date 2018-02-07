@@ -1,24 +1,30 @@
 package com.preventium.boxpreventium.server.EPC;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.support.v4.view.MotionEventCompat;
 import android.util.Log;
+
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.utils.BytesUtils;
 import com.preventium.boxpreventium.utils.ComonUtils;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Locale;
 
-public class ReaderEPCFile {
-    private static final String TAG = "ReaderEPCFile";
-    private boolean lat_long = false;
-    private ForceSeuil[] seuil = new ForceSeuil[20];
+/**
+ * Created by Franck on 23/09/2016.
+ */
 
+public class ReaderEPCFile {
+
+    private final static String TAG = "ReaderEPCFile";
+    private ForceSeuil[] seuil = new ForceSeuil[20];
+    private boolean lat_long = false;
     private String EPC_name1 = "";
     private String EPC_name2 = "";
     private String EPC_name3 = "";
@@ -34,13 +40,9 @@ public class ReaderEPCFile {
         EPC_name4 = "";
         EPC_name5 = "";
     }
-
-
-    public String getEPCFileName(Context ctx, int i, boolean acknowledge) {
-        if (acknowledge) {
-            return String.format(Locale.getDefault(), ComonUtils.getIMEInumber(ctx) + "_%d_ok.EPC", new Object[]{Integer.valueOf(i)});
-        }
-        return String.format(Locale.getDefault(), ComonUtils.getIMEInumber(ctx) + "_%d.EPC", new Object[]{Integer.valueOf(i)});
+    public String getEPCFileName(Context ctx, int i, boolean acknowledge ) {
+        if( acknowledge )return String.format(Locale.getDefault(), ComonUtils.getIMEInumber(ctx) + "_%d_ok.EPC", i);
+        return String.format(Locale.getDefault(), ComonUtils.getIMEInumber(ctx) + "_%d.EPC", i);
     }
 
     public String getNameFileName(Context ctx) {
@@ -48,130 +50,71 @@ public class ReaderEPCFile {
         return String.format(Locale.getDefault(), ComonUtils.getIMEInumber(ctx) + "_EPC.NAME");
     }
 
-
-
-
-    public String getEPCFilePath(Context ctx, int i) {
-        String fileName = getEPCFileName(ctx, i, false);
-        return String.format(Locale.getDefault(), "%s/%s", new Object[]{ctx.getFilesDir(), fileName});
+    public String getEPCFilePath(Context ctx, int i ) {
+        String fileName = getEPCFileName(ctx,i,false);
+        return String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), fileName);
     }
 
-    public boolean read(Context ctx, int i) {
-        return read(getEPCFilePath(ctx, i));
+    public boolean read( Context ctx, int i ) {
+        String srcFilePath = getEPCFilePath(ctx,i);
+        return read( srcFilePath );
     }
 
-    public boolean read(String filename) {
-        FileInputStream fileInputStream;
-        FileNotFoundException e;
+    public boolean read( String filename ) {
         boolean ret = false;
+        FileInputStream in = null;
         try {
-            FileInputStream in = new FileInputStream(filename);
+            in = new FileInputStream(filename);
+            byte[] data = new byte[122];
             try {
-                byte[] data = new byte[122];
-                if (in.read(data) == 122) {
+                if( in.read( data ) == 122 ){
+
                     int i = 0;
-                    for (int s = 0; s < this.seuil.length; s++) {
-                        this.seuil[s] = new ForceSeuil();
-                        int i2 = i + 1;
-                        this.seuil[s].IDAlert = (short) data[i];
-                        i = i2 + 1;
-                        this.seuil[s].TPS = (short) data[i2];
-                        i2 = i + 1;
-                        i = i2 + 1;
-                        this.seuil[s].mG_low = (double) ((data[i] & 255) | ((data[i2] << 8) & MotionEventCompat.ACTION_POINTER_INDEX_MASK));
-                        i2 = i + 1;
-                        i = i2 + 1;
-                        this.seuil[s].mG_high = (double) ((data[i] & 255) | ((data[i2] << 8) & MotionEventCompat.ACTION_POINTER_INDEX_MASK));
-                        switch (s) {
-                            case 0:
-                            case 5:
-                            case 10:
-                            case 15:
-                                this.seuil[s].level = LEVEL_t.LEVEL_1;
-                                break;
-                            case 1:
-                            case 6:
-                            case 11:
-                            case 16:
-                                this.seuil[s].level = LEVEL_t.LEVEL_2;
-                                break;
-                            case 2:
-                            case 7:
-                            case 12:
-                            case 17:
-                                this.seuil[s].level = LEVEL_t.LEVEL_3;
-                                break;
-                            case 3:
-                            case 8:
-                            case 13:
-                            case 18:
-                                this.seuil[s].level = LEVEL_t.LEVEL_4;
-                                break;
-                            case 4:
-                            case 9:
-                            case 14:
-                            case 19:
-                                this.seuil[s].level = LEVEL_t.LEVEL_5;
-                                break;
+                    for( int s = 0; s < seuil.length; s++ ) {
+                        seuil[s] = new ForceSeuil();
+                        seuil[s].IDAlert = data[i++];
+                        seuil[s].TPS = (short) data[i++];
+                        seuil[s].mG_low = (double) ( (data[i++] & 0xFF) | ((data[i++] << 8) & 0xFF00) );
+                        seuil[s].mG_high = (double) ( (data[i++] & 0xFF) | ((data[i++] << 8) & 0xFF00) );
+                        switch ( s ) {
+                            case 0: case 5: case 10: case 15:
+                                seuil[s].level = LEVEL_t.LEVEL_1; break;
+                            case 1: case 6: case 11: case 16:
+                                seuil[s].level = LEVEL_t.LEVEL_2; break;
+                            case 2: case 7: case 12: case 17:
+                                seuil[s].level = LEVEL_t.LEVEL_3; break;
+                            case 3: case 8: case 13: case 18:
+                                seuil[s].level = LEVEL_t.LEVEL_4; break;
+                            case 4: case 9: case 14: case 19:
+                                seuil[s].level = LEVEL_t.LEVEL_5; break;
                             default:
-                                this.seuil[s].level = LEVEL_t.LEVEL_UNKNOW;
-                                break;
+                                seuil[s].level = LEVEL_t.LEVEL_UNKNOW; break;
                         }
-                        switch (s) {
-                            case 0:
-                            case 1:
-                            case 2:
-                            case 3:
-                            case 4:
-                                this.seuil[s].type = FORCE_t.ACCELERATION;
-                                break;
-                            case 5:
-                            case 6:
-                            case 7:
-                            case 8:
-                            case 9:
-                                this.seuil[s].type = FORCE_t.BRAKING;
-                                break;
-                            case 10:
-                            case 11:
-                            case 12:
-                            case 13:
-                            case 14:
-                                this.seuil[s].type = FORCE_t.TURN_RIGHT;
-                                break;
-                            case 15:
-                            case 16:
-                            case 17:
-                            case 18:
-                            case 19:
-                                this.seuil[s].type = FORCE_t.TURN_LEFT;
-                                break;
+                        switch ( s ) {
+                            case 0: case 1: case 2: case 3: case 4:
+                                seuil[s].type = FORCE_t.ACCELERATION; break;
+                            case 5: case 6: case 7: case 8: case 9:
+                                seuil[s].type = FORCE_t.BRAKING; break;
+                            case 10: case 11: case 12: case 13: case 14:
+                                seuil[s].type = FORCE_t.TURN_RIGHT; break;
+                            case 15: case 16: case 17: case 18: case 19:
+                                seuil[s].type = FORCE_t.TURN_LEFT; break;
                             default:
-                                this.seuil[s].type = FORCE_t.UNKNOW;
-                                break;
+                                seuil[s].type = FORCE_t.UNKNOW; break;
                         }
+
                     }
-                    this.lat_long = data[i] != (byte) 0;
+                    lat_long = (data[i] != 0x00);
                     ret = true;
                 }
-                fileInputStream = in;
-            } catch (FileNotFoundException e3) {
-                e = e3;
-                fileInputStream = in;
+            } catch (IOException e) {
                 e.printStackTrace();
-                return ret;
-            } catch (IOException e1) {
-                e1.printStackTrace();
             }
-        } catch (FileNotFoundException e4) {
-            e = e4;
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
-            return ret;
         }
         return ret;
     }
-
-
 
     public boolean readname( String filename ) {
         boolean ret = false;
@@ -199,124 +142,124 @@ public class ReaderEPCFile {
         return ret;
     }
 
+    public int[] get_all_alertID(){
+        int ret[] = new int[20];
+        for( int i = 0; i < 20; i++ ) ret[i] = seuil[i].IDAlert;
+        return  ret;
+    }
+    public short get_TPS(int index) {
+        return  ( index >= 0 && index < seuil.length )
+                ? seuil[index].TPS : -1;
+    }
+    public long get_TPS_ms(int index) {
+        return  ( index >= 0 && index < seuil.length )
+                ? (seuil[index].TPS*1000) : -1;
+    }
+    public ForceSeuil getForceSeuil(int index) {
+        return  ( index >= 0 && index < seuil.length )
+                ? seuil[index] : null;
+    }
 
+    public ForceSeuil getForceSeuil(double XmG, double YmG) {
+        return  ( ComonUtils.interval(0.0,XmG) >= ComonUtils.interval(0.0,YmG) )
+                ? getForceSeuilForX( XmG ) : getForceSeuilForY( YmG );
+    }
 
-    public int[] get_all_alertID() {
-        int[] ret = new int[20];
-        for (int i = 0; i < 20; i++) {
-            ret[i] = this.seuil[i].IDAlert;
+    public ForceSeuil getForceSeuilForX(double XmG) {
+        ForceSeuil ret = null;
+        if( XmG >= 0.0 ) {
+            for( int s = 0; s < 5; s++ ) {
+                if( XmG >= seuil[s].mG_low && XmG <= seuil[s].mG_high ) {
+                    ret = seuil[s];
+                    break;
+                }
+            }
+        } else {
+            for( int s = 5; s < 10; s++ ) {
+                if( -XmG >= seuil[s].mG_low && -XmG <= seuil[s].mG_high ) {
+                    ret = seuil[s];
+                    break;
+                }
+            }
         }
         return ret;
     }
 
-    public short get_TPS(int index) {
-        return (index < 0 || index >= this.seuil.length) ? (short) -1 : this.seuil[index].TPS;
-    }
-
-    public long get_TPS_ms(int index) {
-        return (index < 0 || index >= this.seuil.length) ? -1 : (long) (this.seuil[index].TPS * 1000);
-    }
-
-    public ForceSeuil getForceSeuil(int index) {
-        return (index < 0 || index >= this.seuil.length) ? null : this.seuil[index];
-    }
-
-    public ForceSeuil getForceSeuil(double XmG, double YmG) {
-        return ComonUtils.interval(0.0d, XmG) >= ComonUtils.interval(0.0d, YmG) ? getForceSeuilForX(XmG) : getForceSeuilForY(YmG);
-    }
-
-    public ForceSeuil getForceSeuilForX(double XmG) {
-        int s;
-        if (XmG >= 0.0d) {
-            s = 0;
-            while (s < 5) {
-                if (XmG >= this.seuil[s].mG_low && XmG <= this.seuil[s].mG_high) {
-                    return this.seuil[s];
-                }
-                s++;
-            }
-            return null;
-        }
-        s = 5;
-        while (s < 10) {
-            if ((-XmG) >= this.seuil[s].mG_low && (-XmG) <= this.seuil[s].mG_high) {
-                return this.seuil[s];
-            }
-            s++;
-        }
-        return null;
-    }
-
     public ForceSeuil getForceSeuilForY(double YmG) {
-        int s;
-        if (YmG >= 0.0d) {
-            s = 10;
-            while (s < 15) {
-                if (YmG >= this.seuil[s].mG_low && YmG <= this.seuil[s].mG_high) {
-                    return this.seuil[s];
+        ForceSeuil ret = null;
+        if( YmG >= 0.0 ) {
+            for( int s = 10; s < 15; s++ ) {
+                if( YmG >= seuil[s].mG_low && YmG <= seuil[s].mG_high ) {
+                    ret = seuil[s];
+                    break;
                 }
-                s++;
             }
-            return null;
-        }
-        s = 15;
-        while (s < 20) {
-            if ((-YmG) >= this.seuil[s].mG_low && (-YmG) <= this.seuil[s].mG_high) {
-                return this.seuil[s];
+        } else {
+            for( int s = 15; s < 20; s++ ) {
+                if( -YmG >= seuil[s].mG_low && -YmG <= seuil[s].mG_high ) {
+                    ret = seuil[s];
+                    break;
+                }
             }
-            s++;
         }
-        return null;
+        return ret;
     }
 
     public ForceSeuil getForceSeuilByID(short IDAlert) {
-        for (int i = 0; i < 20; i++) {
-            if (this.seuil[i].IDAlert == IDAlert) {
-                return this.seuil[i];
+        ForceSeuil ret = null;
+        for( int i = 0; i < 20; i++ ){
+            if( seuil[i].IDAlert == IDAlert ) {
+                ret = seuil[i];
+                break;
             }
         }
-        return null;
+        return ret;
     }
 
-    public void print() {
-        for (ForceSeuil aSeuil : this.seuil) {
-            Log.d(TAG, aSeuil.toString());
+    public void print(){
+        for (ForceSeuil aSeuil : seuil) Log.d(TAG, aSeuil.toString());
+        Log.d(TAG, "lat/long enable: " + lat_long );
+    }
+
+    public int selectedEPC( Context ctx ) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String key = ctx.getResources().getString(R.string.epc_selected_key);
+        int val = ctx.getResources().getInteger(R.integer.epc_selected_def_key);
+        return sp.getInt(key,val);
+    }
+    public boolean loadFromApp( Context ctx ) {
+
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String key = ctx.getResources().getString(R.string.epc_selected_key);
+        int val = ctx.getResources().getInteger(R.integer.epc_selected_def_key);
+        val = sp.getInt(key,val);
+
+        return loadFromApp(ctx,val);
+    }
+
+    public boolean loadFromApp( Context ctx, int epc ) {
+        boolean ret = false;
+        if( DataEPC.preferenceFileExist(ctx,epc) ){
+            for( int i = 0; i < seuil.length; i++ ) {
+                seuil[i] = DataEPC.getEPCLine(ctx,epc,i);
+            }
+            lat_long = DataEPC.getLatLong(ctx,epc);
+            ret = true;
         }
-        Log.d(TAG, "lat/long enable: " + this.lat_long);
+        return ret;
     }
 
-    public int selectedEPC(Context ctx) {
-        return PreferenceManager.getDefaultSharedPreferences(ctx).getInt(ctx.getResources().getString(R.string.epc_selected_key), ctx.getResources().getInteger(R.integer.epc_selected_def_key));
-    }
-
-    public boolean loadFromApp(Context ctx) {
-        return loadFromApp(ctx, PreferenceManager.getDefaultSharedPreferences(ctx).getInt(ctx.getResources().getString(R.string.epc_selected_key), ctx.getResources().getInteger(R.integer.epc_selected_def_key)));
-    }
-
-    public boolean loadFromApp(Context ctx, int epc) {
-        if (!DataEPC.preferenceFileExist(ctx, epc)) {
-            return false;
+    public boolean applyToApp( Context ctx, int epc ){
+        boolean ret = false;
+        if( epc >= 1 && epc <= 5 ) {
+            for (int i = 0; i < seuil.length; i++) {
+                DataEPC.setEPCLine(ctx, epc, i, seuil[i]);
+            }
+            DataEPC.setLatLong(ctx, epc, lat_long);
+            ret = true;
         }
-        for (int i = 0; i < this.seuil.length; i++) {
-            this.seuil[i] = DataEPC.getEPCLine(ctx, epc, i);
-        }
-        this.lat_long = DataEPC.getLatLong(ctx, epc);
-        return true;
+        return ret;
     }
-
-    public boolean applyToApp(Context ctx, int epc) {
-        if (epc < 1 || epc > 5) {
-            return false;
-        }
-        for (int i = 0; i < this.seuil.length; i++) {
-            DataEPC.setEPCLine(ctx, epc, i, this.seuil[i]);
-        }
-        DataEPC.setLatLong(ctx, epc, this.lat_long);
-        return true;
-    }
-
-
-
 
     public boolean loadNameFromApp( Context ctx) {
         clear();
@@ -338,6 +281,5 @@ public class ReaderEPCFile {
         NameEPC.set_EPC_Name(ctx, EPC_name4, 4);
         NameEPC.set_EPC_Name(ctx, EPC_name5, 5);
     }
-
 
 }
