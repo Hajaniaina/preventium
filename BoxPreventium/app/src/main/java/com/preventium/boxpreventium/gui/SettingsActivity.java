@@ -546,6 +546,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
 
     /**********************************for Force wiew***********************************************************/
+  /*
     public static class ForcePreferenceFragment extends PreferenceFragment {
 
         class C00761 implements Preference.OnPreferenceClickListener {
@@ -617,7 +618,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         }
     }
 
-
+*/
 
     /**********************************for map wiew***********************************************************/
   /*  public static class MapPreferenceFragment extends PreferenceFragment {
