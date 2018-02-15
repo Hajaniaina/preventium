@@ -245,8 +245,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private List<SpeedCorner> speed_corner = new ArrayList();
     private List<SpeedLine> speed_line = new ArrayList();
     private TextView forceView;
-    private SharedPreferences speedCorner;
-    private SharedPreferences speedLine;
+    public SharedPreferences speedCorner;
+    public SharedPreferences speedLine;
     private MediaPlayer mediaPlayer;
     private LatLng firstPos;
     private Lock lock;
@@ -265,6 +265,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private static MainActivity activity;
     private boolean flag_run_once = false;
     private boolean alertqrscan = false;
+
+    public int vitesse_ld;
+    public int vitesse_vr;
+
+    private String testL = "LD = ", testC = "LC = ", testL1 = "LD1 = ", testC1 = "LC1 = ";
 
     @Override
     public void onLocationChanged(Location location) {
@@ -1534,12 +1539,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void run() {
                 SpeedLine speed_l = new SpeedLine(kmh, level);
                 try {
+
                     MainActivity.this.speedLine = MainActivity.this.getSharedPreferences("", 0);
                     SharedPreferences.Editor speed_line_editor = MainActivity.this.speedLine.edit();
                     Gson gson_line = new Gson();
                     MainActivity.this.speed_line.add(speed_l);
                     speed_line_editor.putString("vitesse_ligne_droite", gson_line.toJson(MainActivity.this.speed_line));
                     speed_line_editor.commit();
+
+                    vitesse_ld = speed_l.getSpeed_line();
+
                 } catch (Exception e) {
                 }
             }
@@ -1551,12 +1560,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void run() {
                 SpeedCorner speed_c = new SpeedCorner(kmh, level);
                 try {
+
                     MainActivity.this.speedCorner = MainActivity.this.getSharedPreferences("", 0);
                     SharedPreferences.Editor speed_corner_editor = MainActivity.this.speedCorner.edit();
                     Gson gson_corner = new Gson();
                     MainActivity.this.speed_corner.add(speed_c);
                     speed_corner_editor.putString("vitesse_virage", gson_corner.toJson(MainActivity.this.speed_corner));
                     speed_corner_editor.commit();
+
+                    vitesse_vr = speed_c.getSpeed_corner();
+
                 } catch (Exception e) {
                 }
             }
@@ -1574,6 +1587,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     } else {
                         MainActivity.this.speedView.setSpeed(SPEED_t.IN_STRAIGHT_LINE, LEVEL_t.LEVEL_UNKNOW, Integer.valueOf(0), true);
                     }
+
                 } catch (Exception e) {
                 }
             }

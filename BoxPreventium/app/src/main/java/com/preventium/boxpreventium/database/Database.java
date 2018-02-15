@@ -690,6 +690,7 @@ Log.d("AAAAA","NB POINTS " + nb);
 
 
     public boolean addCEP(@Nullable Location location, @NonNull String device_mac, int note, int vitesse_ld, int vitesse_vr, long distance_covered, long parcour_duration, int nb_eca, int nb_box, boolean connected) {
+
         SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         ContentValues contentValues = new ContentValues();
         if (location != null) {
@@ -830,12 +831,12 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
-                                b = ByteBuffer.allocate(4).putFloat(vitesseLd).array(); //integer vitesse_ld //4 bytes
+                                b = ByteBuffer.allocate(4).putInt(vitesseLd).array(); //integer vitesse_ld //4 bytes
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
-                                b = ByteBuffer.allocate(4).putFloat(vitesseVr).array(); //integer vitesse_vr //4 bytes
+                                b = ByteBuffer.allocate(4).putInt(vitesseVr).array(); //integer vitesse_vr //4 bytes
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];

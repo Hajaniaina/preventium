@@ -19,7 +19,7 @@ import com.preventium.boxpreventium.enums.MOVING_t;
 import com.preventium.boxpreventium.enums.SCORE_t;
 import com.preventium.boxpreventium.enums.SPEED_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
-import com.preventium.boxpreventium.gui.SettingsActivity;
+import com.preventium.boxpreventium.gui.MainActivity;
 import com.preventium.boxpreventium.location.CustomMarkerData;
 import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.module.HandlerBox.NotifyListener;
@@ -302,8 +302,13 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
         Location location = get_last_location();
         int note = (int) calc_note(this.parcour_id);
-        int vitesse_ld = (int) (speed_H * 3.6f);
-        int vitesse_vr = (int) (speed_V * 3.6f);
+        //int vitesse_ld = (int) (speed_H * 3.6f);
+        //int vitesse_vr = (int) (speed_V * 3.6f);
+
+        MainActivity main = MainActivity.instance();
+        int vitesse_ld = main.vitesse_ld;
+        int vitesse_vr = main.vitesse_vr;
+
         int nbBox = nb_box;
         long distance_covered = this.database.get_distance(this.parcour_id);
         long parcour_duration = (long) (((double) duration) * 0.001d);
