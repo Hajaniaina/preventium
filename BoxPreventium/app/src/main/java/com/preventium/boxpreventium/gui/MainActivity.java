@@ -206,6 +206,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private int opt_config_type = 99;
     private int opt_langue = 99;
     private int opt_screen_size = 99;
+    private int opt_force_mg = 99;
 
     public int opt_panneau_speed;
 
@@ -1834,6 +1835,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         flagView = (ImageView) findViewById(R.id.localization_flag_image);
         no_map = (ImageView) findViewById(R.id.no_map);
 
+        forceView = (TextView) findViewById(R.id.mark);
+
 
 
 
@@ -3401,7 +3404,13 @@ protected void showEpcSelectDialog() {
         }else{
 
         }
+        //------force mg ----
+        if(opt_force_mg== 1){
+            forceView.setVisibility(View.VISIBLE);
 
+        }else{
+            forceView.setVisibility(View.INVISIBLE);
+        }
 
 
     }
@@ -3541,7 +3550,7 @@ protected void showEpcSelectDialog() {
         }
 
     }
-
+/*
     public void onForceView(){
         MainActivity.this.forceView = (TextView) findViewById(R.id.mark);
         if (ComonUtils.LoadPreferences("force", "force", this) == 0) {
@@ -3550,7 +3559,7 @@ protected void showEpcSelectDialog() {
             MainActivity.this.forceView.setVisibility(View.VISIBLE);
         }
     }
-
+*/
 
     //####### Loop for check value web option ########
     public void setRepeatingAsyncTask() {
@@ -3581,8 +3590,7 @@ protected void showEpcSelectDialog() {
                               Log.e("connect zaInter : ", String.valueOf(internet_activeopt));
 
                               if (internet_activeopt) {
-
-                                  onForceView();
+                                  //onForceView();
 
                                   srcFileName = ComonUtils.getIMEInumber(getApplicationContext()) + ".CFG";
                                   desFileName = String.format(Locale.getDefault(), "%s/%s", getApplicationContext().getFilesDir(), srcFileName);
@@ -3716,6 +3724,8 @@ protected void showEpcSelectDialog() {
                         int opt_config_type_web = Integer.parseInt(config.optString("config_type"));
                         int opt_langue_web = Integer.parseInt(config.optString("langue"));
                         int opt_screen_size_web = Integer.parseInt(config.optString("taille_ecran"));
+                        int opt_force_mg_web = Integer.parseInt(config.optString("force_mg"));
+
                         //int opt_leurre = Integer.parseInt(config.optString("leurre"));
 
                         int opt_leurre = Integer.parseInt(config.optString("leurre"));
@@ -3741,6 +3751,7 @@ protected void showEpcSelectDialog() {
                         opt_langue = opt_langue_web;
                         opt_duree = opt_duree_web;
                         opt_screen_size = opt_screen_size_web;
+                        opt_force_mg = opt_force_mg_web;
                         box_leurre.set_active_from_serveur(opt_leurre); //value affectation of leurre from web
 
                         //get value of leurre by francisco
