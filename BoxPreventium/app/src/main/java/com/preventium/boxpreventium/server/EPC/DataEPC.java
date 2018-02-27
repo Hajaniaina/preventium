@@ -51,41 +51,21 @@ public class DataEPC {
         SharedPreferences sp = ctx.getSharedPreferences(String.format(Locale.getDefault(), KEY_EPC, new Object[]{Integer.valueOf(epc)}), 0);
         ForceSeuil seuil = new ForceSeuil();
         seuil.index = i;
-        seuil.IDAlert = (short) sp.getInt(String.format(Locale.getDefault(), KEY_IDAlert, new Object[]{Integer.valueOf(i)}), -1);
-        seuil.TPS = (short) sp.getInt(String.format(Locale.getDefault(), KEY_Tps, new Object[]{Integer.valueOf(i)}), -1);
-        seuil.mG_low = (double) sp.getFloat(String.format(Locale.getDefault(), KEY_SeuilBas, new Object[]{Integer.valueOf(i)}), 0.0f);
-        seuil.mG_high = (double) sp.getFloat(String.format(Locale.getDefault(), KEY_SeuilHaut, new Object[]{Integer.valueOf(i)}), 0.0f);
-        switch (i) {
-            case 0:
-            case 5:
-            case 10:
-            case 15:
-                seuil.level = LEVEL_t.LEVEL_1;
-                break;
-            case 1:
-            case 6:
-            case 11:
-            case 16:
-                seuil.level = LEVEL_t.LEVEL_2;
-                break;
-            case 2:
-            case 7:
-            case 12:
-            case 17:
-                seuil.level = LEVEL_t.LEVEL_3;
-                break;
-            case 3:
-            case 8:
-            case 13:
-            case 18:
-                seuil.level = LEVEL_t.LEVEL_4;
-                break;
-            case 4:
-            case 9:
-            case 14:
-            case 19:
-                seuil.level = LEVEL_t.LEVEL_5;
-                break;
+        seuil.IDAlert = (short)sp.getInt( String.format(Locale.getDefault(),KEY_IDAlert,i), -1 );
+        seuil.TPS = (short)sp.getInt( String.format(Locale.getDefault(),KEY_Tps,i), -1 );
+        seuil.mG_low = Math.round( sp.getFloat( String.format(Locale.getDefault(),KEY_SeuilBas,i), 0f ) );
+        seuil.mG_high = Math.round( (double)sp.getFloat( String.format(Locale.getDefault(),KEY_SeuilHaut,i), 0f ) );
+        switch ( i ) {
+            case 0: case 5: case 10: case 15:
+                seuil.level = LEVEL_t.LEVEL_1; break;
+            case 1: case 6: case 11: case 16:
+                seuil.level = LEVEL_t.LEVEL_2; break;
+            case 2: case 7: case 12: case 17:
+                seuil.level = LEVEL_t.LEVEL_3; break;
+            case 3: case 8: case 13: case 18:
+                seuil.level = LEVEL_t.LEVEL_4; break;
+            case 4: case 9: case 14: case 19:
+                seuil.level = LEVEL_t.LEVEL_5; break;
             default:
                 seuil.level = LEVEL_t.LEVEL_UNKNOW;
                 break;

@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.location.Location;
+import android.media.MediaScannerConnection;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -48,6 +50,7 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
@@ -56,9 +59,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class AppManager extends ThreadDefault implements NotifyListener {
-    private static final boolean DEBUG = true;
 
     private static final String HOSTNAME = "www.preventium.fr";
+    private final static boolean DEBUG = true;
     private static final float MS_TO_KMH = 3.6f;
     private static final String PASSWORD = "Box*16/64/prev";
     private static final int PORTNUM = 21;
@@ -324,7 +327,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
     }
 
-    public void onForceChanged(Pair<Double, Short> smooth, Pair<Double, Short> shock) {
+    @Override
+    public void onForceChanged(Pair<Long, Short> smooth, Pair<Long, Short> shock) {
         this.smooth = smooth;
         this.shock = shock;
     }
@@ -347,10 +351,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     }
 
     public void onCalibrateRAZ() {
-        onForceChanged(Pair.create(Double.valueOf(0.0d), Short.valueOf((short) 0)), Pair.create(Double.valueOf(0.0d), Short.valueOf((short) 0)));
-        if (this.listener != null) {
-            this.listener.onCalibrateRAZ();
-        }
+        onForceChanged( Pair.create((long)0,(short)0),Pair.create((long)0,(short)0));
+        if( listener != null ) listener.onCalibrateRAZ();
     }
 
     // PRIVATE
@@ -1175,7 +1177,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this._tracking = PreferenceManager.getDefaultSharedPreferences(this.ctx).getBoolean(this.ctx.getResources().getString(R.string.tracking_activated_key), DEBUG);
     }
 
-
     /// ============================================================================================
     /// CALCUL
     /// ============================================================================================
@@ -1196,114 +1197,145 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private Chrono seuil_chrono_y = new Chrono();
     private ForceSeuil seuil_last_x = null;
     private ForceSeuil seuil_last_y = null;
-    private double XmG = 0.0;
-    Pair<Double,Short> smooth = Pair.create(0.0,(short)0);
-    Pair<Double,Short> shock = Pair.create(0.0,(short)0);
+    Pair<Long,Short> smooth = Pair.create((long)0,(short)0);
+    Pair<Long,Short> shock = Pair.create((long)0,(short)0);
 
-    private float Vavg = 0f;
-    private long Tavg = System.currentTimeMillis();
+
+    private static float median(float[] m) {
+        Arrays.sort(m);
+        float median;
+        if (m.length % 2 == 0)
+            median = (m[m.length/2] + m[m.length/2 - 1])/2f;
+        else
+            median = m[m.length/2];
+        return median;
+    }
+
+    private double SpeedToXmG( @NonNull float v1, @NonNull float v2, @NonNull long t1, @NonNull long t2 ) {
+        // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
+        // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+        // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+        return ((v2 - v1)
+                / (9.81 * ((t2 - t1) * 0.001)))
+                * 1000.0;
+    }
+
+    private boolean isRightRoad( Location location_1, Location location_2, Location location_3 ) {
+        double Lat_rad_1 = location_1.getLatitude() * Math.PI / 180.0;
+        double Lat_rad_2 = location_2.getLatitude() * Math.PI / 180.0;
+        double Lat_rad_3 = location_3.getLatitude() * Math.PI / 180.0;
+
+        double Long_rad_1 = location_1.getLongitude() * Math.PI / 180.0;
+        double Long_rad_2 = location_2.getLongitude() * Math.PI / 180.0;
+        double Long_rad_3 = location_3.getLongitude() * Math.PI / 180.0;
+
+        double Delta_L_rad_1 = Lat_rad_2 - Lat_rad_1;
+        double Delta_L_rad_2 = Lat_rad_3 - Lat_rad_2;
+
+        double X_1 = Math.cos(Long_rad_2) * Math.sin(Delta_L_rad_1);
+        double X_2 = Math.cos(Long_rad_3) * Math.sin(Delta_L_rad_2);
+
+        double Y_1 = (Math.cos(Long_rad_1) * Math.sin(Long_rad_2))
+                - (Math.sin(Long_rad_1) * Math.cos(Long_rad_2) * Math.cos(Delta_L_rad_1) );
+        double Y_2 = (Math.cos(Long_rad_2) * Math.sin(Long_rad_3))
+                - (Math.sin(Long_rad_2) * Math.cos(Long_rad_3) * Math.cos(Delta_L_rad_2) );
+
+        double A_rad_1 = Math.atan2( X_1, Y_1 );
+        double A_rad_2 = Math.atan2( X_2, Y_2 );
+
+        double A_deg_1 = A_rad_1 * 360.0 / Math.PI;
+        double A_deg_2 = A_rad_2 * 360.0 / Math.PI;
+
+        return ( (Math.max(A_deg_1,A_deg_2) - Math.min(A_deg_1,A_deg_2) ) < 3.0 );
+    }
+
+    private float V_median = 0f;
+    private long T_median = System.currentTimeMillis();
+    private long XmG = 0;
+    private long XmG_elapsed = 0;
 
     private void calc_movements() {
+        // Important, reset XmG for not re-count in longitudinal counter
+        this.XmG = 0;  // Important, Reset XmG value
+        this.XmG_elapsed = 0;  // Important, Reset XmG elapsed
 
-        if (System.currentTimeMillis() - this.Tavg >= 1000) {
-            float acceleration;
-            this.mov_t = MOVING_t.UNKNOW;
-            this.XmG = 0.0d;
-            boolean rightRoad = false;
+        // Check if ready to update force
+        Location loc = get_last_location();
+        if (loc == null || loc.getTime() <= T_median ) return;
 
-            // Calculate Vavg and Acceleration (m/s)
-            List<Location> list = get_location_list(3, 5000);
-            if (list == null || list.size() < 3) {
-                acceleration = 0.0f;
-                this.Vavg = 0.0f;
-                this.Tavg = System.currentTimeMillis();
-            } else {
-                int i = list.size() - 1;
-                rightRoad = isRightRoad((Location) list.get(i - 2), (Location) list.get(i - 1), (Location) list.get(i));
-                float Vavg_next = (((Location) list.get(i)).getSpeed() + (((Location) list.get(i - 2)).getSpeed() + ((Location) list.get(i - 1)).getSpeed())) * 0.33333334f;
-                long Tavg_next = System.currentTimeMillis();
+        // Clear variable
+        boolean rightRoad = false;
+        float acceleration = 0f;
+        this.mov_t = MOVING_t.UNKNOW;
 
-                // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
-                // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
-                // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+        // Get locations and the longitudinal acceleration in mG
+        List<Location> list = get_location_list(3,5000);
+        if( list != null && list.size() >= 3 )
+        {
+            // check if the road is straight and get speed values
+            int i = list.size()-1;
+            rightRoad = isRightRoad( list.get(i-2), list.get(i-1), list.get(i) );
+            float v[] = { list.get(i-2).getSpeed() , list.get(i-1).getSpeed() , list.get(i).getSpeed() };
 
-                this.XmG = SpeedToXmG(this.Vavg, Vavg_next, this.Tavg, Tavg_next);
-                acceleration = Vavg_next - this.Vavg;
-                this.Vavg = Vavg_next;
-                this.Tavg = Tavg_next;
-            }
-            if (this.Vavg * 3.6f <= 3.0f) {
-                this.mov_t = MOVING_t.STP;
-            } else if (Math.abs(0.0f - (acceleration * 3.6f)) < 2.0f) {
-                this.mov_t = MOVING_t.CST;
-            } else if (acceleration > 0.0f) {
-                this.mov_t = MOVING_t.ACC;
-            } else if (acceleration < 0.0f) {
-                this.mov_t = MOVING_t.BRK;
-            } else {
-                this.mov_t = MOVING_t.NCS;
-            }
-            if (this.mov_t != this.mov_t_last) {
-                this.mov_t_last_chrono.start();
-                this.mov_chrono.start();
-                this.mov_t_last = this.mov_t;
-            } else if (this.mov_chrono.isStarted()) {
-                switch (this.mov_t_last) {
+            // Calculate median of the speed values
+            float V_median_next = median(v);
+            long T_median_next = list.get(i-2).getTime();
+            // Calculate acceleration
+            acceleration = V_median_next - V_median;
+            // Calculate force longitudinal
+            this.XmG = Math.round( SpeedToXmG(V_median_next,V_median,T_median_next,T_median) );
+            this.XmG_elapsed = T_median_next - T_median;
+            // Save median result
+            this.V_median = V_median_next;
+            this.T_median = T_median_next;
+        }
+        else
+        {
+            this.V_median = 0f;
+            this.T_median = System.currentTimeMillis();
+        }
+
+        // Set moving status
+        if (V_median * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
+        else if ( Math.abs( 0f - (acceleration * MS_TO_KMH) ) < 2f ) mov_t = MOVING_t.CST;
+        else if (acceleration > 0f ) mov_t = MOVING_t.ACC;
+        else if (acceleration < 0f) mov_t = MOVING_t.BRK;
+        else mov_t = MOVING_t.NCS;
+        // Set move chrono and calibration if necessary
+        if ( mov_t != mov_t_last )
+        {
+            mov_t_last_chrono.start();
+            mov_chrono.start();
+            mov_t_last = mov_t;
+        }
+        else
+        {
+            if ( mov_chrono.isStarted() ) {
+                switch (mov_t_last) {
                     case ACC:
                         if (rightRoad) {
-                            this.mov_chrono.stop();
-                            this.modules.on_acceleration();
-                            return;
+                            mov_chrono.stop();
+                            modules.on_acceleration();
                         }
-                        return;
+                        break;
                     case BRK:
                         if (rightRoad) {
-                            this.mov_chrono.stop();
-                            this.modules.on_constant_speed();
-                            return;
+                            mov_chrono.stop();
+                            modules.on_constant_speed();
                         }
-                        return;
+                        break;
                     default:
-                        return;
+                        break;
                 }
             }
         }
-
-
     }
 
-    private double SpeedToXmG(@NonNull float v1, @NonNull float v2, @NonNull long t1, @NonNull long t2) {
-        // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
-        // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
-        // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+    private long longitudinal_elapsed[] = { 0,0,0,0,0,0,0,0,0,0 };
+    private static void update_longitudinal_elapsed( long tab[], FORCE_t t, LEVEL_t l, long elapsed ){
 
-        return (((double) (v2 - v1)) / (9.81d * (((double) (t2 - t1)) * 0.001d))) * 1000.0d;
-    }
+        if( elapsed <= 0 ) return;
 
-    private double LocationsToXmG(@NonNull Location l0, @NonNull Location l1) {
-        // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
-        // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
-        // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
-
-        return (((double) (l0.getSpeed() - l1.getSpeed())) / (9.81d * (((double) (l0.getTime() - l1.getTime())) * 0.001d))) * 1000.0d;
-    }
-
-    private boolean isRightRoad(Location location_1, Location location_2, Location location_3) {
-        double Lat_rad_2 = (location_2.getLatitude() * 3.141592653589793d) / 180.0d;
-        double Long_rad_1 = (location_1.getLongitude() * 3.141592653589793d) / 180.0d;
-        double Long_rad_2 = (location_2.getLongitude() * 3.141592653589793d) / 180.0d;
-        double Long_rad_3 = (location_3.getLongitude() * 3.141592653589793d) / 180.0d;
-        double Delta_L_rad_1 = Lat_rad_2 - ((location_1.getLatitude() * 3.141592653589793d) / 180.0d);
-        double Delta_L_rad_2 = ((location_3.getLatitude() * 3.141592653589793d) / 180.0d) - Lat_rad_2;
-        double A_deg_1 = (360.0d * Math.atan2(Math.cos(Long_rad_2) * Math.sin(Delta_L_rad_1), (Math.cos(Long_rad_1) * Math.sin(Long_rad_2)) - ((Math.sin(Long_rad_1) * Math.cos(Long_rad_2)) * Math.cos(Delta_L_rad_1)))) / 3.141592653589793d;
-        double A_deg_2 = (360.0d * Math.atan2(Math.cos(Long_rad_3) * Math.sin(Delta_L_rad_2), (Math.cos(Long_rad_2) * Math.sin(Long_rad_3)) - ((Math.sin(Long_rad_2) * Math.cos(Long_rad_3)) * Math.cos(Delta_L_rad_2)))) / 3.141592653589793d;
-        return Math.max(A_deg_1, A_deg_2) - Math.min(A_deg_1, A_deg_2) < 3.0d ? DEBUG : false;
-    }
-
-// ==============================================================
-
-    private long X[] = { 0,0,0,0,0,0,0,0,0,0 };
-    private static void update_tab_X( long tab[], FORCE_t t, LEVEL_t l, long s ){
         int i1 = -1;
         int i2 = -1;
 
@@ -1335,22 +1367,20 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
         for( int i = 0; i < 10; i++ ) {
             if( i >= i1 && i <= i2 ) {
-                if( tab[i] <= 0 ) tab[i] = s;
+                tab[i] = (tab[i] + elapsed);
             } else {
                 tab[i] = 0;
             }
         }
     }
-    private ForceSeuil read_tab_X( long tab[], long s ){
+    private ForceSeuil get_longitudial_seuil( long tab[] ){
         ForceSeuil ret = null;
         // 0 to 4: LEVEL_1 to LEVEL_5 for A
         // 5 to 9: LEVEL_1 to LEVEL_5 for F
         int a = -1;
-        long tps;
         for( int i = 0; i < 10; i++ ) {
             if( tab[i] > 0 ) {
-                tps = s - tab[i];
-                if( tps >= readerEPCFile.get_TPS_ms(i) ) {
+                if( tab[i] >= readerEPCFile.get_TPS_ms(i) ) {
                     a = i;
                 }
             }
@@ -1360,8 +1390,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
         return ret;
     }
-    private long Y[] = { 0,0,0,0,0,0,0,0,0,0 };
-    private static void update_tab_Y( long tab[], FORCE_t t, LEVEL_t l, long s ){
+
+    private long lateral_time[] = { 0,0,0,0,0,0,0,0,0,0 };
+    private static void update_lateral_elapsed( long tab[], FORCE_t t, LEVEL_t l, long s ){
         int i1 = -1;
         int i2 = -1;
 
@@ -1399,7 +1430,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             }
         }
     }
-    private ForceSeuil read_tab_Y( long tab[], long s ){
+    private ForceSeuil get_lateral_seuil( long tab[], long s ){
         ForceSeuil ret = null;
         // 0 to 4: LEVEL_1 to LEVEL_5 for A
         // 5 to 9: LEVEL_1 to LEVEL_5 for F
@@ -1419,103 +1450,163 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         return ret;
     }
 
-    private synchronized void calculate_eca() {
+    synchronized private void calculate_eca() {
+        // Get seuils of runtime alert
         long ST = System.currentTimeMillis();
         Location loc = get_last_location();
-        ForceSeuil seuil_x = this.readerEPCFile.getForceSeuilForX(this.XmG);
-        ForceSeuil seuil_y = this.readerEPCFile.getForceSeuilForY(((Double) this.smooth.first).doubleValue());
-        if (loc == null || ((double) (loc.getSpeed() * 3.6f)) < 20.0d) {
+
+        ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
+        ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(smooth.first);
+        if( loc == null || (loc.getSpeed() * MS_TO_KMH) < 0.0 )
+        {
             seuil_x = null;
             seuil_y = null;
-        } else {
+        }
+        else
+        {
+            // LONGITUDINAL
             FORCE_t type_X = FORCE_t.UNKNOW;
-            FORCE_t type_Y = FORCE_t.UNKNOW;
             LEVEL_t level_X = LEVEL_t.LEVEL_UNKNOW;
-            LEVEL_t level_Y = LEVEL_t.LEVEL_UNKNOW;
-            if (seuil_x != null) {
+            if (seuil_x != null)
+            {
                 type_X = seuil_x.type;
                 level_X = seuil_x.level;
             }
-            if (seuil_y != null) {
+            // Update start at for all alerts
+            update_longitudinal_elapsed(longitudinal_elapsed, type_X, level_X, XmG_elapsed);
+            // Gettings alerts
+            seuil_x = get_longitudial_seuil(longitudinal_elapsed);
+
+
+
+            // ADD ECA? ( location with X alert )
+            boolean add_eca = false;
+            if (seuil_x != null) {
+                if (_tracking) {
+                    if( alertX_add_id != seuil_x.IDAlert ||
+                            ST > alertX_add_at + (seuil_x.TPS * 1000) ) {
+
+                        database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc, null));
+                        alertX_add_at = ST;
+                        alertX_add_id = seuil_x.IDAlert;
+                        lastLocSend = loc;
+                        add_eca = true;
+                    }
+                }
+            }
+
+            // LATERAL
+            FORCE_t type_Y = FORCE_t.UNKNOW;
+            LEVEL_t level_Y = LEVEL_t.LEVEL_UNKNOW;
+            if (seuil_y != null)
+            {
                 type_Y = seuil_y.type;
                 level_Y = seuil_y.level;
             }
-            update_tab_X(this.f6X, type_X, level_X, ST);
-            update_tab_Y(this.f7Y, type_Y, level_Y, ST);
-            seuil_x = read_tab_X(this.f6X, ST);
-            seuil_y = read_tab_Y(this.f7Y, ST);
-            if (seuil_x != null && this._tracking && (this.alertX_add_id != ((long) seuil_x.IDAlert) || ST > this.alertX_add_at + ((long) (seuil_x.TPS * 1000)))) {
-                this.database.addECA(this.parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc, null));
-                this.alertX_add_at = ST;
-                this.alertX_add_id = (long) seuil_x.IDAlert;
-                this.lastLocSend = loc;
+            // Update start at for all alerts
+            update_lateral_elapsed(lateral_time, type_Y, level_Y, ST);
+            // Gettings alerts
+            seuil_y = get_lateral_seuil(lateral_time, ST);
+            // ADD ECA? ( location with Y alert )
+            if (seuil_y != null) {
+                if (_tracking) {
+                    if( alertY_add_id != seuil_y.IDAlert ||
+                            ST > alertY_add_at + (seuil_y.TPS * 1000)  ) {
+                        database.addECA(parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc, null));
+                        //Log.d("AAA", "ADD ECA " + seuil_y.toString());
+                        alertY_add_at = ST;
+                        alertY_add_id = seuil_y.IDAlert;
+                        lastLocSend = loc;
+                    }
+                }
             }
-            if (seuil_y != null && this._tracking && (this.alertY_add_id != ((long) seuil_y.IDAlert) || ST > this.alertY_add_at + ((long) (seuil_y.TPS * 1000)))) {
-                this.database.addECA(this.parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc, null));
-                this.alertY_add_at = ST;
-                this.alertY_add_id = (long) seuil_y.IDAlert;
-                this.lastLocSend = loc;
-            }
-            if (this._tracking) {
+
+
+            // ADD ECA? (simple location without alert)
+            if (_tracking) {
                 List<Location> locations = get_location_list(1);
                 if (locations != null && locations.size() >= 1) {
-                    float min_meters = ((Location) locations.get(0)).getSpeed() * 3.6f < 70.0f ? 5.0f : 15.0f;
-                    if (this.lastLocSend == null || ((Location) locations.get(0)).distanceTo(this.lastLocSend) > min_meters) {
-                        if (this.lastLocSend == null) {
-                            this.lastLocSend = new Location((Location) locations.get(0));
-                        }
-                        this.database.addECA(this.parcour_id, ECALine.newInstance((Location) locations.get(0), this.lastLocSend));
-                        this.lastLocSend = new Location((Location) locations.get(0));
+                    float min_meters = ((locations.get(0).getSpeed() * MS_TO_KMH) < 70f) ? 5f : 15f;
+                    if (lastLocSend == null
+                            || locations.get(0).distanceTo(lastLocSend) > min_meters) {
+
+                        if (lastLocSend == null) lastLocSend = new Location(locations.get(0));
+                        database.addECA(parcour_id, ECALine.newInstance(locations.get(0), lastLocSend));
+                        lastLocSend = new Location(locations.get(0));
                     }
                 }
             }
         }
-        if (this.listener != null) {
-            ForceSeuil seuil;
+
+        // Update UI interface
+        if( listener != null ) {
+
+            // Select seuil for ui
+            ForceSeuil seuil = null;
             double force;
+
             if (seuil_x == null) {
                 seuil = seuil_y;
-                force = ((Double) this.smooth.first).doubleValue();
+                force = this.smooth.first;
             } else if (seuil_y == null) {
                 seuil = seuil_x;
                 force = this.XmG;
             } else {
-                if (seuil_x.level.getValue() >= seuil_y.level.getValue()) {
-                    seuil = seuil_x;
-                } else {
-                    seuil = seuil_y;
-                }
-                force = seuil_x.level.getValue() >= seuil_y.level.getValue() ? this.XmG : ((Double) this.smooth.first).doubleValue();
+                seuil = (seuil_x.level.getValue() >= seuil_y.level.getValue()) ? seuil_x : seuil_y;
+                force = (seuil_x.level.getValue() >= seuil_y.level.getValue()) ? this.XmG : this.smooth.first;
             }
-            int t_ms = this.seuil_ui == null ? 0 : this.seuil_ui.level.get_ui_time_ms();
-            if (this.seuil_ui == null) {
-                if (seuil == null) {
-                    this.alertUI_add_at = ST;
-                } else {
-                    this.alertUI_add_at = ST;
-                    this.seuil_ui = seuil;
+
+            int t_ms = ( seuil_ui == null ) ? 0 : seuil_ui.level.get_ui_time_ms();
+
+            if( seuil_ui == null )
+            {
+                if( seuil == null )
+                {
+                    alertUI_add_at = ST;
+                }
+                else
+                {
+                    alertUI_add_at = ST;
+                    seuil_ui = seuil;
                     this.listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
                     this.listener.onLevelNotified(seuil.level);
                     this.listener.onForceDisplayed(force);
                 }
-            } else if (seuil == null) {
-                if (this.alertUI_add_at + ((long) t_ms) < ST) {
-                    this.alertUI_add_at = ST;
-                    this.seuil_ui = null;
-                    this.listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0.0d, 0.0f, 0.0f);
+            }
+            else
+            {
+                if( seuil == null )
+                {
+                    if( alertUI_add_at + t_ms < ST )
+                    {
+                        alertUI_add_at = ST;
+                        seuil_ui = null;
+                        this.listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0.0d, 0.0f, 0.0f);
+                    }
                 }
-            } else if (seuil.type.getAxe() == this.seuil_ui.type.getAxe() && seuil.level.getValue() > this.seuil_ui.level.getValue()) {
-                this.alertUI_add_at = ST;
-                this.seuil_ui = seuil;
-                this.listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
-                this.listener.onLevelNotified(seuil.level);
-                this.listener.onForceDisplayed(force);
-            } else if (this.alertUI_add_at + ((long) t_ms) < ST) {
-                this.alertUI_add_at = ST;
-                this.seuil_ui = seuil;
-                this.listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
-                this.listener.onLevelNotified(seuil.level);
-                this.listener.onForceDisplayed(force);
+                else
+                {
+                    if( (seuil.type.getAxe() == seuil_ui.type.getAxe())
+                            && (seuil.level.getValue() > seuil_ui.level.getValue()) )
+                    {
+                        alertUI_add_at = ST;
+                        seuil_ui = seuil;
+                        this.listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
+                        this.listener.onLevelNotified(seuil.level);
+                        this.listener.onForceDisplayed(force);
+                    }
+                    else
+                    {
+                        if( alertUI_add_at + t_ms < ST )
+                        {
+                            alertUI_add_at = ST;
+                            seuil_ui = seuil;
+                            this.listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
+                            this.listener.onLevelNotified(seuil.level);
+                            this.listener.onForceDisplayed(force);
+                        }
+                    }
+                }
             }
         }
     }
@@ -1813,19 +1904,15 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     /// Check shock
     private void check_shock() {
-        if (this.listener != null) {
-            if (interval(0.0d, ((Double) this.shock.first).doubleValue()) > ((double) PreferenceManager.getDefaultSharedPreferences(this.ctx).getInt(this.ctx.getResources().getString(R.string.shock_trigger_mG_key), 1000))) {
-                this.listener.onShock(((Double) this.shock.first).doubleValue(), ((Short) this.shock.second).shortValue());
+        if( listener != null ) {
+
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+            String key = ctx.getResources().getString(R.string.shock_trigger_mG_key);
+            int val = sp.getInt(key,1000);
+            if( ComonUtils.difference(0, shock.first) > val ) {
+                listener.onShock( shock.first, shock.second );
             }
         }
-    }
-
-    private double interval(double d1, double d2) {
-        double ret = d1 - d2;
-        if (ret < 0.0d) {
-            return -ret;
-        }
-        return ret;
     }
 
     /// ============================================================================================
@@ -2017,21 +2104,28 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     /// LOCATIONS
     /// ============================================================================================
 
-    public void setLocation(Location location) {
+    public void setLocation( Location location ) {
+
+        // Clear obselete location and limit list size
         clear_obselete_location();
-        if (location != null) {
-            location.setTime(System.currentTimeMillis());
-            this.lock.lock();
-            this.locations.add(0, new Location(location));
-            this.lock.unlock();
-            switchON(DEBUG);
+
+        if( location != null ) {
+
+            lock.lock();
+
+            // Add new location
+            this.locations.add(0, new Location(location) );
+
+            lock.unlock();
+
+            switchON( true );
         }
     }
 
-    public void setGpsStatus(boolean active) {
-        this.lock.lock();
-        this.gps = DEBUG;
-        this.lock.unlock();
+    public void setGpsStatus( boolean active ) {
+        lock.lock();
+        gps = active;
+        lock.unlock();
     }
 
     private synchronized void clear_obselete_location() {
