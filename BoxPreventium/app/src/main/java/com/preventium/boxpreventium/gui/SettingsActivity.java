@@ -2,13 +2,11 @@ package com.preventium.boxpreventium.gui;
 
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.os.Handler;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
@@ -16,14 +14,12 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.pavelsikun.seekbarpreference.SeekBarPreference;
 import com.preventium.boxpreventium.R;
-import com.preventium.boxpreventium.utils.ComonUtils;
 
 import java.util.List;
 import java.util.Locale;

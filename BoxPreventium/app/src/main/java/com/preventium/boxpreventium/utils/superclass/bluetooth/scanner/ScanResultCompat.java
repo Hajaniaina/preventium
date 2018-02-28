@@ -5,7 +5,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanResult;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.os.Parcelable.Creator;
 import android.support.annotation.Nullable;
 
 public class ScanResultCompat implements Parcelable {

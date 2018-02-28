@@ -37,6 +37,7 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AlertDialog;
 import android.telephony.SmsManager;
+import android.telephony.TelephonyManager;
 import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -1632,6 +1633,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public void onLevelNotified(final LEVEL_t level) {
         runOnUiThread(new Runnable() {
             public void run() {
+                /*
                 switch (level) {
                     case LEVEL_3:
                         MainActivity.this.mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.yellow);
@@ -1648,6 +1650,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     default:
                         return;
                 }
+                */
             }
         });
     }
@@ -2851,80 +2854,47 @@ protected void showEpcSelectDialog() {
                     Toast.makeText(MainActivity.this, getString(R.string.form_invalid_string), Toast.LENGTH_SHORT).show();
                 } else {
 
-               /*     runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() { */
-                          //  boolean location = false;
-
-                         //   while( !location ) {
-                            /*    if( lastLocation == null ) {
-                                    try {
-                                        Thread.sleep(500);
-                                    }catch(InterruptedException ie) {}
-                              */  //} else {
-
                     boolean activeopt = Connectivity.isConnected(getApplicationContext());
                     Log.e("connect za form : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
                     if( activeopt != internet_activeopt ) {
                         internet_activeopt = activeopt;
                     }
 
-                    Log.e("connect zaInterForm : ", String.valueOf(internet_activeopt));
+                    if (internet_activeopt)
+                    {
+                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+                        Date date = new Date();
+                        TelephonyManager manager = (TelephonyManager) MainActivity.this.getSystemService(Context.TELEPHONY_SERVICE);
 
-                    if (internet_activeopt) {
+                        String[] form = {
+                            form_name_id.getText().toString(),
+                            form_phone_id.getText().toString(),
+                            form_email_id.getText().toString(),
+                            form_titulaire_id.getText().toString(),
+                            String.valueOf(lastLocation.getLatitude()),
+                            String.valueOf(lastLocation.getLongitude()),
+                            dateFormat.format(date),
+                            manager.getLine1Number(),
+                            ComonUtils.getVersionName(MainActivity.this),
+                        };
 
-                                    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
-                                    Date date = new Date();
-                                    String[] form = {
-                                            form_name_id.getText().toString(),
-                                            form_phone_id.getText().toString(),
-                                            form_email_id.getText().toString(),
-                                            form_titulaire_id.getText().toString(),
-                                            String.valueOf(lastLocation.getLatitude()),
-                                            String.valueOf(lastLocation.getLongitude()),
-                                            dateFormat.format(date)
-                                    };
+                        appManager.OpenForm(form);
+                        MessageWait();
+                        di.hide();
 
-                                        appManager.OpenForm(form);
+                        SharedPreferences.Editor editor1 = sharedPref.edit();
+                        //editor.putBoolean("FIRSTRUN", false);
+                        editor1.putBoolean(getString(R.string.firstrun_key), false);
+                        editor1.apply();
 
-
-                                    MessageWait();
-                                    di.hide();
-
-
-//############# annulation du formulaire
-                                    SharedPreferences.Editor editor1 = sharedPref.edit();
-                                    //editor.putBoolean("FIRSTRUN", false);
-                                    editor1.putBoolean(getString(R.string.firstrun_key), false);
-
-                                    editor1.apply();
-
-
-                                    Log.e("AFTERRUN val : ", String.valueOf(sharedPref.getBoolean(getString(R.string.firstrun_key), true)));
-
-//############# annulation du formulaire
-                }else {
-                    //Toast.makeText(MainActivity.this, getString(R.string.form_invalid_string), Toast.LENGTH_SHORT).show();
-                    Toast.makeText(MainActivity.this, getString(R.string.erreur_connect), Toast.LENGTH_SHORT).show();
-                }
-                                  //  break;
-                               // }
-                          //  }
-                       // }
-                  //  });
-
+                    }else {
+                        Toast.makeText(MainActivity.this, getString(R.string.erreur_connect), Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });
         di.show();
     }
-
-
-
-
-
-
-
 
     private String getPhoneNumber (int key) {
 
@@ -3416,43 +3386,22 @@ protected void showEpcSelectDialog() {
     }
 
     private void alertopt(){
-
-
         final AlertDialog.Builder optDisableAlert = new AlertDialog.Builder(MainActivity.this);
         optDisableAlert.setCancelable(false);
         optDisableAlert.setMessage(getString(R.string.progress_inactive_opt_string));
-
         optDisableAlert.setNegativeButton(getString(R.string.close_string), null);
         optDisableAlert.create().show();
-        //  cancel(true);
-
-      /*            if (progress != null) {
-
-                        progress.show();
-                        progress.setMessage(getString(R.string.progress_inactive_opt_string) );
-                    }
-                    */
-
     }
 
 
     private void notification(String msg, int Idnotif){
 
         Uri soundNotif = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-     /*   if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            notif.setSmallIcon(R.drawable.icon_transperent);
-            //notif.setColor(getResources().getColor(R.color.notification_color));
-        } else {
-            notif.setSmallIcon(R.mipmap.ic_launcher);
-        }
-        */
         notif.setSmallIcon(R.mipmap.ic_launcher);
         notif.setTicker("Preventium");
         notif.setWhen(System.currentTimeMillis());
         notif.setContentTitle("Preventium");
         notif.setContentText(msg);
-
-
 
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -3491,22 +3440,6 @@ protected void showEpcSelectDialog() {
         }
 
     }
-
-    ///###### chek protocol
-  /*  public boolean checkProtocol(String url){
-     String http = (url.substring(0, 4)).trim();
-        Log.e("Protocol za : ", String.valueOf(http));
-        if (http== "http"){
-            return true;
-
-        }
-        else {
-            return false;
-        }
-
-
-    }
-*/
 
 //##### Get screen size #######
     public int getScreen() {

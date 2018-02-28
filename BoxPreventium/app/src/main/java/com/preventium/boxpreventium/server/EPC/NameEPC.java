@@ -2,11 +2,7 @@ package com.preventium.boxpreventium.server.EPC;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import android.util.Log;
-
-import com.preventium.boxpreventium.R;
-import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 
 import java.util.Locale;
 

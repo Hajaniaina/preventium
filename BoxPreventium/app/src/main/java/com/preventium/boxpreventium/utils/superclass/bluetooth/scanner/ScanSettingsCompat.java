@@ -4,7 +4,6 @@ import android.annotation.TargetApi;
 import android.bluetooth.le.ScanSettings;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.os.Parcelable.Creator;
 
 public class ScanSettingsCompat implements Parcelable {
     public static final int CALLBACK_TYPE_ALL_MATCHES = 1;

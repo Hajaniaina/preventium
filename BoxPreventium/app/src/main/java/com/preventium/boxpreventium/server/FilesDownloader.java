@@ -4,7 +4,6 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.EPC.ReaderEPCFile;

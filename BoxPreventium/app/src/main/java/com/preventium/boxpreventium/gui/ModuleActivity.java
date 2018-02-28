@@ -40,6 +40,8 @@ public class ModuleActivity extends AppCompatActivity {
     private TextView module_langue;
     private TextView module_epc;
     private TextView module_qr_code;
+    private TextView module_leurre;
+    private TextView module_force_mg;
 
     private String serveur;
     private ReaderCFGFile reader = new ReaderCFGFile();
@@ -56,6 +58,9 @@ public class ModuleActivity extends AppCompatActivity {
     private int opt_config_type_web = 0;
     private int opt_langue_web = 0;
     private int opt_screen_size_web = 0;
+    private int opt_force_mg_web = 0;
+    private int opt_leurre_web = 0;
+
 
     private boolean cfgi;
     private Handler handler;
@@ -111,6 +116,8 @@ public class ModuleActivity extends AppCompatActivity {
         // module bouton
         module_epc = (TextView) findViewById(R.id.module_epc);
         module_qr_code = (TextView) findViewById(R.id.module_qr_code);
+        module_leurre = (TextView) findViewById(R.id.module_leurre);
+        module_force_mg = (TextView) findViewById(R.id.module_force_mg);
     }
 
     @Override
@@ -257,7 +264,23 @@ public class ModuleActivity extends AppCompatActivity {
         } else {
             module_epc.setText(R.string.disabled_string);
             module_epc.setTextColor(RED);
-         }
+        }
+
+        if (opt_force_mg_web != 0) {
+            module_force_mg.setText(R.string.enabled_string);
+            module_force_mg.setTextColor(GREEN);
+        } else {
+            module_force_mg.setText(R.string.disabled_string);
+            module_force_mg.setTextColor(RED);
+        }
+
+        if (opt_leurre_web != 0) {
+            module_leurre.setText(R.string.enabled_string);
+            module_leurre.setTextColor(GREEN);
+        } else {
+            module_leurre.setText(R.string.disabled_string);
+            module_leurre.setTextColor(RED);
+        }
     }
 
     class JsonParse extends AsyncTask<Void, Void, Void>
@@ -304,6 +327,8 @@ public class ModuleActivity extends AppCompatActivity {
                     opt_config_type_web = Integer.parseInt(config.optString("config_type"));
                     opt_langue_web = Integer.parseInt(config.optString("langue"));
                     opt_screen_size_web = Integer.parseInt(config.optString("taille_ecran"));
+                    opt_force_mg_web = Integer.parseInt(config.optString("force_mg"));
+                    opt_leurre_web = Integer.parseInt(config.optString("leurre"));
 
                     run = true;
 

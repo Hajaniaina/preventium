@@ -56,7 +56,7 @@
                     android:layout_column="1"
                     android:layout_marginLeft="75dp"
                     android:padding="3dp"
-                    android:text="active" />
+                    android:text="@string/loading_string" />
             </TableRow>
             <TableRow
                 android:layout_width="match_parent"
@@ -77,7 +77,7 @@
                     android:layout_column="1"
                     android:layout_marginLeft="75dp"
                     android:padding="3dp"
-                    android:text="active"
+                    android:text="@string/loading_string"
                     android:textColor="@color/material_redA700" />
             </TableRow>
             <TableRow
@@ -98,6 +98,7 @@
                     android:layout_height="wrap_content"
                     android:layout_column="1"
                     android:layout_marginLeft="75dp"
+                    android:text="@string/loading_string"
                     android:padding="3dp" />
             </TableRow>
             <TableRow
@@ -118,7 +119,7 @@
                     android:layout_column="1"
                     android:layout_marginLeft="75dp"
                     android:padding="3dp"
-                    android:text="active"
+                    android:text="@string/loading_string"
                     android:textColor="@color/material_redA700" />
             </TableRow>
             <TableRow
@@ -140,7 +141,7 @@
                     android:layout_column="1"
                     android:layout_marginLeft="75dp"
                     android:padding="3dp"
-                    android:text="active"
+                    android:text="@string/loading_string"
                     android:textColor="@color/material_redA700" />
             </TableRow>
         </TableLayout>
@@ -179,7 +180,7 @@
                     android:layout_column="1"
                     android:layout_marginLeft="75dp"
                     android:padding="3dp"
-                    android:text="active"
+                    android:text="@string/loading_string"
                     android:textColor="@color/material_green500" />
             </TableRow>
             <TableRow
@@ -201,7 +202,7 @@
                     android:layout_column="1"
                     android:layout_marginLeft="75dp"
                     android:padding="3dp"
-                    android:text="active"
+                    android:text="@string/loading_string"
                     android:textColor="@color/material_redA700" />
             </TableRow>
 
@@ -224,7 +225,7 @@
                     android:layout_column="1"
                     android:layout_marginLeft="75dp"
                     android:padding="3dp"
-                    android:text="active"
+                    android:text="@string/loading_string"
                     android:textColor="@color/material_redA700" />
             </TableRow>
         </TableLayout>
@@ -260,7 +261,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_column="1"
-                    android:layout_marginLeft="70dp"
+                    android:layout_marginLeft="65dp"
+                    android:text="@string/loading_string"
                     android:padding="3dp" />
             </TableRow>
             <TableRow
@@ -280,9 +282,53 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_column="1"
-                    android:layout_marginLeft="70dp"
+                    android:layout_marginLeft="65dp"
                     android:padding="3dp"
-                    android:text="active"
+                    android:text="@string/loading_string"
+                    android:textColor="@color/material_redA700" />
+            </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#fbf4da">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:text="@string/module_leurre_string"
+                    android:textColor="#777" />
+
+                <TextView
+                    android:id="@+id/module_leurre"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginLeft="65dp"
+                    android:padding="3dp"
+                    android:text="@string/loading_string"
+                    android:textColor="@color/material_redA700" />
+            </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#fff">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:text="@string/module_force_mg_string"
+                    android:textColor="#777" />
+
+                <TextView
+                    android:id="@+id/module_force_mg"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginLeft="65dp"
+                    android:padding="3dp"
+                    android:text="@string/loading_string"
                     android:textColor="@color/material_redA700" />
             </TableRow>
         </TableLayout>

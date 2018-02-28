@@ -1,7 +1,6 @@
 package com.preventium.boxpreventium.server.DOBJ;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.preventium.boxpreventium.utils.ComonUtils;
 
@@ -9,7 +8,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Locale;
 
 /**

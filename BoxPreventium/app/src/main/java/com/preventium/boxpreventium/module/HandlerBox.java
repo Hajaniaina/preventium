@@ -3,14 +3,11 @@ package com.preventium.boxpreventium.module;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.util.Pair;
 
 import com.preventium.boxpreventium.enums.ENGINE_t;
-import com.preventium.boxpreventium.enums.STATUS_t;
-import com.preventium.boxpreventium.manager.AppManager;
 import com.preventium.boxpreventium.module.device.BluetoothBox;
 import com.preventium.boxpreventium.module.enums.CONNEXION_STATE_t;
 import com.preventium.boxpreventium.module.trames.BatteryInfo;

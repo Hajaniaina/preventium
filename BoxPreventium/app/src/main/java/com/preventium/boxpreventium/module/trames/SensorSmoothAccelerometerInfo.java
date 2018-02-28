@@ -1,12 +1,7 @@
 package com.preventium.boxpreventium.module.trames;
 
-import android.util.Log;
-
 import com.preventium.boxpreventium.utils.BytesUtils;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Locale;
 
 /**

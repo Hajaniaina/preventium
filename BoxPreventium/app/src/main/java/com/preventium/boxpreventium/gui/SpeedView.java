@@ -2,16 +2,18 @@ package com.preventium.boxpreventium.gui;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
+
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.SPEED_t;
+
 import java.util.HashMap;
+
 import at.grabner.circleprogress.CircleProgressView;
 import at.grabner.circleprogress.TextMode;
 
@@ -136,8 +138,9 @@ public class SpeedView implements Parcelable {
 
         if (!visible) {
             hide(false);
-
         }
+
+        Toast.makeText(MainActivity.instance(), "Vitesse unconnu" + String.valueOf(speedId), Toast.LENGTH_LONG);
 
         switch (speedId) {
 

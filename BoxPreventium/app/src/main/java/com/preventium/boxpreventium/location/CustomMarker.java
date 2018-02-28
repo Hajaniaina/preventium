@@ -1,6 +1,11 @@
 package com.preventium.boxpreventium.location;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.VectorDrawable;
 import android.support.v4.internal.view.SupportMenu;
+
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -10,6 +15,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.preventium.boxpreventium.R;
+import com.preventium.boxpreventium.gui.MainActivity;
+
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -172,107 +179,107 @@ public class CustomMarker {
                 bitmap = BitmapDescriptorFactory.defaultMarker(MARKER_HUES[new Random().nextInt(MARKER_HUES.length)]);
                 break;
             case 13:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_info);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_marker_info);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 14:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker_danger);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_marker_danger);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 15:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_go);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_go);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 16:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_stop);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_stop);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 17:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_pause);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_pause);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 18:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_resume);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_resume);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 20:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_left0);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_left0);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 21:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_left1);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_left1);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 22:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_left2);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_left2);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 23:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_left3);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_left3);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 24:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_left4);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_left4);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 25:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_right0);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_right0);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 26:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_right1);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_right1);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 27:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_right2);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_right2);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 28:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_right3);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_right3);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 29:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_right4);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_right4);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 30:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_acc0);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_acc0);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 31:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_acc1);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_acc1);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 32:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_acc2);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_acc2);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 33:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_acc3);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_acc3);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 34:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_acc4);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_acc4);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 35:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_brake0);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_brake0);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 36:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_brake1);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_brake1);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 37:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_brake2);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_brake2);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 38:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_brake3);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_brake3);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             case 39:
-                bitmap = BitmapDescriptorFactory.fromResource(R.drawable.ic_little_arrow_brake4);
+                bitmap = getMarkerIconFromDrawable(R.drawable.ic_little_arrow_brake4);
                 this.opt.anchor(0.5f, 0.5f);
                 break;
             default:
@@ -288,6 +295,24 @@ public class CustomMarker {
                 this.marker.setIcon(bitmap);
             }
         }
+    }
+
+    private BitmapDescriptor getMarkerIconFromDrawable(int res) {
+
+        Bitmap bitmap = null;
+        try {
+            bitmap = ((BitmapDrawable) MainActivity.instance().getResources().getDrawable(res)).getBitmap();
+        }catch(Exception e) {
+            VectorDrawable vector = ((VectorDrawable) MainActivity.instance().getResources().getDrawable(res));
+
+            bitmap = Bitmap.createBitmap(vector.getIntrinsicWidth(), vector.getIntrinsicHeight(), Bitmap.Config.ARGB_4444);
+            bitmap.setHasAlpha(true);
+            Canvas canvas = new Canvas();
+            canvas.setBitmap(bitmap);
+            vector.setBounds(0, 0, vector.getIntrinsicWidth(), vector.getIntrinsicHeight());
+            vector.draw(canvas);
+        }
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 
     public int getType() {

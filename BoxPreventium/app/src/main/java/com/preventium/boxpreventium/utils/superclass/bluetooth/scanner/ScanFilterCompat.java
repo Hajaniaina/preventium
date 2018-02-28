@@ -7,7 +7,6 @@ import android.bluetooth.le.ScanFilter;
 import android.os.Parcel;
 import android.os.ParcelUuid;
 import android.os.Parcelable;
-import android.os.Parcelable.Creator;
 import android.support.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;

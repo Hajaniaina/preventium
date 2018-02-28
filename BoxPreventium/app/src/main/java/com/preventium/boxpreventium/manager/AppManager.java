@@ -2215,9 +2215,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     public void OpenForm (String[] form) {
         // recuperer les valeurs
 
-        final String header = "imei;nometprenom;telephone;email;titulaire;latitude;longitude;date\n";
+        final String header = "imei;nometprenom;telephone;email;titulaire;latitude;longitude;date;numéro;versionapp\n";
         final String imei = StatsLastDriving.getIMEI(ctx);
-        final String content = imei + ";" + form[0] + ";" + form[1] + ";" + form[2] + ";" + form[3] + ";" + form[4] + ";" + form[5] + ";" + form[6];
+        final String content = imei + ";" + form[0] + ";" + form[1] + ";" + form[2] + ";" + form[3] + ";" + form[4] + ";" + form[5] + ";" + form[6]+ ";" + form[7]+ ";" + form[8];
         Log.w("content", content);
 
         // mettre dans un fichiers
@@ -2229,13 +2229,11 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             @Override
             public void run () {
                 while(!sent) {
-                    Log.w("loop", "looping");
                     if( zipfile == null ) {
                         try {
                             File tmp = File.createTempFile(imei, ".tmp");
                             File file = new File(tmp.getParent() + File.separator + imei + ".FORM");
 
-                            Log.w("path file", file.getAbsolutePath());
                             //write it
                             BufferedWriter bw = new BufferedWriter(new FileWriter(file));
                             bw.write(header);
@@ -2270,7 +2268,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                         ie.printStackTrace();
                     }
                 }
-                Log.w("terminé", "terms");
                 thread.interrupt();
             }
         };

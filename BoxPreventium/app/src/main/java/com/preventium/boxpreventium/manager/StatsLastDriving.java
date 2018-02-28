@@ -10,8 +10,6 @@ import com.preventium.boxpreventium.utils.ComonUtils;
 
 import java.util.Locale;
 
-import static android.R.attr.type;
-
 /**
  * Created by Franck on 16/11/2016.
  */

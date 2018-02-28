@@ -138,7 +138,7 @@
     <string name="phone_select_sms_pause">phone_select_sms_pause</string>
     <string name="phone_select_sms_qr">phone_select_sms_qr</string>
     <string name="stop_trigger_time">stop_trigger_time</string>
-    <string name="title_activity_info">InfoActivity</string>
+    <string name="title_activity_info">Info activité</string>
     <string name="tracking_activated">tracking_activated</string>
     <string name="tracking_disabled_string">Tracking disabled</string>
     <string name="tracking_enabled_string">Tracking enabled</string>
@@ -211,6 +211,8 @@
     <string name="module_ecran_string">Ecran</string>
     <string name="module_carte_string">Carte</string>
     <string name="module_langue_string">Langue</string>
+    <string name="module_leurre_string">Leurre</string>
+    <string name="module_force_mg_string">Force MG</string>
     <string name="module_simple_string">Simplifié</string>
     <string name="module_complete_string">Large</string>
 

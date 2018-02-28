@@ -3,14 +3,9 @@ package com.preventium.boxpreventium.server.ECA;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
-
-import com.preventium.boxpreventium.server.EPC.ForceSeuil;
-import com.preventium.boxpreventium.utils.BytesUtils;
 
 import java.nio.ByteBuffer;
 import java.util.Calendar;
-import java.util.Locale;
 import java.util.TimeZone;
 
 /**

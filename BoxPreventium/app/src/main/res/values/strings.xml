@@ -276,6 +276,8 @@
     <string name="module_ecran_string">Screen</string>
     <string name="module_carte_string">Map</string>
     <string name="module_langue_string">Language</string>
+    <string name="module_leurre_string">Lure</string>
+    <string name="module_force_mg_string">Force MG</string>
     <string name="module_simple_string">Simplified</string>
     <string name="module_complete_string">Large</string>
     <string name="loading_string">Loading ...</string>

@@ -1,12 +1,8 @@
 package com.preventium.boxpreventium.server.POSS;
 
 import android.content.Context;
-import android.graphics.Paint;
-import android.util.Log;
-import android.util.Pair;
 
 import com.google.android.gms.maps.model.LatLng;
-import com.preventium.boxpreventium.location.CustomMarker;
 import com.preventium.boxpreventium.location.CustomMarkerData;
 import com.preventium.boxpreventium.utils.ComonUtils;
 
@@ -16,8 +12,6 @@ import org.jsoup.nodes.Element;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,9 +19,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static android.R.attr.color;
-import static android.R.attr.country;
 
 /**
  * Created by Franck on 31/03/2017.
