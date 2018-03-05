@@ -270,6 +270,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public int vitesse_ld;
     public int vitesse_vr;
 
+    public int color_a, color_v, color_f, color_m;
+
     private String testL = "LD = ", testC = "LC = ", testL1 = "LD1 = ", testC1 = "LC1 = ";
 
     @Override

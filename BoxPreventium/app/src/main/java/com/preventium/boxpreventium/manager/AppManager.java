@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.location.Location;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -33,8 +35,10 @@ import com.preventium.boxpreventium.server.EPC.ForceSeuil;
 import com.preventium.boxpreventium.server.EPC.ReaderEPCFile;
 import com.preventium.boxpreventium.server.POSS.ReaderPOSSFile;
 import com.preventium.boxpreventium.utils.Chrono;
+import com.preventium.boxpreventium.utils.ColorCEP;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
+import com.preventium.boxpreventium.utils.FileCEP;
 import com.preventium.boxpreventium.utils.ThreadDefault;
 import com.preventium.boxpreventium.utils.Zipper;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPClientIO;
@@ -134,6 +138,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private long try_send_eca_at = 0;
     private List<Pair<Long, Integer>> ui_timers = new ArrayList();
 
+    int a,v,f,m;
+
     private final static FTPConfig FTP_FORM = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM, "/FORM");
 
     public interface AppManagerListener {
@@ -164,6 +170,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         void onRecommendedSpeedChanged(SPEED_t sPEED_t, int i, LEVEL_t lEVEL_t, boolean z);
 
         void onScoreChanged(SCORE_t sCORE_t, LEVEL_t lEVEL_t);
+
+        //void onChangeScore(LEVEL_t lEVEL_A, LEVEL_t lEVEL_V, LEVEL_t lEVEL_F, LEVEL_t lEVEL_M);
 
         void onShock(double d, short s);
 
@@ -240,6 +248,24 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
     }
 
+
+    private int  note_to_score(float note) {
+        int score = 5;
+        if (note >= 16.0f) {
+            return 1;
+        }
+        if (note >= 13.0f) {
+            return 2;
+        }
+        if (note >= 9.0f) {
+            return 3;
+        }
+        if (note >= 6.0f) {
+            return 4;
+        }
+        return score;
+    }
+
     public void myRun() throws InterruptedException {
         super.myRun();
         setLog("");
@@ -309,11 +335,16 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         int vitesse_ld = main.vitesse_ld;
         int vitesse_vr = main.vitesse_vr;
 
+        int a = main.color_a;
+        int v = main.color_v;
+        int f = main.color_f;
+        int m = main.color_m;
+
         int nbBox = nb_box;
         long distance_covered = this.database.get_distance(this.parcour_id);
         long parcour_duration = (long) (((double) duration) * 0.001d);
         Database database = this.database;
-        this.database.addCEP(location, device_mac, note, vitesse_ld, vitesse_vr, distance_covered, parcour_duration, Database.get_eca_counter(this.ctx, this.parcour_id), nbBox, connected);
+        this.database.addCEP(location, device_mac, note, vitesse_ld, vitesse_vr, distance_covered, parcour_duration, Database.get_eca_counter(this.ctx, this.parcour_id), nbBox, a, v, f,m, connected);
     }
 
     public void onNumberOfBox(int nb) {
@@ -376,14 +407,13 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             listener.onStatusChanged( STATUS_t.PAR_PAUSING );
             listener.onStatusChanged( STATUS_t.PAR_STOPPED );
 
-
-
             this.listener.onDrivingTimeChanged(this.chronoRideTxt);
             this.listener.onNoteChanged(20, LEVEL_t.LEVEL_1, LEVEL_t.LEVEL_1);
-            this.listener.onScoreChanged(SCORE_t.ACCELERATING, LEVEL_t.LEVEL_1);
-            this.listener.onScoreChanged(SCORE_t.BRAKING, LEVEL_t.LEVEL_1);
-            this.listener.onScoreChanged(SCORE_t.CORNERING, LEVEL_t.LEVEL_1);
-            this.listener.onScoreChanged(SCORE_t.AVERAGE, LEVEL_t.LEVEL_1);
+            //this.listener.onScoreChanged(SCORE_t.ACCELERATING, LEVEL_t.LEVEL_1);
+            //this.listener.onScoreChanged(SCORE_t.BRAKING, LEVEL_t.LEVEL_1);
+            //this.listener.onScoreChanged(SCORE_t.CORNERING, LEVEL_t.LEVEL_1);
+            //this.listener.onScoreChanged(SCORE_t.AVERAGE, LEVEL_t.LEVEL_1);
+
         }
         this.alertX_add_at = 0;
         this.alertY_add_at = 0;
@@ -1703,12 +1733,27 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         if (force || this.note_forces_update_at + 60000 < System.currentTimeMillis()) {
             this.note_forces_update_at = System.currentTimeMillis();
             float Note_A = calc_note_by_force_type("A", this.parcour_id);
+            //a--------
+            a=note_to_score(Note_A);
+            //------
             LEVEL_t level_A = note2level(Note_A);
             float Note_F = calc_note_by_force_type("F", this.parcour_id);
+            //f--------
+            f=note_to_score(Note_F);
+            //------
             LEVEL_t level_F = note2level(Note_F);
             float Note_V = calc_note_by_force_type("V", this.parcour_id);
+            //v--------
+            v=note_to_score(Note_V);
+            //------
             LEVEL_t level_V = note2level(Note_V);
             float Note_M = ((Note_A + Note_F) + Note_V) * 0.33333334f;
+            //v--------
+            m=note_to_score(Note_M);
+            //------
+
+            ColorCEP.addColors(note_to_score(Note_A), note_to_score(Note_V), note_to_score(Note_F), note_to_score(Note_M));
+
             LEVEL_t level_M = note2level(Note_M);
             StatsLastDriving.set_note(this.ctx, SCORE_t.ACCELERATING, Note_A);
             StatsLastDriving.set_note(this.ctx, SCORE_t.BRAKING, Note_F);
@@ -1717,6 +1762,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             Log.d(TAG, "Parcours " + this.parcour_id + " note F: " + Note_F);
             Log.d(TAG, "Parcours " + this.parcour_id + " note V: " + Note_V);
             Log.d(TAG, "Parcours " + this.parcour_id + " note M: " + Note_M);
+            MainActivity main = MainActivity.instance();
             StatsLastDriving.set_speed_avg(this.ctx, this.database.speed_avg(this.parcour_id, System.currentTimeMillis(), 0.0f, new int[0]));
             if (this.listener != null) {
                 this.listener.onScoreChanged(SCORE_t.ACCELERATING, level_A);
@@ -1913,10 +1959,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         update_parcour_note(DEBUG);
         update_force_note(DEBUG);
         update_recommended_speed(DEBUG);
+        upload_cep();
         this.database.addECA(this.parcour_id, ECALine.newInstance(255, get_last_location(), null));
         StatsLastDriving.set_distance(this.ctx, this.database.get_distance(this.parcour_id));
         clear_force_ui();
-        upload_cep();
         upload_shared_pos();
         upload_parcours_type();
         this.parcour_id = -1;

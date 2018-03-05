@@ -60,6 +60,31 @@ public class AppColor {
         return color;
     }
 
+    public int getColorCode (LEVEL_t level) {
+
+        int color = -1;
+
+        switch (level) {
+
+            case LEVEL_1: color = 1;
+                break;
+
+            case LEVEL_2: color = 2;
+                break;
+
+            case LEVEL_3: color = 3;
+                break;
+
+            case LEVEL_4: color = 4;
+                break;
+
+            case LEVEL_5: color = 5;
+                break;
+        }
+
+        return color;
+    }
+
     public int getColor (int id) {
 
         if (id < RED || id > GREY) {

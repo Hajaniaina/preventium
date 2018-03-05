@@ -6,13 +6,17 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.ECA.ECALine;
+import com.preventium.boxpreventium.utils.ColorCEP;
 import com.preventium.boxpreventium.utils.ComonUtils;
+import com.preventium.boxpreventium.utils.FileCEP;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -24,6 +28,10 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_DEVICE_A;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_DEVICE_F;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_DEVICE_M;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_DEVICE_V;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_DIST_COV;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_ID;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_LAT_POS;
@@ -689,7 +697,26 @@ Log.d("AAAAA","NB POINTS " + nb);
     /// Add an Preventium Box event (Connected/Disconnected)
 
 
-    public boolean addCEP(@Nullable Location location, @NonNull String device_mac, int note, int vitesse_ld, int vitesse_vr, long distance_covered, long parcour_duration, int nb_eca, int nb_box, boolean connected) {
+    public boolean addCEP(@Nullable Location location, @NonNull String device_mac, int note, int vitesse_ld, int vitesse_vr, long distance_covered, long parcour_duration, int nb_eca, int nb_box, int device_a,int device_v, int device_f, int device_m, boolean connected) {
+
+        final int a = device_a, v = device_v, f = device_f, m = device_m;
+
+        Thread thread = new Thread() {
+            public void run() {
+                Looper.prepare();
+
+                final Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        FileCEP.generateNoteOnSD(ctx, "Add CEP AVFM : " + a + v + f + m);
+                    }
+                }, 2000);
+
+                Looper.loop();
+            }
+        };
+        thread.start();
 
         SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         ContentValues contentValues = new ContentValues();
@@ -710,6 +737,10 @@ Log.d("AAAAA","NB POINTS " + nb);
         contentValues.put(COLUMN_CEP_PAR_DUR, Long.valueOf(parcour_duration));
         contentValues.put(COLUMN_CEP_NB_ECA, Integer.valueOf(nb_eca));
         contentValues.put(COLUMN_CEP_NB_BOX, Integer.valueOf(nb_box));
+        contentValues.put(COLUMN_CEP_DEVICE_A, Integer.valueOf(device_a));
+        contentValues.put(COLUMN_CEP_DEVICE_V, Integer.valueOf(device_v));
+        contentValues.put(COLUMN_CEP_DEVICE_F, Integer.valueOf(device_f));
+        contentValues.put(COLUMN_CEP_DEVICE_M, Integer.valueOf(device_m));
         contentValues.put("status", Integer.valueOf(connected ? 1 : 0));
         db.insert(DatabaseHelper.TABLE_CEP, null, contentValues);
         DatabaseManager.getInstance().closeDatabase();
@@ -745,6 +776,7 @@ Log.d("AAAAA","NB POINTS " + nb);
 
     /// Create CEP file
     public void create_cep_file(long parcour_id) {
+
         File folder = new File(ctx.getFilesDir(), "CEP");
         // Create folder if not exist
         if (!folder.exists())
@@ -764,7 +796,7 @@ Log.d("AAAAA","NB POINTS " + nb);
                                     = new BufferedOutputStream(
                                     new FileOutputStream(file.getAbsolutePath()));
                             Calendar GMTCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-                            byte[] line = new byte[57];
+                            byte[] line = new byte[61];
                             byte[] b;
                             String[] macAddressParts;
                             int i;
@@ -780,6 +812,10 @@ Log.d("AAAAA","NB POINTS " + nb);
                             int nbEca;
                             int nbBox;
                             String mac;
+                            int device_a;
+                            int device_v;
+                            int device_f;
+                            int device_m;
                             int status;
                             while (!cursor.isAfterLast()) {
                                 id = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_ID));
@@ -795,6 +831,10 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 parcoursDuration = cursor.getLong(cursor.getColumnIndex(COLUMN_CEP_PAR_DUR));
                                 nbEca = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NB_ECA));
                                 nbBox = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NB_BOX));
+                                device_a = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_A));
+                                device_v = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_V));
+                                device_f = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F));
+                                device_m = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M));
 
                                 i = 0;
                                 GMTCalendar.setTimeInMillis(time); //TIMESTAMP timestamp //6 bytes
@@ -869,6 +909,29 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
+                                line[i++] = (byte) device_a;
+                                line[i++] = (byte) device_v;
+                                line[i++] = (byte) device_f;
+                                line[i++] = (byte) device_m;
+
+                                final int a = device_a, v = device_v, f = device_f, m1 = device_m;
+                                Thread thread = new Thread() {
+                                    public void run() {
+                                        Looper.prepare();
+
+                                        final Handler handler = new Handler();
+                                        handler.postDelayed(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                FileCEP.generateNoteOnSD(ctx, "Create CEP AVFM : " + a + v + f + m1);
+                                            }
+                                        }, 2000);
+
+                                        Looper.loop();
+                                    }
+                                };
+                                thread.start();
+
                                 line[i] = (byte) status;  //unsigned char device_status //1 byte
 
                                 output.write(line);

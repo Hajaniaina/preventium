@@ -124,16 +124,41 @@ public class ScoreView implements Parcelable {
 
     public void setScore (SCORE_t scoreId, LEVEL_t level) {
 
+        MainActivity main = MainActivity.instance();
+
         switch (scoreId) {
 
             case CORNERING:
-            case BRAKING:
-            case ACCELERATING:
-            case AVERAGE:
-
                 Drawable drawable = viewMap.get(scoreId).getBackground();
                 drawable.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
                 viewMap.get(scoreId).setBackground(drawable);
+                main.color_v = appColor.getColorCode(level);
+
+                break;
+
+            case BRAKING:
+                Drawable drawable1 = viewMap.get(scoreId).getBackground();
+                drawable1.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
+                viewMap.get(scoreId).setBackground(drawable1);
+                main.color_f = appColor.getColorCode(level);
+
+                break;
+
+            case ACCELERATING:
+
+                Drawable drawable2 = viewMap.get(scoreId).getBackground();
+                drawable2.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
+                viewMap.get(scoreId).setBackground(drawable2);
+                main.color_a = appColor.getColorCode(level);
+
+                break;
+
+            case AVERAGE:
+
+                Drawable drawable3 = viewMap.get(scoreId).getBackground();
+                drawable3.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
+                viewMap.get(scoreId).setBackground(drawable3);
+                main.color_m = appColor.getColorCode(level);
 
                 break;
 
