@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">BOX PREVENTIUM</string>
+    <string name="app_name">Box-Eode</string>
     <string name="acc_string">PRZYSPIESZENIE</string>
     <string name="action_settings">PARAMETRY</string>
     <string name="activate_string">AKTYWOWAĆ</string>
@@ -32,6 +32,7 @@
     <string name="enable_tracking_string">WŁĄCZYĆ MONITOROWANIE</string>
     <string name="enabled_string">WŁĄCZONA</string>
     <string name="end_day_confirm_string">CZY ZAKOŃCZYŁEŚ PRACĘ ?</string>
+    <string name="calibre_confirm_string">Czy potwierdzasz, że chcesz wywołać kalibrację pola pomiaru?</string>
     <string name="epc_missing_string">ŻADEN PLIK WARTOŚCI GRANICZNYCH NIE JEST DOSTĘPNY NA SERWERZE</string>
     <string name="finish_marker_string">KONIEC</string>
     <string name="force_permissions_string">ABY KONTYNUOWAĆ PROSZĘ AKTYWOWAĆ UPRAWNIENIA W PARAMETRACH ANDROID</string>

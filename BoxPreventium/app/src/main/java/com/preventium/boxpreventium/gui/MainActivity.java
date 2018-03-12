@@ -227,6 +227,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private SupportMapFragment mapFrag;
     private boolean internet_activeopt = true;
 
+    private boolean verifDm = true;
+
 
     String serveur="tsis";
     ReaderCFGFile reader1 = new ReaderCFGFile();
@@ -234,11 +236,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     String desFileName="";
 
     boolean cfgi = false;
-
-
     private String epcname = "";
 
-//##### add old veer
+    //##### add old veer
     private SharedPreferences force_pref;
     private Marker forceMarker = null;
     private List<Force> posList = new ArrayList();
@@ -247,8 +247,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private List<SpeedCorner> speed_corner = new ArrayList();
     private List<SpeedLine> speed_line = new ArrayList();
     private TextView forceView;
-    public SharedPreferences speedCorner;
-    public SharedPreferences speedLine;
+    private SharedPreferences speedCorner;
+    private SharedPreferences speedLine;
     private MediaPlayer mediaPlayer;
     private LatLng firstPos;
     private Lock lock;
@@ -271,6 +271,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public int vitesse_ld;
     public int vitesse_vr;
 
+    public int color_a, color_v, color_f, color_m;
     private String testL = "LD = ", testC = "LC = ", testL1 = "LD1 = ", testC1 = "LC1 = ";
 
     @Override
@@ -411,10 +412,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    int one_run_option=0;
     @Override
     protected void onResume() {
         //cfgi= reader1.read(desFileName);
-        setRepeatingAsyncTask();
+        //setRepeatingAsyncTask();
+        // one_run_option = 0;
+        get_one_lance_ptions();
+        Log.e("VERIFdm_resume : ", String.valueOf(verifDm));
+        //new ParseJson().cancel(true);
         if (!PositionManager.isLocationEnabled(getApplicationContext())) {
 
             showLocationAlert();
@@ -422,7 +428,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
 
-           BluetoothAdapter.getDefaultAdapter().enable();
+            BluetoothAdapter.getDefaultAdapter().enable();
         }
 
         int permissionsGranted = checkPermissions();
@@ -466,6 +472,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onStop() {
 
+        verifDm = true;
+        Log.e("VERIFdm_stop : ", String.valueOf(verifDm));
         permissionsChecked = false;
         super.onStop();
     }
@@ -541,7 +549,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 */
-   //######qrcod test
+    //######qrcod test
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == 0 && resultCode == -1 && data.hasExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM)) {
@@ -986,13 +994,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         return;
 
                     case GETTING_DOBJ:
-                    if (progress != null) {
+                        if (progress != null) {
 
-                        progress.show();
-                        progress.setMessage((getString(R.string.progress_obj_string) + StatsLastDriving.getIMEI(MainActivity.this)));
+                            progress.show();
+                            progress.setMessage((getString(R.string.progress_obj_string) + StatsLastDriving.getIMEI(MainActivity.this)));
 
-                        return;
-                    }
+                            return;
+                        }
 
                         return;
                     case SETTING_CEP:
@@ -1215,20 +1223,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (routeActive) {
 
                             if (qrRequest.isAnyReqPending(QrScanRequest.REQUEST_ON_START)) {
-                                    if(alertqrscan) {
-                                        drawAttention(5);
-                                        showQrRequestAlert();
+                                if(opt_qrcode == 1 && alertqrscan) {
+                                    drawAttention(5);
+                                    showQrRequestAlert();
 
-                                        appManager.add_ui_timer(qrSmsTimeout, QR_SEND_ON_START_SMS_TMR);
-                                    }
-
+                                    appManager.add_ui_timer(qrSmsTimeout, QR_SEND_ON_START_SMS_TMR);
+                                }
                             }
                         }
                         else {
 
                             qrRequest.resetAllReq();
                             appManager.clear_ui_timer();
-                         }
+                        }
 
                         break;
 
@@ -1253,11 +1260,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     case QR_CHECK_ON_END_TMR:
 
                         if (qrRequest.isVehicleReqPending(QrScanRequest.REQUEST_ON_STOP)) {
-
-                            drawAttention(5);
-                            showQrRequestAlert();
-
-                            appManager.add_ui_timer(qrSmsTimeout, QR_SEND_ON_END_SMS_TMR);
+                            if(opt_qrcode == 1 && alertqrscan) {
+                                drawAttention(5);
+                                showQrRequestAlert();
+                                appManager.add_ui_timer(qrSmsTimeout, QR_SEND_ON_END_SMS_TMR);
+                            }
                         }
                         else {
 
@@ -1336,11 +1343,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-  /*  @Override
-    public void onForceChanged(FORCE_t type, LEVEL_t level) {
+    /*  @Override
+      public void onForceChanged(FORCE_t type, LEVEL_t level) {
 
-    }
-*/
+      }
+  */
     //##santo
     public void onForceDisplayed(final double force) {
         runOnUiThread(new Runnable() {
@@ -1424,7 +1431,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-   // @Override
+    // @Override
     public void onSharedPositionsChanged (final List<CustomMarkerData> list) {
 
         runOnUiThread(new Runnable() {
@@ -1480,60 +1487,60 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
- /*   @Override
-    public void onShock (final double mG, final short raw) {
+    /*   @Override
+       public void onShock (final double mG, final short raw) {
 
+           runOnUiThread(new Runnable() {
+
+               @Override
+               public void run() {
+
+                   if (!shockDetected) {
+
+                       shockDetected = true;
+
+                       new CountDownTimer(5000, 5000) {
+
+                           public void onTick(long millisUntilFinished) {}
+
+                           public void onFinish() {
+
+                               drawAttention(5);
+                               shockDetected = false;
+
+                               String msg = getString(R.string.sms_shock_msg_string) + " " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")";
+                               sendSms(getPhoneNumber(R.string.phone_select_sms_shock_key), msg);
+
+                               markerManager.addMarker(googleMap, "Shock " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")", lastPos, CustomMarker.MARKER_ROSE, false);
+                           }
+
+                       }.start();
+                   }
+               }
+           });
+       }
+   */
+    //##santo
+    public void onShock(final double mG, final short raw) {
         runOnUiThread(new Runnable() {
-
-            @Override
             public void run() {
-
-                if (!shockDetected) {
-
-                    shockDetected = true;
-
+                if (!MainActivity.this.shockDetected) {
+                    MainActivity.this.shockDetected = true;
                     new CountDownTimer(5000, 5000) {
-
-                        public void onTick(long millisUntilFinished) {}
-
-                        public void onFinish() {
-
-                            drawAttention(5);
-                            shockDetected = false;
-
-                            String msg = getString(R.string.sms_shock_msg_string) + " " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")";
-                            sendSms(getPhoneNumber(R.string.phone_select_sms_shock_key), msg);
-
-                            markerManager.addMarker(googleMap, "Shock " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")", lastPos, CustomMarker.MARKER_ROSE, false);
+                        public void onTick(long millisUntilFinished) {
                         }
 
+                        public void onFinish() {
+                            MainActivity.this.drawAttention(5);
+                            MainActivity.this.shockDetected = false;
+                            MainActivity.this.sendSms(MainActivity.this.getPhoneNumber(R.string.phone_select_sms_shock_key), MainActivity.this.getString(R.string.sms_shock_msg_string) + " " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")");
+                            MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, "Shock " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")", "", MainActivity.this.lastPos, 9, false);
+                        }
                     }.start();
                 }
             }
         });
     }
-*/
- //##santo
- public void onShock(final double mG, final short raw) {
-     runOnUiThread(new Runnable() {
-         public void run() {
-             if (!MainActivity.this.shockDetected) {
-                 MainActivity.this.shockDetected = true;
-                 new CountDownTimer(5000, 5000) {
-                     public void onTick(long millisUntilFinished) {
-                     }
-
-                     public void onFinish() {
-                         MainActivity.this.drawAttention(5);
-                         MainActivity.this.shockDetected = false;
-                         MainActivity.this.sendSms(MainActivity.this.getPhoneNumber(R.string.phone_select_sms_shock_key), MainActivity.this.getString(R.string.sms_shock_msg_string) + " " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")");
-                         MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, "Shock " + String.valueOf(mG) + "mG (" + String.valueOf(raw) + ")", "", MainActivity.this.lastPos, 9, false);
-                     }
-                 }.start();
-             }
-         }
-     });
- }
 
 
     public void onSpeedLineKept(final int kmh, final LEVEL_t level) {
@@ -1541,7 +1548,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void run() {
                 SpeedLine speed_l = new SpeedLine(kmh, level);
                 try {
-
                     MainActivity.this.speedLine = MainActivity.this.getSharedPreferences("", 0);
                     SharedPreferences.Editor speed_line_editor = MainActivity.this.speedLine.edit();
                     Gson gson_line = new Gson();
@@ -1550,7 +1556,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     speed_line_editor.commit();
 
                     vitesse_ld = speed_l.getSpeed_line();
-
                 } catch (Exception e) {
                 }
             }
@@ -1562,7 +1567,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void run() {
                 SpeedCorner speed_c = new SpeedCorner(kmh, level);
                 try {
-
                     MainActivity.this.speedCorner = MainActivity.this.getSharedPreferences("", 0);
                     SharedPreferences.Editor speed_corner_editor = MainActivity.this.speedCorner.edit();
                     Gson gson_corner = new Gson();
@@ -1571,7 +1575,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     speed_corner_editor.commit();
 
                     vitesse_vr = speed_c.getSpeed_corner();
-
                 } catch (Exception e) {
                 }
             }
@@ -1589,7 +1592,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     } else {
                         MainActivity.this.speedView.setSpeed(SPEED_t.IN_STRAIGHT_LINE, LEVEL_t.LEVEL_UNKNOW, Integer.valueOf(0), true);
                     }
-
                 } catch (Exception e) {
                 }
             }
@@ -1625,7 +1627,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         runOnUiThread(new Runnable() {
             public void run() {
                 if(opt_panneau==1)
-                MainActivity.this.speedView.setSpeed(sPEED_t, lEVEL_t, Integer.valueOf(i), z);
+                    MainActivity.this.speedView.setSpeed(sPEED_t, lEVEL_t, Integer.valueOf(i), z);
             }
         });
     }
@@ -1692,11 +1694,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     if (txt.isEmpty()) {
 
-                       debugLayout.setVisibility(View.GONE);
+                        debugLayout.setVisibility(View.GONE);
                     }
                     else {
 
-                       debugLayout.setVisibility(View.VISIBLE);
+                        debugLayout.setVisibility(View.VISIBLE);
                     }
 
                     debugView.setText(txt);
@@ -1887,7 +1889,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             debugView = (TextView) findViewById(R.id.debug_view);
         }
 
-            mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
 
 
         if (firstLaunch) {
@@ -2121,6 +2123,27 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         alertDialog.show();
+    }
+
+    public void askCalibrationConfirm() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+
+        builder.setMessage(getString(R.string.calibre_confirm_string));
+        builder.setCancelable(false);
+
+        builder.setNegativeButton(getString(R.string.no_string), null);
+        builder.setPositiveButton(getString(R.string.yes_string), new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick (DialogInterface dialogInterface, int i) {
+
+                appManager.raz_calibration();
+                appManager.setStopped();
+            }
+        });
+
+        builder.show();
     }
 
     public void askEndDayConfirm() {
@@ -2694,24 +2717,23 @@ protected void showEpcSelectDialog() {
         for (int i = 0; i < actionBtnArray.length; i++) {
 
             if (hide) {
-
-
-
                 actionBtnArray[i].hide(true);
+                actionBtnArray[i].setVisibility(View.GONE);
             }
             else {
-                if(i==2 && opt_qrcode== 0){
+                if(i==2 && opt_qrcode == 0){
                     //qrcode
-                        actionBtnArray[i].hide(true);
+                    actionBtnArray[i].hide(true);
+                    actionBtnArray[i].setVisibility(View.GONE);
 
                 } else if(i==3 && opt_seulforce== 0){
                     //epcbtn
-                        actionBtnArray[i].hide(true);
+                    actionBtnArray[i].hide(true);
+                    actionBtnArray[i].setVisibility(View.GONE);
                 }else {
                     actionBtnArray[i].show(true);
+                    actionBtnArray[i].setVisibility(View.VISIBLE);
                 }
-
-
             }
         }
     }
@@ -2751,21 +2773,24 @@ protected void showEpcSelectDialog() {
         }.start();
     }
 
+    private ToneGenerator tone;
     private void beep (int seconds) {
+        try {
+            int ms = seconds * 1000;
+            tone = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
 
-        int ms = seconds * 1000;
-        final ToneGenerator tone = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
+            new CountDownTimer(ms, 500) {
+                public void onTick(long millisUntilFinished) {
+                    tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 200);
+                }
 
-        new CountDownTimer(ms, 500) {
+                public void onFinish() {
+                }
 
-            public void onTick (long millisUntilFinished) {
-
-                tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 200);
-            }
-
-            public void onFinish() {}
-
-        }.start();
+            }.start();
+        }catch(Exception e) {
+            /* on passe */
+        }
     }
 
     private void vibrate (int seconds) {
@@ -2774,9 +2799,9 @@ protected void showEpcSelectDialog() {
         vibrator.vibrate((seconds * 1000));
     }
 
-//################# form on start #########################
+    //################# form on start #########################
     private void runOnce () {
-       // boolean isFirstRun = sharedPref.getBoolean("FIRSTRUN", true);
+        // boolean isFirstRun = sharedPref.getBoolean("FIRSTRUN", true);
         boolean isFirstRun = sharedPref.getBoolean(getString(R.string.firstrun_key), true);
 
         Log.e("isFirstRun val : ", String.valueOf(isFirstRun));
@@ -2809,7 +2834,7 @@ protected void showEpcSelectDialog() {
                 MainActivity.this.finish();
                 System.exit(0);
 
- //############---------- Annulation du load config blue screen ###################
+                //############---------- Annulation du load config blue screen ###################
                 SharedPreferences.Editor editor = sharedPref.edit();
                 //editor.putBoolean("FIRSTRUN", false);
                 editor.putBoolean(getString(R.string.load_alert_cfg_key), false);
@@ -2854,14 +2879,28 @@ protected void showEpcSelectDialog() {
                     Toast.makeText(MainActivity.this, getString(R.string.form_invalid_string), Toast.LENGTH_SHORT).show();
                 } else {
 
+               /*     runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() { */
+                    //  boolean location = false;
+
+                    //   while( !location ) {
+                            /*    if( lastLocation == null ) {
+                                    try {
+                                        Thread.sleep(500);
+                                    }catch(InterruptedException ie) {}
+                              */  //} else {
+
                     boolean activeopt = Connectivity.isConnected(getApplicationContext());
                     Log.e("connect za form : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
                     if( activeopt != internet_activeopt ) {
                         internet_activeopt = activeopt;
                     }
 
-                    if (internet_activeopt)
-                    {
+                    Log.e("connect zaInterForm : ", String.valueOf(internet_activeopt));
+
+                    if (internet_activeopt) {
+
                         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
                         Date date = new Date();
                         TelephonyManager manager = (TelephonyManager) MainActivity.this.getSystemService(Context.TELEPHONY_SERVICE);
@@ -2879,22 +2918,45 @@ protected void showEpcSelectDialog() {
                         };
 
                         appManager.OpenForm(form);
+
+
                         MessageWait();
                         di.hide();
 
+
+//############# annulation du formulaire
                         SharedPreferences.Editor editor1 = sharedPref.edit();
                         //editor.putBoolean("FIRSTRUN", false);
                         editor1.putBoolean(getString(R.string.firstrun_key), false);
+
                         editor1.apply();
 
+
+                        Log.e("AFTERRUN val : ", String.valueOf(sharedPref.getBoolean(getString(R.string.firstrun_key), true)));
+
+//############# annulation du formulaire
                     }else {
+                        //Toast.makeText(MainActivity.this, getString(R.string.form_invalid_string), Toast.LENGTH_SHORT).show();
                         Toast.makeText(MainActivity.this, getString(R.string.erreur_connect), Toast.LENGTH_SHORT).show();
                     }
+                    //  break;
+                    // }
+                    //  }
+                    // }
+                    //  });
+
                 }
             }
         });
         di.show();
     }
+
+
+
+
+
+
+
 
     private String getPhoneNumber (int key) {
 
@@ -3010,8 +3072,8 @@ protected void showEpcSelectDialog() {
 
 
 
-                if(opt_qrcode== 1)
-                   // if(true)
+                if(opt_qrcode== 1 || opt_qrcode== 99)
+                // if(true)
                 {
 
                     class C00431 implements DialogInterface.OnClickListener {
@@ -3024,12 +3086,12 @@ protected void showEpcSelectDialog() {
                     }
 
 
-                Intent intent = new Intent(MainActivity.this, QrScanActivity.class);
-                intent.putExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM, qrRequest);
-                startActivityForResult(intent, QR_REQUEST_ID);
+                    Intent intent = new Intent(MainActivity.this, QrScanActivity.class);
+                    intent.putExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM, qrRequest);
+                    startActivityForResult(intent, QR_REQUEST_ID);
 
 
-            }else {
+                }else {
                     alertopt();
 
                 }
@@ -3067,7 +3129,7 @@ protected void showEpcSelectDialog() {
             }
 
             public void onClick(View view) {
-               // JSONManager jSONManager = new JSONManager(MainActivity.this);
+                // JSONManager jSONManager = new JSONManager(MainActivity.this);
                 if (getSet() == Integer.valueOf(QrScanActivity.SCAN_MODE_VEHICLE_DISABLED).intValue()) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this, R.style.InfoDialogStyle);
                     builder.setMessage(R.string.subscriber_string);
@@ -3078,7 +3140,7 @@ protected void showEpcSelectDialog() {
                 }
                 MainActivity.this.remote_file = "/" + ComonUtils.getIMEInumber(MainActivity.this) + "_EPC.NAME";
                 MainActivity.this.local_file = "/sdcard/" + ComonUtils.getIMEInumber(MainActivity.this) + "_EPC.NAME";
-               //### Chargement on load EPC
+                //### Chargement on load EPC
                 /* final ProgressDialog progress = new ProgressDialog(MainActivity.this, R.style.InfoDialogStyle);
                 progress.setMessage(MainActivity.this.getString(R.string.load_epc_string));
                 progress.setCancelable(false);
@@ -3095,7 +3157,7 @@ protected void showEpcSelectDialog() {
 
 
 
-        
+
 
         stopButton.setOnClickListener(new View.OnClickListener() {
 
@@ -3112,11 +3174,11 @@ protected void showEpcSelectDialog() {
             public void onMenuToggle(boolean opened) {
 
                 if (optMenu.isOpened()) {
-                    if(opt_config_type==0){
-
+                    if(opt_config_type == 0){
                         menuButtonSettings.setVisibility(View.GONE);
+                    }else {
+                        menuButtonSettings.setVisibility(View.VISIBLE);
                     }
-
 
                     hideActionButtons(true);
                 }
@@ -3151,7 +3213,8 @@ protected void showEpcSelectDialog() {
             @Override
             public void onClick(View view) {
 
-                appManager.raz_calibration();
+                //appManager.raz_calibration();
+                askCalibrationConfirm();
             }
         });
 
@@ -3161,7 +3224,7 @@ protected void showEpcSelectDialog() {
             @Override
             public void onClick (View view) {
 
-                if(opt_config_type== 1)
+                if(opt_config_type== 1 || opt_config_type== 99)
                 {
                     startActivity(new Intent(MainActivity.this, PinLockActivity.class));
                     optMenu.close(true);
@@ -3187,8 +3250,19 @@ protected void showEpcSelectDialog() {
 
     private void hideOPT(){
 
+        opt_qrcode = sharedPref.getInt("qrcode", 0);
+        opt_carte = sharedPref.getInt("affiche_carte", 0);
+        opt_panneau = sharedPref.getInt("paneau_vitesse_droite", 0);
+        opt_note = sharedPref.getInt("note_sur_20", 0);
+        opt_VFAM = sharedPref.getInt("VFAM", opt_VFAM);
+        opt_duree = sharedPref.getInt("duree", opt_duree);
+        opt_seulforce = sharedPref.getInt("seulforce", opt_seulforce);
+        opt_config_type = sharedPref.getInt("config_type", 0);
+        opt_langue = sharedPref.getInt("langue", 0);
+        opt_screen_size = sharedPref.getInt("taille_ecran", 4);
+        opt_force_mg = sharedPref.getInt("force_mg", 0);
 
-   //-----VFAM
+        //-----VFAM
         if(opt_VFAM==0){
             corner_n_v.setVisibility(View.INVISIBLE);
             brake_n_v.setVisibility(View.INVISIBLE);
@@ -3318,12 +3392,12 @@ protected void showEpcSelectDialog() {
             }
         }
 
-      //  if(opt_config_type== 0){
-            //menuButtonSettings.setVisibility(View.INVISIBLE);
-          //  menuButtonSettings.hide(true);
-      //  }else{
-            //menuButtonSettings.show(true);
-           // menuButtonSettings.setVisibility(View.VISIBLE);
+        //  if(opt_config_type== 0){
+        //menuButtonSettings.setVisibility(View.INVISIBLE);
+        //  menuButtonSettings.hide(true);
+        //  }else{
+        //menuButtonSettings.show(true);
+        // menuButtonSettings.setVisibility(View.VISIBLE);
          /*   if (!optMenu.isOpened()){
                 //hideActionButtons(true);
                 menuButtonSettings.setVisibility(View.VISIBLE);
@@ -3332,10 +3406,10 @@ protected void showEpcSelectDialog() {
                 menuButtonSettings.setVisibility(View.INVISIBLE);
             }*/
 
-     //   }
+        //   }
 
         //--langue opt
-        if(opt_langue== 1){
+        if(opt_langue== 1 || opt_langue== 99){
 
             flagView.setVisibility(View.VISIBLE);
         }else{
@@ -3345,7 +3419,7 @@ protected void showEpcSelectDialog() {
 
         //---paneau vitesse
 
-        if(opt_panneau== 1){
+        if(opt_panneau== 1 || opt_panneau== 99){
             //accForceView.hide(false);
             speedView.hide(false);
         }else{
@@ -3354,9 +3428,9 @@ protected void showEpcSelectDialog() {
         }
 
         //------carte opt ----
-        if(opt_carte== 1){
+        if(opt_carte== 1 || opt_carte== 99){
 
-           // nomapFrag.getView().setVisibility(View.GONE);
+            // nomapFrag.getView().setVisibility(View.GONE);
             no_map.setVisibility(View.GONE);
             mapFrag.getView().setVisibility(View.VISIBLE);
 
@@ -3364,11 +3438,11 @@ protected void showEpcSelectDialog() {
         }else{
             mapFrag.getView().setVisibility(View.GONE);
             no_map.setVisibility(View.VISIBLE);
-           // nomapFrag.getView().setVisibility(View.VISIBLE);
+            // nomapFrag.getView().setVisibility(View.VISIBLE);
         }
 
         //------carte opt ----
-        if(opt_screen_size== 4){
+        if(opt_screen_size== 4 || opt_screen_size== 99){
             //scanQrCodeButton.layout();
 
         }else{
@@ -3386,22 +3460,43 @@ protected void showEpcSelectDialog() {
     }
 
     private void alertopt(){
+
+
         final AlertDialog.Builder optDisableAlert = new AlertDialog.Builder(MainActivity.this);
         optDisableAlert.setCancelable(false);
         optDisableAlert.setMessage(getString(R.string.progress_inactive_opt_string));
+
         optDisableAlert.setNegativeButton(getString(R.string.close_string), null);
         optDisableAlert.create().show();
+        //  cancel(true);
+
+      /*            if (progress != null) {
+
+                        progress.show();
+                        progress.setMessage(getString(R.string.progress_inactive_opt_string) );
+                    }
+                    */
+
     }
 
 
     private void notification(String msg, int Idnotif){
 
         Uri soundNotif = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+     /*   if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            notif.setSmallIcon(R.drawable.icon_transperent);
+            //notif.setColor(getResources().getColor(R.color.notification_color));
+        } else {
+            notif.setSmallIcon(R.mipmap.ic_launcher);
+        }
+        */
         notif.setSmallIcon(R.mipmap.ic_launcher);
         notif.setTicker("Preventium");
         notif.setWhen(System.currentTimeMillis());
         notif.setContentTitle("Preventium");
         notif.setContentText(msg);
+
+
 
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -3441,7 +3536,23 @@ protected void showEpcSelectDialog() {
 
     }
 
-//##### Get screen size #######
+    ///###### chek protocol
+  /*  public boolean checkProtocol(String url){
+     String http = (url.substring(0, 4)).trim();
+        Log.e("Protocol za : ", String.valueOf(http));
+        if (http== "http"){
+            return true;
+
+        }
+        else {
+            return false;
+        }
+
+
+    }
+*/
+
+    //##### Get screen size #######
     public int getScreen() {
 
         if (opt_screen_size==99){
@@ -3513,53 +3624,58 @@ protected void showEpcSelectDialog() {
 */
 
 
-                              boolean load_cfg = sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true);
-                              boolean activeopt = Connectivity.isConnected(getApplicationContext());
-                              Log.e("connect za : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
-                              if( activeopt != internet_activeopt ) {
-                                  internet_activeopt = activeopt;
-                              }
+                            boolean load_cfg = sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true);
+                            boolean activeopt = Connectivity.isConnected(getApplicationContext());
+                            Log.e("connect za : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
+                            if( activeopt != internet_activeopt ) {
+                                internet_activeopt = activeopt;
+                            }
 
-                              Log.e("connect zaInter : ", String.valueOf(internet_activeopt));
+                            Log.e("connect zaInter : ", String.valueOf(internet_activeopt));
 
-                              if (internet_activeopt) {
-                                  //onForceView();
+                            if (internet_activeopt) {
+                                //onForceView();
 
-                                  srcFileName = ComonUtils.getIMEInumber(getApplicationContext()) + ".CFG";
-                                  desFileName = String.format(Locale.getDefault(), "%s/%s", getApplicationContext().getFilesDir(), srcFileName);
-                                  cfgi = reader1.read(desFileName);  // santooo
-                                  Log.e("FTP cfgBol : ", String.valueOf(cfgi));
+                                if(verifDm){
+                                    srcFileName = ComonUtils.getIMEInumber(getApplicationContext()) + ".CFG";
+                                    desFileName = String.format(Locale.getDefault(), "%s/%s", getApplicationContext().getFilesDir(), srcFileName);
+                                    cfgi = reader1.read(desFileName);  // santooo
+                                    Log.e("FTP cfgBol : ", String.valueOf(cfgi));
 
-                                  Log.e("connect : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
+                                    Log.e("connect : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
 
-                                  //reader1.read(desFileName);
-                                  if(cfgi){
-
-
-                                      //URL uValide = new URL(serveur);
-                                      //Log.e("protocole : ",String.valueOf(uValide.getProtocol()));
-                                      serveur = reader1.getServerUrl();
-                                      if(serveur != "" && serveur!="tsis"){
-
-                                        // boolean check=  checkProtocol(serveur);
-                                         // Log.e("akor vrai : ", String.valueOf(check));
-
-                                       //  if (check){
+                                    //reader1.read(desFileName);
+                                    if(cfgi){
 
 
+                                        //URL uValide = new URL(serveur);
+                                        //Log.e("protocole : ",String.valueOf(uValide.getProtocol()));
+                                        serveur = reader1.getServerUrl();
+                                        if(serveur != "" && serveur!="tsis"){
 
-                                          // serveur = encode(serveur, "UTF-8");
+                                            // boolean check=  checkProtocol(serveur);
+                                            // Log.e("akor vrai : ", String.valueOf(check));
 
-                                          Log.e("url boucle : ",serveur);
-
-                                          new ParseJson().execute();
+                                            //  if (check){
 
 
-                                          hideOPT();
 
-                                          if (progressOPT != null) {
-                                              progressOPT.hide();
-                                          }
+                                            // serveur = encode(serveur, "UTF-8");
+
+                                            Log.e("url boucle : ",serveur);
+
+                                            new ParseJson().execute();
+
+
+                                            hideOPT();
+
+                                            verifDm = false;
+
+                                            Log.e("VERIFdm : ", String.valueOf(verifDm));
+
+                                            if (progressOPT != null) {
+                                                progressOPT.hide();
+                                            }
 
                             /*             }else {
                                              //#### Erreur protocol
@@ -3574,24 +3690,27 @@ protected void showEpcSelectDialog() {
                                          }
 */
 
-                                      }
-                                  }else{
-                                      //progresse fichier cfg introuvable
+                                        }
+                                    }else{
+                                        //progresse fichier cfg introuvable
 
 
-                                      if(!load_cfg){
+                                        if(!load_cfg){
 
-                                          if (progressOPT != null) {
+                                            if (progressOPT != null) {
 
-                                              progressOPT.show();
-                                              progressOPT.setMessage(getString(R.string.progress_cfg_opt_string) );
-                                          }
-                                      }
+                                                progressOPT.show();
+                                                progressOPT.setMessage(getString(R.string.progress_cfg_opt_string) );
+                                            }
+                                        }
 
 
 
-                                  }
-                              }
+                                    }
+
+
+                                }
+                            }
 /*
                           }
 
@@ -3615,14 +3734,95 @@ protected void showEpcSelectDialog() {
     }
 
     // -------------------------------------------------------------------------------------------- //
+    //int one_run_option=0;
+    public void get_one_lance_ptions(){
+        final Handler handler = new Handler();
+        Timer timer = new Timer();
+        /*
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() { */
+        try {
+
+            boolean load_cfg = sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true);
+            boolean activeopt = Connectivity.isConnected(getApplicationContext());
+
+            Log.e("connect za : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
+            if( activeopt != internet_activeopt ) {
+                internet_activeopt = activeopt;
+            }
+
+            Log.e("connect zaInter : ", String.valueOf(internet_activeopt));
+
+            if (internet_activeopt) {
+                //onForceView();
+
+                srcFileName = ComonUtils.getIMEInumber(getApplicationContext()) + ".CFG";
+                desFileName = String.format(Locale.getDefault(), "%s/%s", getApplicationContext().getFilesDir(), srcFileName);
+                cfgi = reader1.read(desFileName);  // santooo
+                Log.e("FTP cfgBol : ", String.valueOf(cfgi));
+
+                Log.e("connect : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
+
+                //reader1.read(desFileName);
+                if(cfgi){
+
+
+                    //URL uValide = new URL(serveur);
+                    //Log.e("protocole : ",String.valueOf(uValide.getProtocol()));
+                    serveur = reader1.getServerUrl();
+                    if(serveur != "" && serveur!= "tsis"){
+
+                        Log.e("url boucle : ",serveur);
+
+                        // one_run_option++;
+                        //if(one_run_option <=5){
+                        new ParseJson().execute();
+                        hideOPT();
+
+                        //}
+
+                        if (progressOPT != null) {
+                            progressOPT.hide();
+                        }
+
+                    }
+                }else{
+                    //progresse fichier cfg introuvable
+                    if(!load_cfg){
+
+                        if (progressOPT != null) {
+
+                            progressOPT.show();
+                            progressOPT.setMessage(getString(R.string.progress_cfg_opt_string) );
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            // error, do something
+        } /*
+                    }
+                });
+            }
+        }; */
+        //ingorer ce timer pour eviter la repetion de requette au serveur
+        // timer.schedule(task, 0, 1*1000);  // interval of one minute (1 sec)
+
+    }
+
+
 //<<<<<<< HEAD
 
-//##### isntacier handler box
+    //##### isntacier handler box
     HandlerBox box_leurre = new HandlerBox(this);
     //--------------------------//
 //=======
     //instancier handler box
-   // HandlerBox box_leurre = new HandlerBox(this);
+    // HandlerBox box_leurre = new HandlerBox(this);
     //-------------------//
 //>>>>>>> 30a59ebc4ffb09d220b0ca728e9e46e36b16028a
 
@@ -3660,10 +3860,9 @@ protected void showEpcSelectDialog() {
                         int opt_force_mg_web = Integer.parseInt(config.optString("force_mg"));
 
                         //int opt_leurre = Integer.parseInt(config.optString("leurre"));
-
                         int opt_leurre = Integer.parseInt(config.optString("leurre"));
 
-
+                        /*
                         compare(opt_qrcode, opt_qrcode_web, getString(R.string.opt_qrcod_activated) + "\n", getString(R.string.opt_qrcod_desactivated), id_notif_qr);
                         compare(opt_carte, opt_carte_web, getString(R.string.opt_carte_activated), getString(R.string.opt_carte_desactivated) + "\n", id_notif_map);
                         compare(opt_panneau, opt_panneau_web, getString(R.string.opt_panneau_activated), getString(R.string.opt_panneau_desactivated) + "\n", id_notif_pan);
@@ -3673,7 +3872,23 @@ protected void showEpcSelectDialog() {
                         compare(opt_seulforce, opt_seulforce_web, getString(R.string.opt_seulforce_activated), getString(R.string.opt_seulforce_desactivated) + "\n", id_notif_seuil);
                         compare(opt_config_type, opt_config_type_web, getString(R.string.opt_config_type_activated), getString(R.string.opt_config_type_desactivated) + "\n", id_notif_conf);
                         compare(opt_langue, opt_langue_web, getString(R.string.opt_langue_desactivated), getString(R.string.opt_langue_desactivated) + "\n", id_notif_lang);
+                        */
 
+                        SharedPreferences.Editor editor = sharedPref.edit();
+                        editor.putInt("qrcode", opt_qrcode_web);
+                        editor.putInt("affiche_carte", opt_carte_web);
+                        editor.putInt("paneau_vitesse_droite", opt_panneau_web);
+                        editor.putInt("note_sur_20", opt_note_web);
+                        editor.putInt("VFAM", opt_VFAM_web);
+                        editor.putInt("duree", opt_duree_web);
+                        editor.putInt("seulforce", opt_seulforce_web);
+                        editor.putInt("config_type", opt_config_type_web);
+                        editor.putInt("langue", opt_langue_web);
+                        editor.putInt("taille_ecran", opt_screen_size_web);
+                        editor.putInt("force_mg", opt_force_mg_web);
+                        editor.apply();
+
+                        /*
                         opt_qrcode = opt_qrcode_web;
                         opt_carte = opt_carte_web;
                         opt_panneau = opt_panneau_web;
@@ -3686,6 +3901,8 @@ protected void showEpcSelectDialog() {
                         opt_screen_size = opt_screen_size_web;
                         opt_force_mg = opt_force_mg_web;
                         box_leurre.set_active_from_serveur(opt_leurre); //value affectation of leurre from web
+                        */
+
 
                         //get value of leurre by francisco
 
@@ -3709,7 +3926,7 @@ protected void showEpcSelectDialog() {
     private void localizationFlag(){
 
         SharedPreferences preferences = getSharedPreferences(APPPREFERENCES, Context.MODE_PRIVATE);
-       // String language = preferences.getString("language", null);
+        // String language = preferences.getString("language", null);
         String language = preferences.getString(getString(R.string.select_language_key), null);
 
         Log.e("langue azo : ", String.valueOf(language));

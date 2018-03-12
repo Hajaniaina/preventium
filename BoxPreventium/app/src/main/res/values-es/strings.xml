@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Box-Preventium</string>
+    <string name="app_name">Box-Eode</string>
     <string name="acc_string">Aceleración</string>
     <string name="action_settings">Configuraciones</string>
     <string name="activate_string">Activar</string>
@@ -32,6 +32,7 @@
     <string name="enable_tracking_string">Activar seguimiento</string>
     <string name="enabled_string">Habilitada</string>
     <string name="end_day_confirm_string">¿Has terminado tu día?</string>
+    <string name="calibre_confirm_string">¿Confirma que desea activar una calibración de la caja de medición?</string>
     <string name="epc_missing_string">No hay ningún archivo de umbral de fuerza disponible en el servidor</string>
     <string name="finish_marker_string">Final</string>
     <string name="force_permissions_string">Para continuar, habilite todos los permisos en la configuración de Android</string>

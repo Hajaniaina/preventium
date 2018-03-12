@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Box-Preventium</string>
+    <string name="app_name">Box-Eode</string>
     <string name="acc_string">Accélération</string>
     <string name="action_settings">Paramètres</string>
     <string name="activate_string">Activer</string>
@@ -33,6 +33,7 @@
     <string name="enable_tracking_string">Activer le tracking</string>
     <string name="enabled_string">Activée</string>
     <string name="end_day_confirm_string">Avez-vous terminé votre journée?</string>
+    <string name="calibre_confirm_string">Confirmez-vous vouloir déclencher une calibration du boitier de mesures ?</string>
     <string name="epc_missing_string">Aucun fichier de seuils de forces disponible sur serveur</string>
     <string name="finish_marker_string">Fin</string>
     <string name="force_permissions_string">Pour continuer, activez toutes les autorisations dans les paramètres Android</string>

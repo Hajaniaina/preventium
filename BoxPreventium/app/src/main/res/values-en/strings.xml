@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Box-Preventium</string>
+    <string name="app_name">Box-Eode</string>
     <string name="title_activity_maps">Preventium</string>
     <string name="title_activity_settings">Settings</string>
 
@@ -93,6 +93,7 @@
     <string name="pin_short_string">Should be 4 digits</string>
     <string name="pin_invalid_string">Invalid PIN code</string>
     <string name="end_day_confirm_string">Have you finished your work day?</string>
+    <string name="calibre_confirm_string">Do you confirm that you want to trigger a calibration of the measurement box?</string>
     <string name="permissions_enable_string">This application need all permissions to be enabled</string>
     <string name="location_settings_string">Location settings</string>
     <string name="location_rationale_string">Location service is disabled. Activate High Precision mode in the Android settings to continue</string>

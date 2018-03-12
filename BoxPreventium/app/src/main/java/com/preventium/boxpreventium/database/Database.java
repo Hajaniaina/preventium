@@ -6,12 +6,15 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.preventium.boxpreventium.gui.MainActivity;
 import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.ECA.ECALine;
+import com.preventium.boxpreventium.utils.ColorCEP;
 import com.preventium.boxpreventium.utils.ComonUtils;
 
 import java.io.BufferedOutputStream;
@@ -24,6 +27,10 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_DEVICE_A;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_DEVICE_F;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_DEVICE_M;
+import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_DEVICE_V;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_DIST_COV;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_ID;
 import static com.preventium.boxpreventium.database.DatabaseHelper.COLUMN_CEP_LAT_POS;
@@ -689,8 +696,9 @@ Log.d("AAAAA","NB POINTS " + nb);
     /// Add an Preventium Box event (Connected/Disconnected)
 
 
-    public boolean addCEP(@Nullable Location location, @NonNull String device_mac, int note, int vitesse_ld, int vitesse_vr, long distance_covered, long parcour_duration, int nb_eca, int nb_box, boolean connected) {
+    public boolean addCEP(@Nullable Location location, @NonNull String device_mac, int note, int vitesse_ld, int vitesse_vr, long distance_covered, long parcour_duration, int nb_eca, int nb_box, int device_a,int device_v, int device_f, int device_m, boolean connected) {
 
+        final int a = device_a, v = device_v, f = device_f, m = device_m;
         SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         ContentValues contentValues = new ContentValues();
         if (location != null) {
@@ -710,31 +718,28 @@ Log.d("AAAAA","NB POINTS " + nb);
         contentValues.put(COLUMN_CEP_PAR_DUR, Long.valueOf(parcour_duration));
         contentValues.put(COLUMN_CEP_NB_ECA, Integer.valueOf(nb_eca));
         contentValues.put(COLUMN_CEP_NB_BOX, Integer.valueOf(nb_box));
+        contentValues.put(COLUMN_CEP_DEVICE_A, Integer.valueOf(device_a));
+        contentValues.put(COLUMN_CEP_DEVICE_V, Integer.valueOf(device_v));
+        contentValues.put(COLUMN_CEP_DEVICE_F, Integer.valueOf(device_f));
+        contentValues.put(COLUMN_CEP_DEVICE_M, Integer.valueOf(device_m));
         contentValues.put("status", Integer.valueOf(connected ? 1 : 0));
         db.insert(DatabaseHelper.TABLE_CEP, null, contentValues);
         DatabaseManager.getInstance().closeDatabase();
-        return true;
-    }
 
-   /* public boolean addCEP(@Nullable Location location, @NonNull String device_mac, boolean connected ) {
-        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
-        ContentValues contentValues = new ContentValues();
-        if( location != null ){
-            contentValues.put(COLUMN_CEP_TIME, location.getTime() );
-            contentValues.put(COLUMN_CEP_LONG_POS, location.getLongitude() );
-            contentValues.put(COLUMN_CEP_LAT_POS, location.getLatitude() );
-        } else {
-            contentValues.put(COLUMN_CEP_TIME, System.currentTimeMillis() );
-            contentValues.put(COLUMN_CEP_LONG_POS, 0f );
-            contentValues.put(COLUMN_CEP_LAT_POS, 0f );
-        }
-        contentValues.put(COLUMN_CEP_MAC, device_mac );
-        contentValues.put(COLUMN_CEP_STATUS, (connected ? 1 : 0) );
-        db.insert(TABLE_CEP, null, contentValues);
-        DatabaseManager.getInstance().closeDatabase();
+        /**
+         * Autre solution qui ne pause pas de problème
+         * prenne seulement de resource mais pas trop
+         * @Arnaud
+         */
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.instance());
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putInt(COLUMN_CEP_DEVICE_A, Integer.valueOf(device_a));
+        editor.putInt(COLUMN_CEP_DEVICE_V, Integer.valueOf(device_v));
+        editor.putInt(COLUMN_CEP_DEVICE_F, Integer.valueOf(device_f));
+        editor.putInt(COLUMN_CEP_DEVICE_M, Integer.valueOf(device_m));
+        editor.apply();
         return true;
     }
-    */
 
     /// Clear all CEP records
     public void clear_cep_data() {
@@ -745,6 +750,7 @@ Log.d("AAAAA","NB POINTS " + nb);
 
     /// Create CEP file
     public void create_cep_file(long parcour_id) {
+
         File folder = new File(ctx.getFilesDir(), "CEP");
         // Create folder if not exist
         if (!folder.exists())
@@ -764,7 +770,7 @@ Log.d("AAAAA","NB POINTS " + nb);
                                     = new BufferedOutputStream(
                                     new FileOutputStream(file.getAbsolutePath()));
                             Calendar GMTCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-                            byte[] line = new byte[57];
+                            byte[] line = new byte[73]; //61 taloha
                             byte[] b;
                             String[] macAddressParts;
                             int i;
@@ -780,7 +786,12 @@ Log.d("AAAAA","NB POINTS " + nb);
                             int nbEca;
                             int nbBox;
                             String mac;
+                            int device_a;
+                            int device_v;
+                            int device_f;
+                            int device_m;
                             int status;
+                            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.instance());
                             while (!cursor.isAfterLast()) {
                                 id = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_ID));
                                 time = cursor.getLong(cursor.getColumnIndex(COLUMN_CEP_TIME));
@@ -796,52 +807,71 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 nbEca = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NB_ECA));
                                 nbBox = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NB_BOX));
 
+                                /**
+                                 * shared ou base de donnée
+                                 * @Arnaud
+                                 */
+                                device_a = sharedPref.getInt(COLUMN_CEP_DEVICE_A, cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_A)));
+                                device_v = sharedPref.getInt(COLUMN_CEP_DEVICE_V, cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_V)));
+                                device_f = sharedPref.getInt(COLUMN_CEP_DEVICE_F, cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F)));
+                                device_m = sharedPref.getInt(COLUMN_CEP_DEVICE_M, cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M)));
+
                                 i = 0;
-                                GMTCalendar.setTimeInMillis(time); //TIMESTAMP timestamp //6 bytes
-                                line[i++] = (byte) GMTCalendar.get(Calendar.DAY_OF_MONTH); //
+                                GMTCalendar.setTimeInMillis(time); // 6
+                                line[i++] = (byte) GMTCalendar.get(Calendar.DAY_OF_MONTH);
                                 line[i++] = (byte) (GMTCalendar.get(Calendar.MONTH) + 1);
                                 line[i++] = (byte) (GMTCalendar.get(Calendar.YEAR) & 0xFF);
                                 line[i++] = (byte) GMTCalendar.get(Calendar.HOUR);
                                 line[i++] = (byte) GMTCalendar.get(Calendar.MINUTE);
                                 line[i++] = (byte) GMTCalendar.get(Calendar.SECOND);
-                                b = ByteBuffer.allocate(4).putFloat(long_pos).array(); //float long_pos //4 bytes
+                                b = ByteBuffer.allocate(4).putFloat(long_pos).array(); // 10
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
-                                b = ByteBuffer.allocate(4).putFloat(lat_pos).array(); //float lat_pos //4 bytes
+                                b = ByteBuffer.allocate(4).putFloat(lat_pos).array(); // 14
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
-                                macAddressParts = mac.split(":"); //unsigned char device_mac //6 bytes
+                                macAddressParts = mac.split(":"); // 20
                                 b = new byte[6];
                                 for (int m = 0; m < 6; m++) {
-                                    b[m] = (byte) 0;
+                                    Integer hex = Integer.parseInt(macAddressParts[m], 16);
+                                    b[m] = hex.byteValue();
                                 }
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
                                 line[i++] = b[4];
-                                line[i++] = b[5];
+                                line[i++] = b[5];//20
 
-                                b = ByteBuffer.allocate(4).putInt(note).array(); //integer note //4 bytes
+                                b = ByteBuffer.allocate(4).putInt(note).array(); //integer note //4 bytes // 24
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
-                                b = ByteBuffer.allocate(4).putInt(vitesseLd).array(); //integer vitesse_ld //4 bytes
+                                b = ByteBuffer.allocate(4).putInt(vitesseLd).array(); //integer vitesse_ld //4 bytes // 28
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
-                                b = ByteBuffer.allocate(4).putInt(vitesseVr).array(); //integer vitesse_vr //4 bytes
+                                b = ByteBuffer.allocate(4).putInt(vitesseVr).array(); //integer vitesse_vr //4 bytes // 32
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
-                                b = ByteBuffer.allocate(8).putFloat(distanceCovered).array(); //long distance_covered //8 bytes
+                                b = ByteBuffer.allocate(8).putFloat(distanceCovered).array(); //long distance_covered //8 bytes // 40
+                                line[i++] = b[0];
+                                line[i++] = b[1];
+                                line[i++] = b[2];
+                                line[i++] = b[3];
+                                line[i++] = b[4];
+                                line[i++] = b[5];
+                                line[i++] = b[6];
+                                line[i++] = b[7]; //40
+                                b = ByteBuffer.allocate(8).putFloat(parcoursDuration).array(); //long parcour_duration //8 bytes // 48
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
@@ -850,31 +880,58 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 line[i++] = b[5];
                                 line[i++] = b[6];
                                 line[i++] = b[7];
-                                b = ByteBuffer.allocate(8).putFloat(parcoursDuration).array(); //long parcour_duration //8 bytes
+                                b = ByteBuffer.allocate(4).putInt(nbEca).array(); //integer nb_eca //4 bytes // 52
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
-                                line[i++] = b[4];
-                                line[i++] = b[5];
-                                line[i++] = b[6];
-                                line[i++] = b[7];
-                                b = ByteBuffer.allocate(4).putFloat(nbEca).array(); //integer nb_eca //4 bytes
+                                b = ByteBuffer.allocate(4).putInt(nbBox).array(); //integer nb_box //4bytes  // 56
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
-                                b = ByteBuffer.allocate(4).putFloat(nbBox).array(); //integer nb_box //4bytes
+
+                                b = ByteBuffer.allocate(4).putInt(device_a).array(); //integer device_a //4bytes  // 60
+                                line[i++] = b[0];
+                                line[i++] = b[1];
+                                line[i++] = b[2];
+                                line[i++] = b[3]; //60
+
+                                b = ByteBuffer.allocate(4).putInt(device_v).array(); //integer device_v //4bytes // 64
                                 line[i++] = b[0];
                                 line[i++] = b[1];
                                 line[i++] = b[2];
                                 line[i++] = b[3];
+
+                                b = ByteBuffer.allocate(4).putInt(device_f).array(); //integer device_f //4bytes // 68
+                                line[i++] = b[0];
+                                line[i++] = b[1];
+                                line[i++] = b[2];
+                                line[i++] = b[3];
+
+                                b = ByteBuffer.allocate(4).putInt(device_m).array(); //integer device_m //4bytes // 73
+                                line[i++] = b[0];
+                                line[i++] = b[1];
+                                line[i++] = b[2];
+                                line[i++] = b[3]; //72
                                 line[i] = (byte) status;  //unsigned char device_status //1 byte
-
                                 output.write(line);
 
                                 cursor.moveToNext();
                             }
+
+                            /**
+                             * on efface les données
+                             * @Arnaud
+                             */
+                            SharedPreferences.Editor editor = sharedPref.edit();
+                            editor.remove(COLUMN_CEP_DEVICE_A);
+                            editor.remove(COLUMN_CEP_DEVICE_V);
+                            editor.remove(COLUMN_CEP_DEVICE_F);
+                            editor.remove(COLUMN_CEP_DEVICE_M);
+                            editor.apply();
+                            ColorCEP.getInstance().unsetColors();
+
                             output.flush();
                             output.close();
                         } else {

@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.location.Location;
-import android.media.MediaScannerConnection;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -35,6 +33,7 @@ import com.preventium.boxpreventium.server.EPC.ForceSeuil;
 import com.preventium.boxpreventium.server.EPC.ReaderEPCFile;
 import com.preventium.boxpreventium.server.POSS.ReaderPOSSFile;
 import com.preventium.boxpreventium.utils.Chrono;
+import com.preventium.boxpreventium.utils.ColorCEP;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
 import com.preventium.boxpreventium.utils.ThreadDefault;
@@ -137,6 +136,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private long try_send_eca_at = 0;
     private List<Pair<Long, Integer>> ui_timers = new ArrayList();
 
+    int a,v,f,m;
+
     private final static FTPConfig FTP_FORM = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM, "/FORM");
 
     public interface AppManagerListener {
@@ -167,6 +168,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         void onRecommendedSpeedChanged(SPEED_t sPEED_t, int i, LEVEL_t lEVEL_t, boolean z);
 
         void onScoreChanged(SCORE_t sCORE_t, LEVEL_t lEVEL_t);
+
+        //void onChangeScore(LEVEL_t lEVEL_A, LEVEL_t lEVEL_V, LEVEL_t lEVEL_F, LEVEL_t lEVEL_M);
 
         void onShock(double d, short s);
 
@@ -243,6 +246,24 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
     }
 
+
+    private int  note_to_score(float note) {
+        int score = 5;
+        if (note >= 16.0f) {
+            return 1;
+        }
+        if (note >= 13.0f) {
+            return 2;
+        }
+        if (note >= 9.0f) {
+            return 3;
+        }
+        if (note >= 6.0f) {
+            return 4;
+        }
+        return score;
+    }
+
     public void myRun() throws InterruptedException {
         super.myRun();
         setLog("");
@@ -316,7 +337,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         long distance_covered = this.database.get_distance(this.parcour_id);
         long parcour_duration = (long) (((double) duration) * 0.001d);
         Database database = this.database;
-        this.database.addCEP(location, device_mac, note, vitesse_ld, vitesse_vr, distance_covered, parcour_duration, Database.get_eca_counter(this.ctx, this.parcour_id), nbBox, connected);
+        ColorCEP color = ColorCEP.getInstance();
+        this.database.addCEP(location, device_mac, note, vitesse_ld, vitesse_vr, distance_covered, parcour_duration, Database.get_eca_counter(this.ctx, this.parcour_id), nbBox, color.getA(), color.getV(), color.getF(), color.getM(), connected);
     }
 
     public void onNumberOfBox(int nb) {
@@ -382,10 +404,11 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
             this.listener.onDrivingTimeChanged(this.chronoRideTxt);
             this.listener.onNoteChanged(20, LEVEL_t.LEVEL_1, LEVEL_t.LEVEL_1);
-            this.listener.onScoreChanged(SCORE_t.ACCELERATING, LEVEL_t.LEVEL_1);
-            this.listener.onScoreChanged(SCORE_t.BRAKING, LEVEL_t.LEVEL_1);
-            this.listener.onScoreChanged(SCORE_t.CORNERING, LEVEL_t.LEVEL_1);
-            this.listener.onScoreChanged(SCORE_t.AVERAGE, LEVEL_t.LEVEL_1);
+            //this.listener.onScoreChanged(SCORE_t.ACCELERATING, LEVEL_t.LEVEL_1);
+            //this.listener.onScoreChanged(SCORE_t.BRAKING, LEVEL_t.LEVEL_1);
+            //this.listener.onScoreChanged(SCORE_t.CORNERING, LEVEL_t.LEVEL_1);
+            //this.listener.onScoreChanged(SCORE_t.AVERAGE, LEVEL_t.LEVEL_1);
+
         }
         this.alertX_add_at = 0;
         this.alertY_add_at = 0;
@@ -1177,6 +1200,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this._tracking = PreferenceManager.getDefaultSharedPreferences(this.ctx).getBoolean(this.ctx.getResources().getString(R.string.tracking_activated_key), DEBUG);
     }
 
+
     /// ============================================================================================
     /// CALCUL
     /// ============================================================================================
@@ -1329,6 +1353,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 }
             }
         }
+
+
     }
 
     private long longitudinal_elapsed[] = { 0,0,0,0,0,0,0,0,0,0 };
@@ -1336,6 +1362,30 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
         if( elapsed <= 0 ) return;
 
+    /*private double LocationsToXmG(@NonNull Location l0, @NonNull Location l1) {
+        // Pour calculer l'accélération longitudinale (accélération ou freinage) avec comme unité le mG :
+        // il faut connaître : la vitesse (v(t)) à l'instant t et à l'instant précédent(v(t-1)) et le delta t entre ces deux mesures.
+        // a = ( v(t) - v(t-1) )/(9.81*( t - (t-1) ) )
+
+        return (((double) (l0.getSpeed() - l1.getSpeed())) / (9.81d * (((double) (l0.getTime() - l1.getTime())) * 0.001d))) * 1000.0d;
+    }
+
+    private boolean isRightRoad(Location location_1, Location location_2, Location location_3) {
+        double Lat_rad_2 = (location_2.getLatitude() * 3.141592653589793d) / 180.0d;
+        double Long_rad_1 = (location_1.getLongitude() * 3.141592653589793d) / 180.0d;
+        double Long_rad_2 = (location_2.getLongitude() * 3.141592653589793d) / 180.0d;
+        double Long_rad_3 = (location_3.getLongitude() * 3.141592653589793d) / 180.0d;
+        double Delta_L_rad_1 = Lat_rad_2 - ((location_1.getLatitude() * 3.141592653589793d) / 180.0d);
+        double Delta_L_rad_2 = ((location_3.getLatitude() * 3.141592653589793d) / 180.0d) - Lat_rad_2;
+        double A_deg_1 = (360.0d * Math.atan2(Math.cos(Long_rad_2) * Math.sin(Delta_L_rad_1), (Math.cos(Long_rad_1) * Math.sin(Long_rad_2)) - ((Math.sin(Long_rad_1) * Math.cos(Long_rad_2)) * Math.cos(Delta_L_rad_1)))) / 3.141592653589793d;
+        double A_deg_2 = (360.0d * Math.atan2(Math.cos(Long_rad_3) * Math.sin(Delta_L_rad_2), (Math.cos(Long_rad_2) * Math.sin(Long_rad_3)) - ((Math.sin(Long_rad_2) * Math.cos(Long_rad_3)) * Math.cos(Delta_L_rad_2)))) / 3.141592653589793d;
+        return Math.max(A_deg_1, A_deg_2) - Math.min(A_deg_1, A_deg_2) < 3.0d ? DEBUG : false;
+    }
+
+// ==============================================================
+
+    private long X[] = { 0,0,0,0,0,0,0,0,0,0 };
+    private static void update_tab_X( long tab[], FORCE_t t, LEVEL_t l, long s ){*/
         int i1 = -1;
         int i2 = -1;
 
@@ -1378,6 +1428,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         // 0 to 4: LEVEL_1 to LEVEL_5 for A
         // 5 to 9: LEVEL_1 to LEVEL_5 for F
         int a = -1;
+        long tps;
         for( int i = 0; i < 10; i++ ) {
             if( tab[i] > 0 ) {
                 if( tab[i] >= readerEPCFile.get_TPS_ms(i) ) {
@@ -1466,6 +1517,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         {
             // LONGITUDINAL
             FORCE_t type_X = FORCE_t.UNKNOW;
+            FORCE_t type_Y = FORCE_t.UNKNOW;
             LEVEL_t level_X = LEVEL_t.LEVEL_UNKNOW;
             if (seuil_x != null)
             {
@@ -1496,7 +1548,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             }
 
             // LATERAL
-            FORCE_t type_Y = FORCE_t.UNKNOW;
+            // FORCE_t type_Y = FORCE_t.UNKNOW;
             LEVEL_t level_Y = LEVEL_t.LEVEL_UNKNOW;
             if (seuil_y != null)
             {
@@ -1544,7 +1596,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             // Select seuil for ui
             ForceSeuil seuil = null;
             double force;
-
             if (seuil_x == null) {
                 seuil = seuil_y;
                 force = this.smooth.first;
@@ -1794,12 +1845,27 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         if (force || this.note_forces_update_at + 60000 < System.currentTimeMillis()) {
             this.note_forces_update_at = System.currentTimeMillis();
             float Note_A = calc_note_by_force_type("A", this.parcour_id);
+            //a--------
+            a=note_to_score(Note_A);
+            //------
             LEVEL_t level_A = note2level(Note_A);
             float Note_F = calc_note_by_force_type("F", this.parcour_id);
+            //f--------
+            f=note_to_score(Note_F);
+            //------
             LEVEL_t level_F = note2level(Note_F);
             float Note_V = calc_note_by_force_type("V", this.parcour_id);
+            //v--------
+            v=note_to_score(Note_V);
+            //------
             LEVEL_t level_V = note2level(Note_V);
             float Note_M = ((Note_A + Note_F) + Note_V) * 0.33333334f;
+            //v--------
+            m=note_to_score(Note_M);
+            //------
+
+            ColorCEP.getInstance().addColors(note_to_score(Note_A), note_to_score(Note_V), note_to_score(Note_F), note_to_score(Note_M));
+
             LEVEL_t level_M = note2level(Note_M);
             StatsLastDriving.set_note(this.ctx, SCORE_t.ACCELERATING, Note_A);
             StatsLastDriving.set_note(this.ctx, SCORE_t.BRAKING, Note_F);
@@ -1808,6 +1874,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             Log.d(TAG, "Parcours " + this.parcour_id + " note F: " + Note_F);
             Log.d(TAG, "Parcours " + this.parcour_id + " note V: " + Note_V);
             Log.d(TAG, "Parcours " + this.parcour_id + " note M: " + Note_M);
+            MainActivity main = MainActivity.instance();
             StatsLastDriving.set_speed_avg(this.ctx, this.database.speed_avg(this.parcour_id, System.currentTimeMillis(), 0.0f, new int[0]));
             if (this.listener != null) {
                 this.listener.onScoreChanged(SCORE_t.ACCELERATING, level_A);
@@ -1904,15 +1971,19 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     /// Check shock
     private void check_shock() {
-        if( listener != null ) {
-
-            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-            String key = ctx.getResources().getString(R.string.shock_trigger_mG_key);
-            int val = sp.getInt(key,1000);
-            if( ComonUtils.difference(0, shock.first) > val ) {
-                listener.onShock( shock.first, shock.second );
+        if (this.listener != null) {
+            if (interval(0.0d, ((Long) this.shock.first).doubleValue()) > ((double) PreferenceManager.getDefaultSharedPreferences(this.ctx).getInt(this.ctx.getResources().getString(R.string.shock_trigger_mG_key), 1000))) {
+                this.listener.onShock(((Long) this.shock.first).doubleValue(), ((Short) this.shock.second).shortValue());
             }
         }
+    }
+
+    private double interval(double d1, double d2) {
+        double ret = d1 - d2;
+        if (ret < 0.0d) {
+            return -ret;
+        }
+        return ret;
     }
 
     /// ============================================================================================
@@ -2000,6 +2071,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         update_parcour_note(DEBUG);
         update_force_note(DEBUG);
         update_recommended_speed(DEBUG);
+        upload_cep();
         this.database.addECA(this.parcour_id, ECALine.newInstance(255, get_last_location(), null));
         StatsLastDriving.set_distance(this.ctx, this.database.get_distance(this.parcour_id));
         clear_force_ui();
@@ -2229,11 +2301,13 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             @Override
             public void run () {
                 while(!sent) {
+                    Log.w("loop", "looping");
                     if( zipfile == null ) {
                         try {
                             File tmp = File.createTempFile(imei, ".tmp");
                             File file = new File(tmp.getParent() + File.separator + imei + ".FORM");
 
+                            Log.w("path file", file.getAbsolutePath());
                             //write it
                             BufferedWriter bw = new BufferedWriter(new FileWriter(file));
                             bw.write(header);
@@ -2268,6 +2342,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                         ie.printStackTrace();
                     }
                 }
+                Log.w("terminé", "terms");
                 thread.interrupt();
             }
         };

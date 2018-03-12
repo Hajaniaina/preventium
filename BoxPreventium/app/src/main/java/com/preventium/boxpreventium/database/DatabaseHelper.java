@@ -56,6 +56,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CEP_VITESSE_LD = "vitesse_ld";
     public static final String COLUMN_CEP_VITESSE_VR = "vitesse_vr";
     public static final String COLUMN_CEP_DIST_COV = "distance_covered";
+    public static final String COLUMN_CEP_DEVICE_A = "device_a";
+    public static final String COLUMN_CEP_DEVICE_V = "device_v";
+    public static final String COLUMN_CEP_DEVICE_F = "device_f";
+    public static final String COLUMN_CEP_DEVICE_M = "device_m";
 
 
     public DatabaseHelper(Context context) {
@@ -94,6 +98,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         COLUMN_CEP_PAR_DUR + " INTEGER, " +
                         COLUMN_CEP_NB_ECA + " INTEGER, " +
                         COLUMN_CEP_NB_BOX + " INTEGER, " +
+                        COLUMN_CEP_DEVICE_A + " INTEGER, " +
+                        COLUMN_CEP_DEVICE_V + " INTEGER, " +
+                        COLUMN_CEP_DEVICE_F + " INTEGER, " +
+                        COLUMN_CEP_DEVICE_M + " INTEGER, " +
                         COLUMN_CEP_STATUS + " INTEGER);";
         String CREATE_DRIVERID_TABLE =
                 "CREATE TABLE " + TABLE_DRIVER + " (" +
