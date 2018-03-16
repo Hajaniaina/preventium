@@ -116,6 +116,8 @@ import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import at.grabner.circleprogress.CircleProgressView;
+
 import static android.provider.Telephony.Carriers.PASSWORD;
 
 //public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
@@ -172,6 +174,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     //private FloatingActionButton menuButtonTracking;
     private FloatingActionButton menuButtonSettings;
 
+
     private GoogleMap googleMap;
     private LatLng lastPos;
     private Location lastLocation = null;
@@ -208,6 +211,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private int opt_langue = 99;
     private int opt_screen_size = 99;
     private int opt_force_mg = 99;
+    private int hide_V_lat=99;
 
     public int opt_panneau_speed;
 
@@ -1845,8 +1849,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 
 
-
-
         corner_n_v = ((TextView) findViewById(R.id.corner_note_view));
         brake_n_v =((TextView) findViewById(R.id.brake_note_view));
         acc_n_v =((TextView) findViewById(R.id.acc_note_view));
@@ -3457,6 +3459,11 @@ protected void showEpcSelectDialog() {
         }
 
 
+        if(hide_V_lat==1){
+            corner_n_v.setVisibility(View.INVISIBLE);
+        }
+
+
     }
 
     private void alertopt(){
@@ -3908,6 +3915,7 @@ protected void showEpcSelectDialog() {
 
                         box_leurre.set_active_from_serveur(opt_leurre);
                         Log.d("HandlerBox","activation leurre  : " +opt_leurre);
+                        hide_V_lat = opt_leurre;
 
                         return opt_qrcode;
                     } catch (JSONException e) {}
