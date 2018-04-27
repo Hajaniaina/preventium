@@ -811,10 +811,10 @@ Log.d("AAAAA","NB POINTS " + nb);
                                  * shared ou base de donnée
                                  * @Arnaud
                                  */
-                                device_a = sharedPref.getInt(COLUMN_CEP_DEVICE_A, cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_A)));
-                                device_v = sharedPref.getInt(COLUMN_CEP_DEVICE_V, cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_V)));
-                                device_f = sharedPref.getInt(COLUMN_CEP_DEVICE_F, cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F)));
-                                device_m = sharedPref.getInt(COLUMN_CEP_DEVICE_M, cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M)));
+                                device_a = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_A)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_A)) : sharedPref.getInt(COLUMN_CEP_DEVICE_A, -1);
+                                device_v = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_V)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_V)) : sharedPref.getInt(COLUMN_CEP_DEVICE_V, -1);
+                                device_f = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F)) : sharedPref.getInt(COLUMN_CEP_DEVICE_F, -1);
+                                device_m = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M)) : sharedPref.getInt(COLUMN_CEP_DEVICE_M, -1);
 
                                 i = 0;
                                 GMTCalendar.setTimeInMillis(time); // 6
@@ -837,7 +837,11 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 macAddressParts = mac.split(":"); // 20
                                 b = new byte[6];
                                 for (int m = 0; m < 6; m++) {
-                                    Integer hex = Integer.parseInt(macAddressParts[m], 16);
+                                    String adress = "";
+                                    if( macAddressParts.length <= m ) adress = "0";
+                                    else adress = macAddressParts[m];
+                                    if( adress.equals("") || adress == null ) adress = "0";
+                                    Integer hex = Integer.parseInt(adress, 16);
                                     b[m] = hex.byteValue();
                                 }
                                 line[i++] = b[0];
@@ -915,6 +919,7 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 line[i++] = b[2];
                                 line[i++] = b[3]; //72
                                 line[i] = (byte) status;  //unsigned char device_status //1 byte
+
                                 output.write(line);
 
                                 cursor.moveToNext();

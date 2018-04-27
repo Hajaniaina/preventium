@@ -9,16 +9,10 @@ public class PreventiumApplication extends Application {
     public void onCreate() {
 
         super.onCreate();
-//#####report beug
+
         AutoErrorReporter.get(this)
-                .setEmailAddresses("soavydiane@gmail.com")
+                .setEmailAddresses("hoanyprojet@gmail.com")
                 .setEmailSubject("Preventium Crash Report")
                 .start();
-//#####report beug
-        /*
-        AutoErrorReporter.get(this)
-                .setEmailAddresses("")
-                .setEmailSubject("Preventium Crash Report")
-                .start();*/
     }
 }

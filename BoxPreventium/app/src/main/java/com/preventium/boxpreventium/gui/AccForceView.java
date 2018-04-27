@@ -83,7 +83,7 @@ public class AccForceView implements Parcelable {
             return;
         }
         if (hide) {
-            this.accForceView.setVisibility(View.INVISIBLE);
+            this.accForceView.setVisibility(View.GONE);
         } else {
             double deviceScreen = new DeviceScreen().getDeviceScreen(this.activity);
             //JSONManager jSONManager = new JSONManager(this.activity);
@@ -94,7 +94,7 @@ public class AccForceView implements Parcelable {
             if (deviceScreen > bolScreen) {
                 //JSONManager jSONManager2 = new JSONManager(this.activity);
                 if (bolmap == Integer.valueOf(QrScanActivity.SCAN_MODE_VEHICLE_DISABLED).intValue()) {
-                    this.accForceView.setVisibility(View.INVISIBLE);
+                    this.accForceView.setVisibility(View.GONE);
                 } else {
                     this.accForceView.setVisibility(View.VISIBLE);
                 }
@@ -119,7 +119,7 @@ public class AccForceView implements Parcelable {
             //###bolSeuil = valeur de retour boolean seuil
 
             if (bolSeuil == Integer.valueOf(QrScanActivity.SCAN_MODE_VEHICLE_DISABLED).intValue()) {
-                this.accForceView.setVisibility(View.INVISIBLE);
+                this.accForceView.setVisibility(View.GONE);
             } else {
                 this.accForceView.setVisibility(View.VISIBLE);
             }

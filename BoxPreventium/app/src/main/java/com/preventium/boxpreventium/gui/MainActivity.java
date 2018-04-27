@@ -112,11 +112,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import at.grabner.circleprogress.CircleProgressView;
 
 import static android.provider.Telephony.Carriers.PASSWORD;
 
@@ -173,6 +170,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton menuButtonResetCalib;
     //private FloatingActionButton menuButtonTracking;
     private FloatingActionButton menuButtonSettings;
+    private FloatingActionButton stop_parcour;
 
 
     private GoogleMap googleMap;
@@ -198,7 +196,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private int selectedEpcFile = 0;
     private boolean trackingActivated = true;
     private int locFilterTimeout = 0;
-
+    private boolean stop = false;
 
     private int opt_panneau = 99;
     private int opt_carte = 99;
@@ -414,15 +412,18 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             requestPermissions();
         }
+
+
     }
 
     int one_run_option=0;
     @Override
     protected void onResume() {
         //cfgi= reader1.read(desFileName);
-        //setRepeatingAsyncTask();
-        // one_run_option = 0;
+
+        // onResume load
         get_one_lance_ptions();
+
         Log.e("VERIFdm_resume : ", String.valueOf(verifDm));
         //new ParseJson().cancel(true);
         if (!PositionManager.isLocationEnabled(getApplicationContext())) {
@@ -921,7 +922,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onStatusChanged(final STATUS_t status) {
 
-
         if (DEBUG_UI_ON) {
 
             if (status != STATUS_t.PAR_STARTED &&
@@ -934,14 +934,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
 
+        if( status == STATUS_t.GETTING_FORM ) {
+            return;
+        }
+
         runOnUiThread(new Runnable() {
             public void run() {
                 Force[] force;
                 int i;
                 MainActivity mainActivity;
                 MainActivity mainActivity2;
-
-
 
                 switch (status) {
                     case CHECK_ACTIF:
@@ -992,7 +994,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     case GETTING_EPC:
                         if (MainActivity.this.progress != null) {
                             MainActivity.this.progress.show();
-                            MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.progress_epc_string) + StatsLastDriving.getIMEI(MainActivity.this));
+                           // MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.progress_epc_string) + StatsLastDriving.getIMEI(MainActivity.this));
+                            MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.loading_string));
                             return;
                         }
                         return;
@@ -1059,6 +1062,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         }
                         MainActivity.this.speed_line.clear();
                         MainActivity.this.speed_corner.clear();
+
+                        stop_parcour.setVisibility(View.VISIBLE);
                         return;
                     case PAR_RESUME:
                         MainActivity.this.routeActive = true;
@@ -1123,7 +1128,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         return;
                 }
                 if (status == STATUS_t.PAR_PAUSING_WITH_STOP) {
-                    MainActivity.this.askEndDayConfirm();
+                    if( !stop ) {
+                        MainActivity.this.askEndDayConfirm();
+                    }
                 }
                 System.gc();
                 MainActivity.this.routeInPause = true;
@@ -1811,7 +1818,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         //qrRequest = new QrScanRequest();
         qrRequest = new QrScanRequest();
 
-
         progressOPT = new ProgressDialog(this, R.style.InfoDialogStyle);
         progress = new ProgressDialog(this, R.style.InfoDialogStyle);
         progress.setMessage(getString(R.string.progress_map_string));
@@ -1830,8 +1836,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             progress.show();
         }
 
-
+        /* form */
         runOnce();
+
+        /* options web */
+        get_one_lance_ptions();
+
         markerManager = new MarkerManager(getApplicationContext());
         speedView = new SpeedView(this);
         scoreView = new ScoreView(this);
@@ -1845,9 +1855,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         no_map = (ImageView) findViewById(R.id.no_map);
 
         forceView = (TextView) findViewById(R.id.mark);
-
-
-
 
         corner_n_v = ((TextView) findViewById(R.id.corner_note_view));
         brake_n_v =((TextView) findViewById(R.id.brake_note_view));
@@ -1869,6 +1876,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         menuButtonResetCalib = (FloatingActionButton) findViewById(R.id.menu_button_reset_calibration);
         //menuButtonTracking = (FloatingActionButton) findViewById(R.id.menu_button_tracking);
         menuButtonSettings = (FloatingActionButton) findViewById(R.id.menu_button_settings);
+        stop_parcour = (FloatingActionButton) findViewById(R.id.stop_parcour);
+        // stop_parcour.setVisibility(View.GONE);
 
         trackingActivated = sharedPref.getBoolean(getString(R.string.tracking_activated_key), true);
 /*
@@ -2162,6 +2171,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onClick (DialogInterface dialogInterface, int i) {
 
                 appManager.setStopped();
+                // stop_parcour.setVisibility(View.GONE);
+                stop = true;
             }
         });
 
@@ -2801,13 +2812,9 @@ protected void showEpcSelectDialog() {
         vibrator.vibrate((seconds * 1000));
     }
 
-    //################# form on start #########################
     private void runOnce () {
-        // boolean isFirstRun = sharedPref.getBoolean("FIRSTRUN", true);
-        boolean isFirstRun = sharedPref.getBoolean(getString(R.string.firstrun_key), true);
 
-        Log.e("isFirstRun val : ", String.valueOf(isFirstRun));
-        Log.e("FIRSTRUN val : ", String.valueOf(sharedPref.getBoolean(getString(R.string.firstrun_key), true)));
+        boolean isFirstRun = sharedPref.getBoolean(getString(R.string.firstrun_key), true);
         if (isFirstRun)
         {
             // load and sent
@@ -2817,13 +2824,16 @@ protected void showEpcSelectDialog() {
                 OpenForm();
                 flag_run_once = true;
             }
-
         }
     }
 
     //==============================================================================================
     private AlertDialog dialog;
     private void MessageWait () {
+
+        // status form
+        this.onStatusChanged(STATUS_t.GETTING_FORM);
+
         AlertDialog.Builder bd = new AlertDialog.Builder(MainActivity.this);
         View mV = getLayoutInflater().inflate(R.layout.openform_valid_activity, null);
         bd.setView(mV);
@@ -3162,6 +3172,15 @@ protected void showEpcSelectDialog() {
 
 
         stopButton.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick (View view) {
+
+                askEndDayConfirm();
+            }
+        });
+
+        stop_parcour.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick (View view) {
@@ -3612,212 +3631,94 @@ protected void showEpcSelectDialog() {
     }
 */
 
-    //####### Loop for check value web option ########
-    public void setRepeatingAsyncTask() {
-
-        final Handler handler = new Handler();
-        Timer timer = new Timer();
-
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run() {
-                handler.post(new Runnable() {
-                    public void run() {
-                        try {
-
-  /*      runOnUiThread(new Runnable() {
-                          @Override
-                          public void run() {
-*/
-
-
-                            boolean load_cfg = sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true);
-                            boolean activeopt = Connectivity.isConnected(getApplicationContext());
-                            Log.e("connect za : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
-                            if( activeopt != internet_activeopt ) {
-                                internet_activeopt = activeopt;
-                            }
-
-                            Log.e("connect zaInter : ", String.valueOf(internet_activeopt));
-
-                            if (internet_activeopt) {
-                                //onForceView();
-
-                                if(verifDm){
-                                    srcFileName = ComonUtils.getIMEInumber(getApplicationContext()) + ".CFG";
-                                    desFileName = String.format(Locale.getDefault(), "%s/%s", getApplicationContext().getFilesDir(), srcFileName);
-                                    cfgi = reader1.read(desFileName);  // santooo
-                                    Log.e("FTP cfgBol : ", String.valueOf(cfgi));
-
-                                    Log.e("connect : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
-
-                                    //reader1.read(desFileName);
-                                    if(cfgi){
-
-
-                                        //URL uValide = new URL(serveur);
-                                        //Log.e("protocole : ",String.valueOf(uValide.getProtocol()));
-                                        serveur = reader1.getServerUrl();
-                                        if(serveur != "" && serveur!="tsis"){
-
-                                            // boolean check=  checkProtocol(serveur);
-                                            // Log.e("akor vrai : ", String.valueOf(check));
-
-                                            //  if (check){
-
-
-
-                                            // serveur = encode(serveur, "UTF-8");
-
-                                            Log.e("url boucle : ",serveur);
-
-                                            new ParseJson().execute();
-
-
-                                            hideOPT();
-
-                                            verifDm = false;
-
-                                            Log.e("VERIFdm : ", String.valueOf(verifDm));
-
-                                            if (progressOPT != null) {
-                                                progressOPT.hide();
-                                            }
-
-                            /*             }else {
-                                             //#### Erreur protocol
-                                             if(!load_cfg){
-
-                                                 if (progressOPT != null) {
-
-                                                     progressOPT.show();
-                                                     progressOPT.setMessage(getString(R.string.erreur_protocol) );
-                                                 }
-                                             }
-                                         }
-*/
-
-                                        }
-                                    }else{
-                                        //progresse fichier cfg introuvable
-
-
-                                        if(!load_cfg){
-
-                                            if (progressOPT != null) {
-
-                                                progressOPT.show();
-                                                progressOPT.setMessage(getString(R.string.progress_cfg_opt_string) );
-                                            }
-                                        }
-
-
-
-                                    }
-
-
-                                }
-                            }
-/*
-                          }
-
-        });
-*/
-
-
-
-
-                        } catch (Exception e) {
-                            // error, do something
-                        }
-
-                    }
-                });
-            }
-        };
-
-        timer.schedule(task, 0, 1*1000);  // interval of one minute (1 sec)
-
-    }
-
     // -------------------------------------------------------------------------------------------- //
     //int one_run_option=0;
+    private Timer timer;
     public void get_one_lance_ptions(){
-        final Handler handler = new Handler();
-        Timer timer = new Timer();
+
         /*
+        if( sharedPref != null ) {
+            boolean options = sharedPref.getBoolean("options_fonc", false);
+            if( options ) return;
+        }
+        */
+
+        /*
+        final Handler handler = new Handler();
+        timer = new Timer();
+
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
                 handler.post(new Runnable() {
-                    public void run() { */
-        try {
+                    public void run() {*/
+        runOnUiThread(new Runnable() {
 
-            boolean load_cfg = sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true);
-            boolean activeopt = Connectivity.isConnected(getApplicationContext());
+            @Override
+            public void run() {
 
-            Log.e("connect za : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
-            if( activeopt != internet_activeopt ) {
-                internet_activeopt = activeopt;
-            }
+                boolean opt = false;
+                // while (!opt) {
 
-            Log.e("connect zaInter : ", String.valueOf(internet_activeopt));
+                  try {
 
-            if (internet_activeopt) {
-                //onForceView();
+                      boolean options = sharedPref.getBoolean("options_fonc", false);
+                      if ( options ) {
+                          opt = true;
+                         //  break;
+                      }
 
-                srcFileName = ComonUtils.getIMEInumber(getApplicationContext()) + ".CFG";
-                desFileName = String.format(Locale.getDefault(), "%s/%s", getApplicationContext().getFilesDir(), srcFileName);
-                cfgi = reader1.read(desFileName);  // santooo
-                Log.e("FTP cfgBol : ", String.valueOf(cfgi));
+                      boolean load_cfg = sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true);
+                      boolean activeopt = Connectivity.isConnected(getApplicationContext());
 
-                Log.e("connect : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
+                      Log.e("connect za : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
+                      if (activeopt != internet_activeopt) {
+                          internet_activeopt = activeopt;
+                      }
 
-                //reader1.read(desFileName);
-                if(cfgi){
+                      Log.e("connect zaInter : ", String.valueOf(internet_activeopt));
 
+                      if (internet_activeopt) {
+                          //onForceView();
 
-                    //URL uValide = new URL(serveur);
-                    //Log.e("protocole : ",String.valueOf(uValide.getProtocol()));
-                    serveur = reader1.getServerUrl();
-                    if(serveur != "" && serveur!= "tsis"){
+                          srcFileName = ComonUtils.getIMEInumber(getApplicationContext()) + ".CFG";
+                          desFileName = String.format(Locale.getDefault(), "%s/%s", getApplicationContext().getFilesDir(), srcFileName);
+                          cfgi = reader1.read(desFileName);  // santooo
+                          Log.e("FTP cfgBol : ", String.valueOf(cfgi));
+                          Log.e("connect : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
+                          //reader1.read(desFileName);
 
-                        Log.e("url boucle : ",serveur);
+                          if (cfgi) {
+                              serveur = reader1.getServerUrl();
+                              if (serveur != "" && serveur != "tsis") {
+                                  new ParseJson().execute();
 
-                        // one_run_option++;
-                        //if(one_run_option <=5){
-                        new ParseJson().execute();
-                        hideOPT();
+                                  if (progressOPT != null) {
+                                      progressOPT.hide();
+                                  }
+                              }
+                          } else {
+                              //progresse fichier cfg introuvable
+                              if (!load_cfg) {
 
-                        //}
+                                  if (progressOPT != null) {
+                                      progressOPT.show();
+                                      progressOPT.setMessage(getString(R.string.progress_cfg_opt_string));
+                                  }
+                              }
+                          }
+                      }
 
-                        if (progressOPT != null) {
-                            progressOPT.hide();
-                        }
+                      // sleep 1s
+                      // Thread.sleep(1000);
 
-                    }
-                }else{
-                    //progresse fichier cfg introuvable
-                    if(!load_cfg){
-
-                        if (progressOPT != null) {
-
-                            progressOPT.show();
-                            progressOPT.setMessage(getString(R.string.progress_cfg_opt_string) );
-                        }
-                    }
+                  } catch (Exception e) {
+                      // error, do something
+                  }
                 }
-            }
+            // }
 
-        } catch (Exception e) {
-            // error, do something
-        } /*
-                    }
-                });
-            }
-        }; */
-        //ingorer ce timer pour eviter la repetion de requette au serveur
-        // timer.schedule(task, 0, 1*1000);  // interval of one minute (1 sec)
+        });
 
     }
 
@@ -3882,6 +3783,7 @@ protected void showEpcSelectDialog() {
                         */
 
                         SharedPreferences.Editor editor = sharedPref.edit();
+                        editor.putBoolean("options_fonc", true);
                         editor.putInt("qrcode", opt_qrcode_web);
                         editor.putInt("affiche_carte", opt_carte_web);
                         editor.putInt("paneau_vitesse_droite", opt_panneau_web);
@@ -3924,6 +3826,11 @@ protected void showEpcSelectDialog() {
 
             return null;
         }  ///-----faran doInBack
+
+        @Override
+        protected void onPostExecute(Integer result) {
+            hideOPT();
+        }
     }
 
 

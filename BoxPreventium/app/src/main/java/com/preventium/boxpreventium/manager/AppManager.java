@@ -4,11 +4,13 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.Pair;
+import android.widget.Toast;
 
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.database.Database;
@@ -264,14 +266,34 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         return score;
     }
 
+    public void _Run ()  throws InterruptedException {
+
+    }
+
     public void myRun() throws InterruptedException {
         super.myRun();
         setLog("");
         this.database.clear_obselete_data();
+
+        if( listener != null ) {
+            MainActivity main = MainActivity.instance();
+            SharedPreferences SharedPref = PreferenceManager.getDefaultSharedPreferences(main);
+            boolean isForm = SharedPref.getBoolean(main.getString(R.string.firstrun_key), true);
+            if( isForm ) {
+                listener.onStatusChanged(STATUS_t.GETTING_FORM);
+                return;
+            }
+        }
+
         IMEI_is_actif();
-        download_cfg();
+
+        // download_cfg();
+        new AsyncCFG().execute();
+        // download_dobj();
+        new AsyncOBJ().execute();
+
         download_epc();
-        download_dobj();
+        // new AsyncEPC().execute();
 
         this.modules.setActive(DEBUG);
 
@@ -373,7 +395,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     }
 
     public void onCalibrateRAZ() {
-        onForceChanged( Pair.create((long)0,(short)0),Pair.create((long)0,(short)0));
+        onForceChanged( Pair.create((long)0, (short)0),Pair.create((long)0,(short)0));
         if( listener != null ) listener.onCalibrateRAZ();
     }
 
@@ -399,8 +421,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             //####santo
             listener.onStatusChanged( STATUS_t.PAR_PAUSING );
             listener.onStatusChanged( STATUS_t.PAR_STOPPED );
-
-
 
             this.listener.onDrivingTimeChanged(this.chronoRideTxt);
             this.listener.onNoteChanged(20, LEVEL_t.LEVEL_1, LEVEL_t.LEVEL_1);
@@ -537,6 +557,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     /// ============================================================================================
 
     // Downloading .cfg file if is needed
+
     private boolean download_cfg() throws InterruptedException {
         boolean cfg = false;
 
@@ -602,6 +623,77 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
         return cfg;
     }
+    class AsyncCFG extends AsyncTask<String, String, Integer> {
+
+        @Override
+        protected Integer doInBackground(String... param) {
+            boolean cfg = false;
+
+            if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
+
+            File folder = new File(ctx.getFilesDir(), "");
+            ReaderCFGFile reader = new ReaderCFGFile();
+
+            FTPClientIO ftp = new FTPClientIO();
+
+            if( !ftp.ftpConnect(FTP_CFG, 5000) ) {
+                check_internet_is_active();
+            } else {
+                // Checking if .CFG file is in FTP server ?
+                String srcFileName = ComonUtils.getIMEInumber(ctx) + ".CFG";
+                String srcAckName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
+                boolean exist_server_cfg = ftp.checkFileExists( srcFileName );
+                boolean exist_server_ack = ftp.checkFileExists( srcAckName );
+
+                // If .CFG file exist in the FTP server
+                cfg = ( exist_server_ack && reader.loadFromApp(ctx) );
+                if( !cfg ) {
+                    if (exist_server_cfg) {
+                        // Create folder if not exist
+                        if (!folder.exists())
+                            if (!folder.mkdirs())
+                                Log.w(TAG, "Error while trying to create new folder!");
+                        if (folder.exists()) {
+                            // Trying to download .CFG file...
+                            String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+                            if (ftp.ftpDownload(srcFileName, desFileName)) {
+                                cfg = reader.read(desFileName);  // santooo
+                                Log.e("FTP cfg : ", String.valueOf(cfg));
+                                if (cfg) {
+                                    String serv = reader.getServerUrl();
+                                    Log.e("FTP azo : ", serv);
+                                    reader.applyToApp(ctx);
+                                    // envoi acknowledge
+                                    try {
+                                        File temp = File.createTempFile("temp-file-name", ".tmp");
+                                        String ackFileName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
+                                        ftp.ftpUpload(temp.getPath(), ackFileName);
+                                        temp.delete();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                    // new File(desFileName).delete();  //delete source cfg santoni
+                                }
+                            }
+                        }
+                    } else {
+                        cfg = reader.loadFromApp(ctx);
+                    }
+                }
+                // Disconnect from FTP server.
+                ftp.ftpDisconnect();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Integer integer) {
+            super.onPostExecute(integer);
+            Log.w("CFG loading", "post execute");
+            Toast.makeText(MainActivity.instance(), "CFG is loaded", Toast.LENGTH_LONG);
+        }
+    }
 
     /// ============================================================================================
     /// .CHECK IF ACTIF
@@ -610,7 +702,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private boolean IMEI_is_actif() {
         boolean exist_actif = false;
         if (this.listener != null) {
-            this.listener.onStatusChanged(STATUS_t.CHECK_ACTIF);
+            // this.listener.onStatusChanged(STATUS_t.CHECK_ACTIF);
         }
         FTPClientIO ftp = new FTPClientIO();
         do {
@@ -620,12 +712,12 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     exist_actif = ftp.checkFileExists(ComonUtils.getIMEInumber(this.ctx));
                     if (exist_actif) {
                         try {
-                            sleep(3000);
+                            sleep(100);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                         if (this.listener != null) {
-                            this.listener.onStatusChanged(STATUS_t.IMEI_INACTIF);
+                            // this.listener.onStatusChanged(STATUS_t.IMEI_INACTIF);
                         }
                     }
                 } else {
@@ -649,6 +741,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private ReaderEPCFile readerEPCFile = new ReaderEPCFile();
 
     // Downloading .EPC files if is needed
+
     private boolean download_epc() throws InterruptedException {
         boolean ready = false;
 
@@ -759,11 +852,140 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             }
 
             ready = !DataEPC.getAppEpcExist(ctx).isEmpty();
-            if( isRunning() && !ready ) sleep(1000);
+            if( isRunning() && !ready ) sleep(100);
         }
 
         return ready;
     }
+    class AsyncEPC extends AsyncTask<Integer, Integer, Integer> {
+
+        @Override
+        protected Integer doInBackground(Integer... index) {
+
+            boolean ready = false;
+
+            if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
+
+            File folder = new File(ctx.getFilesDir(), "");
+            ReaderEPCFile reader = new ReaderEPCFile();
+            FTPClientIO ftp = new FTPClientIO();
+
+            while( isRunning() && !ready ) {
+
+                if (listener != null) listener.onStatusChanged(STATUS_t.GETTING_EPC);
+
+                // Trying to connect to FTP server...
+                if (!ftp.ftpConnect(FTP_EPC, 5000)) {
+                    check_internet_is_active();
+                } else {
+
+                    // Changing working directory if needed
+                    boolean change_directory = true;
+                    if (FTP_EPC.getWorkDirectory() != null && !FTP_EPC.getWorkDirectory().isEmpty() && !FTP_EPC.getWorkDirectory().equals("/"))
+                        change_directory = ftp.changeWorkingDirectory(FTP_EPC.getWorkDirectory());
+
+                    if (!change_directory) {
+                        Log.w(TAG, "EPC: Error while trying to change working directory to \"" + FTP_EPC.getWorkDirectory() + "\"");
+                    } else {
+                        boolean epc;
+                        boolean epc_name;
+                        boolean exist_server_epc = false;
+                        boolean exist_server_ack = false;
+                        boolean exist_server_name = false;
+                        String srcFileName = "";
+                        String srcAckName = "";
+                        String srcNameName = "";
+                        String desFileName = "";
+                        int i = 1;
+                        while (i <= 5 && isRunning()) {
+
+                            // Checking if .EPC file is in FTP server ?
+                            srcFileName = reader.getEPCFileName(ctx, i, false);
+                            srcAckName = reader.getEPCFileName(ctx, i, true);
+                            srcNameName = reader.getNameFileName(ctx);
+                            exist_server_epc = ftp.checkFileExists(srcFileName);
+                            exist_server_ack = ftp.checkFileExists(srcAckName);
+                            exist_server_name = ftp.checkFileExists(srcNameName);
+
+                            // If .EPC file exist in the FTP server
+                            epc = (exist_server_ack && reader.loadFromApp(ctx, i));
+                            if (!epc) {
+                                if (exist_server_epc) {
+                                    // Create folder if not exist
+                                    if (!folder.exists())
+                                        if (!folder.mkdirs())
+                                            Log.w(TAG, "Error while trying to create new folder!");
+                                    if (folder.exists()) {
+                                        // Trying to download .EPC file...
+                                        desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+                                        if (ftp.ftpDownload(srcFileName, desFileName)) {
+                                            epc = reader.read(desFileName);
+                                            if (epc) {
+                                                reader.applyToApp(ctx, i);
+                                                // envoi acknowledge
+                                                try {
+                                                    File temp = File.createTempFile("temp-file-name", ".tmp");
+                                                    ftp.ftpUpload(temp.getPath(), srcAckName);
+                                                    temp.delete();
+                                                } catch (IOException e) {
+                                                    e.printStackTrace();
+                                                }
+                                                new File(desFileName).delete();
+                                            }
+                                        }
+                                        //get the EPC.NAME info in server
+                                        if (exist_server_name) {
+                                            if (!folder.exists())
+                                                if (!folder.mkdirs())
+                                                    Log.w(TAG, "Error while trying to create new folder!");
+                                            if (folder.exists()) {
+                                                // Trying to download EPC.NAME file...
+                                                desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcNameName);
+                                                if (ftp.ftpDownload(srcNameName, desFileName)) {
+                                                    epc_name = reader.readname(desFileName);
+                                                    if (epc_name) {
+                                                        reader.applyNameToApp(ctx);
+
+                                                        new File(desFileName).delete();
+                                                    }
+                                                }
+                                            }
+
+                                        } else {
+                                            reader.loadNameFromApp(ctx);
+                                        }
+
+                                    }
+                                }
+                            } else {
+                                epc = reader.loadFromApp(ctx, i);
+                            }
+
+                            i++;
+                        }
+
+
+                    }
+                    // Disconnect from FTP server.
+                    ftp.ftpDisconnect();
+                }
+
+                ready = !DataEPC.getAppEpcExist(ctx).isEmpty();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Integer integer) {
+            super.onPostExecute(integer);
+
+            try {
+                _Run();
+            }catch(InterruptedException ie) {}
+        }
+    }
+
     private boolean loading_epc() throws InterruptedException {
         boolean ready = false;
         while (isRunning() && !ready) {
@@ -781,6 +1003,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             this.selected_epc = this.readerEPCFile.selectedEPC(this.ctx);
             if (!ready) {
                 download_epc();
+                // new AsyncEPC().execute();
             }
         }
         return ready;
@@ -798,6 +1021,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             ready = this.readerEPCFile.loadFromApp(this.ctx, num);
             if (!ready) {
                 download_epc();
+                // new AsyncEPC().execute();
             }
         }
         if (!ready) {
@@ -812,6 +1036,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     /// ============================================================================================
 
     // Downloading .DOBJ files if is needed
+
     private boolean download_dobj() throws InterruptedException {
         boolean ready = false;
 
@@ -884,6 +1109,83 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             if( isRunning() && !ready ) sleep(1000);
         }
         return ready;
+    }
+
+    class AsyncOBJ extends AsyncTask<String, String, Integer> {
+
+        @Override
+        protected Integer doInBackground(String... param) {
+            boolean ready = false;
+
+            // if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
+
+            File folder = new File(ctx.getFilesDir(), "");
+            ReaderDOBJFile reader = new ReaderDOBJFile();
+            FTPClientIO ftp = new FTPClientIO();
+
+
+            // if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
+
+            // Trying to connect to FTP server...
+            if( !ftp.ftpConnect(FTP_DOBJ, 5000) ) {
+                check_internet_is_active();
+            } else {
+
+                // Changing working directory if needed
+                boolean change_directory = true;
+                if (FTP_DOBJ.getWorkDirectory() != null && !FTP_DOBJ.getWorkDirectory().isEmpty() && !FTP_DOBJ.getWorkDirectory().equals("/"))
+                    change_directory = ftp.changeWorkingDirectory(FTP_DOBJ.getWorkDirectory());
+
+                if( !change_directory ) {
+                    Log.w(TAG, "DOBJ: Error while trying to change working directory to \"" + FTP_DOBJ.getWorkDirectory() + "\"!");
+                } else {
+
+                    boolean dobj = false;
+
+                    // Checking if .DOBJ file is in FTP server ?
+                    String srcFileName = ReaderDOBJFile.getOBJFileName(ctx, false);
+                    String srcAckName = ReaderDOBJFile.getOBJFileName(ctx, true);
+                    boolean exist_server_dobj = ftp.checkFileExists( srcFileName );
+                    boolean exist_server_ack = ftp.checkFileExists( srcAckName );
+
+                    // If .DOBJ file exist in the FTP server
+                    dobj = ( exist_server_ack && DataDOBJ.preferenceFileExist(ctx) );
+                    if( !dobj ) {
+                        if (exist_server_dobj) {
+                            // Create folder if not exist
+                            if (!folder.exists())
+                                if (!folder.mkdirs())
+                                    Log.w(TAG, "Error while trying to create new folder!");
+                            if (folder.exists()) {
+                                // Trying to download .OBJ file...
+                                String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+                                if (ftp.ftpDownload(srcFileName, desFileName)) {
+                                    dobj = reader.read(ctx,desFileName,false);
+                                    if( dobj ) {
+                                        ready = reader.read(ctx,desFileName,true);
+                                        // envoi acknowledge
+                                        try {
+                                            File temp = File.createTempFile("temp-file-name", ".tmp");
+                                            ftp.ftpUpload(temp.getPath(), srcAckName);
+                                            temp.delete();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                        new File(desFileName).delete();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Disconnect from FTP server.
+            ftp.ftpDisconnect();
+
+            if( !ready ) ready = DataDOBJ.preferenceFileExist(ctx);
+
+            return null;
+        }
     }
 
     /// ============================================================================================

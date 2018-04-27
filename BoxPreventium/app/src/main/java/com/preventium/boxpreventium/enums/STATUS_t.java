@@ -10,6 +10,7 @@ import java.util.Map;
  */
 
 public enum STATUS_t {
+    GETTING_FORM(-1),
     GETTING_CFG(0),
     GETTING_EPC(1),
     GETTING_DOBJ(2),
@@ -38,6 +39,8 @@ public enum STATUS_t {
     @NonNull
     public String toString() {
         switch ( valueOf(value) ) {
+            case GETTING_FORM    :
+                return "STATUS_t[GETTING_FORM]";
             case GETTING_CFG    :
                 return "STATUS_t[GETTING_CFG]";
             case GETTING_EPC  :

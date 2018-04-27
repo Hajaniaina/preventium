@@ -305,7 +305,7 @@ public class CustomMarker {
         }catch(Exception e) {
             VectorDrawable vector = ((VectorDrawable) MainActivity.instance().getResources().getDrawable(res));
 
-            bitmap = Bitmap.createBitmap(vector.getIntrinsicWidth(), vector.getIntrinsicHeight(), Bitmap.Config.ARGB_4444);
+            bitmap = Bitmap.createBitmap(vector.getIntrinsicWidth(), vector.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
             bitmap.setHasAlpha(true);
             Canvas canvas = new Canvas();
             canvas.setBitmap(bitmap);
