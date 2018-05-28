@@ -1,13 +1,13 @@
 <resources>
-    <dimen name="score_layout_width">58dp</dimen>
-    <dimen name="score_layout_height">58dp</dimen>
+    <dimen name="score_layout_width">50dp</dimen>
+    <dimen name="score_layout_height">48dp</dimen>
     <dimen name="score_layout_margin_top">2dp</dimen>
     <dimen name="score_layout_margin_start">0dp</dimen>
     <dimen name="score_margin_top1">0dp</dimen>
-    <dimen name="score_margin_top2">0dp</dimen>
-    <dimen name="score_text_size">24sp</dimen>
+    <dimen name="score_margin_top2">-8dp</dimen>
+    <dimen name="score_text_size">20sp</dimen>
 
-    <dimen name="driving_time_text_size">16sp</dimen>
+    <dimen name="driving_time_text_size">11sp</dimen>
 
     <dimen name="speed_layout_margin_top">1dp</dimen>
     <dimen name="speed_layout_margin_start">10dp</dimen>

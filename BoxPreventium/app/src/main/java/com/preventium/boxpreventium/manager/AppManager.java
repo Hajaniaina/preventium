@@ -186,6 +186,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         void onStatusChanged(STATUS_t sTATUS_t);
 
         void onUiTimeout(int i, STATUS_t sTATUS_t);
+
+        void onLastAlertData();
     }
 
     class C01051 implements Runnable {
@@ -266,9 +268,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         return score;
     }
 
-    public void _Run ()  throws InterruptedException {
 
-    }
 
     public void myRun() throws InterruptedException {
         super.myRun();
@@ -287,10 +287,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
         IMEI_is_actif();
 
-        // download_cfg();
-        new AsyncCFG().execute();
-        // download_dobj();
-        new AsyncOBJ().execute();
+        download_cfg();
+        // new AsyncCFG().execute();
+        download_dobj();
+        // new AsyncOBJ().execute();
 
         download_epc();
         // new AsyncEPC().execute();
@@ -306,6 +306,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             update_tracking_status();
             this.modules.setActive(DEBUG);
             sleep(500);
+            // listener.onLastAlertData();
             this.database.clear_obselete_data();
             upload_eca(false);
             update_driving_time();
@@ -561,7 +562,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private boolean download_cfg() throws InterruptedException {
         boolean cfg = false;
 
-        if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
+        // if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
 
         File folder = new File(ctx.getFilesDir(), "");
         ReaderCFGFile reader = new ReaderCFGFile();
@@ -569,7 +570,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         FTPClientIO ftp = new FTPClientIO();
 
         while ( isRunning() && !cfg  ){
-            if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
+            // if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
 
             // Trying to connect to FTP server...
             if( !ftp.ftpConnect(FTP_CFG, 5000) ) {
@@ -627,6 +628,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
         @Override
         protected Integer doInBackground(String... param) {
+
             boolean cfg = false;
 
             if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
@@ -636,52 +638,61 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
             FTPClientIO ftp = new FTPClientIO();
 
-            if( !ftp.ftpConnect(FTP_CFG, 5000) ) {
-                check_internet_is_active();
-            } else {
-                // Checking if .CFG file is in FTP server ?
-                String srcFileName = ComonUtils.getIMEInumber(ctx) + ".CFG";
-                String srcAckName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
-                boolean exist_server_cfg = ftp.checkFileExists( srcFileName );
-                boolean exist_server_ack = ftp.checkFileExists( srcAckName );
+            while ( isRunning() && !cfg  ){
+                if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
 
-                // If .CFG file exist in the FTP server
-                cfg = ( exist_server_ack && reader.loadFromApp(ctx) );
-                if( !cfg ) {
-                    if (exist_server_cfg) {
-                        // Create folder if not exist
-                        if (!folder.exists())
-                            if (!folder.mkdirs())
-                                Log.w(TAG, "Error while trying to create new folder!");
-                        if (folder.exists()) {
-                            // Trying to download .CFG file...
-                            String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
-                            if (ftp.ftpDownload(srcFileName, desFileName)) {
-                                cfg = reader.read(desFileName);  // santooo
-                                Log.e("FTP cfg : ", String.valueOf(cfg));
-                                if (cfg) {
-                                    String serv = reader.getServerUrl();
-                                    Log.e("FTP azo : ", serv);
-                                    reader.applyToApp(ctx);
-                                    // envoi acknowledge
-                                    try {
-                                        File temp = File.createTempFile("temp-file-name", ".tmp");
-                                        String ackFileName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
-                                        ftp.ftpUpload(temp.getPath(), ackFileName);
-                                        temp.delete();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
+                // Trying to connect to FTP server...
+                if( !ftp.ftpConnect(FTP_CFG, 5000) ) {
+                    check_internet_is_active();
+                } else {
+                    // Checking if .CFG file is in FTP server ?
+                    String srcFileName = ComonUtils.getIMEInumber(ctx) + ".CFG";
+                    String srcAckName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
+                    boolean exist_server_cfg = ftp.checkFileExists( srcFileName );
+                    boolean exist_server_ack = ftp.checkFileExists( srcAckName );
+
+                    // If .CFG file exist in the FTP server
+                    cfg = ( exist_server_ack && reader.loadFromApp(ctx) );
+                    if( !cfg ) {
+                        if (exist_server_cfg) {
+                            // Create folder if not exist
+                            if (!folder.exists())
+                                if (!folder.mkdirs())
+                                    Log.w(TAG, "Error while trying to create new folder!");
+                            if (folder.exists()) {
+                                // Trying to download .CFG file...
+                                String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+                                if (ftp.ftpDownload(srcFileName, desFileName)) {
+                                    cfg = reader.read(desFileName);  // santooo
+                                    Log.e("FTP cfg : ", String.valueOf(cfg));
+                                    if (cfg) {
+                                        String serv = reader.getServerUrl();
+                                        Log.e("FTP azo : ", serv);
+                                        reader.applyToApp(ctx);
+                                        // envoi acknowledge
+                                        try {
+                                            File temp = File.createTempFile("temp-file-name", ".tmp");
+                                            String ackFileName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
+                                            ftp.ftpUpload(temp.getPath(), ackFileName);
+                                            temp.delete();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                        // new File(desFileName).delete();  //delete source cfg santoni
                                     }
-                                    // new File(desFileName).delete();  //delete source cfg santoni
                                 }
                             }
+                        } else {
+                            cfg = reader.loadFromApp(ctx);
                         }
-                    } else {
-                        cfg = reader.loadFromApp(ctx);
                     }
+                    // Disconnect from FTP server.
+                    ftp.ftpDisconnect();
                 }
-                // Disconnect from FTP server.
-                ftp.ftpDisconnect();
+
+                try {
+                    if (isRunning() && !cfg) sleep(1000);
+                }catch(InterruptedException ie) {}
             }
 
             return null;
@@ -980,9 +991,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         protected void onPostExecute(Integer integer) {
             super.onPostExecute(integer);
 
-            try {
-                _Run();
-            }catch(InterruptedException ie) {}
+
         }
     }
 
@@ -1040,14 +1049,14 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private boolean download_dobj() throws InterruptedException {
         boolean ready = false;
 
-        if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
+        // if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
 
         File folder = new File(ctx.getFilesDir(), "");
         ReaderDOBJFile reader = new ReaderDOBJFile();
         FTPClientIO ftp = new FTPClientIO();
 
         while( isRunning() && !ready ) {
-            if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
+            // if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
 
             // Trying to connect to FTP server...
             if( !ftp.ftpConnect(FTP_DOBJ, 5000) ) {

@@ -13,6 +13,7 @@ import com.preventium.boxpreventium.module.enums.CONNEXION_STATE_t;
 import com.preventium.boxpreventium.module.trames.BatteryInfo;
 import com.preventium.boxpreventium.module.trames.SensorShockAccelerometerInfo;
 import com.preventium.boxpreventium.module.trames.SensorSmoothAccelerometerInfo;
+import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.ThreadDefault;
@@ -197,7 +198,11 @@ public class HandlerBox extends ThreadDefault
 
                 if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
                     Log.d(TAG,"deconnecté box");
-                    if( listener != null ) listener.onDeviceState( mBoxList.get(i).getMacAddr(), false );
+
+                    int alertID = (int)ECALine.instance().alertID;
+                    boolean connected =  (alertID > 0 && alertID < 254) && alertID == 230;
+
+                    if( listener != null ) listener.onDeviceState( mBoxList.get(i).getMacAddr(), connected );
                     if( DEBUG ) Log.d(TAG,"LOST " + mBoxList.get(i).getMacAddr());
                     mBoxList.remove(i);
 
@@ -337,8 +342,12 @@ public class HandlerBox extends ThreadDefault
         while( nb > 0 ) {
             for (int i = mBoxList.size() - 1; i >= 0; i--) {
                 if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
-                    if (listener != null)
-                        listener.onDeviceState(mBoxList.get(i).getMacAddr(), false);
+                    if (listener != null) {
+                        int alertID = (int)ECALine.instance().alertID;
+                        boolean connected =  alertID > 0 && alertID < 254 ? (alertID == 230 ? true : false) : false;
+
+                        listener.onDeviceState(mBoxList.get(i).getMacAddr(), connected);
+                    }
                     if (DEBUG) Log.d(TAG, "LOST " + mBoxList.get(i).getMacAddr());
                     mBoxList.remove(i);
                 } else {
@@ -359,7 +368,9 @@ public class HandlerBox extends ThreadDefault
     private void add( BluetoothDevice device ) throws InterruptedException {
         if( mBoxList.size() < 3 ) {
             BluetoothBox box = new BluetoothBox(context);
-            if( listener != null ) listener.onDeviceState( device.getAddress(), true );
+            int alertID = (int)ECALine.instance().alertID;
+            boolean connected =  alertID > 0 && alertID < 254 ? (alertID == 230 ? true : false) : false;
+            if( listener != null ) listener.onDeviceState( device.getAddress(), connected );
             if( DEBUG ) Log.d(TAG,"FIND " + device.getAddress() );
 
             // On ferme l'ancienne instance de ce divice s'il est déjà dans la list

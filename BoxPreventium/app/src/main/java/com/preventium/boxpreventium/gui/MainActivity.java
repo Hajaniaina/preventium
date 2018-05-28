@@ -12,7 +12,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
@@ -40,8 +39,10 @@ import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
 import android.text.Html;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -64,11 +65,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.gson.Gson;
@@ -93,6 +92,7 @@ import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.NameEPC;
 import com.preventium.boxpreventium.server.JSON.ParseJsonData;
+import com.preventium.boxpreventium.utils.ColorCEP;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
 
@@ -172,6 +172,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton menuButtonSettings;
     private FloatingActionButton stop_parcour;
 
+    private boolean is_corner_show = false;
+    private ImageView acc_image;
+    private ImageView corner_image;
+    private ImageView brake_image;
 
     private GoogleMap googleMap;
     private LatLng lastPos;
@@ -1063,7 +1067,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         MainActivity.this.speed_line.clear();
                         MainActivity.this.speed_corner.clear();
 
-                        stop_parcour.setVisibility(View.VISIBLE);
+                        // last data
+                        onLastAlertData();
+                        // stop_parcour.setVisibility(View.VISIBLE);
                         return;
                     case PAR_RESUME:
                         MainActivity.this.routeActive = true;
@@ -1107,7 +1113,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                             double lng1 = force[i].getLoc().longitude;
                                             double lat2 = force[i + 1].getLoc().latitude;
                                             double dLon = force[i + 1].getLoc().longitude - lng1;
-                                            MainActivity.this.googleMap.addMarker(new MarkerOptions().position(force[i + 1].getLoc()).rotation((float) Math.toDegrees(Math.atan2(Math.sin(dLon) * Math.cos(lat2), (Math.cos(lat1) * Math.sin(lat2)) - ((Math.sin(lat1) * Math.cos(lat2)) * Math.cos(dLon))))).anchor(-0.65f, 0.5f).icon(BitmapDescriptorFactory.fromBitmap(BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.arrow_head))));
+                                            // flèche grise
+                                            // MainActivity.this.googleMap.addMarker(new MarkerOptions().position(force[i + 1].getLoc()).rotation((float) Math.toDegrees(Math.atan2(Math.sin(dLon) * Math.cos(lat2), (Math.cos(lat1) * Math.sin(lat2)) - ((Math.sin(lat1) * Math.cos(lat2)) * Math.cos(dLon))))).anchor(-0.65f, 0.5f).icon(BitmapDescriptorFactory.fromBitmap(BitmapFactory.decodeResource(MainActivity.this.getResources(), R.drawable.arrow_head))));
                                         }
                                     }
                                 } catch (Exception e2) {
@@ -1123,6 +1130,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         }
                         MainActivity.this.routeActive = false;
                         MainActivity.this.routeInPause = false;
+
+                        // hideTriangle
+                        hideTriangle();
                         return;
                     default:
                         return;
@@ -1234,7 +1244,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         if (routeActive) {
 
                             if (qrRequest.isAnyReqPending(QrScanRequest.REQUEST_ON_START)) {
-                                if(opt_qrcode == 1 && alertqrscan) {
+                                if((opt_qrcode == 1) && alertqrscan) {
                                     drawAttention(5);
                                     showQrRequestAlert();
 
@@ -1326,14 +1336,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void run() {
 
                 if (nb > 0) {
-
                     boxNumView.setTextColor(Color.GRAY);
+                    corner_n_v.setVisibility(View.VISIBLE);
+                    triangleCorner(true);
                 }
                 else {
                     boxNumView.setTextColor(Color.RED);
                     if(active_leurre == 1){
                         boxNumView.setTextColor(Color.GREEN);
                     }
+                    corner_n_v.setVisibility(View.INVISIBLE);
+                    triangleCorner(false);
                 }
 
                 boxNumView.setText(String.valueOf(nb));
@@ -1862,6 +1875,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         avg_n_v =((TextView) findViewById(R.id.avg_note_view));
         drive_n_v =(TextView) findViewById(R.id.driving_score_view);
 
+        acc_image = (ImageView) findViewById(R.id.acc_image);
+        corner_image = (ImageView) findViewById(R.id.corner_image);
+        brake_image = (ImageView) findViewById(R.id.brake_image);
+
+        // pour corner
+        corner_n_v.setVisibility(View.INVISIBLE);
+
+       // avg_n_v.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_left_arrow, 0);
+       // avg_n_v.setCompoundDrawablePadding(6);
+
         infoButton = (FloatingActionButton) findViewById(R.id.button_info);
         callButton = (FloatingActionButton) findViewById(R.id.button_call);
         scanQrCodeButton = (FloatingActionButton) findViewById(R.id.button_qrcode);
@@ -2062,11 +2085,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void showQrRequestAlert() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.NegativeDialogStyle);
+        if( opt_qrcode != 1 ) return;
 
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.NegativeDialogStyle);
         builder.setCancelable(true);
         builder.setMessage(getString(R.string.qr_rationale_string));
-
         final AlertDialog dialog = builder.show();
 
         new CountDownTimer(10000, 10000) {
@@ -2705,7 +2728,7 @@ protected void showEpcSelectDialog() {
 
 
 
-
+/*
     private void disableActionButtons (boolean disable) {
 
         FloatingActionButton[] actionBtnArray = {menuButtonSos, callButton, menuButtonResetCalib, menuButtonMapRecenter};
@@ -2722,29 +2745,30 @@ protected void showEpcSelectDialog() {
             }
         }
     }
+*/
 
     private void hideActionButtons (boolean hide) {
 
-        FloatingActionButton[] actionBtnArray = {menuButtonSos, callButton, menuButtonResetCalib, menuButtonMapRecenter};
+        FloatingActionButton[] actionBtnArray = {menuButtonSos, callButton, menuButtonResetCalib, menuButtonMapRecenter, stop_parcour};
 
         for (int i = 0; i < actionBtnArray.length; i++) {
 
             if (hide) {
-                actionBtnArray[i].hide(true);
+                // actionBtnArray[i].hide(true);
                 actionBtnArray[i].setVisibility(View.GONE);
             }
             else {
-                if(i==2 && opt_qrcode == 0){
+                /*if( true /*i==2 && opt_qrcode == 0){
                     //qrcode
-                    actionBtnArray[i].hide(true);
-                    actionBtnArray[i].setVisibility(View.GONE);
+                    // actionBtnArray[i].hide(true);
+                    //actionBtnArray[i].setVisibility(View.GONE);
 
-                } else if(i==3 && opt_seulforce== 0){
+                } else */ if(i==3 && opt_seulforce== 0){
                     //epcbtn
-                    actionBtnArray[i].hide(true);
-                    actionBtnArray[i].setVisibility(View.GONE);
+                    //actionBtnArray[i].hide(true);
+                    //actionBtnArray[i].setVisibility(View.GONE);
                 }else {
-                    actionBtnArray[i].show(true);
+                    // actionBtnArray[i].show(true);
                     actionBtnArray[i].setVisibility(View.VISIBLE);
                 }
             }
@@ -2752,7 +2776,7 @@ protected void showEpcSelectDialog() {
     }
 
     private void drawAttention (int seconds) {
-
+        if( opt_qrcode != 1 ) return;
         flashBackground(seconds);
         vibrate(seconds);
         beep(seconds);
@@ -3084,7 +3108,7 @@ protected void showEpcSelectDialog() {
 
 
 
-                if(opt_qrcode== 1 || opt_qrcode== 99)
+                if(opt_qrcode== 1 /* || opt_qrcode== 99 */)
                 // if(true)
                 {
 
@@ -3166,10 +3190,6 @@ protected void showEpcSelectDialog() {
                 new downloadAndSaveFile().execute();
             }
         });
-
-
-
-
 
         stopButton.setOnClickListener(new View.OnClickListener() {
 
@@ -3253,9 +3273,31 @@ protected void showEpcSelectDialog() {
                 }else {
                     alertopt();
                 }
+            }
+        });
 
+        // avfm listener
+        acc_n_v.setOnClickListener(new View.OnClickListener(){ // A
 
+            @Override
+            public void onClick (View view) {
+                bulleToast(getString(R.string.acc_help_string), (LinearLayout)findViewById(R.id.layout_acc));
+            }
+        });
 
+        corner_n_v.setOnClickListener(new View.OnClickListener(){ // V
+
+            @Override
+            public void onClick (View view) {
+                bulleToast(getString(R.string.corner_help_string), (LinearLayout)findViewById(R.id.layout_corner));
+            }
+        });
+
+        brake_n_v.setOnClickListener(new View.OnClickListener(){ // F
+
+            @Override
+            public void onClick (View view) {
+                bulleToast(getString(R.string.brake_help_string), (LinearLayout)findViewById(R.id.layout_brake));
             }
         });
     }
@@ -3282,6 +3324,7 @@ protected void showEpcSelectDialog() {
         opt_langue = sharedPref.getInt("langue", 0);
         opt_screen_size = sharedPref.getInt("taille_ecran", 4);
         opt_force_mg = sharedPref.getInt("force_mg", 0);
+        hide_V_lat = sharedPref.getInt("leurre", 0);
 
         //-----VFAM
         if(opt_VFAM==0){
@@ -3290,7 +3333,14 @@ protected void showEpcSelectDialog() {
             acc_n_v.setVisibility(View.INVISIBLE);
             avg_n_v.setVisibility(View.INVISIBLE);
         }else {
-            corner_n_v.setVisibility(View.VISIBLE);
+            String text = new StringBuilder(boxNumView.getText()).toString();
+            int nb = Integer.parseInt(text);
+            if( nb > 0 ) {
+                corner_n_v.setVisibility(View.VISIBLE);
+                triangleCorner(true);
+            }else{
+                triangleCorner(false);
+            }
             brake_n_v.setVisibility(View.VISIBLE);
             acc_n_v.setVisibility(View.VISIBLE);
             avg_n_v.setVisibility(View.VISIBLE);
@@ -3324,10 +3374,10 @@ protected void showEpcSelectDialog() {
         */
 
         //---- qrcode
-        if(opt_qrcode==0){
+        if(opt_qrcode != 1 ){
 
             scanQrCodeButton.hide(true);
-            //scanQrCodeButton.setVisibility(View.GONE);
+            scanQrCodeButton.setVisibility(View.GONE);
             //hideActionButtons(true);
         }else{
             if (!optMenu.isOpened()){
@@ -3477,10 +3527,19 @@ protected void showEpcSelectDialog() {
             forceView.setVisibility(View.INVISIBLE);
         }
 
-
-        if(hide_V_lat==1){
-            corner_n_v.setVisibility(View.INVISIBLE);
+        /*
+        if( hide_V_lat==1 ){
+            String text = new StringBuilder(boxNumView.getText()).toString();
+            int nb = Integer.parseInt(text);
+            if( nb > 0 ) {
+                corner_n_v.setVisibility(View.INVISIBLE);
+                ((ImageView) findViewById(R.id.corner_image)).setVisibility(View.INVISIBLE);
+            }
         }
+        else {
+            corner_n_v.setVisibility(View.VISIBLE);
+        }
+        */
 
 
     }
@@ -3795,6 +3854,7 @@ protected void showEpcSelectDialog() {
                         editor.putInt("langue", opt_langue_web);
                         editor.putInt("taille_ecran", opt_screen_size_web);
                         editor.putInt("force_mg", opt_force_mg_web);
+                        editor.putInt("leurre", 1); // opt_leurre
                         editor.apply();
 
                         /*
@@ -3814,10 +3874,10 @@ protected void showEpcSelectDialog() {
 
 
                         //get value of leurre by francisco
-
-                        box_leurre.set_active_from_serveur(opt_leurre);
-                        Log.d("HandlerBox","activation leurre  : " +opt_leurre);
-                        hide_V_lat = opt_leurre;
+                        // opt_leurre = 1;
+                        // box_leurre.set_active_from_serveur(opt_leurre);
+                        // Log.d("HandlerBox","activation leurre  : " +opt_leurre);
+                        // hide_V_lat = opt_leurre;
 
                         return opt_qrcode;
                     } catch (JSONException e) {}
@@ -3922,4 +3982,57 @@ protected void showEpcSelectDialog() {
         }
     }
 
+    public void bulleToast (String message, LinearLayout element) {
+        LayoutInflater inflater = getLayoutInflater();
+        View layout = inflater.inflate(R.layout.bulle_toast,
+                (ViewGroup) findViewById(R.id.custom_toast_container));
+
+        TextView text = (TextView) layout.findViewById(R.id.message_aide);
+        text.setText(message);
+
+        Toast toast = new Toast(getApplicationContext());
+        toast.setGravity(Gravity.TOP|Gravity.LEFT, element.getLeft() + 75, element.getTop() + 14);
+        toast.setDuration(Toast.LENGTH_LONG);
+        toast.setView(layout);
+        toast.show();
+    }
+
+
+
+    public void onLastAlertData () {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ColorCEP Color = ColorCEP.getInstance();
+                if( Color.getA() > 2 ) {
+                    acc_image.setImageResource(R.drawable.ic_left_arrow);
+                    acc_image.setColorFilter(appColor.getColor(LEVEL_t.valueOf(Color.getA())));
+                }
+                if( Color.getV() > 2 ) {
+                    is_corner_show = true;
+                    corner_image.setImageResource(R.drawable.ic_left_arrow);
+                    corner_image.setColorFilter(appColor.getColor(LEVEL_t.valueOf(Color.getV())));
+                }
+                if( Color.getF() > 2 ) {
+                    brake_image.setImageResource(R.drawable.ic_left_arrow);
+                    brake_image.setColorFilter(appColor.getColor(LEVEL_t.valueOf(Color.getF())));
+                }
+            }
+        });
+    }
+
+    // corner triangle
+    public void triangleCorner (boolean show) {
+        if( show && is_corner_show )
+            corner_image.setVisibility(View.VISIBLE);
+        else
+            corner_image.setVisibility(View.INVISIBLE);
+    }
+
+    // hide all triangle image
+    public void hideTriangle () {
+        acc_image.setVisibility(View.INVISIBLE);
+        corner_image.setVisibility(View.INVISIBLE);
+        brake_image.setVisibility(View.INVISIBLE);
+    }
 }

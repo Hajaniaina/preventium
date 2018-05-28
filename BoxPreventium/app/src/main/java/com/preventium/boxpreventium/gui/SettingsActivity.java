@@ -491,8 +491,12 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // check if the request code is same as what is passed  here it is 0
             if(requestCode == 0)
             {
-                String message = data.getStringExtra("MESSAGE");
-                if( message.equals("close") ) {
+                try {
+                    String message = data.getStringExtra("MESSAGE");
+                    if (message.equals("close")) {
+                        getActivity().onBackPressed();
+                    }
+                }catch(NullPointerException e) {
                     getActivity().onBackPressed();
                 }
             }

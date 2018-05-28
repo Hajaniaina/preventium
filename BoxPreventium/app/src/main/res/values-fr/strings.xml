@@ -145,8 +145,11 @@
     <string name="tracking_enabled_string">Tracking enabled</string>
     <string name="title_activity_web_view">WebViewActivity</string>
     <string name="corner_note_string">V</string>
+    <string name="corner_help_string">Évaluation virage du parcours</string>
     <string name="brake_note_string">F</string>
+    <string name="brake_help_string">Évaluation freinage du parcours</string>
     <string name="acc_note_string">A</string>
+    <string name="acc_help_string">Évaluation de l\'accélération du parcours</string>
     <string name="avg_note_string">M</string>
     <string name="progress_cfg_opt_string">Aucune configuration trouvée. Veuillez contacter le service Preventium</string>
 

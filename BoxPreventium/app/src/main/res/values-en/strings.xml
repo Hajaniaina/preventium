@@ -155,8 +155,11 @@
     <string name="opt_carte_activated">The map option is now enabled</string>
     <string name="opt_carte_desactivated">The map option is now disabled</string>
     <string name="corner_note_string">V</string>
+    <string name="corner_help_string">Course Turn Evaluation</string>
     <string name="brake_note_string">F</string>
+    <string name="brake_help_string">Braking evaluation of the course</string>
     <string name="acc_note_string">A</string>
+    <string name="acc_help_string">Course acceleration assessment</string>
     <string name="avg_note_string">M</string>
     <string name="progress_cfg_opt_string">No configuration found. Please contact Preventium service</string>
 

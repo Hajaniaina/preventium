@@ -32,16 +32,22 @@ public class ECALine {
 
     public ECALine(){};
 
+    public static ECALine instance = null;
+    public static ECALine instance () {
+        if( instance == null ) instance = new ECALine();
+        return instance;
+    }
+
     public static ECALine newInstance(@NonNull Location location, @Nullable Location prev_location ) {
-        ECALine ret = new ECALine();
-        ret.alertID = ID_POSITION;
-        ret.location = location;
-        ret.distance = ( prev_location == null ) ? 0f : location.distanceTo( prev_location );
-        return ret;
+        if( instance == null ) instance = new ECALine();
+        instance.alertID = ID_POSITION;
+        instance.location = location;
+        instance.distance = ( prev_location == null ) ? 0f : location.distanceTo( prev_location );
+        return instance;
     }
 
     public static ECALine newInstance(int alertID, @NonNull Location location, @Nullable Location prev_location ) {
-        ECALine ret = ECALine.newInstance(location,prev_location);
+        ECALine ret = ECALine.newInstance(location, prev_location);
         ret.alertID = alertID;
         return ret;
     }

@@ -7,7 +7,7 @@
     <dimen name="score_margin_top2">0dp</dimen>
     <dimen name="score_text_size">24sp</dimen>
 
-    <dimen name="driving_time_text_size">16sp</dimen>
+    <dimen name="driving_time_text_size">14sp</dimen>
 
     <dimen name="speed_layout_margin_top">1dp</dimen>
     <dimen name="speed_layout_margin_start">10dp</dimen>
@@ -29,7 +29,7 @@
     <dimen name="driving_score_layout_height">72dp</dimen>
     <dimen name="driving_score_layout_margin_top">5dp</dimen>
     <dimen name="driving_score_layout_margin_start">6dp</dimen>
-    <dimen name="driving_score_text_size">34sp</dimen>
+    <dimen name="driving_score_text_size">36sp</dimen>
 
     <dimen name="fb_button_size">@dimen/fb_button_mini</dimen>
     <dimen name="fb_button_icon_size">32dp</dimen>

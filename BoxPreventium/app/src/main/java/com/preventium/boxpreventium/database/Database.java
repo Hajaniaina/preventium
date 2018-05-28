@@ -93,6 +93,28 @@ public class Database {
         DatabaseManager.getInstance().closeDatabase();
     }
 
+    public void get_last_data_cep () {
+        // aujourd'hui
+        long end = startOfDays(System.currentTimeMillis());
+        long begin = end - (5 * 24 * 3600 * 1000);
+        SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_CEP + " WHERE " + COLUMN_CEP_TIME + " < " + begin + ";", null);
+
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                while(!cursor.isAfterLast()) {
+                    int device_a = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_A));
+                    int device_v = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_V));
+                    int device_f = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F));
+                    int device_m = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M));
+
+                    // settings last data
+                    ColorCEP.getInstance().addColors(device_a, device_v, device_f, device_m);
+                }
+            }
+        }
+    }
+
     public void clear_obselete_data() {
         SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         long end = startOfDays(System.currentTimeMillis());
@@ -701,6 +723,7 @@ Log.d("AAAAA","NB POINTS " + nb);
         final int a = device_a, v = device_v, f = device_f, m = device_m;
         SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
         ContentValues contentValues = new ContentValues();
+        // Long time = location.
         if (location != null) {
             contentValues.put("time", Long.valueOf(location.getTime()));
             contentValues.put("long_pos", Double.valueOf(location.getLongitude()));

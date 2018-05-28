@@ -82,39 +82,41 @@ public class PositionManager implements LocationListener, GoogleApiClient.Connec
                 if (event == GpsStatus.GPS_EVENT_SATELLITE_STATUS)
                 {
                     checkPermission();
-                    gpsStatus = manager.getGpsStatus(gpsStatus);
 
-                    int satNum = 0;
-                    float snrAvg = 0;
-                    boolean status = false;
+                    try {
+                        gpsStatus = manager.getGpsStatus(gpsStatus);
 
-                    Iterable<GpsSatellite> satellites = gpsStatus.getSatellites();
+                        int satNum = 0;
+                        float snrAvg = 0;
+                        boolean status = false;
 
-                    for (GpsSatellite satelite : satellites) {
+                        Iterable<GpsSatellite> satellites = gpsStatus.getSatellites();
+                        for (GpsSatellite satelite : satellites) {
 
-                        double snr = satelite.getSnr();
+                            double snr = satelite.getSnr();
 
-                        if (satelite.getSnr() > GPS_SNR_AVG_MIN) {
+                            if (satelite.getSnr() > GPS_SNR_AVG_MIN) {
 
-                            snrAvg += snr;
-                            satNum++;
+                                snrAvg += snr;
+                                satNum++;
+                            }
                         }
-                    }
 
-                    if (satNum > 0) {
+                        if (satNum > 0) {
 
-                        snrAvg /= satNum;
+                            snrAvg /= satNum;
 
-                        if (snrAvg >= GPS_SNR_TH) {
+                            if (snrAvg >= GPS_SNR_TH) {
 
-                            status = true;
+                                status = true;
+                            }
                         }
-                    }
 
-                    for (PositionListener posListener : posListeners) {
+                        for (PositionListener posListener : posListeners) {
 
-                        posListener.onGpsStatusChange(status);
-                    }
+                            posListener.onGpsStatusChange(status);
+                        }
+                    }catch(Exception e) {}
                 }
             }
         });

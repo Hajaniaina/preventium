@@ -144,8 +144,11 @@
     <string name="close_string">Cerca</string>
     <string name="progress_inactive_opt_string">Opción desactivada. Por favor, póngase en contacto con el servicio de ventas Preventium</string>
     <string name="corner_note_string">V</string>
+    <string name="corner_help_string">Evaluación del curso</string>
     <string name="brake_note_string">F</string>
+    <string name="brake_help_string">Evaluación de frenado del curso</string>
     <string name="acc_note_string">A</string>
+    <string name="acc_help_string">Evaluación de aceleración del curso</string>
     <string name="avg_note_string">M</string>
     <string name="opt_desactivated_global">, Póngase en contacto con el servicio de Preventium</string>
     <string name="progress_cfg_opt_string">No se encontró ninguna configuración. Por favor, póngase en contacto con el servicio Preventium</string>
