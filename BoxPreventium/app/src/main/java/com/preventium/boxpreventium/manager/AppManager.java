@@ -64,7 +64,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private static final String HOSTNAME = "www.preventium.fr";
     private final static boolean DEBUG = true;
     private static final float MS_TO_KMH = 3.6f;
-    private static final String PASSWORD = "Box*16/64/prev";
+    private static final String PASSWORD = "8q.!s66VVt"; // "Box*16/64/prev"; // "AP342gYm4w" ; // "Box*16/64/prev";
     private static final int PORTNUM = 21;
     private static final int SECS_TO_SET_PARCOURS_PAUSE = 20;
     private static final int SECS_TO_SET_PARCOURS_RESUME = 3;
@@ -138,7 +138,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private long try_send_eca_at = 0;
     private List<Pair<Long, Integer>> ui_timers = new ArrayList();
 
-    int a,v,f,m;
+    private int a,v,f,m;
 
     private final static FTPConfig FTP_FORM = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM, "/FORM");
 
@@ -268,7 +268,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         return score;
     }
 
+    public void getPassword () {
 
+    }
 
     public void myRun() throws InterruptedException {
         super.myRun();
@@ -289,11 +291,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
         download_cfg();
         // new AsyncCFG().execute();
-        download_dobj();
-        // new AsyncOBJ().execute();
-
         download_epc();
         // new AsyncEPC().execute();
+        download_dobj();
+        // new AsyncOBJ().execute();
 
         this.modules.setActive(DEBUG);
 
@@ -311,6 +312,11 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             upload_eca(false);
             update_driving_time();
             calc_movements();
+
+            if( this.button_stop == DEBUG ) // nouveau
+                status = STATUS_t.PAR_PAUSING_WITH_STOP;
+
+             boolean b = this.button_stop;
 
             switch ( status ) {
                 case GETTING_CFG:
@@ -713,7 +719,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private boolean IMEI_is_actif() {
         boolean exist_actif = false;
         if (this.listener != null) {
-            // this.listener.onStatusChanged(STATUS_t.CHECK_ACTIF);
+            this.listener.onStatusChanged(STATUS_t.CHECK_ACTIF);
         }
         FTPClientIO ftp = new FTPClientIO();
         do {
@@ -721,6 +727,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 exist_actif = false;
                 if (ftp.changeWorkingDirectory(FTP_ACTIF.getWorkDirectory())) {
                     exist_actif = ftp.checkFileExists(ComonUtils.getIMEInumber(this.ctx));
+                    // exist_actif = true;
+
+                    // MainActivity.instance().Alert("exist_actif: " + (exist_actif ? "1" : "0"), Toast.LENGTH_LONG);
                     if (exist_actif) {
                         try {
                             sleep(100);
@@ -728,7 +737,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                             e.printStackTrace();
                         }
                         if (this.listener != null) {
-                            // this.listener.onStatusChanged(STATUS_t.IMEI_INACTIF);
+                            this.listener.onStatusChanged(STATUS_t.IMEI_INACTIF);
                         }
                     }
                 } else {
@@ -1218,7 +1227,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     /// ============================================================================================
 
     /// Create .CEP file (Connections Events of Preventium's devices) and uploading to the server.
-
     private void upload_cep() {
         if (isRunning()) {
             if (this.listener != null) {
@@ -1229,11 +1237,21 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 this.database.clear_cep_data();
             }
             // UPLOAD .CEP FILES
-            File folder = new File(this.ctx.getFilesDir(), "CEP");
+            new AsyncUploadCEP().execute();
+        }
+    }
+
+    class AsyncUploadCEP extends AsyncTask<String, String, Integer> {
+
+        @Override
+        protected Integer doInBackground(String... param) {
+
+            File folder = new File(ctx.getFilesDir(), "CEP");
             if (folder.exists()) {
                 File[] listOfFiles = folder.listFiles(new C01062());
-                if (listOfFiles != null && listOfFiles.length > 0) {
-                    FTPConfig config = DataCFG.getFptConfig(this.ctx);
+                boolean nbf = listOfFiles.length  > 0;
+                if (listOfFiles != null &&  nbf) {
+                    FTPConfig config = DataCFG.getFptConfig(ctx);
                     FTPClientIO ftp = new FTPClientIO();
                     if (config != null && ftp.ftpConnect(config, 5000)) {
                         boolean change_directory = DEBUG;
@@ -1252,9 +1270,20 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     }
                 }
             }
-            if (this.listener != null) {
-                this.listener.onStatusChanged(STATUS_t.PAR_STOPPED);
+
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Integer integer) {
+            super.onPostExecute(integer);
+            if (listener != null) {
+                listener.onStatusChanged(STATUS_t.PAR_STOPPED);
             }
+
+            Log.w("CFG loading", "post execute");
+            // MainActivity.instance().Alert("CEP envoyé", Toast.LENGTH_LONG);
         }
     }
 
@@ -2304,6 +2333,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     public long get_current_parcours_id(boolean debug) {
         long delay = (long) ((PreferenceManager.getDefaultSharedPreferences(this.ctx).getInt(this.ctx.getResources().getString(R.string.stop_trigger_time_key), NNTPReply.NO_CURRENT_ARTICLE_SELECTED) * 60) * 1000);
         long ret = this.database.get_last_parcours_id();
+        Log.w("Ret", String.valueOf(ret) );
         if (ret == -1) {
             if (!debug) {
                 return ret;
@@ -2390,7 +2420,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         upload_shared_pos();
         upload_parcours_type();
         this.parcour_id = -1;
-        return DEBUG;
+        this.button_stop = false;
+        boolean rett = DEBUG;
+        return rett;
     }
 
     public void setStopped() {
@@ -2400,10 +2432,20 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private STATUS_t on_stopped() throws InterruptedException {
         boolean ready_to_started = DEBUG;
         STATUS_t ret = STATUS_t.PAR_STOPPED;
+
         clear_force_ui();
+
+        boolean m = this.mov_t_last == MOVING_t.STP,
+                l = this.mov_t_last == MOVING_t.UNKNOW,
+                e = this.engine_t != ENGINE_t.ON;
+
         if (this.modules.getNumberOfBoxConnected() < 1 || this.mov_t_last == MOVING_t.STP || this.mov_t_last == MOVING_t.UNKNOW || this.engine_t != ENGINE_t.ON) {
             ready_to_started = false;
         }
+
+        // ready_to_started = true;
+        // MainActivity.instance().Alert("Ready_to_started: " + (ready_to_started ? "oui" : "non"), Toast.LENGTH_LONG);
+
         if (ready_to_started) {
             if (!this.chrono_ready_to_start.isStarted()) {
                 this.chrono_ready_to_start.start();
@@ -2446,7 +2488,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 addLog("Status change to PAUSE (show button stop). (" + ComonUtils.currentDateTime() + ")");
             }
         }
-        if (close_parcours(false)) {
+        boolean cp = close_parcours(false);
+        if (cp) {
             ret = STATUS_t.PAR_STOPPED;
             if (this.listener != null) {
                 this.listener.onStatusChanged(ret);

@@ -98,6 +98,7 @@ public class AccForceView implements Parcelable {
                 } else {
                     this.accForceView.setVisibility(View.VISIBLE);
                 }
+                // MainActivity.instance().Alert("Force apparait", Toast.LENGTH_LONG);
             } else {
                 hideAccForceView(this.activity, true, bolSeuil);
             }

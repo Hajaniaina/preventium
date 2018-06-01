@@ -998,8 +998,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     case GETTING_EPC:
                         if (MainActivity.this.progress != null) {
                             MainActivity.this.progress.show();
-                           // MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.progress_epc_string) + StatsLastDriving.getIMEI(MainActivity.this));
-                            MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.loading_string));
+                            MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.progress_epc_string) + StatsLastDriving.getIMEI(MainActivity.this));
+                            // MainActivity.this.progress.setMessage(MainActivity.this.getString(R.string.loading_string));
                             return;
                         }
                         return;
@@ -1101,6 +1101,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             MainActivity.this.googleMap.getUiSettings().setAllGesturesEnabled(true);
                             MainActivity.this.googleMap.getUiSettings().setRotateGesturesEnabled(false);
                             if (MainActivity.this.forceMarker == null) {
+                                // MainActivity.instance().Alert("Force apparait sur la carte", Toast.LENGTH_LONG);
                                 try {
                                     MainActivity.this.force_pref = MainActivity.this.getSharedPreferences("", 0);
                                     force = (Force[]) new Gson().fromJson(MainActivity.this.force_pref.getString("force", ""), Force[].class);
@@ -3490,12 +3491,12 @@ protected void showEpcSelectDialog() {
 
         //---paneau vitesse
 
-        if(opt_panneau== 1 || opt_panneau== 99){
+        if(opt_panneau == 0/* || opt_panneau== 99*/){
             //accForceView.hide(false);
-            speedView.hide(false);
+            speedView.hide(true);
         }else{
             //accForceView.hide(true);
-            speedView.hide(true);
+            speedView.hide(false);
         }
 
         //------carte opt ----
@@ -3874,8 +3875,8 @@ protected void showEpcSelectDialog() {
 
 
                         //get value of leurre by francisco
-                        // opt_leurre = 1;
-                        // box_leurre.set_active_from_serveur(opt_leurre);
+                         // opt_leurre = 1;
+                         // box_leurre.set_active_from_serveur(opt_leurre);
                         // Log.d("HandlerBox","activation leurre  : " +opt_leurre);
                         // hide_V_lat = opt_leurre;
 
@@ -4034,5 +4035,24 @@ protected void showEpcSelectDialog() {
         acc_image.setVisibility(View.INVISIBLE);
         corner_image.setVisibility(View.INVISIBLE);
         brake_image.setVisibility(View.INVISIBLE);
+    }
+
+    public void Alert(final String msg, int duration) {
+
+        switch(duration) {
+            case Toast.LENGTH_LONG:
+            case Toast.LENGTH_SHORT:
+                break;
+            default:
+                duration = Toast.LENGTH_LONG;
+        }
+
+        final int dure = duration;
+        runOnUiThread(new Runnable() {
+            public void run () {
+                Toast.makeText(MainActivity.this, msg, dure).show();
+            }
+        });
+
     }
 }

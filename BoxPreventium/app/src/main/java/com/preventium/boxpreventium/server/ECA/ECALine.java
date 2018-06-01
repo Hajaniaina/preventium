@@ -72,13 +72,15 @@ public class ECALine {
         // unsigned char padding; //1 byte
         line[i++] = (byte)0x00;
         // float long_pos; //4 bytes
-        b = ByteBuffer.allocate(4).putFloat((float)location.getLongitude()).array();
+        float L = (float)location.getLongitude();
+        b = ByteBuffer.allocate(4).putFloat(Float.isNaN(L) ? 0 : L).array();
         line[i++] = b[0];
         line[i++] = b[1];
         line[i++] = b[2];
         line[i++] = b[3];
         // float lat_pos; //4 bytes
-        b = ByteBuffer.allocate(4).putFloat((float)location.getLatitude()).array();
+        float l = (float)location.getLatitude();
+        b = ByteBuffer.allocate(4).putFloat(Float.isNaN(l) ? 0 : l).array();
         line[i++] = b[0];
         line[i++] = b[1];
         line[i++] = b[2];
@@ -89,6 +91,7 @@ public class ECALine {
         line[i++] = (byte)0x00;
         // speed
         int speed = (int)location.getSpeed()*(int)MS_TO_KMH;
+        speed = Integer.toString(speed) != null ? speed : 0;
         line[i++] = (byte)( (speed & 0xFF00) >> 8 );
         line[i] = (byte)(speed & 0xFF);
 

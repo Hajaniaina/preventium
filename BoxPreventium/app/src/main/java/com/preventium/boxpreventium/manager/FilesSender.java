@@ -66,6 +66,7 @@ public class FilesSender extends ThreadDefault {
             File[] listOfFiles = folder.listFiles();
             if( listOfFiles != null && listOfFiles.length > 0 ){
                 FTPConfig config = DataCFG.getFptConfig(_ctx);
+                // MainActivity.instance().Alert("CFG ftp pwd: " + config.getPassword(), Toast.LENGTH_LONG);
                 FTPClientIO ftp = new FTPClientIO();
                 if( config != null && ftp.ftpConnect(config, 5000) ) {
                     boolean change_directory = true;

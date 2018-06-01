@@ -781,7 +781,8 @@ Log.d("AAAAA","NB POINTS " + nb);
         if (folder.exists()) {
             SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
             Cursor cursor = db.rawQuery("SELECT * from " + TABLE_CEP + ";", null);
-            if (cursor != null) {
+            int a = cursor.getCount();
+            // if (cursor != null) {
                 if (cursor.moveToFirst()) {
                     String filename = String.format(Locale.getDefault(), "%s_%s.CEP",
                             ComonUtils.getIMEInumber(ctx), Long.toString(parcour_id));
@@ -964,6 +965,7 @@ Log.d("AAAAA","NB POINTS " + nb);
                             output.close();
                         } else {
                             Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
+                            // MainActivity.instance().Alert("File CEP not created", Toast.LENGTH_LONG);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -971,7 +973,7 @@ Log.d("AAAAA","NB POINTS " + nb);
                     cursor.close();
                 }
                 DatabaseManager.getInstance().closeDatabase();
-            }
+            // }
         }
     }
 }

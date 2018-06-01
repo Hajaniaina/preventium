@@ -120,7 +120,7 @@ public class HandlerBox extends ThreadDefault
                 case DISCONNECTED: break;
             }
         }
-        return nb;
+        return nb + 1;
     }
 
     public int getNumberOfBoxConnectedOrConnecting(){
