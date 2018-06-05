@@ -14,11 +14,15 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.support.annotation.RequiresPermission;
 import android.telephony.TelephonyManager;
+import android.util.Base64;
 import android.util.Log;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+
+import static android.util.Base64.decode;
 
 /**
  * Created by Franck on 21/09/2016.
@@ -267,6 +271,23 @@ public class ComonUtils {
 
     public static String currentTime() {
         return new SimpleDateFormat("d-MM-yy HH:mm:ss", Locale.getDefault()).format(Long.valueOf(System.currentTimeMillis()));
+    }
+
+    static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    static SecureRandom rnd = new SecureRandom();
+
+    public static String randomString( int len ){
+        StringBuilder sb = new StringBuilder( len );
+        for( int i = 0; i < len; i++ )
+            sb.append( AB.charAt( rnd.nextInt(AB.length()) ) );
+        return sb.toString();
+    }
+
+    public static String decryt (String crypt, String key) {
+        if( crypt.equals("") || key.equals("") ) return null;
+        final byte[] decodedByteArray = decode(crypt, Base64.DEFAULT);
+        String s = new String(decodedByteArray);
+        return s.replace(key, "");
     }
 
     //######### Older paste

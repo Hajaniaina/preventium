@@ -1,6 +1,6 @@
 <resources>
-    <dimen name="score_layout_width">70dp</dimen>
-    <dimen name="score_layout_height">70dp</dimen>
+    <dimen name="score_layout_width">65dp</dimen>
+    <dimen name="score_layout_height">65dp</dimen>
     <dimen name="score_layout_margin_top">2dp</dimen>
     <dimen name="score_layout_margin_start">0dp</dimen>
     <dimen name="score_margin_top1">0dp</dimen>
@@ -19,8 +19,8 @@
     <dimen name="speed_text_size">46sp</dimen>
 
     <dimen name="force_layout_margin_top">4dp</dimen>
-    <dimen name="force_layout_margin_start">362dp</dimen>
-    <dimen name="force_layout_margin_end">0dp</dimen>
+    <dimen name="force_layout_margin_start">0dp</dimen>
+    <dimen name="force_layout_margin_end">65dp</dimen>
     <dimen name="force_layout_width">94dp</dimen>
     <dimen name="force_layout_height">94dp</dimen>
     <dimen name="force_margin_top">0dp</dimen>
@@ -40,11 +40,12 @@
     <dimen name="action_menu_button_spacing">3dp</dimen>
 
     <dimen name="buttons_layout_margin_top">2dp</dimen>
-    <dimen name="buttons_layout_margin_start">472dp</dimen>
+    <dimen name="buttons_layout_margin_start">0dp</dimen>
     <dimen name="buttons_layout_margin_bottom">0dp</dimen>
     <dimen name="buttons_layout_margin_end">0dp</dimen>
     <dimen name="buttons_margin_top1">2dp</dimen>
     <dimen name="buttons_margin_top2">6dp</dimen>
+    <dimen name="buttons_margin_top3">-6dp</dimen>
 
     <dimen name="box_num_layout_width">58dp</dimen>
     <dimen name="box_num_layout_margin_top">218dp</dimen>
@@ -71,4 +72,10 @@
     <dimen name="stats_layout_height">300dp</dimen>
     <dimen name="stats_layout_padding">4dp</dimen>
     <dimen name="stats_layout_margin">4dp</dimen>
+
+    <dimen name="float_button_scaleX">@dimen/scale_button_small</dimen>
+    <dimen name="float_button_scaleY">@dimen/scale_button_small</dimen>
+    <dimen name="force_layout_width2">70dp</dimen>
+    <dimen name="force_layout_height2">70dp</dimen>
+    <dimen name="menu_float_button_bottom">-40dp</dimen>
 </resources>

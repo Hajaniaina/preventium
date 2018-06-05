@@ -3855,7 +3855,7 @@ protected void showEpcSelectDialog() {
                         editor.putInt("langue", opt_langue_web);
                         editor.putInt("taille_ecran", opt_screen_size_web);
                         editor.putInt("force_mg", opt_force_mg_web);
-                        editor.putInt("leurre", 1); // opt_leurre
+                        editor.putInt("leurre", opt_leurre); // opt_leurre
                         editor.apply();
 
                         /*
@@ -3876,7 +3876,7 @@ protected void showEpcSelectDialog() {
 
                         //get value of leurre by francisco
                          // opt_leurre = 1;
-                         // box_leurre.set_active_from_serveur(opt_leurre);
+                         box_leurre.set_active_from_serveur(opt_leurre);
                         // Log.d("HandlerBox","activation leurre  : " +opt_leurre);
                         // hide_V_lat = opt_leurre;
 

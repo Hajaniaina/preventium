@@ -33,6 +33,7 @@ import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.ForceSeuil;
 import com.preventium.boxpreventium.server.EPC.ReaderEPCFile;
+import com.preventium.boxpreventium.server.JSON.ParseJsonData;
 import com.preventium.boxpreventium.server.POSS.ReaderPOSSFile;
 import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ColorCEP;
@@ -44,6 +45,7 @@ import com.preventium.boxpreventium.utils.superclass.ftp.FTPClientIO;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 
 import org.apache.commons.net.nntp.NNTPReply;
+import org.json.JSONObject;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -61,24 +63,24 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class AppManager extends ThreadDefault implements NotifyListener {
 
-    private static final String HOSTNAME = "www.preventium.fr";
+    // private static final String HOSTNAME = "www.preventium.fr";
     private final static boolean DEBUG = true;
     private static final float MS_TO_KMH = 3.6f;
-    private static final String PASSWORD = "8q.!s66VVt"; // "Box*16/64/prev"; // "AP342gYm4w" ; // "Box*16/64/prev";
+    // private static final String PASSWORD = "8q.!s66VVt"; // "Box*16/64/prev"; // "AP342gYm4w" ; // "Box*16/64/prev";
     private static final int PORTNUM = 21;
     private static final int SECS_TO_SET_PARCOURS_PAUSE = 20;
     private static final int SECS_TO_SET_PARCOURS_RESUME = 3;
     private static final int SECS_TO_SET_PARCOURS_START = 3;
     private static final int SECS_TO_SET_PARCOURS_STOPPED = 25200;
     private static final String TAG = "AppManager";
-    private static final String USERNAME = "box.preventium";
+    // private static final String USERNAME = "box.preventium";
 
-    private static final FTPConfig FTP_ACTIF = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/ACTIFS");
-    private static final FTPConfig FTP_CFG = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
-    private static final FTPConfig FTP_DOBJ = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
-    private static final FTPConfig FTP_EPC = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
-    private static final FTPConfig FTP_POS = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/POSS");
-    private final static FTPConfig FTP_NAME = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
+    private static FTPConfig FTP_ACTIF; // = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/ACTIFS");
+    private static FTPConfig FTP_CFG; // = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
+    private static FTPConfig FTP_DOBJ; // = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
+    private static FTPConfig FTP_EPC; // = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
+    private static FTPConfig FTP_POS; // = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/POSS");
+    private static FTPConfig FTP_NAME; // = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
 
     private static long duration = 0;
     private static int nb_box = 0;
@@ -138,9 +140,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private long try_send_eca_at = 0;
     private List<Pair<Long, Integer>> ui_timers = new ArrayList();
 
-    private int a,v,f,m;
-
-    private final static FTPConfig FTP_FORM = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM, "/FORM");
+    private int a, v, f, m;
+    private static FTPConfig FTP_FORM; // = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM, "/FORM");
 
     public interface AppManagerListener {
         void onCalibrateOnAcceleration();
@@ -268,14 +269,72 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         return score;
     }
 
-    public void getPassword () {
+    public class AsyncPassword extends AsyncTask<String, String, Integer> {
 
+        private String serveur = "https://test.preventium.fr/index.php/get_activation/";
+        private String key;
+        private String HOSTNAME;
+        private String USERNAME;
+        private String PASSWORD;
+        private String url;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            key = ComonUtils.randomString(8);
+            // MainActivity.instance().Alert("Le key est " + key, Toast.LENGTH_LONG);
+        }
+
+        @Override
+        protected Integer doInBackground(String... param) {
+
+            String imei = StatsLastDriving.getIMEI(MainActivity.instance());
+            url = serveur + imei + "/" + key;
+            String json = new ParseJsonData().makeServiceCall(url);
+
+            if( json != null && json.toString().length() > 0) {
+                try {
+                    JSONObject config = new JSONObject(json);
+                    // if( config.optBoolean("succes", false) ) {
+                        HOSTNAME = config.optString("hostname");
+                        USERNAME = config.optString("username");
+                        PASSWORD = ComonUtils.decryt(config.optString("password"), key);
+                    // }
+                }catch(Exception e) {
+                }
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Integer integer) {
+            super.onPostExecute(integer);
+
+            String txt = "HOSTNAME = " + HOSTNAME +
+                    "  USERNAME = " + USERNAME +
+                    "  PASSWORD = " + PASSWORD +
+                    "  URL = " + url;
+
+            // MainActivity.instance().Alert(txt, Toast.LENGTH_LONG);
+
+            AppManager.FTP_ACTIF = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/ACTIFS");
+            AppManager.FTP_CFG = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
+            AppManager.FTP_DOBJ = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
+            AppManager.FTP_EPC = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
+            AppManager.FTP_POS = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/POSS");
+            AppManager.FTP_NAME = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
+            AppManager.FTP_FORM = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM, "/FORM");
+
+        }
     }
 
     public void myRun() throws InterruptedException {
         super.myRun();
         setLog("");
         this.database.clear_obselete_data();
+
+        new AsyncPassword().execute();
 
         if( listener != null ) {
             MainActivity main = MainActivity.instance();
@@ -316,7 +375,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             if( this.button_stop == DEBUG ) // nouveau
                 status = STATUS_t.PAR_PAUSING_WITH_STOP;
 
-             boolean b = this.button_stop;
+            boolean b = this.button_stop;
 
             switch ( status ) {
                 case GETTING_CFG:
@@ -579,7 +638,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             // if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
 
             // Trying to connect to FTP server...
-            if( !ftp.ftpConnect(FTP_CFG, 5000) ) {
+            if( FTP_CFG == null || !ftp.ftpConnect(FTP_CFG, 5000) ) {
                 check_internet_is_active();
             } else {
                 // Checking if .CFG file is in FTP server ?
@@ -723,11 +782,11 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
         FTPClientIO ftp = new FTPClientIO();
         do {
-            if (ftp.ftpConnect(FTP_ACTIF, 5000)) {
+            if (FTP_ACTIF != null && ftp.ftpConnect(FTP_ACTIF, 5000)) {
                 exist_actif = false;
                 if (ftp.changeWorkingDirectory(FTP_ACTIF.getWorkDirectory())) {
                     exist_actif = ftp.checkFileExists(ComonUtils.getIMEInumber(this.ctx));
-                    // exist_actif = true;
+                    //  exist_actif = true;
 
                     // MainActivity.instance().Alert("exist_actif: " + (exist_actif ? "1" : "0"), Toast.LENGTH_LONG);
                     if (exist_actif) {
@@ -775,7 +834,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
 
             // Trying to connect to FTP server...
-            if( !ftp.ftpConnect(FTP_EPC, 5000) ) {
+            if( FTP_EPC == null || !ftp.ftpConnect(FTP_EPC, 5000) ) {
                 check_internet_is_active();
             } else {
 
@@ -1068,7 +1127,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             // if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
 
             // Trying to connect to FTP server...
-            if( !ftp.ftpConnect(FTP_DOBJ, 5000) ) {
+            if( FTP_DOBJ == null || !ftp.ftpConnect(FTP_DOBJ, 5000) ) {
                 check_internet_is_active();
             } else {
 
