@@ -84,17 +84,11 @@
 
     <item name="scale_button_small" type="dimen">0.8</item>
     <item name="scale_button_medium" type="dimen">0.9</item>
+    <item name="scale_button_medium_high" type="dimen">0.97</item>
     <item name="scale_button_large" type="dimen">1</item>
 
-    <dimen name="float_button_scaleX_small">@dimen/scale_button_small</dimen>
-    <dimen name="float_button_scaleY_small">@dimen/scale_button_small</dimen>
-    <dimen name="float_button_scaleX_medium">@dimen/scale_button_medium</dimen>
-    <dimen name="float_button_scaleY_medium">@dimen/scale_button_medium</dimen>
-    <dimen name="float_button_scaleX_large">@dimen/scale_button_large</dimen>
-    <dimen name="float_button_scaleY_large">@dimen/scale_button_large</dimen>
-
-    <dimen name="float_button_scaleX">@dimen/float_button_scaleX_large</dimen>
-    <dimen name="float_button_scaleY">@dimen/float_button_scaleY_large</dimen>
+    <dimen name="float_button_scaleX">@dimen/scale_button_large</dimen>
+    <dimen name="float_button_scaleY">@dimen/scale_button_large</dimen>
     <dimen name="force_layout_width2">50dp</dimen>
     <dimen name="force_layout_height2">50dp</dimen>
     <dimen name="menu_float_button_bottom">0dp</dimen>

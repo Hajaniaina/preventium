@@ -753,7 +753,7 @@ Log.d("AAAAA","NB POINTS " + nb);
          * Autre solution qui ne pause pas de problème
          * prenne seulement de resource mais pas trop
          * @Arnaud
-         */
+
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.instance());
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putInt(COLUMN_CEP_DEVICE_A, Integer.valueOf(device_a));
@@ -761,6 +761,7 @@ Log.d("AAAAA","NB POINTS " + nb);
         editor.putInt(COLUMN_CEP_DEVICE_F, Integer.valueOf(device_f));
         editor.putInt(COLUMN_CEP_DEVICE_M, Integer.valueOf(device_m));
         editor.apply();
+        */
         return true;
     }
 
@@ -840,12 +841,20 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 device_f = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F)) : sharedPref.getInt(COLUMN_CEP_DEVICE_F, -1);
                                 device_m = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M)) : sharedPref.getInt(COLUMN_CEP_DEVICE_M, -1);
 
+                                SharedPreferences _sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.instance());
+                                SharedPreferences.Editor editor = sharedPref.edit();
+                                editor.putInt(COLUMN_CEP_DEVICE_A, Integer.valueOf(device_a));
+                                editor.putInt(COLUMN_CEP_DEVICE_V, Integer.valueOf(device_v));
+                                editor.putInt(COLUMN_CEP_DEVICE_F, Integer.valueOf(device_f));
+                                editor.putInt(COLUMN_CEP_DEVICE_M, Integer.valueOf(device_m));
+                                editor.apply();
+
                                 i = 0;
                                 GMTCalendar.setTimeInMillis(time); // 6
                                 line[i++] = (byte) GMTCalendar.get(Calendar.DAY_OF_MONTH);
                                 line[i++] = (byte) (GMTCalendar.get(Calendar.MONTH) + 1);
                                 line[i++] = (byte) (GMTCalendar.get(Calendar.YEAR) & 0xFF);
-                                line[i++] = (byte) GMTCalendar.get(Calendar.HOUR);
+                                line[i++] = (byte) GMTCalendar.get(Calendar.HOUR_OF_DAY);
                                 line[i++] = (byte) GMTCalendar.get(Calendar.MINUTE);
                                 line[i++] = (byte) GMTCalendar.get(Calendar.SECOND);
                                 b = ByteBuffer.allocate(4).putFloat(long_pos).array(); // 10
@@ -952,14 +961,15 @@ Log.d("AAAAA","NB POINTS " + nb);
                             /**
                              * on efface les données
                              * @Arnaud
-                             */
-                            SharedPreferences.Editor editor = sharedPref.edit();
-                            editor.remove(COLUMN_CEP_DEVICE_A);
-                            editor.remove(COLUMN_CEP_DEVICE_V);
-                            editor.remove(COLUMN_CEP_DEVICE_F);
-                            editor.remove(COLUMN_CEP_DEVICE_M);
-                            editor.apply();
-                            ColorCEP.getInstance().unsetColors();
+
+                                SharedPreferences.Editor editor = sharedPref.edit();
+                                editor.remove(COLUMN_CEP_DEVICE_A);
+                                editor.remove(COLUMN_CEP_DEVICE_V);
+                                editor.remove(COLUMN_CEP_DEVICE_F);
+                                editor.remove(COLUMN_CEP_DEVICE_M);
+                                editor.apply();
+                                ColorCEP.getInstance().unsetColors();
+                            */
 
                             output.flush();
                             output.close();

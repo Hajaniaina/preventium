@@ -10,12 +10,14 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.media.AudioManager;
@@ -41,6 +43,7 @@ import android.text.Html;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -73,6 +76,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.gson.Gson;
 import com.gregacucnik.EditableSeekBar;
 import com.preventium.boxpreventium.R;
+import com.preventium.boxpreventium.database.DatabaseHelper;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.SCORE_t;
@@ -118,7 +122,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import static android.provider.Telephony.Carriers.PASSWORD;
 
 //public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
-public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener, LocationListener {
+public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener, LocationListener, GoogleMap.OnCameraMoveStartedListener,
+        GoogleMap.OnCameraMoveListener, GoogleMap.OnCameraMoveCanceledListener {
 
     private static final String TAG = "MainActivity";
     private static final String APPPREFERENCES = "AppPrefs" ;
@@ -200,6 +205,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private int selectedEpcFile = 0;
     private boolean trackingActivated = true;
     private int locFilterTimeout = 0;
+
+    private boolean parcours_display = false; // false => play, true => stop
     private boolean stop = false;
 
     private int opt_panneau = 99;
@@ -213,8 +220,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private int opt_langue = 99;
     private int opt_screen_size = 99;
     private int opt_force_mg = 99;
-    private int hide_V_lat=99;
-
+    private int hide_V_lat = 99;
+    private int opt_sonore = 99;
+    private int opt_button_parcours = 99;
     public int opt_panneau_speed;
 
     private String opt_test;
@@ -231,10 +239,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int id_notif_pan = 17;
     private static final int id_notif_map = 18;
     private SupportMapFragment mapFrag;
+
     private boolean internet_activeopt = true;
-
     private boolean verifDm = true;
-
 
     String serveur="tsis";
     ReaderCFGFile reader1 = new ReaderCFGFile();
@@ -265,8 +272,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private String remote_file;
     private static final String USERNAME = "box.preventium";
     private static final String HOSTNAME = "www.preventium.fr";
-
-
 
     private final long MESSAGE_DURATION = 10800000L;
     private TextView smsMessageView;
@@ -299,6 +304,21 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onProviderDisabled(String s) {
 
+    }
+
+    @Override
+    public void onCameraMove() {
+        // Alert("The camera is moving.", Toast.LENGTH_SHORT);
+    }
+
+    @Override
+    public void onCameraMoveStarted(int i) {
+
+    }
+
+    @Override
+    public void onCameraMoveCanceled() {
+        // Alert("The camera is cancelling.", Toast.LENGTH_SHORT);
     }
 
 
@@ -587,16 +607,18 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         this.googleMap.getUiSettings().setMyLocationButtonEnabled(false);
         this.googleMap.getUiSettings().setAllGesturesEnabled(true);
-//##santo
+
         this.googleMap.getUiSettings().setMapToolbarEnabled(false);
         this.googleMap.getUiSettings().setRotateGesturesEnabled(false);
 
+        // add tog
+        googleMap.setOnCameraMoveStartedListener(this);
+        googleMap.setOnCameraMoveListener(this);
+        googleMap.setOnCameraMoveCanceledListener(this);
+
         mapReady = true;
-
         if (Connectivity.isConnected(getApplicationContext())) {
-
             if (progress != null) {
-
                 progress.setMessage(getString(R.string.network_alert_string));
             }
         }
@@ -1069,7 +1091,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         // last data
                         onLastAlertData();
-                        // stop_parcour.setVisibility(View.VISIBLE);
+
+                        // set to stop
+                        // setButtonParcours(R.drawable.ic_stop_black_24dp);
+                        setParcoursActive(true);
+
                         return;
                     case PAR_RESUME:
                         MainActivity.this.routeActive = true;
@@ -1132,8 +1158,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         MainActivity.this.routeActive = false;
                         MainActivity.this.routeInPause = false;
 
-                        // hideTriangle
-                        hideTriangle();
+                        // set to stop
+                        // setButtonParcours(R.drawable.ic_play_arrow);
+                        setParcoursActive(false);
+
                         return;
                     default:
                         return;
@@ -1327,7 +1355,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onNumberOfBoxChanged (final int nb) {
+    public void onNumberOfBoxChanged (final int nb, final boolean isBM) {
         HandlerBox box_leurre = new HandlerBox(this);
         final int active_leurre =  box_leurre.get_active_from_serveur();
 
@@ -1336,18 +1364,30 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
 
-                if (nb > 0) {
-                    boxNumView.setTextColor(Color.GRAY);
+                // si leurre active
+                if( active_leurre == 1 ) {
+                    if (nb > 0) {
+                        corner_n_v.setVisibility(View.VISIBLE);
+                        triangleCorner(true);
+                    } else {
+                        corner_n_v.setVisibility(View.INVISIBLE);
+                        triangleCorner(false);
+                    }
+
+                    boxNumView.setTextColor(Color.GREEN);
+
+                    if( isBM ) { // BM existe même avec le leurre activé
+                        corner_n_v.setVisibility(View.VISIBLE);
+                        triangleCorner(true);
+                    }
+                } else {
                     corner_n_v.setVisibility(View.VISIBLE);
                     triangleCorner(true);
-                }
-                else {
-                    boxNumView.setTextColor(Color.RED);
-                    if(active_leurre == 1){
-                        boxNumView.setTextColor(Color.GREEN);
-                    }
-                    corner_n_v.setVisibility(View.INVISIBLE);
-                    triangleCorner(false);
+
+                    if( nb <= 0 )
+                        boxNumView.setTextColor(Color.RED);
+                    else
+                        boxNumView.setTextColor(Color.GRAY);
                 }
 
                 boxNumView.setText(String.valueOf(nb));
@@ -1368,12 +1408,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    /*  @Override
-      public void onForceChanged(FORCE_t type, LEVEL_t level) {
-
-      }
-  */
-    //##santo
     public void onForceDisplayed(final double force) {
         runOnUiThread(new Runnable() {
             @SuppressLint("SetTextI18n")
@@ -1383,33 +1417,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-
-
-    /*
-    @Override
-    public void onForceChanged (final FORCE_t type, final LEVEL_t level) {
-
-        runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-
-                if (routeActive && !routeInPause) {
-
-                    if (type != FORCE_t.UNKNOW) {
-
-                        accForceView.hide(false);
-                        accForceView.setValue(type, level);
-                    }
-                    else {
-
-                        accForceView.hide(true);
-                    }
-                }
-            }
-        });
-    }
-*/
     public void onForceChanged(FORCE_t type, LEVEL_t level, double force, float speed_l, float speed_c) {
         final FORCE_t fORCE_t = type;
         final LEVEL_t lEVEL_t = level;
@@ -1440,8 +1447,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
     }
-
-
 
     @Override
     public void onCustomMarkerDataListGet() {
@@ -1640,9 +1645,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-
-
-
     @Override
     public void onRecommendedSpeedChanged(SPEED_t speed_t, int kmh, LEVEL_t level, boolean valid) {
         final SPEED_t sPEED_t = speed_t;
@@ -1660,24 +1662,69 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public void onLevelNotified(final LEVEL_t level) {
         runOnUiThread(new Runnable() {
             public void run() {
-                /*
-                switch (level) {
-                    case LEVEL_3:
-                        MainActivity.this.mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.yellow);
-                        MainActivity.this.mediaPlayer.start();
-                        return;
-                    case LEVEL_4:
-                        MainActivity.this.mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.orange);
-                        MainActivity.this.mediaPlayer.start();
-                        return;
-                    case LEVEL_5:
-                        MainActivity.this.mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.red);
-                        MainActivity.this.mediaPlayer.start();
-                        return;
-                    default:
-                        return;
+
+                // opt: 1 bip {1,2,3}
+                // opt: 2 voix {4,5,6}
+
+                if( opt_sonore > 0 ) {
+                    if (opt_sonore > 3) { // par voix
+                        try {
+                            switch (level) {
+                                case LEVEL_3:
+                                    if (opt_sonore == 6) {
+                                        MediaPlayer mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.vigilance);
+                                        mediaPlayer.start();
+                                    }
+                                    return;
+                                case LEVEL_4:
+                                    if (opt_sonore > 5) {
+                                        MediaPlayer mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.attention);
+                                        mediaPlayer.start();
+                                    }
+                                    return;
+                                case LEVEL_5:
+
+                                    if (opt_sonore > 3) {
+                                        MediaPlayer mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.dangereux);
+                                        mediaPlayer.start();
+                                    }
+                                    return;
+                                default:
+                                    return;
+                            }
+                        }catch(Exception e) {
+                           // Alert(e.getMessage(), Toast.LENGTH_LONG);
+                        }
+
+                    } else {
+
+                        try {
+                            switch (level) {
+                                case LEVEL_3:
+                                    if( opt_sonore > 2) {
+                                        MediaPlayer mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.bip);
+                                        mediaPlayer.start();
+                                    }
+                                    return;
+                                case LEVEL_4:
+                                    if( opt_sonore > 1) {
+                                        MediaPlayer mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.bip_bip);
+                                        mediaPlayer.start();
+                                    }
+                                    return;
+                                case LEVEL_5:
+                                    MediaPlayer mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.biiip);
+                                    mediaPlayer.start();
+                                    return;
+                                default:
+                                    return;
+                            }
+
+                        } catch (Exception e) {
+                           // Alert(e.getMessage(), Toast.LENGTH_LONG);
+                        }
+                    }
                 }
-                */
             }
         });
     }
@@ -1697,7 +1744,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         progress.dismiss();
                     }
                     else {
-
                         progress.setMessage(getString(R.string.network_alert_string));
                     }
                 }
@@ -1779,8 +1825,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     //##santoo
 
-
-
     private void setPositionClient() {
         this.posManager = new PositionManager(this);
         if (ActivityCompat.checkSelfPermission(this, "android.permission.ACCESS_FINE_LOCATION") == 0 || ActivityCompat.checkSelfPermission(this, "android.permission.ACCESS_COARSE_LOCATION") == 0) {
@@ -1811,16 +1855,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     // -------------------------------------------------------------------------------------------- //
 
     private void init (boolean firstLaunch) {
-     /*   if (getSharedPreferences("prime", 0).getInt("prime", 0) == 0) {
-            setPositionClient();
-
-            return;
-        }
-        */
 
         smsMessageView = (TextView) findViewById(R.id.sms_message_text);
-
-
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         mapReady = false;
@@ -1901,6 +1937,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         //menuButtonTracking = (FloatingActionButton) findViewById(R.id.menu_button_tracking);
         menuButtonSettings = (FloatingActionButton) findViewById(R.id.menu_button_settings);
         stop_parcour = (FloatingActionButton) findViewById(R.id.stop_parcour);
+        stop_parcour.setVisibility(View.GONE);
+        setParcoursActive(false);
         // stop_parcour.setVisibility(View.GONE);
 
         trackingActivated = sharedPref.getBoolean(getString(R.string.tracking_activated_key), true);
@@ -1933,23 +1971,45 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         mapFrag.getMapAsync(this);
+
+        // orientation
+        onOrientationlistener();
     }
 
+    private OrientationEventListener mOrientationListener;
+    private boolean orientation = false;
+    public void onOrientationlistener () {
 
+        mOrientationListener = new OrientationEventListener(this,
+                SensorManager.SENSOR_DELAY_NORMAL) {
 
+            @Override
+            public void onOrientationChanged(int orientation) {
+                if (mOrientationListener.canDetectOrientation() == true) {
+                    mOrientationListener.enable();
+                    if( MainActivity.this.orientation )
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                } else {
+                    mOrientationListener.disable();
+                }
+            }
+        };
 
-
+        mOrientationListener.onOrientationChanged(getRequestedOrientation());
+        if( !orientation ) {
+            // setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            orientation = true;
+        }
+    }
 
     private int checkPermissions() {
 
         int ok = 1;
 
         if (!permissionsChecked) {
-
             permissionsChecked = true;
 
             if (!PermissionHelper.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-
                 ok = 0;
             }
 
@@ -2050,11 +2110,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onClick (DialogInterface dialog,int which) {
 
                 if (retry) {
-
                     permissionRequest.retry();
                 }
                 else {
-
                     Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", getPackageName(), null));
                     startActivity(intent);
                 }
@@ -2094,13 +2152,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         final AlertDialog dialog = builder.show();
 
         new CountDownTimer(10000, 10000) {
-
             public void onTick (long millisUntilFinished) {}
-
             public void onFinish() {
-
                 if (dialog.isShowing()) {
-
                     dialog.dismiss();
                 }
             }
@@ -2114,7 +2168,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
         final int filesNum = customMarker.getTotalAttachmentsNum();
-        String msg = "Attention, vous vous approchez du marqueur '" + customMarker.getTitle() + "'\n";
+        String msg = "attention, vous vous approchez du marqueur '" + customMarker.getTitle() + "'\n";
 
         if (filesNum > 0) {
 
@@ -2688,7 +2742,6 @@ protected void showEpcSelectDialog() {
                 }
 
                 if (dialog.isShowing()) {
-
                     dialog.dismiss();
                 }
             }
@@ -2702,6 +2755,8 @@ protected void showEpcSelectDialog() {
         //get the center coordinates of the current displayed screen
         int mWidth= this.getResources().getDisplayMetrics().widthPixels/2;
         int mHeight= this.getResources().getDisplayMetrics().heightPixels/2;
+
+        // "Recenter bouton", Toast.LENGTH_LONG);
 
         if (lastPos == null) {
 
@@ -2839,7 +2894,7 @@ protected void showEpcSelectDialog() {
 
     private void runOnce () {
 
-        boolean isFirstRun = sharedPref.getBoolean(getString(R.string.firstrun_key), true);
+        boolean isFirstRun = false; // sharedPref.getBoolean(getString(R.string.firstrun_key), true);
         if (isFirstRun)
         {
             // load and sent
@@ -2987,12 +3042,6 @@ protected void showEpcSelectDialog() {
         });
         di.show();
     }
-
-
-
-
-
-
 
 
     private String getPhoneNumber (int key) {
@@ -3205,8 +3254,13 @@ protected void showEpcSelectDialog() {
 
             @Override
             public void onClick (View view) {
-
-                askEndDayConfirm();
+                /* if( !parcours_display ) {
+                    appManager.setStarted();
+                    // setButtonParcours(R.drawable.ic_stop_black_24dp);
+                }
+                else
+                */
+                    askEndDayConfirm();
             }
         });
 
@@ -3229,6 +3283,7 @@ protected void showEpcSelectDialog() {
                     menuButtonSettings.setVisibility(View.GONE);
                     hideActionButtons(false);
                 }
+
             }
         });
 
@@ -3326,6 +3381,10 @@ protected void showEpcSelectDialog() {
         opt_screen_size = sharedPref.getInt("taille_ecran", 4);
         opt_force_mg = sharedPref.getInt("force_mg", 0);
         hide_V_lat = sharedPref.getInt("leurre", 0);
+        opt_sonore = sharedPref.getInt("voix", 0);
+        opt_button_parcours = sharedPref.getInt("btn_menu", 0);
+
+        // Alert(String.valueOf(hide_V_lat), Toast.LENGTH_LONG);
 
         //-----VFAM
         if(opt_VFAM==0){
@@ -3334,29 +3393,18 @@ protected void showEpcSelectDialog() {
             acc_n_v.setVisibility(View.INVISIBLE);
             avg_n_v.setVisibility(View.INVISIBLE);
         }else {
-            String text = new StringBuilder(boxNumView.getText()).toString();
-            int nb = Integer.parseInt(text);
-            if( nb > 0 ) {
+            if( hide_V_lat == 0)
                 corner_n_v.setVisibility(View.VISIBLE);
-                triangleCorner(true);
-            }else{
-                triangleCorner(false);
-            }
             brake_n_v.setVisibility(View.VISIBLE);
             acc_n_v.setVisibility(View.VISIBLE);
             avg_n_v.setVisibility(View.VISIBLE);
         }
-        /*
-        if(opt_VFAM == 1){
 
-
-            scoreView.hideFAMV(false);
+        if( opt_button_parcours == 0 ) {
+            stop_parcour.setVisibility(View.GONE);
+        } else {
+            // stop_parcour.setVisibility(View.VISIBLE);
         }
-        else {
-
-            scoreView.hideFAMV(true);
-        }
-*/
 
         //----- drive_note
         if(opt_note==0){
@@ -3826,9 +3874,9 @@ protected void showEpcSelectDialog() {
                         int opt_langue_web = Integer.parseInt(config.optString("langue"));
                         int opt_screen_size_web = Integer.parseInt(config.optString("taille_ecran"));
                         int opt_force_mg_web = Integer.parseInt(config.optString("force_mg"));
-
-                        //int opt_leurre = Integer.parseInt(config.optString("leurre"));
                         int opt_leurre = Integer.parseInt(config.optString("leurre"));
+                        int opt_sonore = 0; //Integer.parseInt(config.optString("voix"));
+                        int opt_button_parcours = 0; //Integer.parseInt(config.optString("btn_menu"));
 
                         /*
                         compare(opt_qrcode, opt_qrcode_web, getString(R.string.opt_qrcod_activated) + "\n", getString(R.string.opt_qrcod_desactivated), id_notif_qr);
@@ -3855,7 +3903,9 @@ protected void showEpcSelectDialog() {
                         editor.putInt("langue", opt_langue_web);
                         editor.putInt("taille_ecran", opt_screen_size_web);
                         editor.putInt("force_mg", opt_force_mg_web);
-                        editor.putInt("leurre", opt_leurre); // opt_leurre
+                        editor.putInt("leurre", opt_leurre);
+                        editor.putInt("voix", opt_sonore);
+                        editor.putInt("btn_menu", opt_button_parcours);
                         editor.apply();
 
                         /*
@@ -3873,12 +3923,9 @@ protected void showEpcSelectDialog() {
                         box_leurre.set_active_from_serveur(opt_leurre); //value affectation of leurre from web
                         */
 
-
                         //get value of leurre by francisco
-                         // opt_leurre = 1;
-                         box_leurre.set_active_from_serveur(opt_leurre);
-                        // Log.d("HandlerBox","activation leurre  : " +opt_leurre);
-                        // hide_V_lat = opt_leurre;
+                        // opt_leurre = 1;
+                        box_leurre.set_active_from_serveur(opt_leurre);
 
                         return opt_qrcode;
                     } catch (JSONException e) {}
@@ -4005,19 +4052,56 @@ protected void showEpcSelectDialog() {
             @Override
             public void run() {
                 ColorCEP Color = ColorCEP.getInstance();
+                // ici, on prend la valeur venant de shared et puis on le supprime
+                // ceci ne sera executé que par started
+                Color.addColors(
+                        sharedPref.getInt(DatabaseHelper.COLUMN_CEP_DEVICE_A, -1),
+                        sharedPref.getInt(DatabaseHelper.COLUMN_CEP_DEVICE_V, -1),
+                        sharedPref.getInt(DatabaseHelper.COLUMN_CEP_DEVICE_F, -1),
+                        sharedPref.getInt(DatabaseHelper.COLUMN_CEP_DEVICE_M, -1)
+                );
+
+                // on cache d'abord
+                hideTriangle();
+                /*
+                Alert(
+                        "A" + String.valueOf(sharedPref.getInt(DatabaseHelper.COLUMN_CEP_DEVICE_A, -1)) +
+                                "V" + String.valueOf(sharedPref.getInt(DatabaseHelper.COLUMN_CEP_DEVICE_V, -1)) +
+                                "F" + String.valueOf(sharedPref.getInt(DatabaseHelper.COLUMN_CEP_DEVICE_F, -1)) +
+                                "M" + String.valueOf(sharedPref.getInt(DatabaseHelper.COLUMN_CEP_DEVICE_M, -1)),
+                        Toast.LENGTH_LONG
+                );
+                */
+
                 if( Color.getA() > 2 ) {
                     acc_image.setImageResource(R.drawable.ic_left_arrow);
                     acc_image.setColorFilter(appColor.getColor(LEVEL_t.valueOf(Color.getA())));
+                    acc_image.setVisibility(View.VISIBLE);
                 }
+
                 if( Color.getV() > 2 ) {
-                    is_corner_show = true;
                     corner_image.setImageResource(R.drawable.ic_left_arrow);
                     corner_image.setColorFilter(appColor.getColor(LEVEL_t.valueOf(Color.getV())));
+                    if( is_corner_show )
+                        corner_image.setVisibility(View.VISIBLE);
                 }
+
                 if( Color.getF() > 2 ) {
                     brake_image.setImageResource(R.drawable.ic_left_arrow);
                     brake_image.setColorFilter(appColor.getColor(LEVEL_t.valueOf(Color.getF())));
+                    brake_image.setVisibility(View.VISIBLE);
                 }
+
+                // on les efface après
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.remove(DatabaseHelper.COLUMN_CEP_DEVICE_A);
+                editor.remove(DatabaseHelper.COLUMN_CEP_DEVICE_V);
+                editor.remove(DatabaseHelper.COLUMN_CEP_DEVICE_F);
+                editor.remove(DatabaseHelper.COLUMN_CEP_DEVICE_M);
+                editor.apply();
+
+                // on le supprime aussi
+                Color.unsetColors();
             }
         });
     }
@@ -4054,5 +4138,22 @@ protected void showEpcSelectDialog() {
             }
         });
 
+    }
+
+    public void setButtonParcours (int image) {
+
+        if( image == R.drawable.ic_play_arrow )
+            parcours_display = false;
+        else
+            parcours_display = true;
+
+        stop_parcour.setImageResource(image);
+    }
+
+    public void setParcoursActive (boolean active) {
+        if( active )
+            stop_parcour.setEnabled(true);
+        else
+            stop_parcour.setEnabled(false);
     }
 }

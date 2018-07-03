@@ -41,6 +41,7 @@ public class HandlerBox extends ThreadDefault
         void onScanState(boolean scanning);
         void onDeviceState( String device_mac, boolean connected );
         void onNumberOfBox(int nb);
+        void onBMExist(boolean bm);
         void onForceChanged(Pair<Long,Short> mG_smooth, Pair<Long,Short> mG_shock);
         void onEngineStateChanged(ENGINE_t state);
         void onCalibrateOnConstantSpeed();
@@ -176,6 +177,7 @@ public class HandlerBox extends ThreadDefault
 
         int nb = mBoxList.size();
         if( listener != null ) {
+
             listener.onNumberOfBox( nb ); //santoo
             listener.onForceChanged( last_smooth, last_shock);
             listener.onEngineStateChanged( last_engine_t );
@@ -195,6 +197,9 @@ public class HandlerBox extends ThreadDefault
             curr_smooth = Pair.create((long)0,(short)0);
             curr_shock = Pair.create((long)0,(short)0);
             for( int i = mBoxList.size()-1; i >= 0; i-- ) {
+
+                if( !mBoxList.get(i).getIsLeurre() && listener != null )
+                    listener.onBMExist(true);
 
                 if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
                     Log.d(TAG,"deconnecté box");
@@ -331,7 +336,7 @@ public class HandlerBox extends ThreadDefault
                 if( listener != null ) listener.onNumberOfBox( nb );  //sss
                 //si leurre active et divice not found//
                 if(nombre_scan_found ==0 && active ==1 && listener != null ){
-                    listener.onNumberOfBox( 0 );
+                    // listener.onNumberOfBox( 0 );
                 }
                 if( DEBUG ) Log.d(TAG,"Number of connected device changed: " + nb );
             }
@@ -441,32 +446,36 @@ public class HandlerBox extends ThreadDefault
 
     public boolean bleutoothVirtuelLeurre(){
         try{
-            BluetoothDevice Bdivice = null;
-            BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-            adapter.setName("Preventium");
-            Bdivice = adapter.getRemoteDevice(adapter.getAddress());
-            //Bdivice.
-            BluetoothBox box = new BluetoothBox(context);
-            box.setConnectionState( CONNEXION_STATE_t.CONNECTED);
+            if( mBoxList.size() <= 0 ) {
+                BluetoothDevice Bdivice = null;
+                BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+                adapter.setName("Preventium");
+                Bdivice = adapter.getRemoteDevice(adapter.getAddress());
+                //Bdivice.
+                BluetoothBox box = new BluetoothBox(context);
+                box.setConnectionState(CONNEXION_STATE_t.CONNECTED);
+                box.setLeurre(true);
 
-            listener.onEngineStateChanged(ENGINE_t.ON);
+                listener.onEngineStateChanged(ENGINE_t.ON);
 
-            ArrayList<BluetoothDevice> devices = new ArrayList<>();
-            //proximityDevices.clear();
-            //mBoxList.clear();
-            devices.add(Bdivice);
+                ArrayList<BluetoothDevice> devices = new ArrayList<>();
+                //proximityDevices.clear();
+                //mBoxList.clear();
+                devices.add(Bdivice);
 
-            onScanChanged(false,devices);
+                onScanChanged(false, devices);
 
 
-            //box.connect(Bdivice);
-            // mBoxList.add(box);
-            return  true;
+                //box.connect(Bdivice);
+                // mBoxList.add(box);
+                return true;
+            }
 
         }catch (Exception e){
             Log.e("Erreur de box virtuel", e.getMessage());
             return false;
         }
+        return false;
     }
 
     public void setSacningState(boolean scanNew){

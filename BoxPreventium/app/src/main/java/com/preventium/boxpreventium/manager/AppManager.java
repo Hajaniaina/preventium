@@ -99,6 +99,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     //private long alertY_add_at = 0;
     //private long alertY_add_id = -1;
     private boolean button_stop = false;
+    private boolean button_start = false;
     //private String chronoRideTxt = "";
     private Chrono chrono_ready_to_start = Chrono.newInstance();
     private Context ctx = null;
@@ -142,6 +143,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     private int a, v, f, m;
     private static FTPConfig FTP_FORM; // = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM, "/FORM");
+    private boolean bm = false;
 
     public interface AppManagerListener {
         void onCalibrateOnAcceleration();
@@ -166,7 +168,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
         void onNoteChanged(int i, LEVEL_t lEVEL_t, LEVEL_t lEVEL_t2);
 
-        void onNumberOfBoxChanged(int i);
+        void onNumberOfBoxChanged(int i, boolean isBM);
 
         void onRecommendedSpeedChanged(SPEED_t sPEED_t, int i, LEVEL_t lEVEL_t, boolean z);
 
@@ -269,7 +271,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         return score;
     }
 
-    public class AsyncPassword extends AsyncTask<String, String, Integer> {
+    public class Async extends AsyncTask<String, String, Integer> {
 
         private String serveur = "https://test.preventium.fr/index.php/get_activation/";
         private String key;
@@ -334,9 +336,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         setLog("");
         this.database.clear_obselete_data();
 
-        new AsyncPassword().execute();
+        new Async().execute();
 
-        if( listener != null ) {
+        /* if( listener != null ) {
             MainActivity main = MainActivity.instance();
             SharedPreferences SharedPref = PreferenceManager.getDefaultSharedPreferences(main);
             boolean isForm = SharedPref.getBoolean(main.getString(R.string.firstrun_key), true);
@@ -345,6 +347,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 return;
             }
         }
+        */
 
         IMEI_is_actif();
 
@@ -372,10 +375,16 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             update_driving_time();
             calc_movements();
 
-            if( this.button_stop == DEBUG ) // nouveau
+            // force to stop
+            if( this.button_stop == DEBUG )
                 status = STATUS_t.PAR_PAUSING_WITH_STOP;
 
+            // force to start
+            if( this.button_start == DEBUG )
+                status = STATUS_t.PAR_STARTED;
+
             boolean b = this.button_stop;
+            // MainActivity.instance().Alert(status.toString(), Toast.LENGTH_SHORT);
 
             switch ( status ) {
                 case GETTING_CFG:
@@ -395,6 +404,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     break;
             }
             listen_timers(status);
+            this.button_start = false;
         }
         this.modules.setActive(false);
     }
@@ -429,11 +439,20 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this.database.addCEP(location, device_mac, note, vitesse_ld, vitesse_vr, distance_covered, parcour_duration, Database.get_eca_counter(this.ctx, this.parcour_id), nbBox, color.getA(), color.getV(), color.getF(), color.getM(), connected);
     }
 
+    @Override
+    public void onBMExist (boolean bm) {
+        this.bm = bm;
+    }
+
+    public boolean getBMExist () {
+        return this.bm;
+    }
+
     public void onNumberOfBox(int nb) {
         nb_box = nb;
         Log.d(TAG, "Number of preventium device connected changed: " + nb);
         if (this.listener != null) {
-            this.listener.onNumberOfBoxChanged(nb);
+            this.listener.onNumberOfBoxChanged(nb, this.bm);
         }
     }
 
@@ -786,7 +805,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 exist_actif = false;
                 if (ftp.changeWorkingDirectory(FTP_ACTIF.getWorkDirectory())) {
                     exist_actif = ftp.checkFileExists(ComonUtils.getIMEInumber(this.ctx));
-                    //  exist_actif = true;
+                    // exist_actif = true;
 
                     // MainActivity.instance().Alert("exist_actif: " + (exist_actif ? "1" : "0"), Toast.LENGTH_LONG);
                     if (exist_actif) {
@@ -795,9 +814,11 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+                        /*
                         if (this.listener != null) {
                             this.listener.onStatusChanged(STATUS_t.IMEI_INACTIF);
                         }
+                        */
                     }
                 } else {
                     Log.d(TAG, "ACTIFS: Error while trying to change working directory to \"" + FTP_ACTIF.getWorkDirectory() + "\"");
@@ -2488,6 +2509,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this.button_stop = DEBUG;
     }
 
+    public void setStarted() {
+        this.button_start = DEBUG;
+    }
+
     private STATUS_t on_stopped() throws InterruptedException {
         boolean ready_to_started = DEBUG;
         STATUS_t ret = STATUS_t.PAR_STOPPED;
@@ -2761,4 +2786,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         };
         thread.start();
     }
+
+
 }

@@ -21,6 +21,15 @@ public class BluetoothBox implements ActionCallback, TramesNotifyListener, Notif
     private SensorShockAccelerometerInfo last_shock_info = null;
     private SensorSmoothAccelerometerInfo last_smooth_info = null;
     private CONNEXION_STATE_t state = CONNEXION_STATE_t.DISCONNECTED;
+    private boolean leurre = false;
+
+    public boolean getIsLeurre () {
+        return this.leurre;
+    }
+
+    public void setLeurre (boolean leurre) {
+        this.leurre = leurre;
+    }
 
     class C01161 implements Runnable {
         C01161() {
@@ -109,6 +118,9 @@ public class BluetoothBox implements ActionCallback, TramesNotifyListener, Notif
     public BluetoothBox(Context context) {
         this.io = new BluetoothBoxIO(context);
         this.io.setDisconnectedListener(this);
+
+        if( this.io.readAddress().toString() != "" )
+            this.leurre = false;
     }
 
     public void connect(BluetoothDevice device) {

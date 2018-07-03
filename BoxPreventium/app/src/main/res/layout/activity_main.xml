@@ -79,46 +79,53 @@
         android:orientation="horizontal">
 
         <!-- SCORE WIDGETS -->
-        <LinearLayout android:id="@+id/score_layout"
-                      android:orientation="vertical"
-                      android:padding="1dp"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:layout_gravity="top|start"
-                      android:layout_marginTop="@dimen/score_layout_margin_top"
-                      android:layout_marginStart="@dimen/score_layout_margin_start">
+        <LinearLayout
+            android:id="@+id/score_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_marginStart="@dimen/score_layout_margin_start"
+            android:layout_marginTop="@dimen/score_layout_margin_top"
+            android:gravity="top|start"
+            android:orientation="vertical"
+            android:padding="1dp">
+
             <LinearLayout
                 android:id="@+id/layout_corner"
                 android:layout_width="wrap_content"
-                android:layout_height="@dimen/score_layout_height"
+                android:layout_height="wrap_content"
+                android:gravity="top|start"
                 android:orientation="horizontal">
-                <TextView android:id="@+id/corner_note_view"
+
+                <TextView
+                    android:id="@+id/corner_note_view"
                     android:layout_width="@dimen/score_layout_width"
                     android:layout_height="wrap_content"
-                    android:padding="1dp"
-                    android:layout_marginTop="@dimen/score_margin_top1"
                     android:layout_marginEnd="0dp"
+                    android:layout_marginTop="@dimen/score_margin_top1"
                     android:height="@dimen/score_layout_height"
-                    android:gravity="center"
-                    android:elevation="2dp"
                     android:background="@android:drawable/dialog_holo_light_frame"
                     android:backgroundTint="@color/colorAppGrey"
+                    android:elevation="2dp"
+                    android:gravity="center"
+                    android:padding="1dp"
                     android:shadowColor="#757575"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
                     android:text="@string/corner_note_string"
                     android:textColor="#ffffff"
                     android:textSize="@dimen/score_text_size"
-                    android:textStyle="bold"
-                    android:shadowDx="1"
-                    android:shadowDy="1"
-                    android:shadowRadius="2"/>
+                    android:textStyle="bold" />
+
                 <ImageView
                     android:id="@+id/corner_image"
                     android:layout_width="35dp"
                     android:layout_height="@dimen/score_layout_height"
-                    android:padding="0dp"
-                    android:gravity="center"
+                    android:layout_marginStart="-20dp"
                     android:elevation="2dp"
-                    android:layout_marginStart="-20dp"/>
+                    android:gravity="center"
+                    android:padding="0dp" />
             </LinearLayout>
 
             <LinearLayout
@@ -126,28 +133,31 @@
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/score_layout_height"
                 android:orientation="horizontal">
-                <TextView android:id="@+id/brake_note_view"
-                          android:layout_width="@dimen/score_layout_width"
-                          android:layout_height="wrap_content"
-                          android:layout_marginTop="@dimen/score_margin_top2"
-                          android:height="@dimen/score_layout_height"
-                          android:gravity="center"
-                          android:elevation="2dp"
-                          android:background="@android:drawable/dialog_holo_light_frame"
-                          android:backgroundTint="@color/colorAppGrey"
-                          android:shadowColor="#757575"
-                          android:text="@string/brake_note_string"
-                          android:textColor="#ffffff"
-                          android:textSize="@dimen/score_text_size"
-                          android:textStyle="bold"
-                          android:shadowDx="1"
-                          android:shadowDy="1"
-                          android:shadowRadius="2"/>
+
+                <TextView
+                    android:id="@+id/brake_note_view"
+                    android:layout_width="@dimen/score_layout_width"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/score_margin_top2"
+                    android:height="@dimen/score_layout_height"
+                    android:background="@android:drawable/dialog_holo_light_frame"
+                    android:backgroundTint="@color/colorAppGrey"
+                    android:elevation="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#757575"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="@string/brake_note_string"
+                    android:textColor="#ffffff"
+                    android:textSize="@dimen/score_text_size"
+                    android:textStyle="bold" />
+
                 <ImageView
                     android:id="@+id/brake_image"
                     android:layout_width="35dp"
                     android:layout_height="@dimen/score_layout_height"
-                    android:layout_marginStart="-20dp"/>
+                    android:layout_marginStart="-20dp" />
             </LinearLayout>
 
             <LinearLayout
@@ -155,28 +165,31 @@
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/score_layout_height"
                 android:orientation="horizontal">
-                <TextView android:id="@+id/acc_note_view"
-                          android:layout_width="@dimen/score_layout_width"
-                          android:layout_height="wrap_content"
-                          android:layout_marginTop="@dimen/score_margin_top2"
-                          android:height="@dimen/score_layout_height"
-                          android:gravity="center"
-                          android:elevation="2dp"
-                          android:background="@android:drawable/dialog_holo_light_frame"
-                          android:backgroundTint="@color/colorAppGrey"
-                          android:shadowColor="#757575"
-                          android:text="@string/acc_note_string"
-                          android:textColor="#ffffff"
-                          android:textSize="@dimen/score_text_size"
-                          android:textStyle="bold"
-                          android:shadowDx="1"
-                          android:shadowDy="1"
-                          android:shadowRadius="2"/>
+
+                <TextView
+                    android:id="@+id/acc_note_view"
+                    android:layout_width="@dimen/score_layout_width"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/score_margin_top2"
+                    android:height="@dimen/score_layout_height"
+                    android:background="@android:drawable/dialog_holo_light_frame"
+                    android:backgroundTint="@color/colorAppGrey"
+                    android:elevation="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#757575"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="@string/acc_note_string"
+                    android:textColor="#ffffff"
+                    android:textSize="@dimen/score_text_size"
+                    android:textStyle="bold" />
+
                 <ImageView
                     android:id="@+id/acc_image"
                     android:layout_width="35dp"
                     android:layout_height="@dimen/score_layout_height"
-                    android:layout_marginStart="-20dp"/>
+                    android:layout_marginStart="-20dp" />
             </LinearLayout>
 
             <LinearLayout
@@ -184,47 +197,51 @@
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/score_layout_height"
                 android:orientation="horizontal">
-                <TextView android:id="@+id/avg_note_view"
-                          android:layout_width="@dimen/score_layout_width"
-                          android:layout_height="wrap_content"
-                          android:layout_marginTop="@dimen/score_margin_top2"
-                          android:height="@dimen/score_layout_height"
-                          android:gravity="center"
-                          android:elevation="2dp"
-                          android:background="@android:drawable/dialog_holo_light_frame"
-                          android:backgroundTint="@color/colorAppGrey"
-                          android:shadowColor="#757575"
-                          android:text="@string/avg_note_string"
-                          android:textColor="#ffffff"
-                          android:textSize="@dimen/score_text_size"
-                          android:textStyle="bold"
-                          android:shadowDx="1"
-                          android:shadowDy="1"
-                          android:shadowRadius="2"/>
+
+                <TextView
+                    android:id="@+id/avg_note_view"
+                    android:layout_width="@dimen/score_layout_width"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/score_margin_top2"
+                    android:height="@dimen/score_layout_height"
+                    android:background="@android:drawable/dialog_holo_light_frame"
+                    android:backgroundTint="@color/colorAppGrey"
+                    android:elevation="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#757575"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="@string/avg_note_string"
+                    android:textColor="#ffffff"
+                    android:textSize="@dimen/score_text_size"
+                    android:textStyle="bold" />
+
                 <ImageView
                     android:id="@+id/avg_image"
                     android:layout_width="22dp"
                     android:layout_height="@dimen/score_layout_height"
-                    android:layout_marginStart="-13dp"/>
+                    android:layout_marginStart="-13dp" />
             </LinearLayout>
 
-            <TextView android:id="@+id/driving_time_text"
-                      android:layout_width="@dimen/score_layout_width"
-                      android:layout_height="wrap_content"
-                      android:layout_marginTop="@dimen/score_margin_top2"
-                      android:height="@dimen/score_layout_height"
-                      android:gravity="center"
-                      android:elevation="2dp"
-                      android:background="@android:drawable/dialog_holo_light_frame"
-                      android:backgroundTint="@color/colorAppGrey"
-                      android:shadowColor="#757575"
-                      android:shadowDx="1"
-                      android:shadowDy="1"
-                      android:shadowRadius="2"
-                      android:textColor="#ffffff"
-                      android:textSize="@dimen/driving_time_text_size"
-                      android:textStyle="bold"
-                      android:text="0:00"/>
+            <TextView
+                android:id="@+id/driving_time_text"
+                android:layout_width="@dimen/score_layout_width"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/score_margin_top2"
+                android:height="@dimen/score_layout_height"
+                android:background="@android:drawable/dialog_holo_light_frame"
+                android:backgroundTint="@color/colorAppGrey"
+                android:elevation="2dp"
+                android:gravity="center"
+                android:shadowColor="#757575"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2"
+                android:text="0:00"
+                android:textColor="#ffffff"
+                android:textSize="@dimen/driving_time_text_size"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/box_num_connected"
@@ -232,16 +249,16 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/score_margin_top2"
                 android:height="@dimen/score_layout_height"
-                android:gravity="center"
                 android:elevation="2dp"
-                android:textColor="#ff0000"
-                android:textSize="@dimen/box_num_text_size"
-                android:textStyle="bold"
+                android:gravity="center"
                 android:shadowColor="#757575"
                 android:shadowDx="1"
                 android:shadowDy="1"
                 android:shadowRadius="2"
-                android:text="0" />
+                android:text="0"
+                android:textColor="#ff0000"
+                android:textSize="@dimen/box_num_text_size"
+                android:textStyle="bold" />
 
         </LinearLayout>
 
@@ -338,8 +355,8 @@
 
         <RelativeLayout
             android:id="@+id/actions_layout"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content">
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
 
             <!-- ACC FORCES & DRIVING SCORE WIDGETS -->
             <LinearLayout
@@ -507,14 +524,14 @@
                 android:id="@+id/button_stop"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="238dp"
                 android:layout_marginStart="110dp"
+                android:layout_marginTop="238dp"
                 android:src="@drawable/ic_check"
-                fab:fab_size="@dimen/fb_button_size"
                 fab:fab_colorNormal="@color/colorAppGrey"
                 fab:fab_colorPressed="@color/colorAppRed"
                 fab:fab_colorRipple="#ff5252"
-                fab:fab_shadowColor="#444"/>
+                fab:fab_shadowColor="#444"
+                fab:fab_size="@dimen/fb_button_size" />
 
             <!-- ACTION MENU -->
             <com.github.clans.fab.FloatingActionMenu
