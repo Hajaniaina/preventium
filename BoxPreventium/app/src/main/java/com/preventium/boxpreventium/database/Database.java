@@ -753,7 +753,7 @@ Log.d("AAAAA","NB POINTS " + nb);
          * Autre solution qui ne pause pas de problème
          * prenne seulement de resource mais pas trop
          * @Arnaud
-
+        */
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.instance());
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putInt(COLUMN_CEP_DEVICE_A, Integer.valueOf(device_a));
@@ -761,7 +761,7 @@ Log.d("AAAAA","NB POINTS " + nb);
         editor.putInt(COLUMN_CEP_DEVICE_F, Integer.valueOf(device_f));
         editor.putInt(COLUMN_CEP_DEVICE_M, Integer.valueOf(device_m));
         editor.apply();
-        */
+
         return true;
     }
 
@@ -961,7 +961,7 @@ Log.d("AAAAA","NB POINTS " + nb);
                             /**
                              * on efface les données
                              * @Arnaud
-
+                             */
                                 SharedPreferences.Editor editor = sharedPref.edit();
                                 editor.remove(COLUMN_CEP_DEVICE_A);
                                 editor.remove(COLUMN_CEP_DEVICE_V);
@@ -969,7 +969,6 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 editor.remove(COLUMN_CEP_DEVICE_M);
                                 editor.apply();
                                 ColorCEP.getInstance().unsetColors();
-                            */
 
                             output.flush();
                             output.close();

@@ -1090,7 +1090,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         MainActivity.this.speed_corner.clear();
 
                         // last data
-                        onLastAlertData();
+                        // onLastAlertData();
 
                         // set to stop
                         // setButtonParcours(R.drawable.ic_stop_black_24dp);
