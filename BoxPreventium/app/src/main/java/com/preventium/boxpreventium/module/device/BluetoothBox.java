@@ -202,7 +202,7 @@ public class BluetoothBox implements ActionCallback, TramesNotifyListener, Notif
     public void onFail(int errorCode, String msg) {
         updateState( CONNEXION_STATE_t.DISCONNECTED );
         Log.d("HandlerBox","faill be:" + msg);
-        updateState(CONNEXION_STATE_t.DISCONNECTED);
+        // updateState(CONNEXION_STATE_t.DISCONNECTED);
     }
 
     public void onBatteryInfoReceived(BatteryInfo info) {
@@ -231,6 +231,6 @@ public class BluetoothBox implements ActionCallback, TramesNotifyListener, Notif
     }
 
     public void setConnectionState(CONNEXION_STATE_t state){
-        this.state=state;
+        this.state = state;
     }
 }

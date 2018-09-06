@@ -17,6 +17,8 @@ import android.telephony.TelephonyManager;
 import android.util.Base64;
 import android.util.Log;
 
+import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
+
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
@@ -288,6 +290,14 @@ public class ComonUtils {
         final byte[] decodedByteArray = decode(crypt, Base64.DEFAULT);
         String s = new String(decodedByteArray);
         return s.replace(key, "");
+    }
+
+    public static ReaderCFGFile getCFG (Context context) {
+        String srcFileName = ComonUtils.getIMEInumber(context.getApplicationContext()) + ".CFG";
+        String desFileName = String.format(Locale.getDefault(), "%s/%s", context.getApplicationContext().getFilesDir(), srcFileName);
+        ReaderCFGFile cfg =  new ReaderCFGFile();
+        cfg.read(desFileName);
+        return cfg;
     }
 
     //######### Older paste

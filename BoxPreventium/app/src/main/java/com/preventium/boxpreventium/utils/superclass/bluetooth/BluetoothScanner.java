@@ -4,9 +4,11 @@ import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Build.VERSION;
 import android.os.Handler;
 import android.util.Log;
+
 import com.google.firebase.analytics.FirebaseAnalytics.Param;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.BluetoothLeScannerCompat;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.ScanCallbackCompat;
@@ -14,12 +16,13 @@ import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.ScanFilte
 import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.ScanResultCompat;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.ScanSettingsCompat;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.scanner.ScannerCallback;
+
 import java.util.List;
 
 public class BluetoothScanner extends ScanCallbackCompat {
     public static final long SCAN_PERIOD = 40000;
     private static final String TAG = "BluetoothScanner";
-    private Context context;
+    public Context context;
     private Handler handler;
     private long scan_period = SCAN_PERIOD;
     private ScannerCallback scannerCallback;
@@ -51,6 +54,7 @@ public class BluetoothScanner extends ScanCallbackCompat {
     @SuppressLint("WrongConstant")
     public void startLeScan() {
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+
         if (adapter == null) {
             Log.w(TAG, "Bluetooth adapter is null");
             if (this.scannerCallback != null) {
@@ -61,7 +65,8 @@ public class BluetoothScanner extends ScanCallbackCompat {
             if (this.scannerCallback != null) {
                 this.scannerCallback.onBluetoothAdapterIsDisable();
             }
-        } else if (VERSION.SDK_INT < 23 || ((LocationManager) this.context.getSystemService(Param.LOCATION)).isProviderEnabled("gps")) {
+            adapter.enable();
+        } else if (VERSION.SDK_INT < Build.VERSION_CODES.M || ((LocationManager) this.context.getSystemService(Param.LOCATION)).isProviderEnabled("gps")) {
             this.handler.postDelayed(new C01341(), this.scan_period);
             BluetoothLeScannerCompat.startScan(adapter, this);
             if (this.scannerCallback != null) {
@@ -73,6 +78,7 @@ public class BluetoothScanner extends ScanCallbackCompat {
                 this.scannerCallback.onLocationServiceIsDisable();
             }
         }
+
     }
 
     public void startLeScan(List<ScanFilterCompat> filters, ScanSettingsCompat settings) {
@@ -118,7 +124,7 @@ public class BluetoothScanner extends ScanCallbackCompat {
     }
 
     public void onScanResult(int callbackType, ScanResultCompat result) {
-        super.onScanResult(callbackType, result);
+        // super.onScanResult(callbackType, result);
         if (this.scannerCallback != null) {
             this.scannerCallback.onScanResult(result.getDevice(), result.getRssi());
         }

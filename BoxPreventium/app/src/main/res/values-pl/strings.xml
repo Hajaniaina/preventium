@@ -269,5 +269,9 @@
 
     <string name="info_conducteur_string">Identyfikacja kierowcy</string>
     <string name="etat">Na starcie</string>
+    <string name="crash_app_message">Aplikacja uległa awarii, e-mail został już wysłany do programisty</string>
+    <string name="crash_app_message_again">Aplikacja ponownie się zawiesiła, do programisty wysłano wiadomość e-mail</string>
+    <string name="crash_report">Raport awarii</string>
+    <string name="storage_problem">We inform you that the storage space of your smartphone should have the system folders necessary for the proper functioning of the application</string>
 
 </resources>

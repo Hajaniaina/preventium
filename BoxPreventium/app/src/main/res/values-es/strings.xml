@@ -267,5 +267,9 @@
 
     <string name="info_conducteur_string">Identificación del conductor</string>
     <string name="etat">Al principio</string>
+    <string name="crash_app_message">La aplicación se bloqueó, ya se envió un correo electrónico al desarrollador</string>
+    <string name="crash_app_message_again">" La aplicación se bloqueó de nuevo, se envió un correo electrónico al desarrollador"</string>
+    <string name="crash_report">Informe de fallas</string>
+    <string name="storage_problem">We inform you that the storage space of your smartphone should have the system folders necessary for the proper functioning of the application</string>
 
 </resources>

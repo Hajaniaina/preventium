@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.location.Location;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -39,6 +40,7 @@ import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ColorCEP;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
+import com.preventium.boxpreventium.utils.DataLocal;
 import com.preventium.boxpreventium.utils.ThreadDefault;
 import com.preventium.boxpreventium.utils.Zipper;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPClientIO;
@@ -81,6 +83,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private static FTPConfig FTP_EPC; // = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
     private static FTPConfig FTP_POS; // = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/POSS");
     private static FTPConfig FTP_NAME; // = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
+    private static FTPConfig FTP_FORM;
 
     private static long duration = 0;
     private static int nb_box = 0;
@@ -118,7 +121,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private final Lock lock = new ReentrantLock();
     private final Lock lock_timers = new ReentrantLock();
     private String log = "";
-    private HandlerBox modules = null;
+
     //private Chrono mov_chrono = new Chrono();
     //private MOVING_t mov_t = MOVING_t.STP;
     //private MOVING_t mov_t_last = MOVING_t.UNKNOW;
@@ -127,25 +130,23 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private long note_parcour_update_at = 0;
     private long parcour_id = 0;
     private String parcoursTypeName = null;
-
     private long recommended_speed_update_at = 0;
-
-    //private Chrono seuil_chrono_x = new Chrono();
-    //private Chrono seuil_chrono_y = new Chrono();
-    //private ForceSeuil seuil_last_x = null;
-    //private ForceSeuil seuil_last_y = null;
-    //private ForceSeuil seuil_ui = null;
-    //Pair<Double, Short> shock = Pair.create(Double.valueOf(0.0d), Short.valueOf((short) 0));
-    //Pair<Double, Short> smooth = Pair.create(Double.valueOf(0.0d), Short.valueOf((short) 0));
     private float speed_max = 0.0f;
     private long try_send_eca_at = 0;
     private List<Pair<Long, Integer>> ui_timers = new ArrayList();
 
     private int a, v, f, m;
-    private static FTPConfig FTP_FORM; // = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM, "/FORM");
+
     private boolean bm = false;
+    private Chrono chrono;
+    private boolean isRestart = false;
+
+    // Data custom
+    private HandlerBox modules = null;
+    private DataLocal local;
 
     public interface AppManagerListener {
+
         void onCalibrateOnAcceleration();
 
         void onCalibrateOnConstantSpeed();
@@ -191,6 +192,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         void onUiTimeout(int i, STATUS_t sTATUS_t);
 
         void onLastAlertData();
+
+        void onCrash();
+
+        void checkRestart();
     }
 
     class C01051 implements Runnable {
@@ -236,7 +241,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this.modules = new HandlerBox(ctx, this);
         this.database = new Database(ctx);
         this.fileSender = new FilesSender(ctx);
-
+        this.local = DataLocal.get(this.ctx);
+        this.chrono = Chrono.newInstance();
+        this.chrono.start();
     }
 
     private void switchON(boolean on) {
@@ -252,7 +259,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             this.modules.on_raz_calibration();
         }
     }
-
 
     private int  note_to_score(float note) {
         int score = 5;
@@ -296,13 +302,12 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
             if( json != null && json.toString().length() > 0) {
                 try {
-                    JSONObject config = new JSONObject(json);
-                    // if( config.optBoolean("succes", false) ) {
-                        HOSTNAME = config.optString("hostname");
-                        USERNAME = config.optString("username");
-                        PASSWORD = ComonUtils.decryt(config.optString("password"), key);
-                    // }
+                    JSONObject config = new JSONObject(json.substring(json.indexOf("{"), json.lastIndexOf("}") + 1));
+                    HOSTNAME = config.optString("hostname");
+                    USERNAME = config.optString("username");
+                    PASSWORD = ComonUtils.decryt(config.optString("password"), key);
                 }catch(Exception e) {
+                    e.printStackTrace();
                 }
             }
 
@@ -319,6 +324,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     "  URL = " + url;
 
             // MainActivity.instance().Alert(txt, Toast.LENGTH_LONG);
+            // Log.v("Data", txt);
 
             AppManager.FTP_ACTIF = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/ACTIFS");
             AppManager.FTP_CFG = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
@@ -333,30 +339,40 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     public void myRun() throws InterruptedException {
         super.myRun();
-        setLog("");
-        this.database.clear_obselete_data();
 
+        // clear database
+        this.database.clear_obselete_data();
         new Async().execute();
 
-        /* if( listener != null ) {
-            MainActivity main = MainActivity.instance();
-            SharedPreferences SharedPref = PreferenceManager.getDefaultSharedPreferences(main);
-            boolean isForm = SharedPref.getBoolean(main.getString(R.string.firstrun_key), true);
-            if( isForm ) {
-                listener.onStatusChanged(STATUS_t.GETTING_FORM);
-                return;
-            }
+        // crash init
+        if( (boolean)local.getValue("crashApp", false) && listener != null ) {
+            listener.onCrash();
         }
-        */
 
-        IMEI_is_actif();
+        boolean isFirst = (boolean)local.getValue("isFirstRelance", true);
+        float beginTime = local.getFloat("currentTime", 0);
+        float currentTime = System.currentTimeMillis();
+        float calcHours = (currentTime - beginTime) / 3600000;
 
-        download_cfg();
-        // new AsyncCFG().execute();
-        download_epc();
-        // new AsyncEPC().execute();
-        download_dobj();
-        // new AsyncOBJ().execute();
+        int opt = (int)local.getValue("timer", 0);
+        boolean isConfigChanged = Math.round(calcHours) > opt;
+        // ((MainActivity)this.ctx).Alert(String.valueOf(opt) + " < " + String.valueOf(Math.round(calcHours)) + " = " + String.valueOf(isConfigChanged), Toast.LENGTH_LONG);
+
+        if( isFirst || opt == 0 || isConfigChanged ) { // > Hours or first_dem
+            // imei check actif
+            IMEI_is_actif();
+            // cfg
+            download_cfg();
+            // epc
+            download_epc();
+            // dobj
+            download_dobj();
+
+            // créer ou mettre à jour
+            this.local.setValue("currentTime", (float) System.currentTimeMillis());
+            this.local.setValue("isFirstRelance", false);
+            this.local.apply();
+        }
 
         this.modules.setActive(DEBUG);
 
@@ -365,23 +381,24 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         upload_eca(DEBUG);
 
         while (isRunning()) {
+            // if( Build.VERSION_CODES.M == Build.VERSION.SDK_INT ) {
+                int relance = (int)local.getValue("relance", 30);
+                if (listener != null && chrono.getMinutes() >= relance  && !isRestart) { // >= 30 mn depart 30mn
+                    chrono.stop();
+                    isRestart = true;
+                    listener.checkRestart();
+                }
+            // }
+
             check_internet_is_active();
             update_tracking_status();
             this.modules.setActive(DEBUG);
-            sleep(500);
-            // listener.onLastAlertData();
+            sleep(1200);
+
             this.database.clear_obselete_data();
             upload_eca(false);
             update_driving_time();
             calc_movements();
-
-            // force to stop
-            if( this.button_stop == DEBUG )
-                status = STATUS_t.PAR_PAUSING_WITH_STOP;
-
-            // force to start
-            if( this.button_start == DEBUG )
-                status = STATUS_t.PAR_STARTED;
 
             boolean b = this.button_stop;
             // MainActivity.instance().Alert(status.toString(), Toast.LENGTH_SHORT);
@@ -1831,6 +1848,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     case LEVEL_2: i1 = 5; i2 = 6; break;
                     case LEVEL_3: i1 = 5; i2 = 7; break;
                     case LEVEL_4: i1 = 5; i2 = 8; break;
+
                     case LEVEL_5: i1 = 5; i2 = 9; break;
                 }
                 break;
@@ -1925,6 +1943,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         // Get seuils of runtime alert
         long ST = System.currentTimeMillis();
         Location loc = get_last_location();
+        boolean pass = false;
 
         ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
         ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(smooth.first);
@@ -1949,13 +1968,11 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             // Gettings alerts
             seuil_x = get_longitudial_seuil(longitudinal_elapsed);
 
-
-
             // ADD ECA? ( location with X alert )
             boolean add_eca = false;
             if (seuil_x != null) {
                 if (_tracking) {
-                    if( alertX_add_id != seuil_x.IDAlert ||
+                    if( alertX_add_id != seuil_x.IDAlert || // ça peut se passer car id peut toujour être différent à l'id courant
                             ST > alertX_add_at + (seuil_x.TPS * 1000) ) {
 
                         database.addECA(parcour_id, ECALine.newInstance(seuil_x.IDAlert, loc, null));
@@ -1963,6 +1980,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                         alertX_add_id = seuil_x.IDAlert;
                         lastLocSend = loc;
                         add_eca = true;
+                        pass = true;
                     }
                 }
             }
@@ -1982,13 +2000,14 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             // ADD ECA? ( location with Y alert )
             if (seuil_y != null) {
                 if (_tracking) {
-                    if( alertY_add_id != seuil_y.IDAlert ||
+                    if( alertY_add_id != seuil_y.IDAlert || // ça peut se passer car id peut toujour être différent à l'id courant
                             ST > alertY_add_at + (seuil_y.TPS * 1000)  ) {
                         database.addECA(parcour_id, ECALine.newInstance(seuil_y.IDAlert, loc, null));
                         //Log.d("AAA", "ADD ECA " + seuil_y.toString());
                         alertY_add_at = ST;
                         alertY_add_id = seuil_y.IDAlert;
                         lastLocSend = loc;
+                        pass = true;
                     }
                 }
             }
@@ -2005,13 +2024,14 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                         if (lastLocSend == null) lastLocSend = new Location(locations.get(0));
                         database.addECA(parcour_id, ECALine.newInstance(locations.get(0), lastLocSend));
                         lastLocSend = new Location(locations.get(0));
+                        pass = true;
                     }
                 }
             }
         }
 
         // Update UI interface
-        if( listener != null ) {
+        if( listener != null /* && pass */) {
 
             // Select seuil for ui
             ForceSeuil seuil = null;
@@ -2048,7 +2068,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             {
                 if( seuil == null )
                 {
-                    if( alertUI_add_at + t_ms < ST )
+                    if( alertUI_add_at + t_ms < ST ) // ne se déclenche pas car inférieur au temps déclenchement
                     {
                         alertUI_add_at = ST;
                         seuil_ui = null;
@@ -2266,22 +2286,22 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             this.note_forces_update_at = System.currentTimeMillis();
             float Note_A = calc_note_by_force_type("A", this.parcour_id);
             //a--------
-            a=note_to_score(Note_A);
+            a = note_to_score(Note_A);
             //------
             LEVEL_t level_A = note2level(Note_A);
             float Note_F = calc_note_by_force_type("F", this.parcour_id);
             //f--------
-            f=note_to_score(Note_F);
+            f = note_to_score(Note_F);
             //------
             LEVEL_t level_F = note2level(Note_F);
             float Note_V = calc_note_by_force_type("V", this.parcour_id);
             //v--------
-            v=note_to_score(Note_V);
+            v = note_to_score(Note_V);
             //------
             LEVEL_t level_V = note2level(Note_V);
             float Note_M = ((Note_A + Note_F) + Note_V) * 0.33333334f;
             //v--------
-            m=note_to_score(Note_M);
+            m = note_to_score(Note_M);
             //------
 
             ColorCEP.getInstance().addColors(note_to_score(Note_A), note_to_score(Note_V), note_to_score(Note_F), note_to_score(Note_M));
@@ -2523,9 +2543,15 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 l = this.mov_t_last == MOVING_t.UNKNOW,
                 e = this.engine_t != ENGINE_t.ON;
 
-        if (this.modules.getNumberOfBoxConnected() < 1 || this.mov_t_last == MOVING_t.STP || this.mov_t_last == MOVING_t.UNKNOW || this.engine_t != ENGINE_t.ON) {
+        // this.mov_t_last == MOVING_t.STP
+        if( Build.VERSION.SDK_INT != Build.VERSION_CODES.N && this.mov_t_last == MOVING_t.STP )
+            ready_to_started = false;
+
+        if (this.modules.getNumberOfBoxConnected() < 1 || this.mov_t_last == MOVING_t.UNKNOW || this.engine_t != ENGINE_t.ON) {
             ready_to_started = false;
         }
+
+        Log.v("Ready Started" , String.valueOf(ready_to_started));
 
         // ready_to_started = true;
         // MainActivity.instance().Alert("Ready_to_started: " + (ready_to_started ? "oui" : "non"), Toast.LENGTH_LONG);

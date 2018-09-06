@@ -1,7 +1,8 @@
 package com.preventium.boxpreventium.gui;
 
 import android.app.Application;
-import com.devs.acr.AutoErrorReporter;
+
+import com.preventium.boxpreventium.module.ErrorEmail.ErrorException;
 
 public class PreventiumApplication extends Application {
 
@@ -10,9 +11,16 @@ public class PreventiumApplication extends Application {
 
         super.onCreate();
 
+        /*
         AutoErrorReporter.get(this)
                 .setEmailAddresses("hoanyprojet@gmail.com")
                 .setEmailSubject("Preventium Crash Report")
                 .start();
+        */
+
+        // error handler
+        ErrorException
+                .get(this)
+                .Start();
     }
 }

@@ -9,7 +9,6 @@ import android.os.Parcelable;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.LinearLayout.LayoutParams;
 
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.FORCE_t;
@@ -61,18 +60,14 @@ public class AccForceView implements Parcelable {
         this.visible = in.readByte() != (byte) 0;
     }
 
-    /*
-    public void restore(Activity activity) {
-        this.accForceView = (ImageView) activity.findViewById(R.id.acc_force_view);
-        this.appColor = new AppColor(activity);
-        setValue(this.lastForce, this.lastLevel);
-        if (this.visible) {
-            hide(false);
-        } else {
-            hide(true);
+    public void viewForce (boolean view) {
+        if( view ) {
+            this.accForceView.setVisibility(View.VISIBLE);
+            this.setValue(FORCE_t.TURN_LEFT, LEVEL_t.LEVEL_3);
         }
     }
-*/
+
+
     public void hide(boolean hide, int bolmap, int bolScreen, int bolSeuil) {
 //###bolmap = valeur de retour map
 //###bolScreen = valeur de retour taille ecran
@@ -111,13 +106,13 @@ public class AccForceView implements Parcelable {
 
     private void hideAccForceView(Activity activity, boolean hide, int bolSeuil) {
         if (hide) {
+
+            /* Layout conmenté
             LayoutParams params = (LayoutParams) this.accForceView.getLayoutParams();
             params.height = ((int) this.accForceView.getResources().getDimension(R.dimen.force_layout_height)) + 20;
             params.width = ((int) this.accForceView.getResources().getDimension(R.dimen.force_layout_width)) + 20;
             this.accForceView.setLayoutParams(params);
-            //JSONManager jSONManager = new JSONManager(activity);
-
-            //###bolSeuil = valeur de retour boolean seuil
+            */
 
             if (bolSeuil == Integer.valueOf(QrScanActivity.SCAN_MODE_VEHICLE_DISABLED).intValue()) {
                 this.accForceView.setVisibility(View.GONE);

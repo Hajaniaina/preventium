@@ -841,6 +841,7 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 device_f = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F)) : sharedPref.getInt(COLUMN_CEP_DEVICE_F, -1);
                                 device_m = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M)) : sharedPref.getInt(COLUMN_CEP_DEVICE_M, -1);
 
+                                /*
                                 SharedPreferences _sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.instance());
                                 SharedPreferences.Editor editor = sharedPref.edit();
                                 editor.putInt(COLUMN_CEP_DEVICE_A, Integer.valueOf(device_a));
@@ -848,6 +849,16 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 editor.putInt(COLUMN_CEP_DEVICE_F, Integer.valueOf(device_f));
                                 editor.putInt(COLUMN_CEP_DEVICE_M, Integer.valueOf(device_m));
                                 editor.apply();
+
+
+                                // pour triangle
+                                SharedPreferences.Editor triangle = (PreferenceManager.getDefaultSharedPreferences(MainActivity.instance())).edit();
+                                triangle.putInt(COLUMN_CEP_DEVICE_A + "_triangle", Integer.valueOf(device_a));
+                                triangle.putInt(COLUMN_CEP_DEVICE_V + "_triangle", Integer.valueOf(device_v));
+                                triangle.putInt(COLUMN_CEP_DEVICE_F + "_triangle", Integer.valueOf(device_f));
+                                triangle.putInt(COLUMN_CEP_DEVICE_M + "_triangle", Integer.valueOf(device_m));
+                                triangle.apply();
+                                */
 
                                 i = 0;
                                 GMTCalendar.setTimeInMillis(time); // 6

@@ -78,7 +78,7 @@ public class HandlerBox extends ThreadDefault
     //by francisco
     public HandlerBox(Context ctx){
         super(null);
-        this.context=ctx;
+        this.context = ctx;
     }
     //---------------//
 
@@ -121,7 +121,7 @@ public class HandlerBox extends ThreadDefault
                 case DISCONNECTED: break;
             }
         }
-        return nb + 1;
+        return nb;
     }
 
     public int getNumberOfBoxConnectedOrConnecting(){
@@ -142,8 +142,6 @@ public class HandlerBox extends ThreadDefault
     }
 
     public ENGINE_t getLastEngine(){ return last_engine_t; }
-
-
 
     public void on_constant_speed(){ calibrate_1 = true; }
 
@@ -186,7 +184,6 @@ public class HandlerBox extends ThreadDefault
         while( isRunning() ) {
 
             sleep(1000);
-
             int active = get_active_from_serveur();
 
             // WHEN SCANNING
@@ -194,8 +191,8 @@ public class HandlerBox extends ThreadDefault
                 chrono.start(); // Restart chrono who indicate the elapsed time since the last scan
             }
 
-            curr_smooth = Pair.create((long)0,(short)0);
-            curr_shock = Pair.create((long)0,(short)0);
+            curr_smooth = Pair.create((long)0, (short)0);
+            curr_shock = Pair.create((long)0, (short)0);
             for( int i = mBoxList.size()-1; i >= 0; i-- ) {
 
                 if( !mBoxList.get(i).getIsLeurre() && listener != null )
@@ -226,7 +223,6 @@ public class HandlerBox extends ThreadDefault
                             curr_shock = Pair.create(shock.value(),shock.value_raw());
                         }
                     }
-
                 }
             }
 
@@ -280,6 +276,7 @@ public class HandlerBox extends ThreadDefault
                 listener.onEngineStateChanged(engine_t);
                 last_engine_t = engine_t;
             }
+
             // WHEN NOT SCANNING
             if( !scanning ) {
                 if( DEBUG ) Log.d(TAG,"scan :" +scanning);
@@ -290,7 +287,7 @@ public class HandlerBox extends ThreadDefault
                         add( proximityDevices.get(i) );
                     }
                     proximityDevices.clear();
-                    if(one_leurre<=1){
+                    if(one_leurre <= 1 ){
                         orderBox();
                     }
 
@@ -306,14 +303,13 @@ public class HandlerBox extends ThreadDefault
                             || (mBoxList.size() == 2 && chrono.getMinutes() > 3.0)
                             ) {
 
-
-                        Log.d(TAG,"Rescan box   " +one_leurre );
+                        Log.d(TAG,"Rescan box   " + one_leurre );
 
                         discoverBox.scan(); // Restart scanning
 
-                        Log.d(TAG,"Box found    " +nombre_scan_found );
+                        Log.d(TAG,"Box found " + nombre_scan_found );
 
-                        if(active == 1 && nombre_scan_found==0){
+                        if( active == 1 && nombre_scan_found == 0 ){
                             if(bleutoothVirtuelLeurre()) {
                                 firstscanVirtuel = true;
                                 one_leurre++;
@@ -325,7 +321,7 @@ public class HandlerBox extends ThreadDefault
                 }
             }
             //si non leurre et non device
-            if(nombre_scan_found ==0 && active ==0 && chrono.getSeconds() > 30.0 ){
+            if(nombre_scan_found == 0 && active == 0 && chrono.getSeconds() > 30.0 ){
                // HandlerBox.this.setStop();
                /// listener.onEngineStateChanged(ENGINE_t.OFF);
                 Log.d(TAG,"STOP because no leurre and no divice");
@@ -375,10 +371,10 @@ public class HandlerBox extends ThreadDefault
             BluetoothBox box = new BluetoothBox(context);
             int alertID = (int)ECALine.instance().alertID;
             boolean connected =  alertID > 0 && alertID < 254 ? (alertID == 230 ? true : false) : false;
-            if( listener != null ) listener.onDeviceState( device.getAddress(), connected );
+            if( listener != null ) listener.onDeviceState( device.getAddress(), connected ); // ne fonctionne qu'avec un boitier
             if( DEBUG ) Log.d(TAG,"FIND " + device.getAddress() );
 
-            // On ferme l'ancienne instance de ce divice s'il est déjà dans la list
+            // On ferme l'ancienne instance de ce device s'il est déjà dans la list
             // (car si il existe déjà, c'est qu'il n'est plus connecté mais que sont status n'est
             // pas encore actualisé, donc on le ferme et on le supprime, pour eviter des conflit)
 
@@ -464,10 +460,6 @@ public class HandlerBox extends ThreadDefault
                 devices.add(Bdivice);
 
                 onScanChanged(false, devices);
-
-
-                //box.connect(Bdivice);
-                // mBoxList.add(box);
                 return true;
             }
 

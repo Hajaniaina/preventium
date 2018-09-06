@@ -280,6 +280,10 @@
     <!--======= -->
         <string name="info_conducteur_string">Driver identification</string>
         <string name="etat">At Start </string>
+    <string name="crash_app_message">The application crashed, an email is already sent to the developer</string>
+    <string name="crash_app_message_again">The application crashed again, an email was sent to the developer</string>
+    <string name="crash_report">Crash report from</string>
+    <string name="storage_problem">We inform you that the storage space of your smartphone should have the system folders necessary for the proper functioning of the application</string>
     <!-- >>>>>>> 5f739083d71b6cf5758d4bd4f99b46f072a32b4f -->
 
 
