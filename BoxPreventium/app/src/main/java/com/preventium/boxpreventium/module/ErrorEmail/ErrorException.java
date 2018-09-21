@@ -45,6 +45,7 @@ public class ErrorException {
             intent.putExtra("crashApp", true);
 
             context.startActivity(intent);
+            context.startActivity(intent);
         }catch(Exception e) {}
     }
 
@@ -53,7 +54,7 @@ public class ErrorException {
         restartApp();
         // make sure we die, otherwise the app will hang ...
         android.os.Process.killProcess(android.os.Process.myPid());
-        System.exit(0);
+        System.exit(-1);
 
     }
 

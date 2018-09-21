@@ -19,8 +19,9 @@ public class PreventiumApplication extends Application {
         */
 
         // error handler
-        ErrorException
+        /*ErrorException
                 .get(this)
                 .Start();
+                */
     }
 }

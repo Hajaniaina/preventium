@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.widget.Toast;
 
 /**
  * Created by tog on 28/08/2018.
@@ -57,6 +58,5 @@ public class BluetoothReceiver extends BroadcastReceiver {
             BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
             // Toast.makeText(context, device.getName() + " est ajouté au bond", Toast.LENGTH_SHORT).show();
         }
-
     }
 }

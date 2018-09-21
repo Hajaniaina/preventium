@@ -6,6 +6,7 @@ import android.content.SharedPreferences.Editor;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -140,6 +141,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private boolean bm = false;
     private Chrono chrono;
     private boolean isRestart = false;
+    private boolean initWorkTime = false;
 
     // Data custom
     private HandlerBox modules = null;
@@ -277,6 +279,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         return score;
     }
 
+
+
     public class Async extends AsyncTask<String, String, Integer> {
 
         private String serveur = "https://test.preventium.fr/index.php/get_activation/";
@@ -337,6 +341,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
     }
 
+    private boolean _timer = false;
     public void myRun() throws InterruptedException {
         super.myRun();
 
@@ -363,8 +368,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             IMEI_is_actif();
             // cfg
             download_cfg();
-            // epc
-            download_epc();
             // dobj
             download_dobj();
 
@@ -372,7 +375,13 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             this.local.setValue("currentTime", (float) System.currentTimeMillis());
             this.local.setValue("isFirstRelance", false);
             this.local.apply();
-        }
+
+            _timer = false;
+        } else
+            _timer = true;
+
+        // epc
+        download_epc();
 
         this.modules.setActive(DEBUG);
 
@@ -381,23 +390,29 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         upload_eca(DEBUG);
 
         while (isRunning()) {
-            // if( Build.VERSION_CODES.M == Build.VERSION.SDK_INT ) {
-                int relance = (int)local.getValue("relance", 30);
-                if (listener != null && chrono.getMinutes() >= relance  && !isRestart) { // >= 30 mn depart 30mn
+            // ((MainActivity)this.ctx).Alert(String.valueOf(chrono.getMinutes()), Toast.LENGTH_SHORT);
+            if( Build.VERSION_CODES.M == Build.VERSION.SDK_INT ) {
+                int relance = local.getInt("relance", 30);
+                if (listener != null && chrono.getMinutes() >= relance  && !isRestart) { // >= relance mn
                     chrono.stop();
                     isRestart = true;
                     listener.checkRestart();
                 }
-            // }
-
+            }
+            // test de connexion tout le temps
             check_internet_is_active();
+            // savoir le tracking de parcours est actif
             update_tracking_status();
+            // detection BM ou/et Leurre
             this.modules.setActive(DEBUG);
-            sleep(1200);
-
+            sleep(1200); // attente pour la dectection
+            // efface les donnée eca 5jrs avant
             this.database.clear_obselete_data();
+            // envoie des eca tout les 1mn
             upload_eca(false);
+            // maj du temps de conduite
             update_driving_time();
+            // calcul si un mouvement est déclenché
             calc_movements();
 
             boolean b = this.button_stop;
@@ -414,6 +429,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 case PAR_STARTED:
                 case PAR_RESUME:
                     status = on_moved(status);
+                    initWorkTime();
                     break;
                 case PAR_PAUSING:
                 case PAR_PAUSING_WITH_STOP:
@@ -424,6 +440,27 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             this.button_start = false;
         }
         this.modules.setActive(false);
+    }
+
+    public boolean isWorkTimeOver () {
+        int timeSave = local.getInt("workTime", 0);
+        float beginTime = local.getFloat("WorkBeginTime", 0);
+        float currentTime = System.currentTimeMillis();
+        float calcHours = (currentTime - beginTime) / 3600000;
+        return Math.round(calcHours) >= timeSave;
+    }
+
+    public void initWorkTime () {
+        // if( !initWorkTime ) {
+        // si dépassé et n'est pas terminé, on demande toujours
+        // si pas encore initié on initie
+        float beginTime = local.getFloat("WorkBeginTime", 0);
+        if( !initWorkTime  && (beginTime == 0 || this.isWorkTimeOver()) ) {
+            local.setValue("WorkBeginTime", (float)System.currentTimeMillis());
+            local.apply();
+            initWorkTime = true;
+            Log.v("BeginWork Time", "initialisation");
+        }
     }
 
     // HANDLER BOX
@@ -860,14 +897,37 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     // Downloading .EPC files if is needed
 
     private boolean download_epc() throws InterruptedException {
+        // var
         boolean ready = false;
+        String srcFileName = "";
+        String srcAckName = "";
+        String srcNameName = "";
+        String desFileName = "";
+        File dir = new File(Environment.getDataDirectory().getAbsolutePath() + "/arno");
+        if( !dir.isDirectory() ) dir.mkdir();
 
-        if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
-
+        // var system
         File folder = new File(ctx.getFilesDir(), "");
         ReaderEPCFile reader = new ReaderEPCFile();
         FTPClientIO ftp = new FTPClientIO();
 
+        if( _timer ) { // à condition que le timer
+            // on reload les données
+            for (int i = 1; i < 6; i++) {
+                srcFileName = reader.getEPCFileName(ctx, i, false);
+                desFileName = String.format(Locale.getDefault(), "%s/%s", dir.getAbsolutePath(), srcFileName); // ctx.getFilesDir()
+                boolean read = reader.read(desFileName);
+                if( read ) reader.applyToApp(ctx,i);
+            }
+
+            // normal name
+            srcNameName = reader.getNameFileName(ctx);
+            if(reader.readname(desFileName)) reader.applyNameToApp(ctx);
+            return true;
+        }
+
+        // status
+        if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
         while( isRunning() && !ready ) {
             if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
 
@@ -889,10 +949,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     boolean exist_server_epc = false;
                     boolean exist_server_ack = false;
                     boolean exist_server_name = false;
-                    String srcFileName = "";
-                    String srcAckName = "";
-                    String srcNameName = "";
-                    String desFileName = "";
+
                     int i = 1;
                     while( i <= 5 && isRunning() ) {
 
@@ -914,7 +971,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                                         Log.w(TAG, "Error while trying to create new folder!");
                                 if (folder.exists()) {
                                     // Trying to download .EPC file...
-                                    desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+                                    desFileName = String.format(Locale.getDefault(), "%s/%s", dir.getAbsolutePath(), srcFileName);
                                     if (ftp.ftpDownload(srcFileName, desFileName)) {
                                         epc = reader.read(desFileName);
                                         if( epc ) {
@@ -927,7 +984,12 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                                             } catch (IOException e) {
                                                 e.printStackTrace();
                                             }
-                                            new File(desFileName).delete();
+
+                                            /**
+                                             * le code ci-dessous supprime le fichier imei_%d.EPC du système android
+                                             * après avoir recupérer le contenu
+                                             */
+                                            // new File(desFileName).delete();
                                         }
                                     }
                                     //get the EPC.NAME info in server
@@ -937,18 +999,17 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                                                 Log.w(TAG, "Error while trying to create new folder!");
                                         if (folder.exists()) {
                                             // Trying to download EPC.NAME file...
-                                            desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcNameName);
+                                            desFileName = String.format(Locale.getDefault(), "%s/%s", dir.getAbsolutePath(), srcNameName);
                                             if (ftp.ftpDownload(srcNameName, desFileName)) {
                                                 epc_name = reader.readname(desFileName);
                                                 if( epc_name ) {
                                                     reader.applyNameToApp(ctx);
 
-                                                    new File(desFileName).delete();
+                                                    // new File(desFileName).delete();
                                                 }
                                             }
                                         }
-
-                                    }else{
+                                    } else{
                                         reader.loadNameFromApp(ctx);
                                     }
 
@@ -957,12 +1018,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                         } else {
                             epc = reader.loadFromApp(ctx,i);
                         }
-
                         i++;
                     }
-
-
-
                 }
                 // Disconnect from FTP server.
                 ftp.ftpDisconnect();
@@ -1309,7 +1366,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
 
     private boolean upload_eca(boolean now) {
-        if (!now && this.try_send_eca_at + 60000 >= System.currentTimeMillis()) {
+        if (!now && this.try_send_eca_at + 60000 >= System.currentTimeMillis()) { // envoie tout les 1mn de plus
             return false;
         }
         this.database.add_driver(this.parcour_id, this.driver_id);
@@ -1790,8 +1847,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 }
             }
         }
-
-
     }
 
     private long longitudinal_elapsed[] = { 0,0,0,0,0,0,0,0,0,0 };
@@ -2537,6 +2592,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         boolean ready_to_started = DEBUG;
         STATUS_t ret = STATUS_t.PAR_STOPPED;
 
+        // on efface les force qui traine
         clear_force_ui();
 
         boolean m = this.mov_t_last == MOVING_t.STP,
@@ -2544,8 +2600,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 e = this.engine_t != ENGINE_t.ON;
 
         // this.mov_t_last == MOVING_t.STP
-        if( Build.VERSION.SDK_INT != Build.VERSION_CODES.N && this.mov_t_last == MOVING_t.STP )
-            ready_to_started = false;
+        // if( Build.VERSION.SDK_INT != Build.VERSION_CODES.N && this.mov_t_last == MOVING_t.STP )
+           //  ready_to_started = false;
 
         if (this.modules.getNumberOfBoxConnected() < 1 || this.mov_t_last == MOVING_t.UNKNOW || this.engine_t != ENGINE_t.ON) {
             ready_to_started = false;

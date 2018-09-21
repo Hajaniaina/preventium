@@ -851,7 +851,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 }
                 if (status == STATUS_t.PAR_PAUSING_WITH_STOP) {
                     if( !stop ) {
-                        MainActivity.this.askEndDayConfirm();
+                        // check if Over time
+                        if( appManager.isWorkTimeOver() ) {
+                            MainActivity.this.askEndDayConfirm();
+                        }
                     }
                 }
                 System.gc();
@@ -1542,9 +1545,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
                 if (time > 1) {
-                    //Dialog(getString(R.string.crash_app_message_again));
+                    Dialog(getString(R.string.crash_app_message_again));
                 } else {
-                    // Dialog(getString(R.string.crash_app_message));
+                    Dialog(getString(R.string.crash_app_message));
                 }
             }
         });
@@ -1570,7 +1573,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
+
+        // finish it
         finish();
+        android.os.Process.killProcess(android.os.Process.myPid());
+        System.exit(-1);
     }
 
     // -------------------------------------------------------------------------------------------- //
@@ -3569,6 +3576,7 @@ protected void showEpcSelectDialog() {
                         local.setValue("triangle", opt_triangle);
                         local.setValue("timer", opt_timer);
                         local.setValue("relance", opt_relance);
+                        local.setValue("workTime", 8);
                         local.apply();
 
                         // leurre active

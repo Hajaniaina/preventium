@@ -80,7 +80,7 @@ public class FilesSender extends ThreadDefault {
                     ftp.ftpDisconnect();
                 }
             }
-Log.d("AAA","success: " + success );
+            Log.d("AAA","success: " + success );
             // UPDATE LAST SENDING INFO
             if( success )
                 Log.d(TAG,"update_last_send: " + db.update_last_send( _ctx, last_time_temp ) );

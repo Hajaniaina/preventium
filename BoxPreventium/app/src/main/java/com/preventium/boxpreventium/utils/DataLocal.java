@@ -37,8 +37,25 @@ public class DataLocal {
         return _defaultValue;
     }
 
+
+    // getting float
     public float getFloat(String key, float _defaultValue) {
         return sharedPref.getFloat(key, _defaultValue);
+    }
+
+    // getting boolean
+    public boolean getBoolean(String key, boolean _defaultValue) {
+        return sharedPref.getBoolean(key, _defaultValue);
+    }
+
+    // getting int
+    public int getInt(String key, int _defaultValue) {
+        return sharedPref.getInt(key, _defaultValue);
+    }
+
+    // getting string
+    public String getString(String key, String _defaultValue) {
+        return sharedPref.getString(key, _defaultValue);
     }
 
     public void setValue(String key, Object value) {

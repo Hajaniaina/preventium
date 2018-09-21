@@ -88,12 +88,24 @@ public class App {
             }
 
             try {
-                String dir_path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString();
-                File file = new File(dir_path);
-                if (!file.exists() || !file.isDirectory()) file.mkdir();
+                File file;
+                if( Build.VERSION_CODES.M <= Build.VERSION.SDK_INT ) {
+                    String dir_path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString();
+                    file = new File(dir_path);
+                    if (!file.exists() || !file.isDirectory()) file.mkdir();
+                } else {
+                    file = File.createTempFile("", ".tmp");
+                }
 
-                if (App.freeSpaceCalculation(dir_path) > 50000 && IsUpdate(_version, version)) {
-                    String url = serveur + "/assets/apk/" + imei + _version + "/" + _version + ".apk";
+                // test d'insuffisance de mémoire
+                if( App.freeSpaceCalculation(file.getPath()) < 50000 ) {// 50MB
+                    MainActivity main = (MainActivity) context;
+                    main.Dialog(main.getString(R.string.storage_problem));
+                }
+
+                if ( IsUpdate(version, _version) ) {
+                    // String url = serveur + "/assets/apk/" + imei + _version + "/" + _version + ".apk";
+                    String url = "http://192.168.8.115/android/apk.apk";
                     version = _version;
                     new DownloadFileFromURL().execute(url);
                 }
