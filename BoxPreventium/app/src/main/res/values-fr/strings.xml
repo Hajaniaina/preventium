@@ -272,6 +272,11 @@
     <string name="crash_app_message_again">L\'application a encore crashé, un email a été envoyé au développeur</string>
     <string name="crash_report">Rapport de crash de</string>
     <string name="storage_problem">Nous vous informons que l\'espace de stockage de votre smartphone devrait avoir les dossiers système nécéssaire au bon fonctionnement de l\'application</string>
+    <string name="yes_and_quit_string">Oui et quitter</string>
+    <string name="no_and_quit">Non et quitter</string>
+    <string name="end_parcours_confirm_string">Avez vous terminé votre parcours ?</string>
+    <string name="send_error_message">Le donnée CEP n\'est pas envoyé, veuillez réessayer SVP</string>
+    <string name="send_success_message">Le donnée CEP est envoyé sur le serveur</string>
 
 
 </resources>

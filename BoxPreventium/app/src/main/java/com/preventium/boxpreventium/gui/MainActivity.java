@@ -853,7 +853,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     if( !stop ) {
                         // check if Over time
                         if( appManager.isWorkTimeOver() ) {
-                            MainActivity.this.askEndDayConfirm();
+                            // MainActivity.this.askEndDayConfirm();
+                            MainActivity.this.askEndParcoursConfirm();
                         }
                     }
                 }
@@ -875,6 +876,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         // store last status
         this.last_status = status;
+    }
+
+    @Override
+    public void onStatutChanged(final STATUS_t status) {
+
     }
 
     private void displayForceMap () {
@@ -1074,6 +1080,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         HandlerBox box_leurre = new HandlerBox(this);
         final int active_leurre =  box_leurre.get_active_from_serveur();
 
+        // skip on no BM
+        // if( !isBM ) return;
+
         runOnUiThread(new Runnable() {
 
             @Override
@@ -1085,7 +1094,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         corner_n_v.setVisibility(View.VISIBLE);
                         triangleCorner(true);
                     } else {
-                        corner_n_v.setVisibility(View.INVISIBLE);
+                        corner_n_v.setVisibility(View.VISIBLE);
                         triangleCorner(false);
                     }
 
@@ -1132,6 +1141,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
+    /**
+     * cette foonction procède à l'affichage de force sur sur l'écran
+     * donc, représenté par des flèche
+     * @param type
+     * @param level
+     * @param force
+     * @param speed_l
+     * @param speed_c
+     */
     public void onForceChanged(FORCE_t type, LEVEL_t level, double force, float speed_l, float speed_c) {
         final FORCE_t fORCE_t = type;
         final LEVEL_t lEVEL_t = level;
@@ -1145,6 +1163,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (MainActivity.this.routeActive && !MainActivity.this.routeInPause) {
                     if (fORCE_t != FORCE_t.UNKNOW) {
+
+                        // ne se déclenche que tout les 10mn
                         MainActivity.this.accForceView.hide(false, getMap(), getScreen(), getSeuil());
                         MainActivity.this.accForceView.setValue(fORCE_t, lEVEL_t);
                         Force strength = new Force(fORCE_t, lEVEL_t, MainActivity.this.lastPos, String.valueOf((int) d), String.valueOf((int) f), String.valueOf((int) f2));
@@ -1194,7 +1214,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 }
 
                 for (CustomMarkerData data : list) {
-
                     Marker marker = markerManager.addMarker(googleMap, data);
                     CustomMarker customMarker = markerManager.getMarker(marker);
 
@@ -1350,7 +1369,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 // opt: 1 bip {1,2,3}
                 // opt: 2 voix {4,5,6}
 
-                if( opt_sonore > 0 ) {
+                if( opt_sonore == -1 ) {
                     if (opt_sonore > 3) { // par voix
                         try {
                             switch (level) {
@@ -1978,17 +1997,66 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         builder.setNegativeButton(getString(R.string.no_string), null);
         builder.setPositiveButton(getString(R.string.yes_string), new DialogInterface.OnClickListener() {
-
             @Override
             public void onClick (DialogInterface dialogInterface, int i) {
-
                 appManager.setStopped();
-                // stop_parcour.setVisibility(View.GONE);
                 stop = true;
             }
         });
 
         builder.show();
+    }
+
+    public void askEndParcoursConfirm() {
+        final View mView = getLayoutInflater().inflate(R.layout.end_parcours, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setMessage(getString(R.string.end_parcours_confirm_string));
+        builder.setCancelable(false);
+        builder.setView(mView);
+        final AlertDialog dialog = builder.create();
+
+        Button no = (Button) mView.findViewById(R.id.no_button);
+        Button no_quit = (Button) mView.findViewById(R.id.no_and_quit_button);
+        Button yes = (Button) mView.findViewById(R.id.yes_button);
+        Button yes_quit = (Button) mView.findViewById(R.id.yes_and_quit_button);
+
+        // no normal
+        no.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+        // no and quitter Eode
+        no_quit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+
+                // terminate
+                finish();
+                android.os.Process.killProcess(android.os.Process.myPid());
+                System.exit(-1);
+            }
+        });
+        // oui normal
+        yes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                appManager.setStopped();
+                dialog.dismiss();
+            }
+        });
+        // Oui et quitter Eode
+        yes_quit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                appManager.setStopped(true); // for quit
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
     }
 
     protected void askCallConfirm() {
@@ -2980,7 +3048,8 @@ protected void showEpcSelectDialog() {
             @Override
             public void onClick (View view) {
 
-                askEndDayConfirm();
+                // askEndDayConfirm();
+                askEndParcoursConfirm();
             }
         });
 
@@ -2994,7 +3063,8 @@ protected void showEpcSelectDialog() {
                 }
                 else
                 */
-                    askEndDayConfirm();
+                    // askEndDayConfirm();
+                askEndParcoursConfirm();
             }
         });
 

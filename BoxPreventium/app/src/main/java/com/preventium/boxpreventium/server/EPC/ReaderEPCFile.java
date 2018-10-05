@@ -31,7 +31,7 @@ public class ReaderEPCFile {
     private String EPC_name4 = "";
     private String EPC_name5 = "";
 
-    public ReaderEPCFile(){clear();}
+    public ReaderEPCFile(){ /*clear();*/ }
 
     private void clear(){
         EPC_name1 = "";

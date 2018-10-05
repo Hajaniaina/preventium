@@ -6,7 +6,6 @@ import android.content.SharedPreferences.Editor;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -146,6 +145,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     // Data custom
     private HandlerBox modules = null;
     private DataLocal local;
+    private Chrono stress;
+    private boolean quit = false;
 
     public interface AppManagerListener {
 
@@ -190,6 +191,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         void onSpeedLineKept(int i, LEVEL_t lEVEL_t);
 
         void onStatusChanged(STATUS_t sTATUS_t);
+
+        void onStatutChanged(STATUS_t sTATUS_t);
 
         void onUiTimeout(int i, STATUS_t sTATUS_t);
 
@@ -236,6 +239,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
     }
 
+    public MainActivity getMainActivity() {
+        return (MainActivity)this.ctx;
+    }
+
     public AppManager(Context ctx, AppManagerListener listener) {
         super(null);
         this.ctx = ctx;
@@ -246,6 +253,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this.local = DataLocal.get(this.ctx);
         this.chrono = Chrono.newInstance();
         this.chrono.start();
+        this.stress = Chrono.newInstance();
+        this.stress.start();
+
     }
 
     private void switchON(boolean on) {
@@ -377,8 +387,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             this.local.apply();
 
             _timer = false;
-        } else
-            _timer = true;
+         }  else
+           _timer = true;
 
         // epc
         download_epc();
@@ -415,8 +425,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             // calcul si un mouvement est déclenché
             calc_movements();
 
-            boolean b = this.button_stop;
             // MainActivity.instance().Alert(status.toString(), Toast.LENGTH_SHORT);
+            if( this.button_stop ) {
+                status = STATUS_t.PAR_PAUSING;
+            }
 
             switch ( status ) {
                 case GETTING_CFG:
@@ -481,7 +493,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         //int vitesse_ld = (int) (speed_H * 3.6f);
         //int vitesse_vr = (int) (speed_V * 3.6f);
 
-        MainActivity main = MainActivity.instance();
+        MainActivity main = getMainActivity();
         int vitesse_ld = main.vitesse_ld;
         int vitesse_vr = main.vitesse_vr;
 
@@ -903,7 +915,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         String srcAckName = "";
         String srcNameName = "";
         String desFileName = "";
-        File dir = new File(Environment.getDataDirectory().getAbsolutePath() + "/arno");
+        File dir = ctx.getFilesDir();
         if( !dir.isDirectory() ) dir.mkdir();
 
         // var system
@@ -913,16 +925,19 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
         if( _timer ) { // à condition que le timer
             // on reload les données
-            for (int i = 1; i < 6; i++) {
-                srcFileName = reader.getEPCFileName(ctx, i, false);
-                desFileName = String.format(Locale.getDefault(), "%s/%s", dir.getAbsolutePath(), srcFileName); // ctx.getFilesDir()
-                boolean read = reader.read(desFileName);
-                if( read ) reader.applyToApp(ctx,i);
-            }
+            if( dir.exists() && dir.isDirectory() ) {
+                for (int i = 1; i < 6; i++) {
+                    srcFileName = reader.getEPCFileName(ctx, i, false);
+                    desFileName = String.format(Locale.getDefault(), "%s/%s", dir.getAbsolutePath(), srcFileName); // ctx.getFilesDir()
+                    boolean read = reader.read(desFileName);
+                    if (read) reader.applyToApp(ctx, i);
+                }
 
-            // normal name
-            srcNameName = reader.getNameFileName(ctx);
-            if(reader.readname(desFileName)) reader.applyNameToApp(ctx);
+                // normal name
+                srcNameName = reader.getNameFileName(ctx);
+                desFileName = String.format(Locale.getDefault(), "%s/%s", dir.getAbsolutePath(), srcNameName);
+                if (reader.readname(desFileName)) reader.applyNameToApp(ctx);
+            }
             return true;
         }
 
@@ -1388,14 +1403,22 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             }
             if (this.parcour_id > 0) {
                 this.database.create_cep_file(this.parcour_id);
-                this.database.clear_cep_data();
             }
             // UPLOAD .CEP FILES
             new AsyncUploadCEP().execute();
         }
     }
 
+    private boolean sent = false;
     class AsyncUploadCEP extends AsyncTask<String, String, Integer> {
+
+        private MainActivity main;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            main = getMainActivity();
+        }
 
         @Override
         protected Integer doInBackground(String... param) {
@@ -1415,8 +1438,12 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                         if (change_directory) {
                             for (File file : listOfFiles) {
                                 if (ftp.ftpUpload(file.getAbsolutePath(), file.getName())) {
+                                    // delete file and erase data
                                     file.delete();
+                                    sent = true;
+                                    database.clear_cep_data();
                                 }
+                                // if( fini )
                             }
                         } else {
                             Log.w(TAG, "CEP: Error while trying to change working directory to \"" + config.getWorkDirectory() + "\"!");
@@ -1424,7 +1451,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     }
                 }
             }
-
 
             return null;
         }
@@ -1434,6 +1460,20 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             super.onPostExecute(integer);
             if (listener != null) {
                 listener.onStatusChanged(STATUS_t.PAR_STOPPED);
+
+                if( !sent ) {
+                    getMainActivity().Dialog(main.getString(R.string.send_error_message));
+                } else {
+                    getMainActivity().Dialog(main.getString(R.string.send_success_message));
+                }
+
+                // quitter après envoye de CEP
+                if( sent && quit ) {
+                    // finish it
+                    ((MainActivity) ctx).finish();
+                    android.os.Process.killProcess(android.os.Process.myPid());
+                    System.exit(-1);
+                }
             }
 
             Log.w("CFG loading", "post execute");
@@ -1814,11 +1854,12 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
 
         // Set moving status
-        if (V_median * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP;
-        else if ( Math.abs( 0f - (acceleration * MS_TO_KMH) ) < 2f ) mov_t = MOVING_t.CST;
+        if (V_median * MS_TO_KMH <= 3f) mov_t = MOVING_t.STP; // 3f
+        else if ( Math.abs( 0f - (acceleration * MS_TO_KMH) ) < 2f ) mov_t = MOVING_t.CST; // 2f
         else if (acceleration > 0f ) mov_t = MOVING_t.ACC;
         else if (acceleration < 0f) mov_t = MOVING_t.BRK;
         else mov_t = MOVING_t.NCS;
+
         // Set move chrono and calibration if necessary
         if ( mov_t != mov_t_last )
         {
@@ -1994,11 +2035,16 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         return ret;
     }
 
+    public double getStress () {
+        return this.stress.getMinutes();
+    }
+
     synchronized private void calculate_eca() {
         // Get seuils of runtime alert
         long ST = System.currentTimeMillis();
         Location loc = get_last_location();
         boolean pass = false;
+        // boolean _stress = this.stress.getMinutes() >= 9; // n'affiche les evalueation que touts les 10 minutes
 
         ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
         ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(smooth.first);
@@ -2086,8 +2132,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
 
         // Update UI interface
-        if( listener != null /* && pass */) {
-
+        if( listener != null ) {
             // Select seuil for ui
             ForceSeuil seuil = null;
             double force;
@@ -2174,6 +2219,11 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         coeff_force[3] = DataDOBJ.get_coefficient(this.ctx, type, "O");
         coeff_force[4] = DataDOBJ.get_coefficient(this.ctx, type, "R");
         int[] nb_evt = new int[5];
+
+        /* bug EPC File */
+        if( this.readerEPCFile.getForceSeuil(0) == null ) return 20.0f;
+
+        // Log.v("EPCFILE", )
         if ("A".equals(type)) {
             nb_evt[0] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(0).IDAlert, parcour_id, begin, end);
             nb_evt[1] = this.database.countNbEvent(this.readerEPCFile.getForceSeuil(1).IDAlert, parcour_id, begin, end);
@@ -2369,9 +2419,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             Log.d(TAG, "Parcours " + this.parcour_id + " note F: " + Note_F);
             Log.d(TAG, "Parcours " + this.parcour_id + " note V: " + Note_V);
             Log.d(TAG, "Parcours " + this.parcour_id + " note M: " + Note_M);
-            MainActivity main = MainActivity.instance();
+            MainActivity main = getMainActivity();
             StatsLastDriving.set_speed_avg(this.ctx, this.database.speed_avg(this.parcour_id, System.currentTimeMillis(), 0.0f, new int[0]));
-            if (this.listener != null) {
+            if ( this.listener != null && this.stress.getMinutes() >= 10 ) {
                 this.listener.onScoreChanged(SCORE_t.ACCELERATING, level_A);
                 this.listener.onScoreChanged(SCORE_t.BRAKING, level_F);
                 this.listener.onScoreChanged(SCORE_t.CORNERING, level_V);
@@ -2571,6 +2621,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this.database.addECA(this.parcour_id, ECALine.newInstance(255, get_last_location(), null));
         StatsLastDriving.set_distance(this.ctx, this.database.get_distance(this.parcour_id));
         clear_force_ui();
+
+        // à connaitre, car pas evident en 2 fois
+        // ceci est vide
         upload_cep();
         upload_shared_pos();
         upload_parcours_type();
@@ -2581,7 +2634,11 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     }
 
     public void setStopped() {
-        this.button_stop = DEBUG;
+        this.button_stop = true;
+    }
+    public void setStopped(boolean quit) {
+        this.button_stop = true;
+        this.quit = true;
     }
 
     public void setStarted() {

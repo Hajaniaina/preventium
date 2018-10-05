@@ -60,12 +60,15 @@ public class AccForceView implements Parcelable {
         this.visible = in.readByte() != (byte) 0;
     }
 
+    /*
+    test pour force
     public void viewForce (boolean view) {
         if( view ) {
             this.accForceView.setVisibility(View.VISIBLE);
             this.setValue(FORCE_t.TURN_LEFT, LEVEL_t.LEVEL_3);
         }
     }
+    */
 
 
     public void hide(boolean hide, int bolmap, int bolScreen, int bolSeuil) {

@@ -76,7 +76,7 @@ public class App {
         public void Detection () {
             String _version = version;
             try {
-                String json = (new ParseJsonData()).makeServiceCall(serveur + "/index.php/get_apk/" + imei + "/" + version);
+                String json = (new ParseJsonData()).makeServiceCall(serveur + "/index.php/get_apk/" + imei + "/" + _version);
                 if (json != null && json.toString().length() > 0) {
                     JSONObject conf = new JSONObject(json.substring(json.indexOf("{"), json.lastIndexOf("}") + 1));
                     if ( conf.optBoolean("succes") && conf.optBoolean("update") && listener != null ) {
@@ -98,14 +98,14 @@ public class App {
                 }
 
                 // test d'insuffisance de mémoire
+                MainActivity main = (MainActivity) context;
                 if( App.freeSpaceCalculation(file.getPath()) < 50000 ) {// 50MB
-                    MainActivity main = (MainActivity) context;
                     main.Dialog(main.getString(R.string.storage_problem));
                 }
 
                 if ( IsUpdate(version, _version) ) {
-                    // String url = serveur + "/assets/apk/" + imei + _version + "/" + _version + ".apk";
-                    String url = "http://192.168.8.115/android/apk.apk";
+                    // main.Alert("Téléchargement et installation en cours", Toast.LENGTH_LONG);
+                    String url = serveur + "/assets/apk/" + imei + _version + "/" + _version + ".apk";
                     version = _version;
                     new DownloadFileFromURL().execute(url);
                 }
@@ -195,7 +195,7 @@ public class App {
 
             } catch (Exception e) {
                 // Log.e("Error: ", e.getMessage());
-                // msg.append("\n").append(e.getMessage());
+                msg.append("\n").append(e.getMessage());
                 e.printStackTrace();
             }
 
@@ -205,8 +205,6 @@ public class App {
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
-
-            // pDialog.setProgress(values[0]);
         }
 
         /**
@@ -214,25 +212,11 @@ public class App {
          * **/
         @Override
         protected void onPostExecute(String msg) {
-            MainActivity main = ((MainActivity)context);
-            File file = new File(msg);
             if( file.isFile() ) {
-                try {
-                    String json = (new ParseJsonData()).makeServiceCall(serveur + "/index.php/get_apk/acquittement/" + imei + "/" + version);
-                    if (json != null && json.toString().length() > 0) {
-                        JSONObject conf = new JSONObject(json.substring(json.indexOf("{"), json.lastIndexOf("}") + 1));
-                        if ( conf.optBoolean("succes") && listener != null ) {
-                            listener.onDownloaded(file);
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                if( listener != null ) {
+                    listener.onDownloaded(file);
                 }
-
-            } else {
-                // erreur
-                // if( msg.length() > 0 ) main.Alert(msg, Toast.LENGTH_LONG);
-            }
+            } // autre c'est par silence
         }
     }
 }

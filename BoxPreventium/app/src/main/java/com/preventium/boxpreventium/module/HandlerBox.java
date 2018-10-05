@@ -173,7 +173,7 @@ public class HandlerBox extends ThreadDefault
         last_shock = Pair.create((long)0,(short)0);
         last_engine_t = ENGINE_t.UNKNOW;
 
-        int nb = mBoxList.size();
+        int nb = this.numberSansLeurre();
         if( listener != null ) {
 
             listener.onNumberOfBox( nb ); //santoo
@@ -195,8 +195,8 @@ public class HandlerBox extends ThreadDefault
             curr_shock = Pair.create((long)0, (short)0);
             for( int i = mBoxList.size()-1; i >= 0; i-- ) {
 
-                if( !mBoxList.get(i).getIsLeurre() && listener != null )
-                    listener.onBMExist(true);
+                // if( !mBoxList.get(i).getIsLeurre() && listener != null )
+                   // listener.onBMExist(true);
 
                 if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
                     Log.d(TAG,"deconnecté box");
@@ -328,12 +328,11 @@ public class HandlerBox extends ThreadDefault
             }
             // NUMBER OF CONNECTED DEVICE CHANGED
             if( nb != mBoxList.size() ) {
-                nb = mBoxList.size();
+
+                // show nombre of box
+                nb = this.numberSansLeurre();
                 if( listener != null ) listener.onNumberOfBox( nb );  //sss
-                //si leurre active et divice not found//
-                if(nombre_scan_found ==0 && active ==1 && listener != null ){
-                    // listener.onNumberOfBox( 0 );
-                }
+
                 if( DEBUG ) Log.d(TAG,"Number of connected device changed: " + nb );
             }
         }
@@ -359,11 +358,22 @@ public class HandlerBox extends ThreadDefault
             if( nb > 0 ) sleep(200);
             // NUMBER OF CONNECTED DEVICE CHANGED
             if( nb != mBoxList.size() ) {
-                nb = mBoxList.size();
+                nb = this.numberSansLeurre();
                 if( listener != null ) listener.onNumberOfBox( nb ); //sss
                 if( DEBUG ) Log.d(TAG,"Number of connected device changed: " + nb );
             }
         }
+    }
+
+    public int numberSansLeurre () {
+        int number = mBoxList.size(), nb = number;
+        for(int i=0; i<number; i++) {
+            boolean isLeurre = mBoxList.get(i).getIsLeurre();
+            if( isLeurre ) {
+                nb--;
+            }
+        }
+        return nb;
     }
 
     private void add( BluetoothDevice device ) throws InterruptedException {
@@ -375,8 +385,8 @@ public class HandlerBox extends ThreadDefault
             if( DEBUG ) Log.d(TAG,"FIND " + device.getAddress() );
 
             // On ferme l'ancienne instance de ce device s'il est déjà dans la list
-            // (car si il existe déjà, c'est qu'il n'est plus connecté mais que sont status n'est
-            // pas encore actualisé, donc on le ferme et on le supprime, pour eviter des conflit)
+            // (car s'il existe déjà, c'est qu'il n'est plus connecté mais que sont status n'est
+            // pas encore actualisé, donc on le ferme et on le supprime, pour eviter les conflits)
 
             for( int i = mBoxList.size()-1; i >= 0; i-- ){
                 if( mBoxList.get(i).getMacAddr().equals(device.getAddress()) ) {
@@ -389,11 +399,14 @@ public class HandlerBox extends ThreadDefault
             // Connection + ajout à la liste du nouveau device
             box.connect(device);
             if(firstscanVirtuel){
-
                 box.connect_leurre(device);
             }
             while( isRunning() && box.getConnectionState() == CONNEXION_STATE_t.CONNECTING ) sleep(50);
             if( box.getConnectionState() == CONNEXION_STATE_t.CONNECTED ) {
+                if( device != null && device.getAddress()!= null ) {
+                    boolean isFake = BluetoothAdapter.getDefaultAdapter().getAddress().equals(device.getAddress());
+                    if( isFake ) box.setLeurre(true);
+                }
                 mBoxList.add(box);
                 if( DEBUG ) Log.d(TAG,"ADDED " + device.getAddress() );
             }
@@ -445,15 +458,15 @@ public class HandlerBox extends ThreadDefault
             if( mBoxList.size() <= 0 ) {
                 BluetoothDevice Bdivice = null;
                 BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-                adapter.setName("Preventium");
+                adapter.setName("Preventium-leurre");
                 Bdivice = adapter.getRemoteDevice(adapter.getAddress());
+                Bdivice.getName();
                 //Bdivice.
                 BluetoothBox box = new BluetoothBox(context);
                 box.setConnectionState(CONNEXION_STATE_t.CONNECTED);
                 box.setLeurre(true);
 
                 listener.onEngineStateChanged(ENGINE_t.ON);
-
                 ArrayList<BluetoothDevice> devices = new ArrayList<>();
                 //proximityDevices.clear();
                 //mBoxList.clear();

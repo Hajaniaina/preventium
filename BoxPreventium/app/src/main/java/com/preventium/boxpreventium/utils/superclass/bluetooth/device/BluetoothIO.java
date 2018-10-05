@@ -116,16 +116,19 @@ public class BluetoothIO extends BluetoothGattCallback {
             Log.e(TAG, "Connect to device first");
             return;
         }
-        BluetoothGattCharacteristic chara = this.gatt.getService(serviceUUID).getCharacteristic(characteristicId);
-        if (chara == null) {
-            Log.e(TAG, "characteristicId " + characteristicId.toString() + " not found in service " + serviceUUID.toString());
-            return;
-        }
-        this.gatt.setCharacteristicNotification(chara, true);
-        BluetoothGattDescriptor descriptor = chara.getDescriptor(Profile.UUID_DESCRIPTOR_UPDATE_NOTIFICATION);
-        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-        this.gatt.writeDescriptor(descriptor);
-        this.notifyListeners.put(characteristicId, listener);
+
+        try {
+            BluetoothGattCharacteristic chara = this.gatt.getService(serviceUUID).getCharacteristic(characteristicId);
+            if (chara == null) {
+                Log.e(TAG, "characteristicId " + characteristicId.toString() + " not found in service " + serviceUUID.toString());
+                return;
+            }
+            this.gatt.setCharacteristicNotification(chara, true);
+            BluetoothGattDescriptor descriptor = chara.getDescriptor(Profile.UUID_DESCRIPTOR_UPDATE_NOTIFICATION);
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            this.gatt.writeDescriptor(descriptor);
+            this.notifyListeners.put(characteristicId, listener);
+        }catch(Exception e) { e.printStackTrace(); }
     }
 
     public boolean serviceExist(UUID serviceUUID) {
