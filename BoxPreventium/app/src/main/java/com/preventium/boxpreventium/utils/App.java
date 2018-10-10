@@ -94,7 +94,7 @@ public class App {
                     file = new File(dir_path);
                     if (!file.exists() || !file.isDirectory()) file.mkdir();
                 } else {
-                    file = File.createTempFile("", ".tmp");
+                    file = File.createTempFile("test", ".tmp");
                 }
 
                 // test d'insuffisance de mémoire
@@ -105,7 +105,7 @@ public class App {
 
                 if ( IsUpdate(version, _version) ) {
                     // main.Alert("Téléchargement et installation en cours", Toast.LENGTH_LONG);
-                    String url = serveur + "/assets/apk/" + imei + _version + "/" + _version + ".apk";
+                    String url = serveur + "/assets/apk/" + _version + imei + "/" + _version + ".apk";
                     version = _version;
                     new DownloadFileFromURL().execute(url);
                 }
@@ -125,7 +125,6 @@ public class App {
 
     class DownloadFileFromURL extends AsyncTask<String, Integer, String>
     {
-
         ProgressDialog pDialog;
         MainActivity main;
         String _url;
@@ -212,7 +211,7 @@ public class App {
          * **/
         @Override
         protected void onPostExecute(String msg) {
-            if( file.isFile() ) {
+            if( msg.toString().length() <= 0 && file.isFile() ) {
                 if( listener != null ) {
                     listener.onDownloaded(file);
                 }
