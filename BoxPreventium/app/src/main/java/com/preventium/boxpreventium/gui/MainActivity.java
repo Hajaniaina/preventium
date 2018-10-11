@@ -3018,14 +3018,19 @@ protected void showEpcSelectDialog() {
 
             public void onClick(View view) {
                 // JSONManager jSONManager = new JSONManager(MainActivity.this);
-                if (getSet() == Integer.valueOf(QrScanActivity.SCAN_MODE_VEHICLE_DISABLED).intValue()) {
+                 /*
+                 if (getSet() == Integer.valueOf(QrScanActivity.SCAN_MODE_VEHICLE_DISABLED).intValue()) {
+
                     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this, R.style.InfoDialogStyle);
                     builder.setMessage(R.string.subscriber_string);
                     builder.setCancelable(false);
                     builder.setPositiveButton("Ok", new C00441());
                     builder.show();
                     return;
-                }
+                 }
+                 */
+                 // à changer dans un isntant
+
                 MainActivity.this.remote_file = "/" + ComonUtils.getIMEInumber(MainActivity.this) + "_EPC.NAME";
                 MainActivity.this.local_file = "/sdcard/" + ComonUtils.getIMEInumber(MainActivity.this) + "_EPC.NAME";
                 //### Chargement on load EPC
@@ -3039,7 +3044,8 @@ protected void showEpcSelectDialog() {
                     }
                 }, 3000);
                 */
-                new downloadAndSaveFile().execute();
+                // new downloadAndSaveFile().execute();
+                MainActivity.this.showEpcSelectDialog();
             }
         });
 
@@ -3519,7 +3525,6 @@ protected void showEpcSelectDialog() {
         }else {
             return opt_config_type;
         }
-
     }
 
 
@@ -3591,6 +3596,8 @@ protected void showEpcSelectDialog() {
     @SuppressLint("StaticFieldLeak")
     class ParseJson extends AsyncTask<String, String, Integer> {
 
+        private DataLocal local = DataLocal.get(MainActivity.this);
+
         @Override
         protected Integer doInBackground(String... param) {
 
@@ -3627,7 +3634,6 @@ protected void showEpcSelectDialog() {
                         int opt_timer = Integer.parseInt(config.optString("timer"));
                         int opt_relance = Integer.parseInt(config.optString("relance"));
 
-                        DataLocal local = DataLocal.get(MainActivity.this);
                         local.setValue("options_fonc", true);
                         local.setValue("qrcode", opt_qrcode_web);
                         local.setValue("affiche_carte", opt_carte_web);
@@ -3655,6 +3661,24 @@ protected void showEpcSelectDialog() {
                         return opt_qrcode;
                     } catch (JSONException e) {}
                 }
+            }
+
+            // pour les autre option à modifier dans un temps ultérieur
+            if( connected ) {
+                String json = jsonData.makeServiceCall(serveur + "/index.php/get_attribution/" + imei);
+                // https://samat.preventium.fr351543080157864
+
+                if( json != null && json.toString().length() > 0) {
+                    try {
+                        JSONObject conf = new JSONObject(json.substring(json.indexOf("{"), json.lastIndexOf("}") + 1));
+                        JSONObject config = conf.getJSONObject("config");
+                    } catch (Exception e) {
+
+                    }
+                }
+
+                // pour le moment
+                MainActivity.this.download();
             }
 
             return null;
