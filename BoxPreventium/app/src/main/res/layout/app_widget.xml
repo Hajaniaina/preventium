@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="#FFF"
+    android:id="@+id/parent">
+
+    <!-- ACC FORCES & DRIVING SCORE WIDGETS -->
+    <LinearLayout
+        android:id="@+id/force_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:orientation="horizontal"
+        android:padding="20dp"
+        tools:layout_marginTop="0dp">
+
+        <TextView
+            android:id="@+id/driving_score_view"
+            android:layout_width="@dimen/force_layout_width2"
+            android:layout_height="@dimen/force_layout_height2"
+            android:layout_marginStart="@dimen/driving_score_layout_margin_start"
+            android:layout_marginTop="@dimen/driving_score_layout_margin_top"
+            android:layout_marginEnd="20dp"
+            android:elevation="4dp"
+            android:gravity="center"
+            android:shadowColor="@color/material_grey600"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:shadowRadius="2"
+            android:background="@drawable/text_border_gray"
+            android:textColor="@color/colorAppGrey"
+            android:textStyle="bold"
+            android:text="20"
+            android:textSize="25dp"
+            tools:layout_marginStart="0dp" />
+
+        <ImageView
+            android:id="@+id/acc_force_view"
+            android:layout_width="@dimen/force_layout_width2"
+            android:layout_height="@dimen/force_layout_height2"
+            android:layout_marginStart="@dimen/driving_score_layout_margin_start"
+            android:layout_marginTop="@dimen/driving_score_layout_margin_top"
+            android:elevation="0dp"
+            android:gravity="center"
+            android:background="@color/colorAppGrey"
+            tools:layout_marginStart="0dp" />
+    </LinearLayout>
+</RelativeLayout>

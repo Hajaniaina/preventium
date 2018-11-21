@@ -124,6 +124,27 @@ public class MarkerManager {
         return marker;
     }
 
+    public Marker addMarker(GoogleMap map, String title, String info, LatLng currPos, int type, boolean editable, int radius) {
+        Marker marker;
+        CustomMarker customMarker = new CustomMarker();
+        DataMarker datamarker = new DataMarker(customMarker, info, type);
+        customMarker.setEditable(editable);
+        customMarker.setPos(currPos);
+        customMarker.setTitle(title);
+        customMarker.setType(type);
+        customMarker.setAlertRadius(radius);
+        if (editable) {
+            marker = customMarker.addToMap(map);
+            this.markersList.add(customMarker);
+            this.data.add(datamarker);
+        } else {
+            marker = customMarker.addToMap(map);
+            this.markersList.add(customMarker);
+            this.data.add(datamarker);
+        }
+        return marker;
+    }
+
     public String getDataMarker(CustomMarker marker) {
         String info = "";
         Iterator itr = this.data.iterator();

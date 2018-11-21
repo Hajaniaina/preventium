@@ -61,6 +61,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CEP_DEVICE_F = "device_f";
     public static final String COLUMN_CEP_DEVICE_M = "device_m";
 
+    /* for marqueur */
+    public static final String TABLE_MARKER = "marker_share";
+    public static final String COLUMN_MARKER_ID = "id_marker";
+    public static final String COLUMN_MARKER_IMEI = "marker_imei";
+    public static final String COLUMN_MARKER_DATE = "marker_date";
+    public static final String COLUMN_MARKER_LAT = "marker_lat";
+    public static final String COLUMN_MARKER_LONG = "marker_long";
+    public static final String COLUMN_MARKER_LABEL = "marker_label";
+    public static final String COLUMN_MARKER_ATTACHMENT = "marker_attachment";
+    public static final String COLUMN_MARKER_ENTERPRISE_ID = "marker_enterprise_id";
+    public static final String COLUMN_MARKER_CREATEUR_ID = "marker_createur_id";
+    public static final String COLUMN_MARKER_PERIMETRE = "marker_perimetre";
+    public static final String COLUMN_MARKER_TITRE = "marker_titre";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -113,11 +126,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         COLUMN_EPC_ID + " INTEGER PRIMARY KEY, " +
                         COLUMN_EPC_PARCOUR_ID + " INTEGER, " +
                         COLUMN_EPC_NUM_EPC + " INTEGER );";
+        String CREATE_MARKER_TABLE =
+                "CREATE TABLE " + TABLE_MARKER + " (" +
+                        COLUMN_MARKER_ID + " INTEGER PRIMARY KEY, " +
+                        COLUMN_MARKER_IMEI + " TEXT, " +
+                        COLUMN_MARKER_LAT + " FLOAT, " +
+                        COLUMN_MARKER_LONG + " FLOAT, " +
+                        COLUMN_MARKER_LABEL + " TEXT, " +
+                        COLUMN_MARKER_ATTACHMENT + " TEXT, " +
+                        COLUMN_MARKER_ENTERPRISE_ID + " INTEGER, " +
+                        COLUMN_MARKER_CREATEUR_ID + " INTEGER, " +
+                        COLUMN_MARKER_PERIMETRE + " INTEGER, " +
+                        COLUMN_MARKER_TITRE + " TEXT, " +
+                        COLUMN_MARKER_DATE + " TEXT );";
 
         sqLiteDatabase.execSQL(CREATE_ECA_TABLE);
         sqLiteDatabase.execSQL(CREATE_CEP_TABLE);
         sqLiteDatabase.execSQL(CREATE_DRIVERID_TABLE);
         sqLiteDatabase.execSQL(CREATE_EPCID_TABLE);
+        sqLiteDatabase.execSQL(CREATE_MARKER_TABLE);
     }
 
     // Called when the database needs to be upgraded.
@@ -131,6 +158,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_DRIVER);
             sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_CEP);
             sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_EPC);
+            sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_MARKER);
             onCreate(sqLiteDatabase);
         }
     }

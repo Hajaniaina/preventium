@@ -78,5 +78,6 @@
     <dimen name="float_button_scaleY">@dimen/scale_button_large</dimen>
     <dimen name="force_layout_width2">70dp</dimen>
     <dimen name="force_layout_height2">70dp</dimen>
+    <dimen name="force_layout_parent_height2">75dp</dimen>
     <dimen name="menu_float_button_bottom">0dp</dimen>
 </resources>

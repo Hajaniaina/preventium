@@ -17,13 +17,19 @@ import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.utils.ColorCEP;
 import com.preventium.boxpreventium.utils.ComonUtils;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -117,6 +123,12 @@ public class Database {
 
     public void clear_obselete_data() {
         SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+
+        // select before and clean
+        String request = "SELECT * FROM " + TABLE_ECA ; // par latitude
+        Cursor cursor =  db.rawQuery( request, null );
+        Log.w(TAG, "Nombre de ECA au début " + String.valueOf(cursor.getCount()));
+
         long end = startOfDays(System.currentTimeMillis());
         long begin = end - (5 * 24 * 3600 * 1000);
         db.delete(TABLE_ECA,COLUMN_ECA_TIME + " < " + begin,null);
@@ -774,205 +786,151 @@ Log.d("AAAAA","NB POINTS " + nb);
 
     /// Create CEP file
     public void create_cep_file(long parcour_id) {
+        String data;
+        try {
 
-        File folder = new File(ctx.getFilesDir(), "CEP");
-        // Create folder if not exist
-        if (!folder.exists())
-            if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
-        if (folder.exists()) {
-            SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
-            Cursor cursor = db.rawQuery("SELECT * from " + TABLE_CEP + ";", null);
-            int a = cursor.getCount();
-            // if (cursor != null) {
-                if (cursor.moveToFirst()) {
-                    String filename = String.format(Locale.getDefault(), "%s_%s.CEP",
-                            ComonUtils.getIMEInumber(ctx), Long.toString(parcour_id));
-                    File file = new File(folder.getAbsolutePath(), filename);
-                    try {
-                        if (file.createNewFile()) {
-                            Log.d(TAG, "FILE CREATE:" + file.getAbsolutePath());
-                            OutputStream output
-                                    = new BufferedOutputStream(
-                                    new FileOutputStream(file.getAbsolutePath()));
-                            Calendar GMTCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-                            byte[] line = new byte[73]; //61 taloha
-                            byte[] b;
-                            String[] macAddressParts;
-                            int i;
-                            int id;
-                            long time;
-                            float long_pos;
-                            float lat_pos;
-                            int note;
-                            int vitesseLd;
-                            int vitesseVr;
-                            long distanceCovered;
-                            long parcoursDuration;
-                            int nbEca;
-                            int nbBox;
-                            String mac;
-                            int device_a;
-                            int device_v;
-                            int device_f;
-                            int device_m;
-                            int status;
-                            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.instance());
-                            while (!cursor.isAfterLast()) {
-                                id = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_ID));
-                                time = cursor.getLong(cursor.getColumnIndex(COLUMN_CEP_TIME));
-                                long_pos = cursor.getFloat(cursor.getColumnIndex(COLUMN_CEP_LONG_POS));
-                                lat_pos = cursor.getFloat(cursor.getColumnIndex(COLUMN_CEP_LAT_POS));
-                                mac = cursor.getString(cursor.getColumnIndex(COLUMN_CEP_MAC));
-                                status = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_STATUS));
-                                note = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NOTE));
-                                vitesseLd = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_VITESSE_LD));
-                                vitesseVr = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_VITESSE_VR));
-                                distanceCovered = cursor.getLong(cursor.getColumnIndex(COLUMN_CEP_DIST_COV));
-                                parcoursDuration = cursor.getLong(cursor.getColumnIndex(COLUMN_CEP_PAR_DUR));
-                                nbEca = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NB_ECA));
-                                nbBox = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NB_BOX));
+            File folder = new File(ctx.getFilesDir(), "CEP");
+            // Create folder if not exist
+            if (!folder.exists())
+                if (!folder.mkdirs()) Log.w(TAG, "Error while trying to create new folder!");
+            if (folder.exists()) {
+                SQLiteDatabase db = DatabaseManager.getInstance().openDatabase();
+                Cursor cursor = db.rawQuery("SELECT * from " + TABLE_CEP + ";", null);
+                int a = cursor.getCount();
+                if (cursor != null) {
+                    if (cursor.moveToFirst()) {
+                        // nom du fichier
+                        String filename = String.format(Locale.getDefault(), "%s_%s.CEP",
+                                ComonUtils.getIMEInumber(ctx), Long.toString(parcour_id));
+
+                        // donnée json en cep
+                        JSONObject json = new JSONObject();
+                        json.put("filename", filename);
+
+                        // le fichier
+                        File file = new File(folder.getAbsolutePath(), filename);
+                        try {
+                            if (!file.exists() && file.createNewFile()) {
+                                // handler write
+                                FileWriter output = new FileWriter(file.getAbsolutePath());
+
+                                // tableau de data
+                                JSONArray json_array = new JSONArray();
+
+                                // les données
+                                Calendar GMTCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+                                byte[] line = new byte[73]; //61 taloha
+                                byte[] b;
+                                String[] macAddressParts;
+                                int i;
+                                int id;
+                                long time;
+                                float long_pos;
+                                float lat_pos;
+                                int note;
+                                int vitesseLd;
+                                int vitesseVr;
+                                long distanceCovered;
+                                long parcoursDuration;
+                                int nbEca;
+                                int nbBox;
+                                String mac;
+                                int device_a;
+                                int device_v;
+                                int device_f;
+                                int device_m;
+                                int status;
+                                JSONObject datas;
+                                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.instance());
+                                while (!cursor.isAfterLast()) {
+
+                                    // tableau de donnée
+                                    datas = new JSONObject();
+                                    id = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_ID));
+
+                                    /** time */
+                                    time = cursor.getLong(cursor.getColumnIndex(COLUMN_CEP_TIME));
+                                    Date _date = new Date(time);
+                                    String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(_date);
+                                    datas.put("date", date);
+                                    /* end time */
+
+                                    /* longitude */
+                                    long_pos = cursor.getFloat(cursor.getColumnIndex(COLUMN_CEP_LONG_POS));
+                                    datas.put("longitude", long_pos);
+                                    /* end longitude */
+
+                                    /* latitude */
+                                    lat_pos = cursor.getFloat(cursor.getColumnIndex(COLUMN_CEP_LAT_POS));
+                                    datas.put("latitude", lat_pos);
+                                    /* end latitude */
+
+                                    /* latitude */
+                                    mac = cursor.getString(cursor.getColumnIndex(COLUMN_CEP_MAC));
+                                    datas.put("adresse_mac", mac);
+                                    /* end latitude */
+
+                                    /* latitude */
+                                    note = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NOTE));
+                                    datas.put("note", note);
+                                    /* end latitude */
+
+                                    /* vitesseLd */
+                                    vitesseLd = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_VITESSE_LD));
+                                    datas.put("vitesse_ld", vitesseLd);
+                                    /* end vitesseLd */
+
+                                    /* vitesseVr */
+                                    vitesseVr = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_VITESSE_VR));
+                                    datas.put("vitesse_vr", vitesseVr);
+                                    /* end vitesseVr */
+
+                                    /* distanceCovered */
+                                    distanceCovered = cursor.getLong(cursor.getColumnIndex(COLUMN_CEP_DIST_COV));
+                                    datas.put("distance", distanceCovered);
+                                    /* end distanceCovered */
+
+                                    /* distanceCovered */
+                                    parcoursDuration = cursor.getLong(cursor.getColumnIndex(COLUMN_CEP_PAR_DUR));
+                                    datas.put("parcour_duration", parcoursDuration);
+                                    /* end distanceCovered */
+
+                                    /* nbEca */
+                                    nbEca = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NB_ECA));
+                                    datas.put("nombre_eca", nbEca);
+                                    /* end nbEca */
+
+                                    /* nbBox */
+                                    nbBox = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_NB_BOX));
+                                    datas.put("nombre_box", nbBox);
+                                    /* end nbBox */
+
+                                    /* AVFM */
+                                    device_a = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_A)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_A)) : sharedPref.getInt(COLUMN_CEP_DEVICE_A, -1);
+                                    datas.put("A", device_a);
+                                    device_v = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_V)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_V)) : sharedPref.getInt(COLUMN_CEP_DEVICE_V, -1);
+                                    datas.put("V", device_v);
+                                    device_f = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F)) : sharedPref.getInt(COLUMN_CEP_DEVICE_F, -1);
+                                    datas.put("F", device_f);
+                                    device_m = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M)) : sharedPref.getInt(COLUMN_CEP_DEVICE_M, -1);
+                                    datas.put("M", device_m);
+                                    /* end AVFM */
+
+                                    /* status */
+                                    status = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_STATUS));
+                                    datas.put("status", status);
+                                    /* end status */
+
+                                    // data
+                                    json_array.put(datas);
+                                    // next
+                                    cursor.moveToNext();
+                                }
 
                                 /**
-                                 * shared ou base de donnée
+                                 * on efface les données
                                  * @Arnaud
                                  */
-                                device_a = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_A)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_A)) : sharedPref.getInt(COLUMN_CEP_DEVICE_A, -1);
-                                device_v = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_V)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_V)) : sharedPref.getInt(COLUMN_CEP_DEVICE_V, -1);
-                                device_f = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_F)) : sharedPref.getInt(COLUMN_CEP_DEVICE_F, -1);
-                                device_m = cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M)) >= 0 ? cursor.getInt(cursor.getColumnIndex(COLUMN_CEP_DEVICE_M)) : sharedPref.getInt(COLUMN_CEP_DEVICE_M, -1);
-
-                                /*
-                                SharedPreferences _sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.instance());
-                                SharedPreferences.Editor editor = sharedPref.edit();
-                                editor.putInt(COLUMN_CEP_DEVICE_A, Integer.valueOf(device_a));
-                                editor.putInt(COLUMN_CEP_DEVICE_V, Integer.valueOf(device_v));
-                                editor.putInt(COLUMN_CEP_DEVICE_F, Integer.valueOf(device_f));
-                                editor.putInt(COLUMN_CEP_DEVICE_M, Integer.valueOf(device_m));
-                                editor.apply();
-
-
-                                // pour triangle
-                                SharedPreferences.Editor triangle = (PreferenceManager.getDefaultSharedPreferences(MainActivity.instance())).edit();
-                                triangle.putInt(COLUMN_CEP_DEVICE_A + "_triangle", Integer.valueOf(device_a));
-                                triangle.putInt(COLUMN_CEP_DEVICE_V + "_triangle", Integer.valueOf(device_v));
-                                triangle.putInt(COLUMN_CEP_DEVICE_F + "_triangle", Integer.valueOf(device_f));
-                                triangle.putInt(COLUMN_CEP_DEVICE_M + "_triangle", Integer.valueOf(device_m));
-                                triangle.apply();
-                                */
-
-                                i = 0;
-                                GMTCalendar.setTimeInMillis(time); // 6
-                                line[i++] = (byte) GMTCalendar.get(Calendar.DAY_OF_MONTH);
-                                line[i++] = (byte) (GMTCalendar.get(Calendar.MONTH) + 1);
-                                line[i++] = (byte) (GMTCalendar.get(Calendar.YEAR) & 0xFF);
-                                line[i++] = (byte) GMTCalendar.get(Calendar.HOUR_OF_DAY);
-                                line[i++] = (byte) GMTCalendar.get(Calendar.MINUTE);
-                                line[i++] = (byte) GMTCalendar.get(Calendar.SECOND);
-                                b = ByteBuffer.allocate(4).putFloat(long_pos).array(); // 10
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3];
-                                b = ByteBuffer.allocate(4).putFloat(lat_pos).array(); // 14
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3];
-                                macAddressParts = mac.split(":"); // 20
-                                b = new byte[6];
-                                for (int m = 0; m < 6; m++) {
-                                    String adress = "";
-                                    if( macAddressParts.length <= m ) adress = "0";
-                                    else adress = macAddressParts[m];
-                                    if( adress.equals("") || adress == null ) adress = "0";
-                                    Integer hex = Integer.parseInt(adress, 16);
-                                    b[m] = hex.byteValue();
-                                }
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3];
-                                line[i++] = b[4];
-                                line[i++] = b[5];//20
-
-                                b = ByteBuffer.allocate(4).putInt(note).array(); //integer note //4 bytes // 24
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3];
-                                b = ByteBuffer.allocate(4).putInt(vitesseLd).array(); //integer vitesse_ld //4 bytes // 28
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3];
-                                b = ByteBuffer.allocate(4).putInt(vitesseVr).array(); //integer vitesse_vr //4 bytes // 32
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3];
-                                b = ByteBuffer.allocate(8).putFloat(distanceCovered).array(); //long distance_covered //8 bytes // 40
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3];
-                                line[i++] = b[4];
-                                line[i++] = b[5];
-                                line[i++] = b[6];
-                                line[i++] = b[7]; //40
-                                b = ByteBuffer.allocate(8).putFloat(parcoursDuration).array(); //long parcour_duration //8 bytes // 48
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3];
-                                line[i++] = b[4];
-                                line[i++] = b[5];
-                                line[i++] = b[6];
-                                line[i++] = b[7];
-                                b = ByteBuffer.allocate(4).putInt(nbEca).array(); //integer nb_eca //4 bytes // 52
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3];
-                                b = ByteBuffer.allocate(4).putInt(nbBox).array(); //integer nb_box //4bytes  // 56
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3];
-
-                                b = ByteBuffer.allocate(4).putInt(device_a).array(); //integer device_a //4bytes  // 60
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3]; //60
-
-                                b = ByteBuffer.allocate(4).putInt(device_v).array(); //integer device_v //4bytes // 64
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3];
-
-                                b = ByteBuffer.allocate(4).putInt(device_f).array(); //integer device_f //4bytes // 68
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3];
-
-                                b = ByteBuffer.allocate(4).putInt(device_m).array(); //integer device_m //4bytes // 73
-                                line[i++] = b[0];
-                                line[i++] = b[1];
-                                line[i++] = b[2];
-                                line[i++] = b[3]; //72
-                                line[i] = (byte) status;  //unsigned char device_status //1 byte
-
-                                output.write(line);
-
-                                cursor.moveToNext();
-                            }
-
-                            /**
-                             * on efface les données
-                             * @Arnaud
-                             */
                                 SharedPreferences.Editor editor = sharedPref.edit();
                                 editor.remove(COLUMN_CEP_DEVICE_A);
                                 editor.remove(COLUMN_CEP_DEVICE_V);
@@ -981,19 +939,33 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 editor.apply();
                                 ColorCEP.getInstance().unsetColors();
 
-                            output.flush();
-                            output.close();
-                        } else {
-                            Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
-                            // MainActivity.instance().Alert("File CEP not created", Toast.LENGTH_LONG);
+                                // write
+                                json.put("data", json_array);
+                                output.write(json.toString());
+
+                                // output
+                                // System.out.println(json.toString());
+                                System.out.println(file.isFile());
+
+                                output.flush();
+                                output.close();
+
+                                Log.w(TAG, "FILE CREATED:" + file.getAbsolutePath());
+                            } else {
+                                Log.w(TAG, "FILE NOT CREATED OR EXISTS:" + file.getAbsolutePath());
+                                // MainActivity.instance().Alert("File CEP not created", Toast.LENGTH_LONG);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        cursor.close();
                     }
-                    cursor.close();
+                    DatabaseManager.getInstance().closeDatabase();
                 }
-                DatabaseManager.getInstance().closeDatabase();
-            // }
+
+            }
+        }catch(Exception e) {
+            e.printStackTrace();
         }
     }
 }

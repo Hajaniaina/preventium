@@ -16,7 +16,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 26
         versionCode 13
-        versionName "3.2.9"
+        versionName "3.3.11"
         multiDexEnabled true
     }
     buildTypes {
@@ -64,6 +64,11 @@ dependencies {
     compile 'com.google.firebase:firebase-auth:11.8.0'
     compile 'com.google.android.gms:play-services-location:11.8.0'
     compile 'com.google.android.gms:play-services:11.8.0'
+    compile 'com.jsibbold:zoomage:1.2.0'
+    compile 'com.github.barteksc:android-pdf-viewer:1.4.0'
+
+    // compile 'com.synnapps:carouselview:0.1.5'
+    // implementation 'com.github.GoodieBag:CarouselPicker:v1.1'
     implementation files('D:/projets/boxs/box/BoxPreventium/libs/mail.jar')
     implementation files('D:/projets/boxs/box/BoxPreventium/libs/additionnal.jar')
     implementation files('D:/projets/boxs/box/BoxPreventium/libs/activation.jar')

@@ -1,11 +1,14 @@
 package com.preventium.boxpreventium.utils;
 
 import android.Manifest;
+import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -17,6 +20,7 @@ import android.telephony.TelephonyManager;
 import android.util.Base64;
 import android.util.Log;
 
+import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 
 import java.math.BigDecimal;
@@ -33,7 +37,6 @@ import static android.util.Base64.decode;
 public class ComonUtils {
 
     private final static String TAG = "ComonUtils";
-
 
     public static boolean haveInternetConnected(Context ctx){
         ConnectivityManager cm = (ConnectivityManager)ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -301,5 +304,22 @@ public class ComonUtils {
     }
 
     //######### Older paste
+
+    public static void setLanguage (Context context) {
+        Application main = (Application)context;
+        SharedPreferences preferences = main.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
+        String language = preferences.getString(main.getString(R.string.select_language_key), null);
+        language = language == null ? Locale.getDefault().getLanguage() : language;
+
+        // setting resources and others
+        Resources res = context.getResources();
+        Configuration configuration = res.getConfiguration();
+
+        // update if needed
+        if( !configuration.locale.equals(language) ) {
+            configuration.setLocale(new Locale(language.toLowerCase()));
+            res.updateConfiguration(configuration, null);
+        }
+    }
 
 }

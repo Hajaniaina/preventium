@@ -194,10 +194,6 @@ public class HandlerBox extends ThreadDefault
             curr_smooth = Pair.create((long)0, (short)0);
             curr_shock = Pair.create((long)0, (short)0);
             for( int i = mBoxList.size()-1; i >= 0; i-- ) {
-
-                // if( !mBoxList.get(i).getIsLeurre() && listener != null )
-                   // listener.onBMExist(true);
-
                 if (mBoxList.get(i).getConnectionState() == CONNEXION_STATE_t.DISCONNECTED) {
                     Log.d(TAG,"deconnecté box");
 
@@ -205,8 +201,8 @@ public class HandlerBox extends ThreadDefault
                     boolean connected =  (alertID > 0 && alertID < 254) && alertID == 230;
 
                     if( listener != null ) listener.onDeviceState( mBoxList.get(i).getMacAddr(), connected );
-                    if( DEBUG ) Log.d(TAG,"LOST " + mBoxList.get(i).getMacAddr());
-                    mBoxList.remove(i);
+                    // if( DEBUG ) Log.d(TAG,"LOST " + mBoxList.get(i).getMacAddr());
+                    // mBoxList.remove(i);
 
                 } else {
                     SensorSmoothAccelerometerInfo smooth = mBoxList.get(i).getSmooth();

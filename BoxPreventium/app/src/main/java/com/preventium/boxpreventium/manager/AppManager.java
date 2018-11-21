@@ -6,12 +6,13 @@ import android.content.SharedPreferences.Editor;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.Pair;
-import android.widget.Toast;
 
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.database.Database;
@@ -24,8 +25,12 @@ import com.preventium.boxpreventium.enums.SPEED_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
 import com.preventium.boxpreventium.gui.MainActivity;
 import com.preventium.boxpreventium.location.CustomMarkerData;
+import com.preventium.boxpreventium.location.CustomMarkerManager;
+import com.preventium.boxpreventium.location.DatasMarker;
 import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.module.HandlerBox.NotifyListener;
+import com.preventium.boxpreventium.module.Load.LoadConfig;
+import com.preventium.boxpreventium.module.Load.LoadServer;
 import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.DOBJ.DataDOBJ;
@@ -34,7 +39,6 @@ import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.ForceSeuil;
 import com.preventium.boxpreventium.server.EPC.ReaderEPCFile;
-import com.preventium.boxpreventium.server.JSON.ParseJsonData;
 import com.preventium.boxpreventium.server.POSS.ReaderPOSSFile;
 import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ColorCEP;
@@ -42,14 +46,11 @@ import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
 import com.preventium.boxpreventium.utils.DataLocal;
 import com.preventium.boxpreventium.utils.ThreadDefault;
-import com.preventium.boxpreventium.utils.Zipper;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPClientIO;
 import com.preventium.boxpreventium.utils.superclass.ftp.FTPConfig;
 
 import org.apache.commons.net.nntp.NNTPReply;
-import org.json.JSONObject;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
@@ -57,7 +58,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.locks.Lock;
@@ -68,42 +68,28 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     // private static final String HOSTNAME = "www.preventium.fr";
     private final static boolean DEBUG = true;
     private static final float MS_TO_KMH = 3.6f;
-    // private static final String PASSWORD = "8q.!s66VVt"; // "Box*16/64/prev"; // "AP342gYm4w" ; // "Box*16/64/prev";
     private static final int PORTNUM = 21;
     private static final int SECS_TO_SET_PARCOURS_PAUSE = 20;
     private static final int SECS_TO_SET_PARCOURS_RESUME = 3;
     private static final int SECS_TO_SET_PARCOURS_START = 3;
     private static final int SECS_TO_SET_PARCOURS_STOPPED = 25200;
     private static final String TAG = "AppManager";
-    // private static final String USERNAME = "box.preventium";
 
-    private static FTPConfig FTP_ACTIF; // = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/ACTIFS");
-    private static FTPConfig FTP_CFG; // = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
-    private static FTPConfig FTP_DOBJ; // = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
-    private static FTPConfig FTP_EPC; // = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
-    private static FTPConfig FTP_POS; // = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/POSS");
-    private static FTPConfig FTP_NAME; // = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
-    private static FTPConfig FTP_FORM;
+    public static FTPConfig FTP_ACTIF;
+    public static FTPConfig FTP_CFG;
+    public static FTPConfig FTP_DOBJ;
+    public static FTPConfig FTP_EPC;
+    public static FTPConfig FTP_POS;
 
     private static long duration = 0;
     private static int nb_box = 0;
     private static float speed_H = 0.0f;
     private static float speed_V = 0.0f;
-    //private long Tavg = System.currentTimeMillis();
-    //private float Vavg = 0.0f;
     private long[] f6X = new long[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    //private double XmG = 0.0d;
     private long[] f7Y = new long[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     private boolean _tracking = DEBUG;
-    //private long alertPos_add_at = 0;
-    //private long alertUI_add_at = 0;
-    //private long alertX_add_at = 0;
-    //private long alertX_add_id = -1;
-    //private long alertY_add_at = 0;
-    //private long alertY_add_id = -1;
     private boolean button_stop = false;
     private boolean button_start = false;
-    //private String chronoRideTxt = "";
     private Chrono chrono_ready_to_start = Chrono.newInstance();
     private Context ctx = null;
     private ArrayList<CustomMarkerData> customMarkerList = null;
@@ -114,18 +100,11 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private long engine_t_changed_at = 0;
     private FilesSender fileSender = null;
     private boolean gps = false;
-    //private boolean internet_active = DEBUG;
-    //private Location lastLocSend = null;
     private AppManagerListener listener = null;
     private List<Location> locations = new ArrayList();
     private final Lock lock = new ReentrantLock();
     private final Lock lock_timers = new ReentrantLock();
     private String log = "";
-
-    //private Chrono mov_chrono = new Chrono();
-    //private MOVING_t mov_t = MOVING_t.STP;
-    //private MOVING_t mov_t_last = MOVING_t.UNKNOW;
-    //private Chrono mov_t_last_chrono = new Chrono();
     private long note_forces_update_at = 0;
     private long note_parcour_update_at = 0;
     private long parcour_id = 0;
@@ -139,6 +118,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     private boolean bm = false;
     private Chrono chrono;
+    private Chrono chrono_cep;
     private boolean isRestart = false;
     private boolean initWorkTime = false;
 
@@ -177,8 +157,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         void onRecommendedSpeedChanged(SPEED_t sPEED_t, int i, LEVEL_t lEVEL_t, boolean z);
 
         void onScoreChanged(SCORE_t sCORE_t, LEVEL_t lEVEL_t);
-
-        //void onChangeScore(LEVEL_t lEVEL_A, LEVEL_t lEVEL_V, LEVEL_t lEVEL_F, LEVEL_t lEVEL_M);
 
         void onShock(double d, short s);
 
@@ -221,15 +199,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
     }
 
-    class C01073 implements FilenameFilter {
-        C01073() {
-        }
-
-        public boolean accept(File dir, String name) {
-            return name.toUpperCase().endsWith(".SHARE");
-        }
-    }
-
     class C01084 implements FilenameFilter {
         C01084() {
         }
@@ -255,7 +224,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this.chrono.start();
         this.stress = Chrono.newInstance();
         this.stress.start();
-
+        this.chrono_cep = Chrono.newInstance();
+        this.chrono_cep.start();
     }
 
     private void switchON(boolean on) {
@@ -289,80 +259,27 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         return score;
     }
 
-
-
-    public class Async extends AsyncTask<String, String, Integer> {
-
-        private String serveur = "https://test.preventium.fr/index.php/get_activation/";
-        private String key;
-        private String HOSTNAME;
-        private String USERNAME;
-        private String PASSWORD;
-        private String url;
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            key = ComonUtils.randomString(8);
-            // MainActivity.instance().Alert("Le key est " + key, Toast.LENGTH_LONG);
-        }
-
-        @Override
-        protected Integer doInBackground(String... param) {
-
-            String imei = StatsLastDriving.getIMEI(MainActivity.instance());
-            url = serveur + imei + "/" + key;
-            String json = new ParseJsonData().makeServiceCall(url);
-
-            if( json != null && json.toString().length() > 0) {
-                try {
-                    JSONObject config = new JSONObject(json.substring(json.indexOf("{"), json.lastIndexOf("}") + 1));
-                    HOSTNAME = config.optString("hostname");
-                    USERNAME = config.optString("username");
-                    PASSWORD = ComonUtils.decryt(config.optString("password"), key);
-                }catch(Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Integer integer) {
-            super.onPostExecute(integer);
-
-            String txt = "HOSTNAME = " + HOSTNAME +
-                    "  USERNAME = " + USERNAME +
-                    "  PASSWORD = " + PASSWORD +
-                    "  URL = " + url;
-
-            // MainActivity.instance().Alert(txt, Toast.LENGTH_LONG);
-            // Log.v("Data", txt);
-
-            AppManager.FTP_ACTIF = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/ACTIFS");
-            AppManager.FTP_CFG = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
-            AppManager.FTP_DOBJ = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
-            AppManager.FTP_EPC = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21);
-            AppManager.FTP_POS = new FTPConfig(HOSTNAME, USERNAME, PASSWORD, 21, "/POSS");
-            AppManager.FTP_NAME = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM);
-            AppManager.FTP_FORM = new FTPConfig(HOSTNAME,USERNAME,PASSWORD,PORTNUM, "/FORM");
-
-        }
-    }
-
     private boolean _timer = false;
+    private double startTime, sleepTime;
+    private Handler handlerPrincipale;
+    private STATUS_t status;
     public void myRun() throws InterruptedException {
         super.myRun();
+        Looper.prepare();
 
         // clear database
         this.database.clear_obselete_data();
-        new Async().execute();
+
+        // chargement des données server
+        new LoadServer(this.ctx).Init();
 
         // crash init
         if( (boolean)local.getValue("crashApp", false) && listener != null ) {
             listener.onCrash();
         }
+
+        // load config
+        LoadConfig.init(this.ctx);
 
         boolean isFirst = (boolean)local.getValue("isFirstRelance", true);
         float beginTime = local.getFloat("currentTime", 0);
@@ -371,7 +288,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
         int opt = (int)local.getValue("timer", 0);
         boolean isConfigChanged = Math.round(calcHours) > opt;
-        // ((MainActivity)this.ctx).Alert(String.valueOf(opt) + " < " + String.valueOf(Math.round(calcHours)) + " = " + String.valueOf(isConfigChanged), Toast.LENGTH_LONG);
 
         if( isFirst || opt == 0 || isConfigChanged ) { // > Hours or first_dem
             // imei check actif
@@ -393,20 +309,31 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         // epc
         download_epc();
 
+        // custom manager marker
+        CustomMarkerManager custom = new CustomMarkerManager(this.ctx);
+        custom.getMarker();
+
+        // autre
         this.modules.setActive(DEBUG);
-
-        STATUS_t status = first_init();
-
+        status = first_init();
         upload_eca(DEBUG);
 
-        while (isRunning()) {
-            // ((MainActivity)this.ctx).Alert(String.valueOf(chrono.getMinutes()), Toast.LENGTH_SHORT);
-            if( Build.VERSION_CODES.M == Build.VERSION.SDK_INT ) {
+        /*
+        handlerPrincipale = new Handler();
+        handlerPrincipale.post(new Runnable() {
+            @Override
+            public void run() {
+            */
+        while(isRunning()) {
+            // horodatage actuel
+            startTime = System.currentTimeMillis();
+            if (Build.VERSION_CODES.M == Build.VERSION.SDK_INT) {
                 int relance = local.getInt("relance", 30);
-                if (listener != null && chrono.getMinutes() >= relance  && !isRestart) { // >= relance mn
+                if (listener != null && chrono.getMinutes() >= relance && !isRestart) { // >= relance mn
                     chrono.stop();
                     isRestart = true;
                     listener.checkRestart();
+                    handlerPrincipale.removeCallbacks(this);
                 }
             }
             // test de connexion tout le temps
@@ -414,10 +341,12 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             // savoir le tracking de parcours est actif
             update_tracking_status();
             // detection BM ou/et Leurre
-            this.modules.setActive(DEBUG);
-            sleep(1200); // attente pour la dectection
+            modules.setActive(DEBUG);
+
             // efface les donnée eca 5jrs avant
-            this.database.clear_obselete_data();
+            database.clear_obselete_data();
+
+            sleep(500);
             // envoie des eca tout les 1mn
             upload_eca(false);
             // maj du temps de conduite
@@ -426,17 +355,30 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             calc_movements();
 
             // MainActivity.instance().Alert(status.toString(), Toast.LENGTH_SHORT);
-            if( this.button_stop ) {
+            if (button_stop) {
                 status = STATUS_t.PAR_PAUSING;
             }
 
-            switch ( status ) {
+            // send cep in 30mn
+            if (chrono_cep.getMinutes() >= 30) {
+                // send cep
+                upload_cep();
+                // stop and start again
+                chrono_cep.stop();
+                chrono_cep.start();
+            }
+
+            switch (status) {
                 case GETTING_CFG:
                 case GETTING_EPC:
                 case GETTING_DOBJ:
                     break;
                 case PAR_STOPPED:
-                    status = on_stopped();
+                    try {
+                        status = on_stopped();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 case PAR_STARTED:
                 case PAR_RESUME:
@@ -445,13 +387,26 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     break;
                 case PAR_PAUSING:
                 case PAR_PAUSING_WITH_STOP:
-                    status = on_paused(status);
+                    try {
+                        status = on_paused(status);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     break;
             }
             listen_timers(status);
-            this.button_start = false;
+            button_start = false;
         }
+        /*
+                if( isRunning() ) {
+                    handlerPrincipale.postDelayed(this, 500);
+                }
+            }
+        });
+        */
+
         this.modules.setActive(false);
+        Looper.loop();
     }
 
     public boolean isWorkTimeOver () {
@@ -484,9 +439,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     public void onDeviceState(String device_mac, boolean connected) {
         if (connected) {
-            addLog("Device " + device_mac + " connected.");
+            // addLog("Device " + device_mac + " connected.");
         } else {
-            addLog("Device " + device_mac + " disconnected.");
+            // addLog("Device " + device_mac + " disconnected.");
         }
         Location location = get_last_location();
         int note = (int) calc_note(this.parcour_id);
@@ -774,87 +729,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
         return cfg;
     }
-    class AsyncCFG extends AsyncTask<String, String, Integer> {
-
-        @Override
-        protected Integer doInBackground(String... param) {
-
-            boolean cfg = false;
-
-            if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
-
-            File folder = new File(ctx.getFilesDir(), "");
-            ReaderCFGFile reader = new ReaderCFGFile();
-
-            FTPClientIO ftp = new FTPClientIO();
-
-            while ( isRunning() && !cfg  ){
-                if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
-
-                // Trying to connect to FTP server...
-                if( !ftp.ftpConnect(FTP_CFG, 5000) ) {
-                    check_internet_is_active();
-                } else {
-                    // Checking if .CFG file is in FTP server ?
-                    String srcFileName = ComonUtils.getIMEInumber(ctx) + ".CFG";
-                    String srcAckName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
-                    boolean exist_server_cfg = ftp.checkFileExists( srcFileName );
-                    boolean exist_server_ack = ftp.checkFileExists( srcAckName );
-
-                    // If .CFG file exist in the FTP server
-                    cfg = ( exist_server_ack && reader.loadFromApp(ctx) );
-                    if( !cfg ) {
-                        if (exist_server_cfg) {
-                            // Create folder if not exist
-                            if (!folder.exists())
-                                if (!folder.mkdirs())
-                                    Log.w(TAG, "Error while trying to create new folder!");
-                            if (folder.exists()) {
-                                // Trying to download .CFG file...
-                                String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
-                                if (ftp.ftpDownload(srcFileName, desFileName)) {
-                                    cfg = reader.read(desFileName);  // santooo
-                                    Log.e("FTP cfg : ", String.valueOf(cfg));
-                                    if (cfg) {
-                                        String serv = reader.getServerUrl();
-                                        Log.e("FTP azo : ", serv);
-                                        reader.applyToApp(ctx);
-                                        // envoi acknowledge
-                                        try {
-                                            File temp = File.createTempFile("temp-file-name", ".tmp");
-                                            String ackFileName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
-                                            ftp.ftpUpload(temp.getPath(), ackFileName);
-                                            temp.delete();
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                        // new File(desFileName).delete();  //delete source cfg santoni
-                                    }
-                                }
-                            }
-                        } else {
-                            cfg = reader.loadFromApp(ctx);
-                        }
-                    }
-                    // Disconnect from FTP server.
-                    ftp.ftpDisconnect();
-                }
-
-                try {
-                    if (isRunning() && !cfg) sleep(1000);
-                }catch(InterruptedException ie) {}
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Integer integer) {
-            super.onPostExecute(integer);
-            Log.w("CFG loading", "post execute");
-            Toast.makeText(MainActivity.instance(), "CFG is loaded", Toast.LENGTH_LONG);
-        }
-    }
 
     /// ============================================================================================
     /// .CHECK IF ACTIF
@@ -880,11 +754,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        /*
+
                         if (this.listener != null) {
-                            this.listener.onStatusChanged(STATUS_t.IMEI_INACTIF);
+                            // this.listener.onStatusChanged(STATUS_t.IMEI_INACTIF);
                         }
-                        */
                     }
                 } else {
                     Log.d(TAG, "ACTIFS: Error while trying to change working directory to \"" + FTP_ACTIF.getWorkDirectory() + "\"");
@@ -1046,132 +919,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
         return ready;
     }
-    class AsyncEPC extends AsyncTask<Integer, Integer, Integer> {
-
-        @Override
-        protected Integer doInBackground(Integer... index) {
-
-            boolean ready = false;
-
-            if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
-
-            File folder = new File(ctx.getFilesDir(), "");
-            ReaderEPCFile reader = new ReaderEPCFile();
-            FTPClientIO ftp = new FTPClientIO();
-
-            while( isRunning() && !ready ) {
-
-                if (listener != null) listener.onStatusChanged(STATUS_t.GETTING_EPC);
-
-                // Trying to connect to FTP server...
-                if (!ftp.ftpConnect(FTP_EPC, 5000)) {
-                    check_internet_is_active();
-                } else {
-
-                    // Changing working directory if needed
-                    boolean change_directory = true;
-                    if (FTP_EPC.getWorkDirectory() != null && !FTP_EPC.getWorkDirectory().isEmpty() && !FTP_EPC.getWorkDirectory().equals("/"))
-                        change_directory = ftp.changeWorkingDirectory(FTP_EPC.getWorkDirectory());
-
-                    if (!change_directory) {
-                        Log.w(TAG, "EPC: Error while trying to change working directory to \"" + FTP_EPC.getWorkDirectory() + "\"");
-                    } else {
-                        boolean epc;
-                        boolean epc_name;
-                        boolean exist_server_epc = false;
-                        boolean exist_server_ack = false;
-                        boolean exist_server_name = false;
-                        String srcFileName = "";
-                        String srcAckName = "";
-                        String srcNameName = "";
-                        String desFileName = "";
-                        int i = 1;
-                        while (i <= 5 && isRunning()) {
-
-                            // Checking if .EPC file is in FTP server ?
-                            srcFileName = reader.getEPCFileName(ctx, i, false);
-                            srcAckName = reader.getEPCFileName(ctx, i, true);
-                            srcNameName = reader.getNameFileName(ctx);
-                            exist_server_epc = ftp.checkFileExists(srcFileName);
-                            exist_server_ack = ftp.checkFileExists(srcAckName);
-                            exist_server_name = ftp.checkFileExists(srcNameName);
-
-                            // If .EPC file exist in the FTP server
-                            epc = (exist_server_ack && reader.loadFromApp(ctx, i));
-                            if (!epc) {
-                                if (exist_server_epc) {
-                                    // Create folder if not exist
-                                    if (!folder.exists())
-                                        if (!folder.mkdirs())
-                                            Log.w(TAG, "Error while trying to create new folder!");
-                                    if (folder.exists()) {
-                                        // Trying to download .EPC file...
-                                        desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
-                                        if (ftp.ftpDownload(srcFileName, desFileName)) {
-                                            epc = reader.read(desFileName);
-                                            if (epc) {
-                                                reader.applyToApp(ctx, i);
-                                                // envoi acknowledge
-                                                try {
-                                                    File temp = File.createTempFile("temp-file-name", ".tmp");
-                                                    ftp.ftpUpload(temp.getPath(), srcAckName);
-                                                    temp.delete();
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                }
-                                                new File(desFileName).delete();
-                                            }
-                                        }
-                                        //get the EPC.NAME info in server
-                                        if (exist_server_name) {
-                                            if (!folder.exists())
-                                                if (!folder.mkdirs())
-                                                    Log.w(TAG, "Error while trying to create new folder!");
-                                            if (folder.exists()) {
-                                                // Trying to download EPC.NAME file...
-                                                desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcNameName);
-                                                if (ftp.ftpDownload(srcNameName, desFileName)) {
-                                                    epc_name = reader.readname(desFileName);
-                                                    if (epc_name) {
-                                                        reader.applyNameToApp(ctx);
-
-                                                        new File(desFileName).delete();
-                                                    }
-                                                }
-                                            }
-
-                                        } else {
-                                            reader.loadNameFromApp(ctx);
-                                        }
-
-                                    }
-                                }
-                            } else {
-                                epc = reader.loadFromApp(ctx, i);
-                            }
-
-                            i++;
-                        }
-
-
-                    }
-                    // Disconnect from FTP server.
-                    ftp.ftpDisconnect();
-                }
-
-                ready = !DataEPC.getAppEpcExist(ctx).isEmpty();
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Integer integer) {
-            super.onPostExecute(integer);
-
-
-        }
-    }
 
     private boolean loading_epc() throws InterruptedException {
         boolean ready = false;
@@ -1190,7 +937,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             this.selected_epc = this.readerEPCFile.selectedEPC(this.ctx);
             if (!ready) {
                 download_epc();
-                // new AsyncEPC().execute();
             }
         }
         return ready;
@@ -1208,7 +954,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             ready = this.readerEPCFile.loadFromApp(this.ctx, num);
             if (!ready) {
                 download_epc();
-                // new AsyncEPC().execute();
             }
         }
         if (!ready) {
@@ -1298,87 +1043,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         return ready;
     }
 
-    class AsyncOBJ extends AsyncTask<String, String, Integer> {
-
-        @Override
-        protected Integer doInBackground(String... param) {
-            boolean ready = false;
-
-            // if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
-
-            File folder = new File(ctx.getFilesDir(), "");
-            ReaderDOBJFile reader = new ReaderDOBJFile();
-            FTPClientIO ftp = new FTPClientIO();
-
-
-            // if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
-
-            // Trying to connect to FTP server...
-            if( !ftp.ftpConnect(FTP_DOBJ, 5000) ) {
-                check_internet_is_active();
-            } else {
-
-                // Changing working directory if needed
-                boolean change_directory = true;
-                if (FTP_DOBJ.getWorkDirectory() != null && !FTP_DOBJ.getWorkDirectory().isEmpty() && !FTP_DOBJ.getWorkDirectory().equals("/"))
-                    change_directory = ftp.changeWorkingDirectory(FTP_DOBJ.getWorkDirectory());
-
-                if( !change_directory ) {
-                    Log.w(TAG, "DOBJ: Error while trying to change working directory to \"" + FTP_DOBJ.getWorkDirectory() + "\"!");
-                } else {
-
-                    boolean dobj = false;
-
-                    // Checking if .DOBJ file is in FTP server ?
-                    String srcFileName = ReaderDOBJFile.getOBJFileName(ctx, false);
-                    String srcAckName = ReaderDOBJFile.getOBJFileName(ctx, true);
-                    boolean exist_server_dobj = ftp.checkFileExists( srcFileName );
-                    boolean exist_server_ack = ftp.checkFileExists( srcAckName );
-
-                    // If .DOBJ file exist in the FTP server
-                    dobj = ( exist_server_ack && DataDOBJ.preferenceFileExist(ctx) );
-                    if( !dobj ) {
-                        if (exist_server_dobj) {
-                            // Create folder if not exist
-                            if (!folder.exists())
-                                if (!folder.mkdirs())
-                                    Log.w(TAG, "Error while trying to create new folder!");
-                            if (folder.exists()) {
-                                // Trying to download .OBJ file...
-                                String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
-                                if (ftp.ftpDownload(srcFileName, desFileName)) {
-                                    dobj = reader.read(ctx,desFileName,false);
-                                    if( dobj ) {
-                                        ready = reader.read(ctx,desFileName,true);
-                                        // envoi acknowledge
-                                        try {
-                                            File temp = File.createTempFile("temp-file-name", ".tmp");
-                                            ftp.ftpUpload(temp.getPath(), srcAckName);
-                                            temp.delete();
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                        new File(desFileName).delete();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            // Disconnect from FTP server.
-            ftp.ftpDisconnect();
-
-            if( !ready ) ready = DataDOBJ.preferenceFileExist(ctx);
-
-            return null;
-        }
-    }
-
     /// ============================================================================================
     /// .ECA
     /// ============================================================================================
-
 
     private boolean upload_eca(boolean now) {
         if (!now && this.try_send_eca_at + 60000 >= System.currentTimeMillis()) { // envoie tout les 1mn de plus
@@ -1462,9 +1129,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 listener.onStatusChanged(STATUS_t.PAR_STOPPED);
 
                 if( !sent ) {
-                    getMainActivity().Dialog(main.getString(R.string.send_error_message));
+                    // getMainActivity().Dialog(main.getString(R.string.send_error_message));
+                    Log.w("CEP Data", main.getString(R.string.send_error_message));
                 } else {
-                    getMainActivity().Dialog(main.getString(R.string.send_success_message));
+                    Log.w("CEP Data", main.getString(R.string.send_success_message));
                 }
 
                 // quitter après envoye de CEP
@@ -1493,10 +1161,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
 
     // Create .SHARE file (Position of map markers) and uploading to the server.
-
     private void upload_shared_pos() throws InterruptedException {
         if (isRunning() && this.listener != null) {
-            File file;
+            final DatasMarker markerData = new DatasMarker(ctx);
             this.customMarkerList_Received = false;
             this.customMarkerList = null;
             this.listener.onCustomMarkerDataListGet();
@@ -1514,65 +1181,28 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     Log.w(TAG, "Error while trying to create new folder!");
                 }
                 if (folder.exists()) {
-                    file = new File(folder.getAbsolutePath(), String.format(Locale.getDefault(), "%s.SHARE", new Object[]{ComonUtils.getIMEInumber(this.ctx)}));
-                    try {
-                        if (file.createNewFile()) {
-                            FileWriter fileWriter = new FileWriter(file);
-                            String line = "";
-                            Iterator it = this.customMarkerList.iterator();
-                            while (it.hasNext()) {
-                                CustomMarkerData mk = (CustomMarkerData) it.next();
-                                Locale locale = Locale.getDefault();
-                                String str = "%f;%f;%d;%d;%d;%s;%d;%d;%s;%s;%s;\n";
-                                Object[] objArr = new Object[11];
-                                objArr[0] = Double.valueOf(mk.position.longitude);
-                                objArr[1] = Double.valueOf(mk.position.latitude);
-                                objArr[2] = Integer.valueOf(mk.type);
-                                objArr[3] = Integer.valueOf(mk.alert ? 1 : 0);
-                                objArr[4] = Integer.valueOf(mk.alertRadius);
-                                objArr[5] = mk.title;
-                                objArr[6] = Integer.valueOf(mk.shared ? 1 : 0);
-                                objArr[7] = Integer.valueOf(0);
-                                String str2 = (mk.alertMsg == null || !mk.alertMsg.isEmpty()) ? "" : mk.alertMsg;
-                                objArr[8] = str2;
-                                objArr[9] = ComonUtils.getIMEInumber(this.ctx);
-                                objArr[10] = "";
-                                fileWriter.write(String.format(locale, str, objArr));
-                            }
-                            fileWriter.flush();
-                            fileWriter.close();
-                        } else {
-                            Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    markerData.create_sharePos_file(this.customMarkerList, folder);
                 }
             }
 
             // UPLOAD .SHARE FILES
-            if (folder.exists()) {
-                File[] listOfFiles = folder.listFiles(new C01073());
-                if (listOfFiles != null && listOfFiles.length > 0) {
-                    FTPClientIO ftp = new FTPClientIO();
-                    if (ftp.ftpConnect(FTP_POS, 5000)) {
-                        boolean change_directory = DEBUG;
-                        if (!(FTP_POS.getWorkDirectory() == null || FTP_POS.getWorkDirectory().isEmpty() || FTP_POS.getWorkDirectory().equals("/"))) {
-                            change_directory = ftp.changeWorkingDirectory(FTP_POS.getWorkDirectory());
-                        }
-                        if (change_directory) {
-                            for (File file2 : listOfFiles) {
-                                if (ftp.ftpUpload(file2.getAbsolutePath(), file2.getName())) {
-                                    file2.delete();
-                                }
-                            }
-                        } else {
-                            Log.w(TAG, "SHARE: Error while trying to change working directory to \"" + FTP_POS.getWorkDirectory() + "\"!");
-                        }
+            final Handler handler = new Handler();
+            handler.post(new Runnable () {
+                boolean send = false;
+                @Override
+                public void run() {
+                    if( !send && ComonUtils.haveInternetConnected(ctx) ) {
+                        markerData.sharePos();
+                        send = true;
                     }
+
+                    if( markerData.is_send ) {
+                        listener.onStatusChanged(STATUS_t.PAR_STOPPED);
+                        handler.removeCallbacks(this);
+                    } else
+                        handler.postDelayed(this, 1000);
                 }
-            }
-            this.listener.onStatusChanged(STATUS_t.PAR_STOPPED);
+            });
         }
     }
 
@@ -2617,7 +2247,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         update_parcour_note(DEBUG);
         update_force_note(DEBUG);
         update_recommended_speed(DEBUG);
-        upload_cep();
+        // upload_cep();
         this.database.addECA(this.parcour_id, ECALine.newInstance(255, get_last_location(), null));
         StatsLastDriving.set_distance(this.ctx, this.database.get_distance(this.parcour_id));
         clear_force_ui();
@@ -2855,76 +2485,4 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             this.listener.onDebugLog(this.log);
         }
     }
-
-
-
-    /// OPEN FORM
-    /// ============================================================================================
-    private Thread thread;
-    public void OpenForm (String[] form) {
-        // recuperer les valeurs
-
-        final String header = "imei;nometprenom;telephone;email;titulaire;latitude;longitude;date;numéro;versionapp\n";
-        final String imei = StatsLastDriving.getIMEI(ctx);
-        final String content = imei + ";" + form[0] + ";" + form[1] + ";" + form[2] + ";" + form[3] + ";" + form[4] + ";" + form[5] + ";" + form[6]+ ";" + form[7]+ ";" + form[8];
-        Log.w("content", content);
-
-        // mettre dans un fichiers
-        thread = new Thread() {
-            private FTPClientIO ftp = new FTPClientIO();
-            private String zipfile = null;
-            private boolean sent = false;
-
-            @Override
-            public void run () {
-                while(!sent) {
-                    Log.w("loop", "looping");
-                    if( zipfile == null ) {
-                        try {
-                            File tmp = File.createTempFile(imei, ".tmp");
-                            File file = new File(tmp.getParent() + File.separator + imei + ".FORM");
-
-                            Log.w("path file", file.getAbsolutePath());
-                            //write it
-                            BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-                            bw.write(header);
-                            bw.append(content);
-                            bw.close();
-
-                            if (file.isFile()) {
-                                // archiver zip le fichiers
-                                String[] fileList = {file.getAbsolutePath()};
-                                Zipper zip = new Zipper(fileList);
-                                zipfile = zip.putSample();
-                                file.delete();
-                                tmp.delete();
-                            }
-
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    if (zipfile != null) {
-                        if( ftp.ftpConnect(FTP_FORM, 3000) && ftp.changeWorkingDirectory(FTP_FORM.getWorkDirectory()) ) {
-                            ftp.ftpUpload(zipfile, imei + ".FORM.zip");
-                            sent = true;
-                            break;
-                        }
-                    }
-
-                    try {
-                        if(!sent) { Thread.sleep(5000); }
-                    }catch(InterruptedException ie) {
-                        ie.printStackTrace();
-                    }
-                }
-                Log.w("terminé", "terms");
-                thread.interrupt();
-            }
-        };
-        thread.start();
-    }
-
-
 }

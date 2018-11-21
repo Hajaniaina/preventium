@@ -1,9 +1,5 @@
 package com.preventium.boxpreventium.location;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.VectorDrawable;
 import android.support.v4.internal.view.SupportMenu;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -16,6 +12,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.gui.MainActivity;
+import com.preventium.boxpreventium.module.Load.LoadImage;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -76,6 +73,7 @@ public class CustomMarker {
     private boolean shared;
     private String title;
     private int type;
+    private boolean isDiapo;
 
     CustomMarker() {
         this.opt = null;
@@ -99,7 +97,6 @@ public class CustomMarker {
     }
 
     CustomMarker(CustomMarkerData data) {
-        this.opt = null;
         this.marker = null;
         this.type = 13;
         this.editable = true;
@@ -298,21 +295,8 @@ public class CustomMarker {
     }
 
     private BitmapDescriptor getMarkerIconFromDrawable(int res) {
-
-        Bitmap bitmap = null;
-        try {
-            bitmap = ((BitmapDrawable) MainActivity.instance().getResources().getDrawable(res)).getBitmap();
-        }catch(Exception e) {
-            VectorDrawable vector = ((VectorDrawable) MainActivity.instance().getResources().getDrawable(res));
-
-            bitmap = Bitmap.createBitmap(vector.getIntrinsicWidth(), vector.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-            bitmap.setHasAlpha(true);
-            Canvas canvas = new Canvas();
-            canvas.setBitmap(bitmap);
-            vector.setBounds(0, 0, vector.getIntrinsicWidth(), vector.getIntrinsicHeight());
-            vector.draw(canvas);
-        }
-        return BitmapDescriptorFactory.fromBitmap(bitmap);
+        LoadImage image = new LoadImage(MainActivity.instance());
+        return BitmapDescriptorFactory.fromBitmap(image.drawableToBitmap(res));
     }
 
     public int getType() {

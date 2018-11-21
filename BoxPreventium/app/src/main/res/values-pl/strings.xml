@@ -276,7 +276,7 @@
     <string name="yes_and_quit_string">Tak i zostaw Eode</string>
     <string name="no_and_quit">Nie i wyjdź z Eode</string>
     <string name="end_parcours_confirm_string">Czy skończyłeś kurs?</string>
-    <string name="send_error_message">Dane CEP nie są wysyłane, spróbuj ponownie</string>
+    <string name="send_error_message">Dane nie zostały wysłane, spróbuj ponownie</string>
     <string name="send_success_message">Dane CEP są wysyłane na serwer</string>
 
 </resources>

@@ -98,7 +98,6 @@ public class ErrorException {
                 */
 
                 if( Handler != null ) {
-
                     // exception
                     ErrorException.this.throwable = throwable;
                     // sent data
@@ -107,7 +106,7 @@ public class ErrorException {
                     ErrorException.this.killAndSurvive();
 
                 } else
-                    System.exit(2);
+                    System.exit(-1);
             }
         });
 

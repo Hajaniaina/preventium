@@ -76,7 +76,7 @@ public class App {
         public void Detection () {
             String _version = version;
             try {
-                String json = (new ParseJsonData()).makeServiceCall(serveur + "/index.php/get_apk/" + imei + "/" + _version);
+                String json = new ParseJsonData().makeServiceCall(serveur + "/index.php/get_apk/" + imei + "/" + _version);
                 if (json != null && json.toString().length() > 0) {
                     JSONObject conf = new JSONObject(json.substring(json.indexOf("{"), json.lastIndexOf("}") + 1));
                     if ( conf.optBoolean("succes") && conf.optBoolean("update") && listener != null ) {
@@ -104,7 +104,6 @@ public class App {
                 }
 
                 if ( IsUpdate(version, _version) ) {
-                    // main.Alert("Téléchargement et installation en cours", Toast.LENGTH_LONG);
                     String url = serveur + "/assets/apk/" + _version + imei + "/" + _version + ".apk";
                     version = _version;
                     new DownloadFileFromURL().execute(url);

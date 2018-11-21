@@ -40,12 +40,12 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.telephony.SmsManager;
-import android.telephony.TelephonyManager;
 import android.text.Html;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -86,6 +86,7 @@ import com.preventium.boxpreventium.enums.SPEED_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
 import com.preventium.boxpreventium.location.CustomMarker;
 import com.preventium.boxpreventium.location.CustomMarkerData;
+import com.preventium.boxpreventium.location.DatasMarker;
 import com.preventium.boxpreventium.location.MarkerManager;
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.manager.AppManager;
@@ -95,32 +96,27 @@ import com.preventium.boxpreventium.manager.SpeedLine;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
 import com.preventium.boxpreventium.module.DiscoverBox;
 import com.preventium.boxpreventium.module.HandlerBox;
+import com.preventium.boxpreventium.module.Load.LoadOption;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.NameEPC;
-import com.preventium.boxpreventium.server.JSON.ParseJsonData;
 import com.preventium.boxpreventium.utils.App;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
 import com.preventium.boxpreventium.utils.DataLocal;
 import com.preventium.boxpreventium.utils.EmailUtils;
+import com.preventium.boxpreventium.widget.Widget;
 
 import org.apache.commons.net.ftp.FTPClient;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Timer;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -149,10 +145,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private PositionManager posManager;
     private MarkerManager markerManager;
+    private AppManager appManager;
     private ScoreView scoreView;
     private SpeedView speedView;
     private AccForceView accForceView;
-    private AppManager appManager;
+    private MarkerView markerView;
+    private MapView mapView;
 
     private TextView debugView;
     private LinearLayout debugLayout;
@@ -283,7 +281,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private final long MESSAGE_DURATION = 10800000L;
     private TextView smsMessageView;
     private static MainActivity activity;
-    private boolean flag_run_once = false;
     private boolean alertqrscan = false;
 
     public int vitesse_ld;
@@ -326,63 +323,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onCameraMoveCanceled() {
         // Alert("The camera is cancelling.", Toast.LENGTH_SHORT);
-    }
-
-
-
-
-    //###santo
-    class C00322 implements GoogleMap.OnMapLongClickListener {
-        C00322() {
-        }
-
-        public void onMapLongClick(final LatLng latLng) {
-            AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
-            alertBuilder.setMessage(MainActivity.this.getString(R.string.validate_marker_create_string));
-            alertBuilder.setNegativeButton(MainActivity.this.getString(R.string.cancel_string), null);
-            alertBuilder.setPositiveButton(MainActivity.this.getString(R.string.create_string), new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    MainActivity.this.showMarkerEditDialog(MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, "", "", latLng, 13, false), true);
-                }
-            });
-            alertBuilder.create().show();
-        }
-    }
-
-    class C00333 implements GoogleMap.OnMapClickListener {
-        C00333() {
-        }
-
-        public void onMapClick(LatLng latLng) {
-            MainActivity.this.markerManager.hideAllAlertCircles();
-        }
-    }
-
-    class C00414 implements GoogleMap.OnInfoWindowClickListener {
-        C00414() {
-        }
-
-        public void onInfoWindowClick(Marker marker) {
-            if (MainActivity.this.markerManager.getMarker(marker).isEditable()) {
-                MainActivity.this.showInfoDialog(marker);
-            }
-        }
-    }
-
-    class C00465 implements GoogleMap.OnMarkerClickListener {
-        C00465() {
-        }
-
-        public boolean onMarkerClick(Marker marker) {
-            CustomMarker customMarker = MainActivity.this.markerManager.getMarker(marker);
-            if (customMarker.isAlertEnabled()) {
-                MainActivity.this.markerManager.showAlertCircle(customMarker, true);
-            }
-            if (customMarker.isEditable()) {
-                marker.setSnippet(MainActivity.this.getResources().getString(R.string.more_string));
-            }
-            return false;
-        }
     }
 
     //######donw s
@@ -619,10 +559,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void setMapListeners() {
-        this.googleMap.setOnMapLongClickListener(new C00322());
-        this.googleMap.setOnMapClickListener(new C00333());
-        this.googleMap.setOnInfoWindowClickListener(new C00414());
-        this.googleMap.setOnMarkerClickListener(new C00465());
+        this.googleMap.setOnMapLongClickListener(mapView);
+        this.googleMap.setOnMapClickListener(mapView);
+        this.googleMap.setOnInfoWindowClickListener(mapView);
+        this.googleMap.setOnMarkerClickListener(markerView);
+    }
+
+    public MarkerManager getMarkerManager() {
+        return markerManager;
+    }
+
+    public MarkerView getMarkerView() {
+        return markerView;
+    }
+
+    public GoogleMap getGoogleMap() {
+        return googleMap;
     }
 
     private void drawMapLine (LatLng startPoint, LatLng endPoint) {
@@ -746,7 +698,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         ComonUtils.SavePreferences("moved", "moved", 1, MainActivity.this);
                         MainActivity.this.routeActive = true;
                         MainActivity.this.routeInPause = false;
-                        MainActivity.this.googleMap.clear();
+                        // MainActivity.this.googleMap.clear();
                         MainActivity.this.posList.clear();
                         MainActivity.this.force_pref.edit().clear().commit();
                         if (MainActivity.this.qrRequest.isAnyReqPending(0)) {
@@ -1142,13 +1094,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * cette foonction procède à l'affichage de force sur sur l'écran
+     * cette fonction procède à l'affichage de force sur l'écran
      * donc, représenté par des flèche
-     * @param type
-     * @param level
-     * @param force
-     * @param speed_l
-     * @param speed_c
      */
     public void onForceChanged(FORCE_t type, LEVEL_t level, double force, float speed_l, float speed_c) {
         final FORCE_t fORCE_t = type;
@@ -1156,6 +1103,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         final double d = force;
         final float f = speed_l;
         final float f2 = speed_c;
+
+        // init data
+        Widget.get().setForce(fORCE_t);
+        Widget.get().setForceColor(level);
+
         runOnUiThread(new Runnable() {
             public void run() {
 
@@ -1235,6 +1187,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
                 scoreView.setFinalScore(level_par, level_5_days, note_par);
+
+                // save data
+                Widget.get().setNote(note_par);
+                Widget.get().setNoteColor(level_par);
+                Widget.get().setNoteColorAVG(level_5_days);
             }
         });
     }
@@ -1246,9 +1203,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void run() {
-
                 scoreView.setScore(type, level);
-                //scoreView.hide(true);
             }
         });
     }
@@ -1452,8 +1407,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         });
-
-
     }
 
     @Override
@@ -1499,16 +1452,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onCalibrateOnAcceleration() {
 
-        /*
-        runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-
-                markerManager.addMarker(googleMap, "Acceleration calibration", lastPos, CustomMarker.MARKER_CYAN, false);
-            }
-        });
-        */
     }
 
     @Override
@@ -1524,28 +1467,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
         */
-    }
-
-    //##santoo
-
-    private void setPositionClient() {
-        this.posManager = new PositionManager(this);
-        if (ActivityCompat.checkSelfPermission(this, "android.permission.ACCESS_FINE_LOCATION") == 0 || ActivityCompat.checkSelfPermission(this, "android.permission.ACCESS_COARSE_LOCATION") == 0) {
-            this.posManager.setPositionChangedListener(new PositionManager.PositionListener() {
-                public void onRawPositionUpdate(Location location) {
-                    MainActivity.this.firstPos = new LatLng(location.getLatitude(), location.getLongitude());
-                }
-
-                public void onPositionUpdate(Location firstLoc, Location lastLoc) {
-                    LatLng posInitial = new LatLng(firstLoc.getLatitude(), lastLoc.getLongitude());
-                    LatLng posFinal = new LatLng(firstLoc.getLatitude(), lastLoc.getLongitude());
-                }
-
-                public void onGpsStatusChange(boolean gpsFix) {
-                    MainActivity.this.setGpsStatus(gpsFix);
-                }
-            });
-        }
     }
 
     public void setGpsStatus(boolean active) {
@@ -1600,7 +1521,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     // -------------------------------------------------------------------------------------------- //
-
     private void init (boolean firstLaunch) {
 
         smsMessageView = (TextView) findViewById(R.id.sms_message_text);
@@ -1612,6 +1532,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         appManager = new AppManager(this, this);
         app = new App(this, this);
+        markerView = new MarkerView(this);
+        mapView = new MapView(this);
 
         //qrRequest = new QrScanRequest();
         qrRequest = new QrScanRequest();
@@ -1635,7 +1557,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         /* options web */
         get_one_lance_ptions();
 
-        markerManager = new MarkerManager(getApplicationContext());
+        markerManager = new MarkerManager(this);
         speedView = new SpeedView(this);
         scoreView = new ScoreView(this);
         accForceView = new AccForceView(this);
@@ -1699,7 +1621,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         */  //btn -------tracking ----
 
         if (DEBUG_LOGVIEW_ON){
-
             debugLayout = (LinearLayout) findViewById(R.id.debug_layout);
             debugView = (TextView) findViewById(R.id.debug_view);
         }
@@ -1708,12 +1629,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         if (firstLaunch) {
-
             mapFrag.setRetainInstance(true);
         }
 
         mapFrag.getMapAsync(this);
-
         // orientation
         onOrientationlistener();
     }
@@ -1739,7 +1658,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         mOrientationListener.onOrientationChanged(getRequestedOrientation());
         if( !orientation ) {
-            // setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             orientation = true;
         }
     }
@@ -1988,25 +1906,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         builder.show();
     }
 
-    public void askEndDayConfirm() {
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-
-        builder.setMessage(getString(R.string.end_day_confirm_string));
-        builder.setCancelable(false);
-
-        builder.setNegativeButton(getString(R.string.no_string), null);
-        builder.setPositiveButton(getString(R.string.yes_string), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick (DialogInterface dialogInterface, int i) {
-                appManager.setStopped();
-                stop = true;
-            }
-        });
-
-        builder.show();
-    }
-
     public void askEndParcoursConfirm() {
         final View mView = getLayoutInflater().inflate(R.layout.end_parcours, null);
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -2103,6 +2002,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    private ScaleGestureDetector mScaleGestureDetector;
 
     protected void showMarkerEditDialog (final Marker marker, final boolean creation) {
 
@@ -2124,6 +2024,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         final AlertDialog alertDlg = builder.create();
+
 
         if (creation) {
 
@@ -2257,19 +2158,27 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                         if (titleBefore != currTitle) {
 
-                            if (currTitle.length() > 0) {
+                           if (currTitle.length() > 0) {
 
                                 customMarker.setTitle(currTitle);
 
                                 marker.hideInfoWindow();    // Refresh marker's title
                                 marker.showInfoWindow();
 
+                                // adding FILE and send
+                               if( customMarker.isShared() ) {
+                                   DatasMarker dataMarker = new DatasMarker(MainActivity.this);
+                                   dataMarker.addBddMarker(customMarker);
+                                   dataMarker.uploadShare(customMarker);
+                               }
+
+                                // dismiss
                                 alertDlg.dismiss();
-                            }
+                             }
                             else {
 
                                 editTitle.setError(getString(R.string.marker_tittle_invalid_string));
-                            }
+                           }
                         }
                     }
                 });
@@ -2316,6 +2225,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         alertDlg.show();
+        // alertDlg.getWindow().setLayout(400, 340);
     }
 
     protected void showEpcSelectDialog() {
@@ -2551,25 +2461,23 @@ protected void showEpcSelectDialog() {
         }.start();
     }
 
-
     private void recenterMap(){
 
         //get the center coordinates of the current displayed screen
-        int mWidth= this.getResources().getDisplayMetrics().widthPixels/2;
-        int mHeight= this.getResources().getDisplayMetrics().heightPixels/2;
+        int mWidth = this.getResources().getDisplayMetrics().widthPixels/2;
+        int mHeight = this.getResources().getDisplayMetrics().heightPixels/2;
 
         // "Recenter bouton", Toast.LENGTH_LONG);
-
         if (lastPos == null) {
 
             CameraPosition cameraPosition = new CameraPosition.Builder().target(lastPos).zoom(MAP_ZOOM_ON_PAUSE).bearing(0).tilt(0).build();
             googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
             if (progress != null && progress.isShowing()) {
-
                 progress.setMessage(getString(R.string.progress_loading_string));
             }
         }
+
         //Get current tracker position in the screen
         Projection projection = googleMap.getProjection();
         Point markerPoint = projection.toScreenLocation(lastPos);
@@ -2579,31 +2487,12 @@ protected void showEpcSelectDialog() {
         int offsetY = mHeight - markerPoint.y;
 
         //The new position
-        Point targetPoint = new Point(mWidth - offsetX , mHeight - offsetY);
-        LatLng targetPosition = projection.fromScreenLocation(targetPoint);
-        googleMap.animateCamera(CameraUpdateFactory.newLatLng(targetPosition), 1000, null);
+        try {
+            Point targetPoint = new Point(mWidth - offsetX, mHeight - offsetY);
+            LatLng targetPosition = projection.fromScreenLocation(targetPoint);
+            googleMap.animateCamera(CameraUpdateFactory.newLatLng(targetPosition), 1000, null);
+        }catch(Exception e){ e.printStackTrace(); }
     }
-
-
-
-/*
-    private void disableActionButtons (boolean disable) {
-
-        FloatingActionButton[] actionBtnArray = {menuButtonSos, callButton, menuButtonResetCalib, menuButtonMapRecenter};
-
-        for (int i = 0; i < actionBtnArray.length; i++) {
-
-            if (disable) {
-
-                actionBtnArray[i].setEnabled(false);
-            }
-            else {
-
-                actionBtnArray[i].setEnabled(true);
-            }
-        }
-    }
-*/
 
     private void hideActionButtons (boolean hide) {
 
@@ -2694,158 +2583,6 @@ protected void showEpcSelectDialog() {
         vibrator.vibrate((seconds * 1000));
     }
 
-    private void runOnce () {
-
-        boolean isFirstRun = false; // sharedPref.getBoolean(getString(R.string.firstrun_key), true);
-        if (isFirstRun)
-        {
-            // load and sent
-            if( !flag_run_once ) {
-                progressOPT.hide();
-                progress.hide();
-                OpenForm();
-                flag_run_once = true;
-            }
-        }
-    }
-
-    //==============================================================================================
-    private AlertDialog dialog;
-    private void MessageWait () {
-
-        // status form
-        this.onStatusChanged(STATUS_t.GETTING_FORM);
-
-        AlertDialog.Builder bd = new AlertDialog.Builder(MainActivity.this);
-        View mV = getLayoutInflater().inflate(R.layout.openform_valid_activity, null);
-        bd.setView(mV);
-        dialog = bd.create();
-        Button close = (Button) mV.findViewById(R.id.form_valid_close);
-        close.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                dialog.hide();
-                MainActivity.this.finish();
-                System.exit(0);
-
-                //############---------- Annulation du load config blue screen ###################
-                SharedPreferences.Editor editor = sharedPref.edit();
-                //editor.putBoolean("FIRSTRUN", false);
-                editor.putBoolean(getString(R.string.load_alert_cfg_key), false);
-
-                editor.apply();
-
-                Log.e("AFTERRUN valcfg : ", String.valueOf(sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true)));
-
-            }
-        });
-        dialog.setCancelable(false);
-        dialog.show();
-        Log.w("Wait message", "in waiting response");
-    }
-
-    protected void OpenForm () {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        final View mView = getLayoutInflater().inflate(R.layout.openform_activity, null);
-        builder.setView(mView);
-        final AlertDialog di = builder.create();
-        di.setCancelable(false);
-
-        Button form_submit = (Button) mView.findViewById(R.id.form_submit);
-        form_submit.setOnClickListener(new View.OnClickListener() {
-
-            private TextView form_name_id;
-            private TextView form_phone_id;
-            private TextView form_email_id;
-            private TextView form_titulaire_id;
-
-            @Override
-            public void onClick(View view) {
-                form_name_id = (TextView) mView.findViewById(R.id.form_name_id);
-                form_phone_id = (TextView) mView.findViewById(R.id.form_phone_id);
-                form_email_id = (TextView) mView.findViewById(R.id.form_email_id);
-                form_titulaire_id = (TextView) mView.findViewById(R.id.form_titulaire_id);
-
-                if( form_name_id.getText().toString().isEmpty() ||
-                        form_phone_id.getText().toString().isEmpty() ||
-                        form_email_id.getText().toString().isEmpty() ||
-                        form_titulaire_id.getText().toString().isEmpty()) {
-                    Toast.makeText(MainActivity.this, getString(R.string.form_invalid_string), Toast.LENGTH_SHORT).show();
-                } else {
-
-               /*     runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() { */
-                    //  boolean location = false;
-
-                    //   while( !location ) {
-                            /*    if( lastLocation == null ) {
-                                    try {
-                                        Thread.sleep(500);
-                                    }catch(InterruptedException ie) {}
-                              */  //} else {
-
-                    boolean activeopt = Connectivity.isConnected(getApplicationContext());
-                    Log.e("connect za form : ", String.valueOf(Connectivity.isConnected(getApplicationContext())));
-                    if( activeopt != internet_activeopt ) {
-                        internet_activeopt = activeopt;
-                    }
-
-                    Log.e("connect zaInterForm : ", String.valueOf(internet_activeopt));
-
-                    if (internet_activeopt) {
-
-                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
-                        Date date = new Date();
-                        TelephonyManager manager = (TelephonyManager) MainActivity.this.getSystemService(Context.TELEPHONY_SERVICE);
-
-                        String[] form = {
-                            form_name_id.getText().toString(),
-                            form_phone_id.getText().toString(),
-                            form_email_id.getText().toString(),
-                            form_titulaire_id.getText().toString(),
-                            String.valueOf(lastLocation.getLatitude()),
-                            String.valueOf(lastLocation.getLongitude()),
-                            dateFormat.format(date),
-                            manager.getLine1Number(),
-                            ComonUtils.getVersionName(MainActivity.this),
-                        };
-
-                        appManager.OpenForm(form);
-
-
-                        MessageWait();
-                        di.hide();
-
-
-//############# annulation du formulaire
-                        SharedPreferences.Editor editor1 = sharedPref.edit();
-                        //editor.putBoolean("FIRSTRUN", false);
-                        editor1.putBoolean(getString(R.string.firstrun_key), false);
-
-                        editor1.apply();
-
-
-                        Log.e("AFTERRUN val : ", String.valueOf(sharedPref.getBoolean(getString(R.string.firstrun_key), true)));
-
-//############# annulation du formulaire
-                    }else {
-                        //Toast.makeText(MainActivity.this, getString(R.string.form_invalid_string), Toast.LENGTH_SHORT).show();
-                        Toast.makeText(MainActivity.this, getString(R.string.erreur_connect), Toast.LENGTH_SHORT).show();
-                    }
-                    //  break;
-                    // }
-                    //  }
-                    // }
-                    //  });
-
-                }
-            }
-        });
-        di.show();
-    }
-
-
     private String getPhoneNumber (int key) {
 
         String[] numberList = new String[5];
@@ -2908,7 +2645,6 @@ protected void showEpcSelectDialog() {
                     drawMapLine(prevPos, currPos);
 
                     if (locFilterTimeout++ > 5) {
-
                         markerManager.fetchNearMarkers(currPos);
                         locFilterTimeout = 0;
                     }
@@ -2916,8 +2652,8 @@ protected void showEpcSelectDialog() {
                     CustomMarker customMarker = markerManager.findClosestAlertMarker(currPos);
 
                     if (customMarker != null) {
-
-                        showMarkerAlert(customMarker);
+                        // on affiche le dialog Marker
+                        markerView.setDialogMarker(customMarker);
                         customMarker.setAsActivated(true);
                     }
                 }
@@ -2987,23 +2723,6 @@ protected void showEpcSelectDialog() {
             }
         });
 
-        /*
-        epcSettingsButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick (final View view) {
-
-                if(opt_seulforce== 1)
-                {
-                    showEpcSelectDialog();
-                }else {
-                    alertopt();
-                }
-
-            }
-        });
-*/
-
         //#### santo epc test
         this.epcSettingsButton.setOnClickListener(new View.OnClickListener() {
 
@@ -3017,34 +2736,9 @@ protected void showEpcSelectDialog() {
             }
 
             public void onClick(View view) {
-                // JSONManager jSONManager = new JSONManager(MainActivity.this);
-                 /*
-                 if (getSet() == Integer.valueOf(QrScanActivity.SCAN_MODE_VEHICLE_DISABLED).intValue()) {
-
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this, R.style.InfoDialogStyle);
-                    builder.setMessage(R.string.subscriber_string);
-                    builder.setCancelable(false);
-                    builder.setPositiveButton("Ok", new C00441());
-                    builder.show();
-                    return;
-                 }
-                 */
-                 // à changer dans un isntant
 
                 MainActivity.this.remote_file = "/" + ComonUtils.getIMEInumber(MainActivity.this) + "_EPC.NAME";
                 MainActivity.this.local_file = "/sdcard/" + ComonUtils.getIMEInumber(MainActivity.this) + "_EPC.NAME";
-                //### Chargement on load EPC
-                /* final ProgressDialog progress = new ProgressDialog(MainActivity.this, R.style.InfoDialogStyle);
-                progress.setMessage(MainActivity.this.getString(R.string.load_epc_string));
-                progress.setCancelable(false);
-                progress.show();
-                new Handler().postDelayed(new Runnable() {
-                    public void run() {
-                        progress.cancel();
-                    }
-                }, 3000);
-                */
-                // new downloadAndSaveFile().execute();
                 MainActivity.this.showEpcSelectDialog();
             }
         });
@@ -3053,7 +2747,6 @@ protected void showEpcSelectDialog() {
 
             @Override
             public void onClick (View view) {
-
                 // askEndDayConfirm();
                 askEndParcoursConfirm();
             }
@@ -3063,13 +2756,7 @@ protected void showEpcSelectDialog() {
 
             @Override
             public void onClick (View view) {
-                /* if( !parcours_display ) {
-                    appManager.setStarted();
-                    // setButtonParcours(R.drawable.ic_stop_black_24dp);
-                }
-                else
-                */
-                    // askEndDayConfirm();
+                // askEndDayConfirm();
                 askEndParcoursConfirm();
             }
         });
@@ -3112,8 +2799,6 @@ protected void showEpcSelectDialog() {
                 recenterMap();
             }
         });
-
-
 
         menuButtonResetCalib.setOnClickListener(new View.OnClickListener() {
 
@@ -3169,15 +2854,7 @@ protected void showEpcSelectDialog() {
     }
 
     // -------------------------------------------------------------------------------------------- //
-
-   /* public int get_paneau_option_web(){
-        return opt_panneau_speed;
-    }
-    public void set_paneau_web(int newpaneau_opt){
-        opt_panneau_speed = newpaneau_opt;
-    }*/
-
-    private void hideOPT(){
+    public void manageOption(){
 
         opt_qrcode = sharedPref.getInt("qrcode", 0);
         opt_carte = sharedPref.getInt("affiche_carte", 0);
@@ -3194,253 +2871,114 @@ protected void showEpcSelectDialog() {
         opt_sonore = sharedPref.getInt("voix", 0);
         opt_button_parcours = sharedPref.getInt("btn_menu", 0);
 
-        // Alert(String.valueOf(hide_V_lat), Toast.LENGTH_LONG);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                //-----VFAM
+                if(opt_VFAM==0){
+                    corner_n_v.setVisibility(View.INVISIBLE);
+                    brake_n_v.setVisibility(View.INVISIBLE);
+                    acc_n_v.setVisibility(View.INVISIBLE);
+                    avg_n_v.setVisibility(View.INVISIBLE);
+                }else {
+                    if( hide_V_lat == 0)
+                        corner_n_v.setVisibility(View.VISIBLE);
+                    brake_n_v.setVisibility(View.VISIBLE);
+                    acc_n_v.setVisibility(View.VISIBLE);
+                    avg_n_v.setVisibility(View.VISIBLE);
+                }
 
-        //-----VFAM
-        if(opt_VFAM==0){
-            corner_n_v.setVisibility(View.INVISIBLE);
-            brake_n_v.setVisibility(View.INVISIBLE);
-            acc_n_v.setVisibility(View.INVISIBLE);
-            avg_n_v.setVisibility(View.INVISIBLE);
-        }else {
-            if( hide_V_lat == 0)
-                corner_n_v.setVisibility(View.VISIBLE);
-            brake_n_v.setVisibility(View.VISIBLE);
-            acc_n_v.setVisibility(View.VISIBLE);
-            avg_n_v.setVisibility(View.VISIBLE);
-        }
+                if( opt_button_parcours == 0 ) {
+                    stop_parcour.setVisibility(View.GONE);
+                }
 
-        if( opt_button_parcours == 0 ) {
-            stop_parcour.setVisibility(View.GONE);
-        } else {
-            // stop_parcour.setVisibility(View.VISIBLE);
-        }
+                //----- drive_note
+                if(opt_note==0){
+                    drive_n_v.setVisibility(View.INVISIBLE);
+                }else {
+                    drive_n_v.setVisibility(View.VISIBLE);
+                }
 
-        //----- drive_note
-        if(opt_note==0){
-            drive_n_v.setVisibility(View.INVISIBLE);
-        }else {
-            drive_n_v.setVisibility(View.VISIBLE);
-        }
-        /*
-        if(opt_note == 1){
-            // onNoteChanged (0, LEVEL_t.LEVEL_UNKNOW,LEVEL_t.LEVEL_UNKNOW);
-            scoreView.hideNote(false);
-        }else {
-            //onNoteChanged(20,LEVEL_t.LEVEL_1,LEVEL_t.LEVEL_1);
-            scoreView.hideNote(true);
-        }
-        */
+                //---- qrcode
+                if(opt_qrcode != 1 ){
+                    scanQrCodeButton.hide(true);
+                    scanQrCodeButton.setVisibility(View.GONE);
+                }
 
-        //---- qrcode
-        if(opt_qrcode != 1 ){
+                //---- durree
+                if(opt_duree==0){
+                    drivingTimeView.setVisibility(View.INVISIBLE);
+                }else{
+                    drivingTimeView.setVisibility(View.VISIBLE);
+                }
 
-            scanQrCodeButton.hide(true);
-            scanQrCodeButton.setVisibility(View.GONE);
-            //hideActionButtons(true);
-        }else{
-            if (!optMenu.isOpened()){
-                //scanQrCodeButton.show(true);
-                //scanQrCodeButton.setVisibility(View.GONE);
+                //------ Seuille frc
+                if(opt_seulforce == 0){
+                    epcSettingsButton.hide(true);
+                }
+
+                if(opt_config_type == 0){
+                    menuButtonSettings.setVisibility(View.GONE);
+                }else{
+                    if (optMenu.isOpened()){
+                        menuButtonSettings.setVisibility(View.VISIBLE);
+                    }
+                }
+
+                //--langue opt
+                if(opt_langue== 1 || opt_langue== 99){
+
+                    flagView.setVisibility(View.VISIBLE);
+                }else{
+                    flagView.setVisibility(View.GONE);
+
+                }
+
+                //---paneau vitesse
+                if(opt_panneau == 0){
+                    speedView.hide(true);
+                }else{
+                    speedView.hide(false);
+                }
+
+                //------carte opt ----
+                if(opt_carte == 1 || opt_carte == 99){
+                    no_map.setVisibility(View.GONE);
+                    mapFrag.getView().setVisibility(View.VISIBLE);
+                }else{
+                    mapFrag.getView().setVisibility(View.GONE);
+                    no_map.setVisibility(View.VISIBLE);
+                }
+
+                //------force mg ----
+                if(opt_force_mg== 1){
+                    forceView.setVisibility(View.VISIBLE);
+                }else{
+                    forceView.setVisibility(View.INVISIBLE);
+                }
             }
-        }
-
-
-   /*     if(opt_qrcode==0){
-
-            scanQrCodeButton.setVisibility(View.GONE);
-            //hideActionButtons(true);
-        }else{
-            //hideActionButtons(false);
-           if (optMenu.isOpened()){
-                 hideActionButtons(true);
-                //scanQrCodeButton.setVisibility(View.GONE);
-            }else{
-               hideActionButtons(false);
-                //scanQrCodeButton.setVisibility(View.VISIBLE);
-            }
-
-        }
-        */
-      /*  if(opt_qrcode==1){
-            scanQrCodeButton.setVisibility(View.VISIBLE);
-        }else{
-            scanQrCodeButton.setVisibility(View.GONE);
-        }
-*/
-        //---- durree
-        if(opt_duree==0){
-            drivingTimeView.setVisibility(View.INVISIBLE);
-        }else{
-            drivingTimeView.setVisibility(View.VISIBLE);
-        }
-
-        //------ Seuille frc
-        if(opt_seulforce==0){
-
-            epcSettingsButton.hide(true);
-            //scanQrCodeButton.setVisibility(View.GONE);
-            //hideActionButtons(true);
-        }else{
-            if (!optMenu.isOpened()){
-                //epcSettingsButton.show(true);
-                //scanQrCodeButton.setVisibility(View.GONE);
-            }
-        }
-     /*   if(opt_seulforce== 1){
-            epcSettingsButton.setVisibility(View.VISIBLE);
-        }else{
-            epcSettingsButton.setVisibility(View.GONE);
-        }
-*/
-  /*      if(opt_seulforce== 0){
-            epcSettingsButton.setVisibility(View.GONE);
-        }else{
-            if (optMenu.isOpened()){
-                hideActionButtons(true);
-                //epcSettingsButton.setVisibility(View.GONE);
-            }else{
-                hideActionButtons(false);
-                //epcSettingsButton.setVisibility(View.VISIBLE);
-            }
-
-
-        }
-*/
-        //--pin btn
-
-        if(opt_config_type==0){
-
-            menuButtonSettings.setVisibility(View.GONE);
-            //scanQrCodeButton.setVisibility(View.GONE);
-            //hideActionButtons(true);
-        }else{
-            if (optMenu.isOpened()){
-                menuButtonSettings.setVisibility(View.VISIBLE);
-                //menuButtonSettings.show(true);
-                //scanQrCodeButton.setVisibility(View.GONE);
-            }
-        }
-
-        //  if(opt_config_type== 0){
-        //menuButtonSettings.setVisibility(View.INVISIBLE);
-        //  menuButtonSettings.hide(true);
-        //  }else{
-        //menuButtonSettings.show(true);
-        // menuButtonSettings.setVisibility(View.VISIBLE);
-         /*   if (!optMenu.isOpened()){
-                //hideActionButtons(true);
-                menuButtonSettings.setVisibility(View.VISIBLE);
-            }else{
-                //hideActionButtons(false);
-                menuButtonSettings.setVisibility(View.INVISIBLE);
-            }*/
-
-        //   }
-
-        //--langue opt
-        if(opt_langue== 1 || opt_langue== 99){
-
-            flagView.setVisibility(View.VISIBLE);
-        }else{
-            flagView.setVisibility(View.GONE);
-
-        }
-
-        //---paneau vitesse
-
-        if(opt_panneau == 0/* || opt_panneau== 99*/){
-            //accForceView.hide(false);
-            speedView.hide(true);
-        }else{
-            //accForceView.hide(true);
-            speedView.hide(false);
-        }
-
-        //------carte opt ----
-        if(opt_carte== 1 || opt_carte== 99){
-
-            // nomapFrag.getView().setVisibility(View.GONE);
-            no_map.setVisibility(View.GONE);
-            mapFrag.getView().setVisibility(View.VISIBLE);
-
-
-        }else{
-            mapFrag.getView().setVisibility(View.GONE);
-            no_map.setVisibility(View.VISIBLE);
-            // nomapFrag.getView().setVisibility(View.VISIBLE);
-        }
-
-        //------carte opt ----
-        if(opt_screen_size== 4 || opt_screen_size== 99){
-            //scanQrCodeButton.layout();
-
-        }else{
-
-        }
-        //------force mg ----
-        if(opt_force_mg== 1){
-            forceView.setVisibility(View.VISIBLE);
-
-        }else{
-            forceView.setVisibility(View.INVISIBLE);
-        }
-
-        /*
-        if( hide_V_lat==1 ){
-            String text = new StringBuilder(boxNumView.getText()).toString();
-            int nb = Integer.parseInt(text);
-            if( nb > 0 ) {
-                corner_n_v.setVisibility(View.INVISIBLE);
-                ((ImageView) findViewById(R.id.corner_image)).setVisibility(View.INVISIBLE);
-            }
-        }
-        else {
-            corner_n_v.setVisibility(View.VISIBLE);
-        }
-        */
-
-
+        });
     }
 
     private void alertopt(){
-
-
         final AlertDialog.Builder optDisableAlert = new AlertDialog.Builder(MainActivity.this);
         optDisableAlert.setCancelable(false);
         optDisableAlert.setMessage(getString(R.string.progress_inactive_opt_string));
 
         optDisableAlert.setNegativeButton(getString(R.string.close_string), null);
         optDisableAlert.create().show();
-        //  cancel(true);
-
-      /*            if (progress != null) {
-
-                        progress.show();
-                        progress.setMessage(getString(R.string.progress_inactive_opt_string) );
-                    }
-                    */
-
     }
 
 
     private void notification(String msg, int Idnotif){
 
         Uri soundNotif = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-     /*   if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            notif.setSmallIcon(R.drawable.icon_transperent);
-            //notif.setColor(getResources().getColor(R.color.notification_color));
-        } else {
-            notif.setSmallIcon(R.mipmap.ic_launcher);
-        }
-        */
+
         notif.setSmallIcon(R.mipmap.ic_launcher);
         notif.setTicker("Preventium");
         notif.setWhen(System.currentTimeMillis());
         notif.setContentTitle("Preventium");
         notif.setContentText(msg);
-
-
 
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -3449,15 +2987,11 @@ protected void showEpcSelectDialog() {
 
         NotificationManager nm = (NotificationManager ) getSystemService(NOTIFICATION_SERVICE);
         nm.notify(Idnotif, notif.build());
-
     }
-
 
     private void compare(int opt , int obj, String msgActiv, String msgDesactiv, int notifiId){
 
         if(opt == 99){
-
-
             Log.e("aopt99  : ", "99");
 
         }else {
@@ -3474,38 +3008,16 @@ protected void showEpcSelectDialog() {
 
                 Log.e("aopt1  : ", "1->=0");
             }
-
-
         }
-
     }
-
-    ///###### chek protocol
-  /*  public boolean checkProtocol(String url){
-     String http = (url.substring(0, 4)).trim();
-        Log.e("Protocol za : ", String.valueOf(http));
-        if (http== "http"){
-            return true;
-
-        }
-        else {
-            return false;
-        }
-
-
-    }
-*/
 
     //##### Get screen size #######
     public int getScreen() {
-
         if (opt_screen_size==99){
             return 4;
         }else {
-
             return opt_screen_size;
         }
-
     }
 
     //##### Get seuil check value #######
@@ -3535,170 +3047,42 @@ protected void showEpcSelectDialog() {
         }else {
             return opt_carte;
         }
-
     }
 
     // -------------------------------------------------------------------------------------------- //
-    private Timer timer;
     public void get_one_lance_ptions(){
+        boolean opt = false;
+        try {
 
-        runOnUiThread(new Runnable() {
+            boolean options = (boolean)DataLocal.get(MainActivity.this).getValue("options_fonc", false);
+            boolean load_cfg = sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true);
+            boolean activeopt = Connectivity.isConnected(getApplicationContext());
 
-            @Override
-            public void run() {
-                boolean opt = false;
-                try {
+            if (activeopt) {
+                reader1 = ComonUtils.getCFG(MainActivity.this);
 
-                  boolean options = (boolean)DataLocal.get(MainActivity.this).getValue("options_fonc", false); // sharedPref.getBoolean("options_fonc", false);
-                  if ( options ) {
-                      opt = true;
-                  }
+                if ( !reader1.getServerUrl().equals("") ) {
+                    serveur = reader1.getServerUrl();
+                    if ( serveur != "" ) {
+                        LoadOption option = new LoadOption(MainActivity.this);
+                        option.getOption(serveur);
 
-                  boolean load_cfg = sharedPref.getBoolean(getString(R.string.load_alert_cfg_key), true);
-                  boolean activeopt = Connectivity.isConnected(getApplicationContext());
-
-                  if (activeopt) {
-                      reader1 = ComonUtils.getCFG(MainActivity.this);
-
-                      if ( !reader1.getServerUrl().equals("") ) {
-                          serveur = reader1.getServerUrl();
-                          if (serveur != "" && serveur != "tsis") {
-                              new ParseJson().execute();
-
-                              if (progressOPT != null) {
-                                  progressOPT.hide();
-                              }
-                          }
-                      } else {
-                          //progresse fichier cfg introuvable
-                          if (!load_cfg) {
-
-                              if (progressOPT != null) {
-                                  progressOPT.show();
-                                  progressOPT.setMessage(getString(R.string.progress_cfg_opt_string));
-                              }
-                          }
-                      }
-                  }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-        });
-
-    }
-
-    // init leurre
-    private HandlerBox box_leurre = new HandlerBox(this);
-
-    @SuppressLint("StaticFieldLeak")
-    class ParseJson extends AsyncTask<String, String, Integer> {
-
-        private DataLocal local = DataLocal.get(MainActivity.this);
-
-        @Override
-        protected Integer doInBackground(String... param) {
-
-            //--------debut
-            Log.e("CFG ok","Chargement sur le sous-domaine "+serveur+" ...");
-
-            String imei = StatsLastDriving.getIMEI(MainActivity.this);
-            ParseJsonData jsonData = new ParseJsonData();
-
-            boolean connected = Connectivity.isConnected(getApplicationContext());
-            if( connected ) {
-                String json = jsonData.makeServiceCall(serveur + "/index.php/get_config/" + imei);
-
-                if( json != null && json.toString().length() > 0) {
-                    try {
-                        JSONObject conf = new JSONObject(json.substring(json.indexOf("{"), json.lastIndexOf("}") + 1));
-                        JSONObject config = conf.getJSONObject("config");
-
-                        int opt_qrcode_web = Integer.parseInt(config.optString("qrcode"));
-                        int opt_carte_web = Integer.parseInt(config.optString("affiche_carte"));
-                        int opt_panneau_web = Integer.parseInt(config.optString("paneau_vitesse_droite"));
-                        int opt_note_web = Integer.parseInt(config.optString("note_sur_20"));
-                        int opt_VFAM_web = Integer.parseInt(config.optString("VFAM"));
-                        int opt_duree_web = Integer.parseInt(config.optString("duree"));
-                        int opt_seulforce_web = Integer.parseInt(config.optString("seulforce"));
-                        int opt_config_type_web = Integer.parseInt(config.optString("config_type"));
-                        int opt_langue_web = Integer.parseInt(config.optString("langue"));
-                        int opt_screen_size_web = Integer.parseInt(config.optString("taille_ecran"));
-                        int opt_force_mg_web = Integer.parseInt(config.optString("force_mg"));
-                        int opt_leurre = Integer.parseInt(config.optString("leurre"));
-                        int opt_sonore = Integer.parseInt(config.optString("voix"));
-                        int opt_button_parcours = Integer.parseInt(config.optString("btn_menu"));
-                        int opt_triangle = Integer.parseInt(config.optString("triangle"));
-                        int opt_timer = Integer.parseInt(config.optString("timer"));
-                        int opt_relance = Integer.parseInt(config.optString("relance"));
-
-                        local.setValue("options_fonc", true);
-                        local.setValue("qrcode", opt_qrcode_web);
-                        local.setValue("affiche_carte", opt_carte_web);
-                        local.setValue("paneau_vitesse_droite", opt_panneau_web);
-                        local.setValue("note_sur_20", opt_note_web);
-                        local.setValue("VFAM", opt_VFAM_web);
-                        local.setValue("duree", opt_duree_web);
-                        local.setValue("seulforce", opt_seulforce_web);
-                        local.setValue("config_type", opt_config_type_web);
-                        local.setValue("langue", opt_langue_web);
-                        local.setValue("taille_ecran", opt_screen_size_web);
-                        local.setValue("force_mg", opt_force_mg_web);
-                        local.setValue("leurre", opt_leurre);
-                        local.setValue("voix", opt_sonore);
-                        local.setValue("btn_menu", opt_button_parcours);
-                        local.setValue("triangle", opt_triangle);
-                        local.setValue("timer", opt_timer);
-                        local.setValue("relance", opt_relance);
-                        local.setValue("workTime", 8);
-                        local.apply();
-
-                        // leurre active
-                        box_leurre.set_active_from_serveur(opt_leurre);
-
-                        return opt_qrcode;
-                    } catch (JSONException e) {}
-                }
-            }
-
-            // pour les autre option à modifier dans un temps ultérieur
-            if( connected ) {
-                String json = jsonData.makeServiceCall(serveur + "/index.php/get_attribution/" + imei);
-                // https://samat.preventium.fr351543080157864
-
-                if( json != null && json.toString().length() > 0) {
-                    try {
-                        JSONObject conf = new JSONObject(json.substring(json.indexOf("{"), json.lastIndexOf("}") + 1));
-                        JSONObject config = conf.getJSONObject("config");
-                    } catch (Exception e) {
-
+                        if (progressOPT != null) {
+                            progressOPT.hide();
+                        }
                     }
                 }
-
-                // pour le moment
-                MainActivity.this.download();
             }
 
-            return null;
-        }  ///-----faran doInBack
-
-        @Override
-        protected void onPostExecute(Integer result) {
-            hideOPT();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-
     // -------------------------------------------------------------------------------------------- //
-//=======
-
     //############### Language manager #################
     private void localizationFlag(){
-
         SharedPreferences preferences = getSharedPreferences(APPPREFERENCES, Context.MODE_PRIVATE);
-        // String language = preferences.getString("language", null);
         String language = preferences.getString(getString(R.string.select_language_key), null);
 
         Log.e("langue azo : ", String.valueOf(language));
@@ -3729,9 +3113,7 @@ protected void showEpcSelectDialog() {
         };
         Handler handler = new Handler();
         handler.postDelayed(displayFlag, DURATION);
-
     }
-
 
     public static MainActivity instance() {
         return activity;
@@ -3761,7 +3143,6 @@ protected void showEpcSelectDialog() {
         handler.postDelayed(dismissMessage, MESSAGE_DURATION);
     }
 
-
     private Boolean download() {
         try {
             FTPClient ftp = new FTPClient();
@@ -3774,7 +3155,7 @@ protected void showEpcSelectDialog() {
             outputStream.close();
             ftp.disconnect();
             return Boolean.valueOf(true);
-        } catch (IOException e) {
+        } catch (Exception e) {
             return Boolean.valueOf(false);
         }
     }
@@ -3793,8 +3174,6 @@ protected void showEpcSelectDialog() {
         toast.setView(layout);
         toast.show();
     }
-
-
 
     public void onLastAlertData () {
 
@@ -3944,7 +3323,6 @@ protected void showEpcSelectDialog() {
     }
 
     private Intent intent;
-    private int REQUEST_CODE = 200;
     public void InstallApplication(File file) {
 
         intent = new Intent(Intent.ACTION_VIEW);

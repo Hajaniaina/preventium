@@ -440,8 +440,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     //editor.putString("language", languageToLoad);
                     //editor.commit();
                     editor.putString(getString(R.string.select_language_key), languageToLoad);
-
-                    editor.apply();
+                    editor.commit();
 
                     fragment.getActivity().startActivity(new Intent(fragment.getActivity(), MainActivity.class));
                     fragment.getActivity().finish();

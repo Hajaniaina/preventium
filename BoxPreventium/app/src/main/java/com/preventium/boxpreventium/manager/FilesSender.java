@@ -88,6 +88,5 @@ public class FilesSender extends ThreadDefault {
         }
         // REMOVE ECA FILE
         db.remove_eca_file(_ctx);
-
     }
 }

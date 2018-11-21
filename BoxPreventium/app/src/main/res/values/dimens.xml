@@ -91,5 +91,12 @@
     <dimen name="float_button_scaleY">@dimen/scale_button_large</dimen>
     <dimen name="force_layout_width2">50dp</dimen>
     <dimen name="force_layout_height2">50dp</dimen>
+    <dimen name="force_layout_parent_height2">55dp</dimen>
     <dimen name="menu_float_button_bottom">0dp</dimen>
+
+    <!--
+Refer to App Widget Documentation for margin information
+http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout
+    -->
+    <dimen name="widget_margin">8dp</dimen>
 </resources>

@@ -188,7 +188,6 @@
     <string name="opt_carte_desactivated">The map option is now disabled</string>
 
 
-
     <string name="sms_sos_msg_string">SOS</string>
     <string name="sms_shock_msg_string">SHOCK</string>
     <string name="sms_qr_msg_string" translatable="false">QR CODE NOT SCANNED</string>
@@ -212,14 +211,14 @@
     </string-array>
 
     <string-array name="pref_qr_ic_mode_titles" translatable="false">
-                <item>@string/disabled_string</item>
-                <item>@string/enable_string</item>
-            </string-array>
+        <item>@string/disabled_string</item>
+        <item>@string/enable_string</item>
+    </string-array>
 
-        <string-array name="pref_qr_ic_mode_values" translatable="false">
-            <item>0</item>
-            <item>1</item>
-        </string-array>
+    <string-array name="pref_qr_ic_mode_values" translatable="false">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
 
     <string-array name="pref_phone_numbers_titles" translatable="false">
         <item>@string/not_used_string</item>
@@ -320,7 +319,6 @@
     <string name="force_string">Display force</string>
     <string name="endis_advert_string">Enable/Disable</string>
 
-
     <string name="screen_alert_string">This option is only for screen up to 4 inches</string>
     <string name="disable_map_displaying_string">Disable map display</string>
     <string name="enable_map_displaying_string">Enable map display</string>
@@ -335,6 +333,6 @@
     <string name="yes_and_quit_string">Yes and Quit</string>
     <string name="no_and_quit">No and quit Eode</string>
     <string name="end_parcours_confirm_string">Have you finished your course ?</string>
-    <string name="send_error_message">The CEP data is not sent, please try again</string>
+    <string name="send_error_message">Data is not sent, please try again</string>
     <string name="send_success_message">The CEP data is sent</string>
 </resources>

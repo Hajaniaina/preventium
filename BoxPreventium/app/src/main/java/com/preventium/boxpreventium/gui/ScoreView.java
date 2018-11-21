@@ -179,6 +179,8 @@ public class ScoreView implements Parcelable {
         Drawable drawable = viewMap.get(SCORE_t.FINAL).getBackground();
         drawable.setColorFilter(appColor.getColor(levelAvg), PorterDuff.Mode.SRC_ATOP);
         viewMap.get(SCORE_t.FINAL).setBackground(drawable);
+
+
     }
 
     public void hideNote(boolean bol){
