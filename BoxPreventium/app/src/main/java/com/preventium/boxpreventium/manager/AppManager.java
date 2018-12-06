@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.location.Location;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -27,10 +26,13 @@ import com.preventium.boxpreventium.gui.MainActivity;
 import com.preventium.boxpreventium.location.CustomMarkerData;
 import com.preventium.boxpreventium.location.CustomMarkerManager;
 import com.preventium.boxpreventium.location.DatasMarker;
+import com.preventium.boxpreventium.manager.interfaces.AppManagerListener;
 import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.module.HandlerBox.NotifyListener;
+import com.preventium.boxpreventium.module.Load.Load;
 import com.preventium.boxpreventium.module.Load.LoadConfig;
 import com.preventium.boxpreventium.module.Load.LoadServer;
+import com.preventium.boxpreventium.module.Upload.UploadCEP;
 import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.DOBJ.DataDOBJ;
@@ -55,6 +57,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -91,7 +94,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private boolean button_stop = false;
     private boolean button_start = false;
     private Chrono chrono_ready_to_start = Chrono.newInstance();
-    private Context ctx = null;
     private ArrayList<CustomMarkerData> customMarkerList = null;
     private boolean customMarkerList_Received = false;
     private Database database = null;
@@ -100,7 +102,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private long engine_t_changed_at = 0;
     private FilesSender fileSender = null;
     private boolean gps = false;
-    private AppManagerListener listener = null;
     private List<Location> locations = new ArrayList();
     private final Lock lock = new ReentrantLock();
     private final Lock lock_timers = new ReentrantLock();
@@ -126,80 +127,27 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private HandlerBox modules = null;
     private DataLocal local;
     private Chrono stress;
+    private Chrono pChrono;
     private boolean quit = false;
 
-    public interface AppManagerListener {
+    // reference
+    private WeakReference<Context> weakReference;
+    private WeakReference<AppManagerListener> listenerWeakReference;
 
-        void onCalibrateOnAcceleration();
-
-        void onCalibrateOnConstantSpeed();
-
-        void onCalibrateRAZ();
-
-        void onCustomMarkerDataListGet();
-
-        void onDebugLog(String str);
-
-        void onDrivingTimeChanged(String str);
-
-        void onForceChanged(FORCE_t fORCE_t, LEVEL_t lEVEL_t, double d, float f, float f2);
-
-        void onForceDisplayed(double d);
-
-        void onInternetConnectionChanged();
-
-        void onLevelNotified(LEVEL_t lEVEL_t);
-
-        void onNoteChanged(int i, LEVEL_t lEVEL_t, LEVEL_t lEVEL_t2);
-
-        void onNumberOfBoxChanged(int i, boolean isBM);
-
-        void onRecommendedSpeedChanged(SPEED_t sPEED_t, int i, LEVEL_t lEVEL_t, boolean z);
-
-        void onScoreChanged(SCORE_t sCORE_t, LEVEL_t lEVEL_t);
-
-        void onShock(double d, short s);
-
-        void onSpeedCorner();
-
-        void onSpeedCornerKept(int i, LEVEL_t lEVEL_t);
-
-        void onSpeedLine();
-
-        void onSpeedLineKept(int i, LEVEL_t lEVEL_t);
-
-        void onStatusChanged(STATUS_t sTATUS_t);
-
-        void onStatutChanged(STATUS_t sTATUS_t);
-
-        void onUiTimeout(int i, STATUS_t sTATUS_t);
-
-        void onLastAlertData();
-
-        void onCrash();
-
-        void checkRestart();
-    }
-
-    class C01051 implements Runnable {
-        C01051() {
+    private static class C01051 implements Runnable {
+        AppManager app;
+        C01051(AppManager app) {
+            this.app = app;
         }
 
         public void run() {
-            AppManager.this.run();
+            this.app.run();
         }
     }
 
-    class C01062 implements FilenameFilter {
-        C01062() {
-        }
 
-        public boolean accept(File dir, String name) {
-            return name.toUpperCase().endsWith(".CEP");
-        }
-    }
 
-    class C01084 implements FilenameFilter {
+    private static class C01084 implements FilenameFilter {
         C01084() {
         }
 
@@ -208,18 +156,20 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
     }
 
-    public MainActivity getMainActivity() {
-        return (MainActivity)this.ctx;
-    }
-
     public AppManager(Context ctx, AppManagerListener listener) {
         super(null);
-        this.ctx = ctx;
-        this.listener = listener;
-        this.modules = new HandlerBox(ctx, this);
-        this.database = new Database(ctx);
-        this.fileSender = new FilesSender(ctx);
-        this.local = DataLocal.get(this.ctx);
+
+        weakReference = new WeakReference<Context>(ctx);
+        Context context = weakReference.get();
+        if( context != null ) {
+            this.modules = new HandlerBox(context, this);
+            this.database = new Database(context);
+            this.fileSender = new FilesSender(context);
+            this.local = DataLocal.get(context);
+            this.load = new Load(context, this);
+        }
+
+        this.listenerWeakReference = new WeakReference<AppManagerListener>(listener);
         this.chrono = Chrono.newInstance();
         this.chrono.start();
         this.stress = Chrono.newInstance();
@@ -232,7 +182,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         if (!on) {
             setStop();
         } else if (!isRunning()) {
-            new Thread(new C01051()).start();
+            new Thread(new C01051(this)).start();
         }
     }
 
@@ -260,9 +210,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     }
 
     private boolean _timer = false;
-    private double startTime, sleepTime;
-    private Handler handlerPrincipale;
     private STATUS_t status;
+    private Load load;
     public void myRun() throws InterruptedException {
         super.myRun();
         Looper.prepare();
@@ -271,71 +220,69 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this.database.clear_obselete_data();
 
         // chargement des données server
-        new LoadServer(this.ctx).Init();
-
-        // crash init
-        if( (boolean)local.getValue("crashApp", false) && listener != null ) {
-            listener.onCrash();
+        Context context = weakReference.get();
+        if( context != null ) {
+            new LoadServer(context).Init();
         }
 
+        // crash init
+        AppManagerListener listener = listenerWeakReference.get();
+        if( listener != null )
+            if( (boolean)local.getValue("crashApp", false) && listener != null ) {
+                listener.onCrash();
+            }
+
         // load config
-        LoadConfig.init(this.ctx);
+        if( context != null ) {
+            LoadConfig.init(context);
+        }
 
-        boolean isFirst = (boolean)local.getValue("isFirstRelance", true);
-        float beginTime = local.getFloat("currentTime", 0);
-        float currentTime = System.currentTimeMillis();
-        float calcHours = (currentTime - beginTime) / 3600000;
-
-        int opt = (int)local.getValue("timer", 0);
-        boolean isConfigChanged = Math.round(calcHours) > opt;
-
-        if( isFirst || opt == 0 || isConfigChanged ) { // > Hours or first_dem
-            // imei check actif
-            IMEI_is_actif();
-            // cfg
-            download_cfg();
-            // dobj
-            download_dobj();
-
-            // créer ou mettre à jour
-            this.local.setValue("currentTime", (float) System.currentTimeMillis());
-            this.local.setValue("isFirstRelance", false);
-            this.local.apply();
-
-            _timer = false;
-         }  else
-           _timer = true;
-
-        // epc
-        download_epc();
+        // load
+        load.onLoad();
 
         // custom manager marker
-        CustomMarkerManager custom = new CustomMarkerManager(this.ctx);
-        custom.getMarker();
+        if( context != null ) {
+            CustomMarkerManager custom = new CustomMarkerManager(context);
+            custom.getMarker();
+        }
 
         // autre
         this.modules.setActive(DEBUG);
         status = first_init();
         upload_eca(DEBUG);
 
-        /*
-        handlerPrincipale = new Handler();
-        handlerPrincipale.post(new Runnable() {
-            @Override
-            public void run() {
-            */
+        // init parcours
+        pChrono = Chrono.newInstance();
+        pChrono.start();
+
         while(isRunning()) {
             // horodatage actuel
-            startTime = System.currentTimeMillis();
+            AppManagerListener _listener = listenerWeakReference.get();
             if (Build.VERSION_CODES.M == Build.VERSION.SDK_INT) {
                 int relance = local.getInt("relance", 30);
-                if (listener != null && chrono.getMinutes() >= relance && !isRestart) { // >= relance mn
+                relance = relance == 0 ? 30 : relance;
+                if (_listener != null && chrono.getMinutes() >= relance && !isRestart) { // >= relance mn
                     chrono.stop();
                     isRestart = true;
-                    listener.checkRestart();
-                    handlerPrincipale.removeCallbacks(this);
+                    _listener.checkRestart();
                 }
             }
+
+            // 10mn sont écoulé on check
+            if (pChrono.getMinutes() >= 2){
+                load.onUpdate(); // update
+                pChrono.stop();
+                pChrono.start();
+            }
+
+            // l'app est bloqué
+            if( load.isBlocked() ) {
+                status = STATUS_t.PAR_STOPPED;
+                if( _listener != null ) {
+                    _listener.onStatusChanged(STATUS_t.CHECK_ACTIF); // et on bloque toujours
+                }
+            }
+
             // test de connexion tout le temps
             check_internet_is_active();
             // savoir le tracking de parcours est actif
@@ -397,16 +344,17 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             listen_timers(status);
             button_start = false;
         }
-        /*
-                if( isRunning() ) {
-                    handlerPrincipale.postDelayed(this, 500);
-                }
-            }
-        });
-        */
 
         this.modules.setActive(false);
         Looper.loop();
+    }
+
+    public boolean is_timer() {
+        return _timer;
+    }
+
+    public void set_timer(boolean _timer) {
+        this._timer = _timer;
     }
 
     public boolean isWorkTimeOver () {
@@ -431,33 +379,31 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     }
 
     // HANDLER BOX
-
     @Override
     public void onScanState(boolean scanning) {
         Log.d(TAG, "Searching preventium box is enable: " + scanning);
     }
 
     public void onDeviceState(String device_mac, boolean connected) {
-        if (connected) {
-            // addLog("Device " + device_mac + " connected.");
-        } else {
-            // addLog("Device " + device_mac + " disconnected.");
-        }
+
         Location location = get_last_location();
         int note = (int) calc_note(this.parcour_id);
         //int vitesse_ld = (int) (speed_H * 3.6f);
         //int vitesse_vr = (int) (speed_V * 3.6f);
 
-        MainActivity main = getMainActivity();
-        int vitesse_ld = main.vitesse_ld;
-        int vitesse_vr = main.vitesse_vr;
+        Context context = weakReference.get();
+        if( context != null ) {
+            MainActivity main = (MainActivity) context;
+            int vitesse_ld = main.vitesse_ld;
+            int vitesse_vr = main.vitesse_vr;
 
-        int nbBox = nb_box;
-        long distance_covered = this.database.get_distance(this.parcour_id);
-        long parcour_duration = (long) (((double) duration) * 0.001d);
-        Database database = this.database;
-        ColorCEP color = ColorCEP.getInstance();
-        this.database.addCEP(location, device_mac, note, vitesse_ld, vitesse_vr, distance_covered, parcour_duration, Database.get_eca_counter(this.ctx, this.parcour_id), nbBox, color.getA(), color.getV(), color.getF(), color.getM(), connected);
+            int nbBox = nb_box;
+            long distance_covered = this.database.get_distance(this.parcour_id);
+            long parcour_duration = (long) (((double) duration) * 0.001d);
+            Database database = this.database;
+            ColorCEP color = ColorCEP.getInstance();
+            this.database.addCEP(location, device_mac, note, vitesse_ld, vitesse_vr, distance_covered, parcour_duration, Database.get_eca_counter(context, this.parcour_id), nbBox, color.getA(), color.getV(), color.getF(), color.getM(), connected);
+        }
     }
 
     @Override
@@ -472,8 +418,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     public void onNumberOfBox(int nb) {
         nb_box = nb;
         Log.d(TAG, "Number of preventium device connected changed: " + nb);
-        if (this.listener != null) {
-            this.listener.onNumberOfBoxChanged(nb, this.bm);
+
+        AppManagerListener listener = listenerWeakReference.get();
+        if (listener != null) {
+            listener.onNumberOfBoxChanged(nb, this.bm);
         }
     }
 
@@ -489,19 +437,22 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     }
 
     public void onCalibrateOnConstantSpeed() {
-        if (this.listener != null) {
-            this.listener.onCalibrateOnConstantSpeed();
+        AppManagerListener listener = listenerWeakReference.get();
+        if (listener != null) {
+            listener.onCalibrateOnConstantSpeed();
         }
     }
 
     public void onCalibrateOnAcceleration() {
-        if (this.listener != null) {
-            this.listener.onCalibrateOnAcceleration();
+        AppManagerListener listener = listenerWeakReference.get();
+        if (listener != null) {
+            listener.onCalibrateOnAcceleration();
         }
     }
 
     public void onCalibrateRAZ() {
         onForceChanged( Pair.create((long)0, (short)0),Pair.create((long)0,(short)0));
+        AppManagerListener listener = listenerWeakReference.get();
         if( listener != null ) listener.onCalibrateRAZ();
     }
 
@@ -520,21 +471,16 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this.mov_t = MOVING_t.UNKNOW;
         onEngineStateChanged(ENGINE_t.OFF);
         this.chronoRideTxt = "0:00";
-        if (this.listener != null) {
 
-            this.listener.onDebugLog("");
-
+        AppManagerListener listener = listenerWeakReference.get();
+        if (listener != null) {
+            listener.onDebugLog("");
             //####santo
             listener.onStatusChanged( STATUS_t.PAR_PAUSING );
             listener.onStatusChanged( STATUS_t.PAR_STOPPED );
 
-            this.listener.onDrivingTimeChanged(this.chronoRideTxt);
-            this.listener.onNoteChanged(20, LEVEL_t.LEVEL_1, LEVEL_t.LEVEL_1);
-            //this.listener.onScoreChanged(SCORE_t.ACCELERATING, LEVEL_t.LEVEL_1);
-            //this.listener.onScoreChanged(SCORE_t.BRAKING, LEVEL_t.LEVEL_1);
-            //this.listener.onScoreChanged(SCORE_t.CORNERING, LEVEL_t.LEVEL_1);
-            //this.listener.onScoreChanged(SCORE_t.AVERAGE, LEVEL_t.LEVEL_1);
-
+            listener.onDrivingTimeChanged(this.chronoRideTxt);
+            listener.onNoteChanged(20, LEVEL_t.LEVEL_1, LEVEL_t.LEVEL_1);
         }
         this.alertX_add_at = 0;
         this.alertY_add_at = 0;
@@ -564,7 +510,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     }
 
     private void update_driving_time() {
-        if (this.listener != null) {
+        Context context = weakReference.get();
+        AppManagerListener listener = listenerWeakReference.get();
+        if (listener != null) {
             long id = get_current_parcours_id(false);
             long ms = id > 0 ? System.currentTimeMillis() - id : 0;
             duration = ms;
@@ -573,10 +521,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 long h = ms / 3600000;
                 long m = ms % 3600000 > 0 ? (ms % 3600000) / 60000 : 0;
                 txt = String.format(Locale.getDefault(), "%02d:%02d", new Object[]{Long.valueOf(h), Long.valueOf(m)});
-                StatsLastDriving.set_times(this.ctx, (long) (((double) ms) * 0.001d));
+                if( context != null ) StatsLastDriving.set_times(context, (long) (((double) ms) * 0.001d));
             }
-            if (!this.chronoRideTxt.equals(txt)) {
-                this.listener.onDrivingTimeChanged(txt);
+            if ( !this.chronoRideTxt.equals(txt) && listener != null ) {
+                listener.onDrivingTimeChanged(txt);
                 this.chronoRideTxt = txt;
             }
         }
@@ -584,30 +532,27 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     private void clear_force_ui() {
         if (this.seuil_ui != null && this.seuil_chrono_x.getSeconds() > 3.0d && this.seuil_chrono_y.getSeconds() > 3.0d) {
-            if (this.listener != null) {
-                this.listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0.0d, 0.0f, 0.0f);
+            AppManagerListener listener = listenerWeakReference.get();
+            if (listener != null) {
+                listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0.0d, 0.0f, 0.0f);
             }
             this.seuil_ui = null;
         }
     }
+
     /// ============================================================================================
     /// Driver ID
     /// ===========================================================================================
     public long get_driver_id() {
         return this.driver_id;
     }
-
-
-
     public void set_driver_id(long driver_id) {
         this.driver_id = driver_id;
     }
 
-
     /// ============================================================================================
     /// UI Timers
     /// ============================================================================================
-
     public void add_ui_timer(long secs, int timer_id) {
         long timestamp = System.currentTimeMillis() + (1000 * secs);
         this.lock_timers.lock();
@@ -632,8 +577,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 long timeout_at = ((Long) timer.first).longValue();
                 int timer_id = ((Integer) timer.second).intValue();
                 if (timestamp >= timeout_at) {
-                    if (this.listener != null) {
-                        this.listener.onUiTimeout(timer_id, status);
+                    AppManagerListener listener = listenerWeakReference.get();
+                    if (listener != null) {
+                        listener.onUiTimeout(timer_id, status);
                     }
                     this.ui_timers.remove(i);
                 }
@@ -645,15 +591,18 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     /// ============================================================================================
     /// INTERNET CONNECTION
     /// ============================================================================================
-
     private boolean internet_active = true;
 
     private void check_internet_is_active() {
-        boolean active = Connectivity.isConnected(this.ctx);
-        if (active != this.internet_active) {
-            this.internet_active = active;
-            if (this.listener != null) {
-                this.listener.onInternetConnectionChanged();
+        Context context = weakReference.get();
+        if( context != null ) {
+            boolean active = Connectivity.isConnected(context);
+            if (active != this.internet_active) {
+                this.internet_active = active;
+                AppManagerListener listener = listenerWeakReference.get();
+                if (listener != null) {
+                    listener.onInternetConnectionChanged();
+                }
             }
         }
     }
@@ -664,31 +613,30 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     // Downloading .cfg file if is needed
 
-    private boolean download_cfg() throws InterruptedException {
+    public boolean download_cfg(boolean display) throws InterruptedException {
         boolean cfg = false;
 
-        // if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
+        Context context = weakReference.get();
+        if( context == null ) return false;
 
-        File folder = new File(ctx.getFilesDir(), "");
+        File folder = new File(context.getFilesDir(), "");
         ReaderCFGFile reader = new ReaderCFGFile();
 
         FTPClientIO ftp = new FTPClientIO();
 
         while ( isRunning() && !cfg  ){
-            // if( listener != null )listener.onStatusChanged( STATUS_t.GETTING_CFG );
-
             // Trying to connect to FTP server...
             if( FTP_CFG == null || !ftp.ftpConnect(FTP_CFG, 5000) ) {
                 check_internet_is_active();
             } else {
                 // Checking if .CFG file is in FTP server ?
-                String srcFileName = ComonUtils.getIMEInumber(ctx) + ".CFG";
-                String srcAckName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
+                String srcFileName = ComonUtils.getIMEInumber(context) + ".CFG";
+                String srcAckName = ComonUtils.getIMEInumber(context) + "_ok.CFG";
                 boolean exist_server_cfg = ftp.checkFileExists( srcFileName );
                 boolean exist_server_ack = ftp.checkFileExists( srcAckName );
 
                 // If .CFG file exist in the FTP server
-                cfg = ( exist_server_ack && reader.loadFromApp(ctx) );
+                cfg = ( exist_server_ack && reader.loadFromApp(context) );
                 if( !cfg ) {
                     if (exist_server_cfg) {
                         // Create folder if not exist
@@ -697,18 +645,18 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                                 Log.w(TAG, "Error while trying to create new folder!");
                         if (folder.exists()) {
                             // Trying to download .CFG file...
-                            String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+                            String desFileName = String.format(Locale.getDefault(), "%s/%s", context.getFilesDir(), srcFileName);
                             if (ftp.ftpDownload(srcFileName, desFileName)) {
                                 cfg = reader.read(desFileName);  // santooo
                                 Log.e("FTP cfg : ", String.valueOf(cfg));
                                 if (cfg) {
                                     String serv = reader.getServerUrl();
                                     Log.e("FTP azo : ", serv);
-                                    reader.applyToApp(ctx);
+                                    reader.applyToApp(context);
                                     // envoi acknowledge
                                     try {
                                         File temp = File.createTempFile("temp-file-name", ".tmp");
-                                        String ackFileName = ComonUtils.getIMEInumber(ctx) + "_ok.CFG";
+                                        String ackFileName = ComonUtils.getIMEInumber(context) + "_ok.CFG";
                                         ftp.ftpUpload(temp.getPath(), ackFileName);
                                         temp.delete();
                                     } catch (IOException e) {
@@ -719,7 +667,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                             }
                         }
                     } else {
-                        cfg = reader.loadFromApp(ctx);
+                        cfg = reader.loadFromApp(context);
                     }
                 }
                 // Disconnect from FTP server.
@@ -734,17 +682,19 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     /// .CHECK IF ACTIF
     /// ============================================================================================
 
-    private boolean IMEI_is_actif() {
+    public boolean IMEI_is_actif() {
         boolean exist_actif = false;
-        if (this.listener != null) {
-            this.listener.onStatusChanged(STATUS_t.CHECK_ACTIF);
+        AppManagerListener listener = listenerWeakReference.get();
+        if (listener != null) {
+            listener.onStatusChanged(STATUS_t.CHECK_ACTIF);
         }
         FTPClientIO ftp = new FTPClientIO();
         do {
             if (FTP_ACTIF != null && ftp.ftpConnect(FTP_ACTIF, 5000)) {
                 exist_actif = false;
                 if (ftp.changeWorkingDirectory(FTP_ACTIF.getWorkDirectory())) {
-                    exist_actif = ftp.checkFileExists(ComonUtils.getIMEInumber(this.ctx));
+                    Context context = weakReference.get();
+                    exist_actif = ftp.checkFileExists(ComonUtils.getIMEInumber(context));
                     // exist_actif = true;
 
                     // MainActivity.instance().Alert("exist_actif: " + (exist_actif ? "1" : "0"), Toast.LENGTH_LONG);
@@ -753,10 +703,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                             sleep(100);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
-                        }
-
-                        if (this.listener != null) {
-                            // this.listener.onStatusChanged(STATUS_t.IMEI_INACTIF);
                         }
                     }
                 } else {
@@ -780,19 +726,22 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private ReaderEPCFile readerEPCFile = new ReaderEPCFile();
 
     // Downloading .EPC files if is needed
-
-    private boolean download_epc() throws InterruptedException {
+    public boolean download_epc(boolean display) throws InterruptedException {
         // var
         boolean ready = false;
         String srcFileName = "";
         String srcAckName = "";
         String srcNameName = "";
         String desFileName = "";
-        File dir = ctx.getFilesDir();
+
+        Context context = weakReference.get();
+        if( context == null ) return false;
+
+        File dir = context.getFilesDir();
         if( !dir.isDirectory() ) dir.mkdir();
 
         // var system
-        File folder = new File(ctx.getFilesDir(), "");
+        File folder = new File(context.getFilesDir(), "");
         ReaderEPCFile reader = new ReaderEPCFile();
         FTPClientIO ftp = new FTPClientIO();
 
@@ -800,24 +749,25 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             // on reload les données
             if( dir.exists() && dir.isDirectory() ) {
                 for (int i = 1; i < 6; i++) {
-                    srcFileName = reader.getEPCFileName(ctx, i, false);
+                    srcFileName = reader.getEPCFileName(context, i, false);
                     desFileName = String.format(Locale.getDefault(), "%s/%s", dir.getAbsolutePath(), srcFileName); // ctx.getFilesDir()
                     boolean read = reader.read(desFileName);
-                    if (read) reader.applyToApp(ctx, i);
+                    if (read) reader.applyToApp(context, i);
                 }
 
                 // normal name
-                srcNameName = reader.getNameFileName(ctx);
+                srcNameName = reader.getNameFileName(context);
                 desFileName = String.format(Locale.getDefault(), "%s/%s", dir.getAbsolutePath(), srcNameName);
-                if (reader.readname(desFileName)) reader.applyNameToApp(ctx);
+                if (reader.readname(desFileName)) reader.applyNameToApp(context);
             }
             return true;
         }
 
         // status
-        if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
+        AppManagerListener listener = listenerWeakReference.get();
+        if( listener != null && !display ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
         while( isRunning() && !ready ) {
-            if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
+            if( listener != null && !display ) listener.onStatusChanged( STATUS_t.GETTING_EPC );
 
             // Trying to connect to FTP server...
             if( FTP_EPC == null || !ftp.ftpConnect(FTP_EPC, 5000) ) {
@@ -842,15 +792,15 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     while( i <= 5 && isRunning() ) {
 
                         // Checking if .EPC file is in FTP server ?
-                        srcFileName = reader.getEPCFileName(ctx, i, false);
-                        srcAckName = reader.getEPCFileName(ctx, i, true);
-                        srcNameName = reader.getNameFileName(ctx);
+                        srcFileName = reader.getEPCFileName(context, i, false);
+                        srcAckName = reader.getEPCFileName(context, i, true);
+                        srcNameName = reader.getNameFileName(context);
                         exist_server_epc = ftp.checkFileExists( srcFileName );
                         exist_server_ack = ftp.checkFileExists( srcAckName );
                         exist_server_name = ftp.checkFileExists( srcNameName );
 
                         // If .EPC file exist in the FTP server
-                        epc = ( exist_server_ack && reader.loadFromApp(ctx,i) );
+                        epc = ( exist_server_ack && reader.loadFromApp(context,i) );
                         if( !epc ) {
                             if (exist_server_epc) {
                                 // Create folder if not exist
@@ -863,7 +813,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                                     if (ftp.ftpDownload(srcFileName, desFileName)) {
                                         epc = reader.read(desFileName);
                                         if( epc ) {
-                                            reader.applyToApp(ctx,i);
+                                            reader.applyToApp(context,i);
                                             // envoi acknowledge
                                             try {
                                                 File temp = File.createTempFile("temp-file-name", ".tmp");
@@ -891,20 +841,18 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                                             if (ftp.ftpDownload(srcNameName, desFileName)) {
                                                 epc_name = reader.readname(desFileName);
                                                 if( epc_name ) {
-                                                    reader.applyNameToApp(ctx);
-
-                                                    // new File(desFileName).delete();
+                                                    reader.applyNameToApp(context);
                                                 }
                                             }
                                         }
                                     } else{
-                                        reader.loadNameFromApp(ctx);
+                                        reader.loadNameFromApp(context);
                                     }
 
                                 }
                             }
                         } else {
-                            epc = reader.loadFromApp(ctx,i);
+                            epc = reader.loadFromApp(context,i);
                         }
                         i++;
                     }
@@ -913,7 +861,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 ftp.ftpDisconnect();
             }
 
-            ready = !DataEPC.getAppEpcExist(ctx).isEmpty();
+            ready = !DataEPC.getAppEpcExist(context).isEmpty();
             if( isRunning() && !ready ) sleep(100);
         }
 
@@ -924,19 +872,20 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         boolean ready = false;
         while (isRunning() && !ready) {
             this.selected_epc = 0;
-            ready = this.readerEPCFile.loadFromApp(this.ctx);
+            Context context = weakReference.get();
+            ready = this.readerEPCFile.loadFromApp(context);
             if (!ready) {
-                for (Integer i : DataEPC.getAppEpcExist(this.ctx)) {
-                    ready = this.readerEPCFile.loadFromApp(this.ctx, i.intValue());
+                for (Integer i : DataEPC.getAppEpcExist(context)) {
+                    ready = this.readerEPCFile.loadFromApp(context, i.intValue());
                     if (ready) {
                         this.selected_epc = i.intValue();
                         break;
                     }
                 }
             }
-            this.selected_epc = this.readerEPCFile.selectedEPC(this.ctx);
+            this.selected_epc = this.readerEPCFile.selectedEPC(context);
             if (!ready) {
-                download_epc();
+                download_epc(false);
             }
         }
         return ready;
@@ -951,9 +900,12 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             num = 5;
         }
         while (isRunning() && !ready) {
-            ready = this.readerEPCFile.loadFromApp(this.ctx, num);
-            if (!ready) {
-                download_epc();
+            Context context = weakReference.get();
+            if( context != null ) {
+                ready = this.readerEPCFile.loadFromApp(context, num);
+                if (!ready) {
+                    download_epc(false);
+                }
             }
         }
         if (!ready) {
@@ -966,15 +918,13 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     /// ============================================================================================
     /// .DOBJ
     /// ============================================================================================
-
     // Downloading .DOBJ files if is needed
-
-    private boolean download_dobj() throws InterruptedException {
+    public boolean download_dobj(boolean display) throws InterruptedException {
         boolean ready = false;
+        Context context = weakReference.get();
+        if( context == null ) return false;
 
-        // if( listener != null ) listener.onStatusChanged( STATUS_t.GETTING_DOBJ );
-
-        File folder = new File(ctx.getFilesDir(), "");
+        File folder = new File(context.getFilesDir(), "");
         ReaderDOBJFile reader = new ReaderDOBJFile();
         FTPClientIO ftp = new FTPClientIO();
 
@@ -998,13 +948,13 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     boolean dobj = false;
 
                     // Checking if .DOBJ file is in FTP server ?
-                    String srcFileName = ReaderDOBJFile.getOBJFileName(ctx, false);
-                    String srcAckName = ReaderDOBJFile.getOBJFileName(ctx, true);
+                    String srcFileName = ReaderDOBJFile.getOBJFileName(context, false);
+                    String srcAckName = ReaderDOBJFile.getOBJFileName(context, true);
                     boolean exist_server_dobj = ftp.checkFileExists( srcFileName );
                     boolean exist_server_ack = ftp.checkFileExists( srcAckName );
 
                     // If .DOBJ file exist in the FTP server
-                    dobj = ( exist_server_ack && DataDOBJ.preferenceFileExist(ctx) );
+                    dobj = ( exist_server_ack && DataDOBJ.preferenceFileExist(context) );
                     if( !dobj ) {
                         if (exist_server_dobj) {
                             // Create folder if not exist
@@ -1013,11 +963,11 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                                     Log.w(TAG, "Error while trying to create new folder!");
                             if (folder.exists()) {
                                 // Trying to download .OBJ file...
-                                String desFileName = String.format(Locale.getDefault(), "%s/%s", ctx.getFilesDir(), srcFileName);
+                                String desFileName = String.format(Locale.getDefault(), "%s/%s", context.getFilesDir(), srcFileName);
                                 if (ftp.ftpDownload(srcFileName, desFileName)) {
-                                    dobj = reader.read(ctx,desFileName,false);
+                                    dobj = reader.read(context,desFileName,false);
                                     if( dobj ) {
-                                        ready = reader.read(ctx,desFileName,true);
+                                        ready = reader.read(context,desFileName,true);
                                         // envoi acknowledge
                                         try {
                                             File temp = File.createTempFile("temp-file-name", ".tmp");
@@ -1037,7 +987,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             // Disconnect from FTP server.
             ftp.ftpDisconnect();
 
-            if( !ready ) ready = DataDOBJ.preferenceFileExist(ctx);
+            if( !ready ) ready = DataDOBJ.preferenceFileExist(context);
             if( isRunning() && !ready ) sleep(1000);
         }
         return ready;
@@ -1064,90 +1014,22 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     /// Create .CEP file (Connections Events of Preventium's devices) and uploading to the server.
     private void upload_cep() {
+        AppManagerListener listener = listenerWeakReference.get();
+        Context context = weakReference.get();
         if (isRunning()) {
-            if (this.listener != null) {
-                this.listener.onStatusChanged(STATUS_t.SETTING_CEP);
+            if (listener != null) {
+                listener.onStatusChanged(STATUS_t.SETTING_CEP);
             }
             if (this.parcour_id > 0) {
                 this.database.create_cep_file(this.parcour_id);
             }
             // UPLOAD .CEP FILES
-            new AsyncUploadCEP().execute();
+            new UploadCEP(context, listener).setQuite(quit);
         }
     }
 
     private boolean sent = false;
-    class AsyncUploadCEP extends AsyncTask<String, String, Integer> {
 
-        private MainActivity main;
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            main = getMainActivity();
-        }
-
-        @Override
-        protected Integer doInBackground(String... param) {
-
-            File folder = new File(ctx.getFilesDir(), "CEP");
-            if (folder.exists()) {
-                File[] listOfFiles = folder.listFiles(new C01062());
-                boolean nbf = listOfFiles.length  > 0;
-                if (listOfFiles != null &&  nbf) {
-                    FTPConfig config = DataCFG.getFptConfig(ctx);
-                    FTPClientIO ftp = new FTPClientIO();
-                    if (config != null && ftp.ftpConnect(config, 5000)) {
-                        boolean change_directory = DEBUG;
-                        if (!(config.getWorkDirectory() == null || config.getWorkDirectory().isEmpty() || config.getWorkDirectory().equals("/"))) {
-                            change_directory = ftp.changeWorkingDirectory(config.getWorkDirectory());
-                        }
-                        if (change_directory) {
-                            for (File file : listOfFiles) {
-                                if (ftp.ftpUpload(file.getAbsolutePath(), file.getName())) {
-                                    // delete file and erase data
-                                    file.delete();
-                                    sent = true;
-                                    database.clear_cep_data();
-                                }
-                                // if( fini )
-                            }
-                        } else {
-                            Log.w(TAG, "CEP: Error while trying to change working directory to \"" + config.getWorkDirectory() + "\"!");
-                        }
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Integer integer) {
-            super.onPostExecute(integer);
-            if (listener != null) {
-                listener.onStatusChanged(STATUS_t.PAR_STOPPED);
-
-                if( !sent ) {
-                    // getMainActivity().Dialog(main.getString(R.string.send_error_message));
-                    Log.w("CEP Data", main.getString(R.string.send_error_message));
-                } else {
-                    Log.w("CEP Data", main.getString(R.string.send_success_message));
-                }
-
-                // quitter après envoye de CEP
-                if( sent && quit ) {
-                    // finish it
-                    ((MainActivity) ctx).finish();
-                    android.os.Process.killProcess(android.os.Process.myPid());
-                    System.exit(-1);
-                }
-            }
-
-            Log.w("CFG loading", "post execute");
-            // MainActivity.instance().Alert("CEP envoyé", Toast.LENGTH_LONG);
-        }
-    }
 
 
     /// ============================================================================================
@@ -1159,23 +1041,24 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this.customMarkerList_Received = DEBUG;
     }
 
-
     // Create .SHARE file (Position of map markers) and uploading to the server.
     private void upload_shared_pos() throws InterruptedException {
-        if (isRunning() && this.listener != null) {
-            final DatasMarker markerData = new DatasMarker(ctx);
+        final Context context = weakReference.get();
+        final AppManagerListener listener = listenerWeakReference.get();
+        if (isRunning() && listener != null && context != null) {
+            final DatasMarker markerData = new DatasMarker(context);
             this.customMarkerList_Received = false;
             this.customMarkerList = null;
-            this.listener.onCustomMarkerDataListGet();
+            listener.onCustomMarkerDataListGet();
             Chrono chrono = Chrono.newInstance();
             chrono.start();
             while (isRunning() && chrono.getSeconds() < 10.0d && !this.customMarkerList_Received) {
                 sleep(500);
             }
-            this.listener.onStatusChanged(STATUS_t.SETTING_MARKERS);
+            listener.onStatusChanged(STATUS_t.SETTING_MARKERS);
 
             // CREATE FILE
-            File folder = new File(this.ctx.getFilesDir(), "SHARE");
+            File folder = new File(context.getFilesDir(), "SHARE");
             if (this.customMarkerList_Received && this.parcour_id > 0 && this.customMarkerList != null && this.customMarkerList.size() > 0) {
                 if (!(folder.exists() || folder.mkdirs())) {
                     Log.w(TAG, "Error while trying to create new folder!");
@@ -1191,7 +1074,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 boolean send = false;
                 @Override
                 public void run() {
-                    if( !send && ComonUtils.haveInternetConnected(ctx) ) {
+                    if( !send && ComonUtils.haveInternetConnected(context) ) {
                         markerData.sharePos();
                         send = true;
                     }
@@ -1209,68 +1092,73 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     // Dowloading shared positions
     private boolean download_shared_pos() throws InterruptedException {
         boolean ready = false;
-        if (this.listener != null) {
-            this.listener.onStatusChanged(STATUS_t.GETTING_MARKERS_SHARED);
+        final AppManagerListener listener = listenerWeakReference.get();
+        final Context context = weakReference.get();
+        if (listener != null) {
+            listener.onStatusChanged(STATUS_t.GETTING_MARKERS_SHARED);
         }
-        File folder = new File(this.ctx.getFilesDir(), "");
-        FTPClientIO ftp = new FTPClientIO();
-        while (isRunning() && !ready) {
-            if (this.listener != null) {
-                this.listener.onStatusChanged(STATUS_t.GETTING_MARKERS_SHARED);
-            }
-            if (ftp.ftpConnect(FTP_POS, 5000)) {
-                boolean change_directory = DEBUG;
-                if (!(FTP_POS.getWorkDirectory() == null || FTP_POS.getWorkDirectory().isEmpty() || FTP_POS.getWorkDirectory().equals("/"))) {
-                    change_directory = ftp.changeWorkingDirectory(FTP_POS.getWorkDirectory());
+
+        if( context != null ) {
+            File folder = new File(context.getFilesDir(), "");
+            FTPClientIO ftp = new FTPClientIO();
+            while (isRunning() && !ready) {
+                if (listener != null) {
+                    listener.onStatusChanged(STATUS_t.GETTING_MARKERS_SHARED);
                 }
-                if (change_directory) {
-                    String srcFileName = ReaderPOSSFile.getFileName(this.ctx, false);
-                    String srcAckName = ReaderPOSSFile.getFileName(this.ctx, DEBUG);
-                    boolean exist_server_poss = ftp.checkFileExists(srcFileName);
-                    boolean exist_server_ack = ftp.checkFileExists(srcAckName);
-                    boolean need_download = ((!exist_server_poss || exist_server_ack) && (!exist_server_poss || ReaderPOSSFile.existLocalFile(this.ctx))) ? false : DEBUG;
-                    if (!(folder.exists() || folder.mkdirs())) {
-                        Log.w(TAG, "Error while trying to create new folder!");
+                if (ftp.ftpConnect(FTP_POS, 5000)) {
+                    boolean change_directory = DEBUG;
+                    if (!(FTP_POS.getWorkDirectory() == null || FTP_POS.getWorkDirectory().isEmpty() || FTP_POS.getWorkDirectory().equals("/"))) {
+                        change_directory = ftp.changeWorkingDirectory(FTP_POS.getWorkDirectory());
                     }
-                    String desFileName = String.format(Locale.getDefault(), "%s/%s", new Object[]{this.ctx.getFilesDir(), srcFileName});
-                    if (need_download) {
-                        try {
-                            File local_file = new File(desFileName);
-                            if (local_file.delete()) {
-                                System.out.println(local_file.getName() + " is deleted!");
-                            } else {
-                                System.out.println("Delete operation is failed.");
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                    if (change_directory) {
+                        String srcFileName = ReaderPOSSFile.getFileName(context, false);
+                        String srcAckName = ReaderPOSSFile.getFileName(context, DEBUG);
+                        boolean exist_server_poss = ftp.checkFileExists(srcFileName);
+                        boolean exist_server_ack = ftp.checkFileExists(srcAckName);
+                        boolean need_download = ((!exist_server_poss || exist_server_ack) && (!exist_server_poss || ReaderPOSSFile.existLocalFile(context))) ? false : DEBUG;
+                        if (!(folder.exists() || folder.mkdirs())) {
+                            Log.w(TAG, "Error while trying to create new folder!");
                         }
-                        if (ftp.ftpDownload(srcFileName, desFileName)) {
-                            need_download = false;
+                        String desFileName = String.format(Locale.getDefault(), "%s/%s", new Object[]{context.getFilesDir(), srcFileName});
+                        if (need_download) {
                             try {
-                                File temp = File.createTempFile("temp-file-name", ".tmp");
-                                ftp.ftpUpload(temp.getPath(), srcAckName);
-                                temp.delete();
-                            } catch (IOException e2) {
-                                e2.printStackTrace();
+                                File local_file = new File(desFileName);
+                                if (local_file.delete()) {
+                                    System.out.println(local_file.getName() + " is deleted!");
+                                } else {
+                                    System.out.println("Delete operation is failed.");
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            if (ftp.ftpDownload(srcFileName, desFileName)) {
+                                need_download = false;
+                                try {
+                                    File temp = File.createTempFile("temp-file-name", ".tmp");
+                                    ftp.ftpUpload(temp.getPath(), srcAckName);
+                                    temp.delete();
+                                } catch (IOException e2) {
+                                    e2.printStackTrace();
+                                }
                             }
                         }
-                    }
-                    if (!need_download) {
-                        if (!ReaderPOSSFile.existLocalFile(this.ctx) || (!exist_server_poss && !exist_server_ack)) {
-                            ready = DEBUG;
-                        } else if (ReaderPOSSFile.readFile(desFileName) != null) {
-                            ready = DEBUG;
+                        if (!need_download) {
+                            if (!ReaderPOSSFile.existLocalFile(context) || (!exist_server_poss && !exist_server_ack)) {
+                                ready = DEBUG;
+                            } else if (ReaderPOSSFile.readFile(desFileName) != null) {
+                                ready = DEBUG;
+                            }
                         }
+                    } else {
+                        Log.w(TAG, "POSS: Error while trying to change working directory to \"" + FTP_POS + "\"!");
                     }
                 } else {
-                    Log.w(TAG, "POSS: Error while trying to change working directory to \"" + FTP_POS + "\"!");
+                    check_internet_is_active();
                 }
-            } else {
-                check_internet_is_active();
-            }
-            ftp.ftpDisconnect();
-            if (isRunning() && !ready) {
-                sleep(1000);
+                ftp.ftpDisconnect();
+                if (isRunning() && !ready) {
+                    sleep(1000);
+                }
             }
         }
         return ready;
@@ -1292,30 +1180,32 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     // Create .PT file (Parcours type) and uploading to the server.
     private void upload_parcours_type() throws InterruptedException {
-        if (this.listener != null) {
+        final AppManagerListener listener = listenerWeakReference.get();
+        final Context context = weakReference.get();
+        if (listener != null) {
             File folder;
             File file;
             this.parcoursTypeName = null;
-            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this.ctx);
-            String key = this.ctx.getResources().getString(R.string.parcours_type_enabled_key);
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+            String key = context.getResources().getString(R.string.parcours_type_enabled_key);
             if (sp.getBoolean(key, false)) {
                 Editor editor = sp.edit();
                 editor.putBoolean(key, false);
                 editor.apply();
                 this.parcoursTypeName = sp.getString(key, "");
             }
-            this.listener.onStatusChanged(STATUS_t.SETTING_PARCOUR_TYPE);
+            listener.onStatusChanged(STATUS_t.SETTING_PARCOUR_TYPE);
             if (!(this.parcoursTypeName == null || this.parcour_id <= 0 || this.parcoursTypeName.isEmpty())) {
-                folder = new File(this.ctx.getFilesDir(), "PT");
+                folder = new File(context.getFilesDir(), "PT");
                 if (!(folder.exists() || folder.mkdirs())) {
                     Log.w(TAG, "Error while trying to create new folder!");
                 }
                 if (folder.exists()) {
-                    file = new File(folder.getAbsolutePath(), String.format(Locale.getDefault(), "%s_%d.PT", new Object[]{ComonUtils.getIMEInumber(this.ctx), Long.valueOf(this.parcour_id)}));
+                    file = new File(folder.getAbsolutePath(), String.format(Locale.getDefault(), "%s_%d.PT", new Object[]{ComonUtils.getIMEInumber(context), Long.valueOf(this.parcour_id)}));
                     try {
                         if (file.createNewFile()) {
                             FileWriter fileWriter = new FileWriter(file);
-                            fileWriter.write(String.format(Locale.getDefault(), "%s;%d;%s", new Object[]{ComonUtils.getIMEInumber(this.ctx), Long.valueOf(this.parcour_id), this.parcoursTypeName}));
+                            fileWriter.write(String.format(Locale.getDefault(), "%s;%d;%s", new Object[]{ComonUtils.getIMEInumber(context), Long.valueOf(this.parcour_id), this.parcoursTypeName}));
                             fileWriter.flush();
                             fileWriter.close();
                         } else {
@@ -1328,11 +1218,11 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             }
 
             // UPLOAD .PT FILES
-            folder = new File(this.ctx.getFilesDir(), "PT");
+            folder = new File(context.getFilesDir(), "PT");
             if (folder.exists()) {
                 File[] listOfFiles = folder.listFiles(new C01084());
                 if (listOfFiles != null && listOfFiles.length > 0) {
-                    FTPConfig config = DataCFG.getFptConfig(this.ctx);
+                    FTPConfig config = DataCFG.getFptConfig(context);
                     FTPClientIO ftp = new FTPClientIO();
                     if (config != null && ftp.ftpConnect(config, 5000)) {
                         boolean change_directory = DEBUG;
@@ -1351,7 +1241,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     }
                 }
             }
-            this.listener.onStatusChanged(STATUS_t.PAR_STOPPED);
+            listener.onStatusChanged(STATUS_t.PAR_STOPPED);
         }
     }
 
@@ -1361,7 +1251,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     /// ============================================================================================
 
     private void update_tracking_status() {
-        this._tracking = PreferenceManager.getDefaultSharedPreferences(this.ctx).getBoolean(this.ctx.getResources().getString(R.string.tracking_activated_key), DEBUG);
+        Context context = weakReference.get();
+        if( context != null ) {
+            this._tracking = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getResources().getString(R.string.tracking_activated_key), DEBUG);
+        }
     }
 
 
@@ -1762,6 +1655,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
 
         // Update UI interface
+        AppManagerListener listener = listenerWeakReference.get();
         if( listener != null ) {
             // Select seuil for ui
             ForceSeuil seuil = null;
@@ -1789,9 +1683,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 {
                     alertUI_add_at = ST;
                     seuil_ui = seuil;
-                    this.listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
-                    this.listener.onLevelNotified(seuil.level);
-                    this.listener.onForceDisplayed(force);
+                    listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
+                    listener.onLevelNotified(seuil.level);
+                    listener.onForceDisplayed(force);
                 }
             }
             else
@@ -1802,7 +1696,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     {
                         alertUI_add_at = ST;
                         seuil_ui = null;
-                        this.listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0.0d, 0.0f, 0.0f);
+                        listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0.0d, 0.0f, 0.0f);
                     }
                 }
                 else
@@ -1812,9 +1706,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     {
                         alertUI_add_at = ST;
                         seuil_ui = seuil;
-                        this.listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
-                        this.listener.onLevelNotified(seuil.level);
-                        this.listener.onForceDisplayed(force);
+                        listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
+                        listener.onLevelNotified(seuil.level);
+                        listener.onForceDisplayed(force);
                     }
                     else
                     {
@@ -1822,9 +1716,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                         {
                             alertUI_add_at = ST;
                             seuil_ui = seuil;
-                            this.listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
-                            this.listener.onLevelNotified(seuil.level);
-                            this.listener.onForceDisplayed(force);
+                            listener.onForceChanged(seuil.type, seuil.level, force, speed_H * 3.6f, speed_V * 3.6f);
+                            listener.onLevelNotified(seuil.level);
+                            listener.onForceDisplayed(force);
                         }
                     }
                 }
@@ -1840,14 +1734,17 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         if (!"A".equals(type) && !"F".equals(type) && !"V".equals(type)) {
             return 20.0f;
         }
+        final Context context = weakReference.get();
+        if( context == null ) return 20.0f;
+
         float ret;
-        float coeff_general = DataDOBJ.get_coefficient_general(this.ctx, type);
+        float coeff_general = DataDOBJ.get_coefficient_general(context, type);
         int[] coeff_force = new int[5];
-        coeff_force[0] = DataDOBJ.get_coefficient(this.ctx, type, "V");
-        coeff_force[1] = DataDOBJ.get_coefficient(this.ctx, type, "B");
-        coeff_force[2] = DataDOBJ.get_coefficient(this.ctx, type, "J");
-        coeff_force[3] = DataDOBJ.get_coefficient(this.ctx, type, "O");
-        coeff_force[4] = DataDOBJ.get_coefficient(this.ctx, type, "R");
+        coeff_force[0] = DataDOBJ.get_coefficient(context, type, "V");
+        coeff_force[1] = DataDOBJ.get_coefficient(context, type, "B");
+        coeff_force[2] = DataDOBJ.get_coefficient(context, type, "J");
+        coeff_force[3] = DataDOBJ.get_coefficient(context, type, "O");
+        coeff_force[4] = DataDOBJ.get_coefficient(context, type, "R");
         int[] nb_evt = new int[5];
 
         /* bug EPC File */
@@ -1937,25 +1834,25 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             if (ret > 20.0f) {
                 ret = 20.0f;
             }
-            if (StatsLastDriving.get_start_at(this.ctx) == parcour_id) {
+            if (StatsLastDriving.get_start_at(context) == parcour_id) {
                 if ("A".equals(type)) {
-                    StatsLastDriving.set_resultat_A(this.ctx, LEVEL_t.LEVEL_1, interm_4[0]);
-                    StatsLastDriving.set_resultat_A(this.ctx, LEVEL_t.LEVEL_2, interm_4[1]);
-                    StatsLastDriving.set_resultat_A(this.ctx, LEVEL_t.LEVEL_3, interm_4[2]);
-                    StatsLastDriving.set_resultat_A(this.ctx, LEVEL_t.LEVEL_4, interm_4[3]);
-                    StatsLastDriving.set_resultat_A(this.ctx, LEVEL_t.LEVEL_5, interm_4[4]);
+                    StatsLastDriving.set_resultat_A(context, LEVEL_t.LEVEL_1, interm_4[0]);
+                    StatsLastDriving.set_resultat_A(context, LEVEL_t.LEVEL_2, interm_4[1]);
+                    StatsLastDriving.set_resultat_A(context, LEVEL_t.LEVEL_3, interm_4[2]);
+                    StatsLastDriving.set_resultat_A(context, LEVEL_t.LEVEL_4, interm_4[3]);
+                    StatsLastDriving.set_resultat_A(context, LEVEL_t.LEVEL_5, interm_4[4]);
                 } else if ("F".equals(type)) {
-                    StatsLastDriving.set_resultat_F(this.ctx, LEVEL_t.LEVEL_1, interm_4[0]);
-                    StatsLastDriving.set_resultat_F(this.ctx, LEVEL_t.LEVEL_2, interm_4[1]);
-                    StatsLastDriving.set_resultat_F(this.ctx, LEVEL_t.LEVEL_3, interm_4[2]);
-                    StatsLastDriving.set_resultat_F(this.ctx, LEVEL_t.LEVEL_4, interm_4[3]);
-                    StatsLastDriving.set_resultat_F(this.ctx, LEVEL_t.LEVEL_5, interm_4[4]);
+                    StatsLastDriving.set_resultat_F(context, LEVEL_t.LEVEL_1, interm_4[0]);
+                    StatsLastDriving.set_resultat_F(context, LEVEL_t.LEVEL_2, interm_4[1]);
+                    StatsLastDriving.set_resultat_F(context, LEVEL_t.LEVEL_3, interm_4[2]);
+                    StatsLastDriving.set_resultat_F(context, LEVEL_t.LEVEL_4, interm_4[3]);
+                    StatsLastDriving.set_resultat_F(context, LEVEL_t.LEVEL_5, interm_4[4]);
                 } else if ("V".equals(type)) {
-                    StatsLastDriving.set_resultat_V(this.ctx, LEVEL_t.LEVEL_1, interm_4[0]);
-                    StatsLastDriving.set_resultat_V(this.ctx, LEVEL_t.LEVEL_2, interm_4[1]);
-                    StatsLastDriving.set_resultat_V(this.ctx, LEVEL_t.LEVEL_3, interm_4[2]);
-                    StatsLastDriving.set_resultat_V(this.ctx, LEVEL_t.LEVEL_4, interm_4[3]);
-                    StatsLastDriving.set_resultat_V(this.ctx, LEVEL_t.LEVEL_5, interm_4[4]);
+                    StatsLastDriving.set_resultat_V(context, LEVEL_t.LEVEL_1, interm_4[0]);
+                    StatsLastDriving.set_resultat_V(context, LEVEL_t.LEVEL_2, interm_4[1]);
+                    StatsLastDriving.set_resultat_V(context, LEVEL_t.LEVEL_3, interm_4[2]);
+                    StatsLastDriving.set_resultat_V(context, LEVEL_t.LEVEL_4, interm_4[3]);
+                    StatsLastDriving.set_resultat_V(context, LEVEL_t.LEVEL_5, interm_4[4]);
                 }
             }
         }
@@ -1971,10 +1868,14 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         float Note_A = calc_note_by_force_type("A", parcour_id, begin, end);
         float Note_F = calc_note_by_force_type("F", parcour_id, begin, end);
         float Note_V = calc_note_by_force_type("V", parcour_id, begin, end);
-        float Coeff_General_A = DataDOBJ.get_coefficient_general(this.ctx, "A");
-        float Coeff_General_F = DataDOBJ.get_coefficient_general(this.ctx, "F");
-        float Coeff_General_V = DataDOBJ.get_coefficient_general(this.ctx, "V");
-        return (((Note_A * Coeff_General_A) + (Note_F * Coeff_General_F)) + (Note_V * Coeff_General_V)) / ((Coeff_General_A + Coeff_General_F) + Coeff_General_V);
+        Context context = weakReference.get();
+        if( context != null ) {
+            float Coeff_General_A = DataDOBJ.get_coefficient_general(context, "A");
+            float Coeff_General_F = DataDOBJ.get_coefficient_general(context, "F");
+            float Coeff_General_V = DataDOBJ.get_coefficient_general(context, "V");
+            return (((Note_A * Coeff_General_A) + (Note_F * Coeff_General_F)) + (Note_V * Coeff_General_V)) / ((Coeff_General_A + Coeff_General_F) + Coeff_General_V);
+        }
+        return 0.0f;
     }
 
     private float calc_note(long parcour_id) {
@@ -2007,11 +1908,17 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             } else if (last_5_days_note >= 6.0f) {
                 last_5_days_level = LEVEL_t.LEVEL_4;
             }
-            StatsLastDriving.set_note(this.ctx, SCORE_t.FINAL, parcour_note);
+
+            Context context = weakReference.get();
+            if( context != null ) {
+                StatsLastDriving.set_note(context, SCORE_t.FINAL, parcour_note);
+            }
             Log.d(TAG, "Parcours " + this.parcour_id + " note: " + parcour_note);
-            if (this.listener != null) {
-                this.listener.onNoteChanged((int) parcour_note, parcour_level, last_5_days_level);
-                this.listener.onLevelNotified(parcour_level);
+
+            AppManagerListener listener = listenerWeakReference.get();
+            if (listener != null) {
+                listener.onNoteChanged((int) parcour_note, parcour_level, last_5_days_level);
+                listener.onLevelNotified(parcour_level);
             }
         }
     }
@@ -2040,22 +1947,25 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             //------
 
             ColorCEP.getInstance().addColors(note_to_score(Note_A), note_to_score(Note_V), note_to_score(Note_F), note_to_score(Note_M));
-
             LEVEL_t level_M = note2level(Note_M);
-            StatsLastDriving.set_note(this.ctx, SCORE_t.ACCELERATING, Note_A);
-            StatsLastDriving.set_note(this.ctx, SCORE_t.BRAKING, Note_F);
-            StatsLastDriving.set_note(this.ctx, SCORE_t.CORNERING, Note_V);
-            Log.d(TAG, "Parcours " + this.parcour_id + " note A: " + Note_A);
-            Log.d(TAG, "Parcours " + this.parcour_id + " note F: " + Note_F);
-            Log.d(TAG, "Parcours " + this.parcour_id + " note V: " + Note_V);
-            Log.d(TAG, "Parcours " + this.parcour_id + " note M: " + Note_M);
-            MainActivity main = getMainActivity();
-            StatsLastDriving.set_speed_avg(this.ctx, this.database.speed_avg(this.parcour_id, System.currentTimeMillis(), 0.0f, new int[0]));
-            if ( this.listener != null && this.stress.getMinutes() >= 10 ) {
-                this.listener.onScoreChanged(SCORE_t.ACCELERATING, level_A);
-                this.listener.onScoreChanged(SCORE_t.BRAKING, level_F);
-                this.listener.onScoreChanged(SCORE_t.CORNERING, level_V);
-                this.listener.onScoreChanged(SCORE_t.AVERAGE, level_M);
+            Context context = weakReference.get();
+            AppManagerListener listener = listenerWeakReference.get();
+            if( context != null ) {
+                StatsLastDriving.set_note(context, SCORE_t.ACCELERATING, Note_A);
+                StatsLastDriving.set_note(context, SCORE_t.BRAKING, Note_F);
+                StatsLastDriving.set_note(context, SCORE_t.CORNERING, Note_V);
+                Log.d(TAG, "Parcours " + this.parcour_id + " note A: " + Note_A);
+                Log.d(TAG, "Parcours " + this.parcour_id + " note F: " + Note_F);
+                Log.d(TAG, "Parcours " + this.parcour_id + " note V: " + Note_V);
+                Log.d(TAG, "Parcours " + this.parcour_id + " note M: " + Note_M);
+
+                StatsLastDriving.set_speed_avg(context, this.database.speed_avg(this.parcour_id, System.currentTimeMillis(), 0.0f, new int[0]));
+                if (listener != null && this.stress.getMinutes() >= 10) {
+                    listener.onScoreChanged(SCORE_t.ACCELERATING, level_A);
+                    listener.onScoreChanged(SCORE_t.BRAKING, level_F);
+                    listener.onScoreChanged(SCORE_t.CORNERING, level_V);
+                    listener.onScoreChanged(SCORE_t.AVERAGE, level_M);
+                }
             }
         }
     }
@@ -2091,16 +2001,18 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     /// ============================================================================================
 
     private void update_recommended_speed(boolean force) {
-        if ((force || this.recommended_speed_update_at + 240000 < System.currentTimeMillis()) && this.readerEPCFile != null) {
-            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this.ctx);
-            long delay_sec = (long) (sp.getInt(this.ctx.getResources().getString(R.string.recommended_speed_time_key), 30) * 60);
-            long max_delay_sec = (long) (sp.getInt(this.ctx.getResources().getString(R.string.stop_trigger_time_key), NNTPReply.NO_CURRENT_ARTICLE_SELECTED) * 60);
+        Context context = weakReference.get();
+        if (context != null && (force || this.recommended_speed_update_at + 240000 < System.currentTimeMillis()) && this.readerEPCFile != null) {
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+            long delay_sec = (long) (sp.getInt(context.getResources().getString(R.string.recommended_speed_time_key), 30) * 60);
+            long max_delay_sec = (long) (sp.getInt(context.getResources().getString(R.string.stop_trigger_time_key), NNTPReply.NO_CURRENT_ARTICLE_SELECTED) * 60);
             speed_H = this.database.speed_max_test(this.parcour_id, delay_sec, 50, max_delay_sec, this.readerEPCFile.getForceSeuil(0).IDAlert, this.readerEPCFile.getForceSeuil(1).IDAlert, this.readerEPCFile.getForceSeuil(5).IDAlert, this.readerEPCFile.getForceSeuil(6).IDAlert);
             speed_V = this.database.speed_max_test(this.parcour_id, delay_sec, 50, max_delay_sec, this.readerEPCFile.getForceSeuil(10).IDAlert, this.readerEPCFile.getForceSeuil(11).IDAlert, this.readerEPCFile.getForceSeuil(15).IDAlert, this.readerEPCFile.getForceSeuil(16).IDAlert);
             this.speed_max = this.database.speed_max_test(this.parcour_id, delay_sec, 50, max_delay_sec, this.readerEPCFile.get_all_alertID());
             this.recommended_speed_update_at = System.currentTimeMillis();
         }
-        if (this.listener != null) {
+        AppManagerListener listener = listenerWeakReference.get();
+        if (listener != null) {
             LEVEL_t level_H = LEVEL_t.LEVEL_UNKNOW;
             if (speed_H > 0.0f) {
                 if (this.speed_max < speed_H) {
@@ -2131,12 +2043,12 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             }
             Location location = get_last_location();
             float speed_observed = location != null ? location.getSpeed() : 0.0f;
-            this.listener.onRecommendedSpeedChanged(SPEED_t.IN_STRAIGHT_LINE, (int) (speed_H * 3.6f), level_H, speed_H <= speed_observed ? DEBUG : false);
-            this.listener.onLevelNotified(level_H);
-            this.listener.onRecommendedSpeedChanged(SPEED_t.IN_CORNERS, (int) (speed_V * 3.6f), level_V, speed_V <= speed_observed ? DEBUG : false);
-            this.listener.onLevelNotified(level_V);
-            this.listener.onSpeedLineKept((int) (speed_H * 3.6f), level_H);
-            this.listener.onSpeedCornerKept((int) (speed_V * 3.6f), level_V);
+            listener.onRecommendedSpeedChanged(SPEED_t.IN_STRAIGHT_LINE, (int) (speed_H * 3.6f), level_H, speed_H <= speed_observed ? DEBUG : false);
+            listener.onLevelNotified(level_H);
+            listener.onRecommendedSpeedChanged(SPEED_t.IN_CORNERS, (int) (speed_V * 3.6f), level_V, speed_V <= speed_observed ? DEBUG : false);
+            listener.onLevelNotified(level_V);
+            listener.onSpeedLineKept((int) (speed_H * 3.6f), level_H);
+            listener.onSpeedCornerKept((int) (speed_V * 3.6f), level_V);
         }
     }
 
@@ -2146,9 +2058,11 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     /// Check shock
     private void check_shock() {
-        if (this.listener != null) {
-            if (interval(0.0d, ((Long) this.shock.first).doubleValue()) > ((double) PreferenceManager.getDefaultSharedPreferences(this.ctx).getInt(this.ctx.getResources().getString(R.string.shock_trigger_mG_key), 1000))) {
-                this.listener.onShock(((Long) this.shock.first).doubleValue(), ((Short) this.shock.second).shortValue());
+        AppManagerListener listener = listenerWeakReference.get();
+        Context context = weakReference.get();
+        if (listener != null && context != null ) {
+            if (interval(0.0d, ((Long) this.shock.first).doubleValue()) > ((double) PreferenceManager.getDefaultSharedPreferences(context).getInt(context.getResources().getString(R.string.shock_trigger_mG_key), 1000))) {
+                listener.onShock(((Long) this.shock.first).doubleValue(), ((Short) this.shock.second).shortValue());
             }
         }
     }
@@ -2166,32 +2080,37 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     /// ============================================================================================
 
     public long get_current_parcours_id(boolean debug) {
-        long delay = (long) ((PreferenceManager.getDefaultSharedPreferences(this.ctx).getInt(this.ctx.getResources().getString(R.string.stop_trigger_time_key), NNTPReply.NO_CURRENT_ARTICLE_SELECTED) * 60) * 1000);
         long ret = this.database.get_last_parcours_id();
-        Log.w("Ret", String.valueOf(ret) );
-        if (ret == -1) {
-            if (!debug) {
+        Log.w("Ret", String.valueOf(ret));
+
+        Context context = weakReference.get();
+        if( context != null ) {
+            long delay = (long) ((PreferenceManager.getDefaultSharedPreferences(context).getInt(context.getResources().getString(R.string.stop_trigger_time_key), NNTPReply.NO_CURRENT_ARTICLE_SELECTED) * 60) * 1000);
+            if (ret == -1) {
+                if (!debug) {
+                    return ret;
+                }
+                Log.d(TAG, "Current parcours ID: empty. ");
+                return ret;
+            } else if (this.database.parcour_is_closed(ret)) {
+                if (debug) {
+                    Log.d(TAG, "Current parcours ID: " + ret + " is closed.");
+                }
+                return -1;
+            } else if (this.database.parcour_expired(ret, delay)) {
+                if (debug) {
+                    Log.d(TAG, "Current parcours ID: " + ret + " expired.");
+                }
+                this.database.close_last_parcour();
+                return -1;
+            } else if (!debug) {
+                return ret;
+            } else {
+                Log.d(TAG, "Current parcours ID: " + ret + ".");
                 return ret;
             }
-            Log.d(TAG, "Current parcours ID: empty. ");
-            return ret;
-        } else if (this.database.parcour_is_closed(ret)) {
-            if (debug) {
-                Log.d(TAG, "Current parcours ID: " + ret + " is closed.");
-            }
-            return -1;
-        } else if (this.database.parcour_expired(ret, delay)) {
-            if (debug) {
-                Log.d(TAG, "Current parcours ID: " + ret + " expired.");
-            }
-            this.database.close_last_parcour();
-            return -1;
-        } else if (!debug) {
-            return ret;
-        } else {
-            Log.d(TAG, "Current parcours ID: " + ret + ".");
-            return ret;
         }
+        return ret;
     }
 
     public boolean init_parcours_id() throws InterruptedException {
@@ -2214,7 +2133,10 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             Log.d(TAG, "Add ECA to start parcous.");
             this.database.addECA(this.parcour_id, ECALine.newInstance(0, get_last_location(), null));
         }
-        StatsLastDriving.startDriving(this.ctx, this.parcour_id);
+        Context context = weakReference.get();
+        if( context != null ) {
+            StatsLastDriving.startDriving(context, this.parcour_id);
+        }
         update_parcour_note(DEBUG);
         update_force_note(DEBUG);
         update_recommended_speed(DEBUG);
@@ -2224,8 +2146,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     public boolean close_parcours(boolean force) throws InterruptedException {
         String reasons = " FORCED";
         boolean stop = force;
-        if (!stop) {
-            long delay_stop = (long) ((PreferenceManager.getDefaultSharedPreferences(this.ctx).getInt(this.ctx.getResources().getString(R.string.stop_trigger_time_key), NNTPReply.NO_CURRENT_ARTICLE_SELECTED) * 60) * 1000);
+        Context context = weakReference.get();
+        if (!stop && context != null ) {
+            long delay_stop = (long) ((PreferenceManager.getDefaultSharedPreferences(context).getInt(context.getResources().getString(R.string.stop_trigger_time_key), NNTPReply.NO_CURRENT_ARTICLE_SELECTED) * 60) * 1000);
             boolean is_closed = this.database.parcour_is_closed(this.parcour_id);
             boolean has_expired = this.database.parcour_expired(this.parcour_id, delay_stop);
             stop = (this.button_stop || is_closed || has_expired) ? DEBUG : false;
@@ -2249,7 +2172,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         update_recommended_speed(DEBUG);
         // upload_cep();
         this.database.addECA(this.parcour_id, ECALine.newInstance(255, get_last_location(), null));
-        StatsLastDriving.set_distance(this.ctx, this.database.get_distance(this.parcour_id));
+        if( context != null )
+            StatsLastDriving.set_distance(context, this.database.get_distance(this.parcour_id));
         clear_force_ui();
 
         // à connaitre, car pas evident en 2 fois
@@ -2259,8 +2183,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         upload_parcours_type();
         this.parcour_id = -1;
         this.button_stop = false;
-        boolean rett = DEBUG;
-        return rett;
+        return DEBUG;
     }
 
     public void setStopped() {
@@ -2314,12 +2237,13 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 this.recommended_speed_update_at = 0;
                 if (init_parcours_id()) {
                     ret = STATUS_t.PAR_STARTED;
-                    if (this.listener != null) {
-                        this.listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0.0d, 0.0f, 0.0f);
-                        this.listener.onForceDisplayed(0.0d);
-                        this.listener.onSpeedLine();
-                        this.listener.onSpeedCorner();
-                        this.listener.onStatusChanged(ret);
+                    AppManagerListener listener = listenerWeakReference.get();
+                    if (listener != null) {
+                        listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0.0d, 0.0f, 0.0f);
+                        listener.onForceDisplayed(0.0d);
+                        listener.onSpeedLine();
+                        listener.onSpeedCorner();
+                        listener.onStatusChanged(ret);
                     }
                     addLog("Status change to START. (" + ComonUtils.currentDateTime() + ")");
                 }
@@ -2332,26 +2256,29 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     private STATUS_t on_paused(STATUS_t status) throws InterruptedException {
         STATUS_t ret = status;
-        if (status == STATUS_t.PAR_PAUSING) {
-            if (this.database.parcour_expired(this.parcour_id, (long) ((PreferenceManager.getDefaultSharedPreferences(this.ctx).getInt(this.ctx.getResources().getString(R.string.pause_trigger_time_key), 4) * 60) * 1000))) {
+        Context context = weakReference.get();
+        if (status == STATUS_t.PAR_PAUSING && context != null ) {
+            if (this.database.parcour_expired(this.parcour_id, (long) ((PreferenceManager.getDefaultSharedPreferences(context).getInt(context.getResources().getString(R.string.pause_trigger_time_key), 4) * 60) * 1000))) {
                 ret = STATUS_t.PAR_PAUSING_WITH_STOP;
-                if (this.listener != null) {
-                    this.listener.onStatusChanged(ret);
+                AppManagerListener listener = listenerWeakReference.get();
+                if (listener != null) {
+                    listener.onStatusChanged(ret);
                 }
                 addLog("Status change to PAUSE (show button stop). (" + ComonUtils.currentDateTime() + ")");
             }
         }
         boolean cp = close_parcours(false);
+        AppManagerListener listener = listenerWeakReference.get();
         if (cp) {
             ret = STATUS_t.PAR_STOPPED;
-            if (this.listener != null) {
-                this.listener.onStatusChanged(ret);
+            if (listener != null) {
+                listener.onStatusChanged(ret);
             }
             addLog("Status change to STOP. (" + ComonUtils.currentDateTime() + ")");
         } else if (this.mov_t_last != MOVING_t.STP && this.mov_t_last_chrono.getSeconds() > 3.0d && this.engine_t == ENGINE_t.ON) {
             ret = STATUS_t.PAR_RESUME;
-            if (this.listener != null) {
-                this.listener.onStatusChanged(ret);
+            if (listener != null) {
+                listener.onStatusChanged(ret);
             }
             this.database.addECA(this.parcour_id, ECALine.newInstance(231, get_last_location(), null));
             clear_force_ui();
@@ -2370,8 +2297,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         if (this.engine_t != ENGINE_t.ON) {
             ret = STATUS_t.PAR_PAUSING;
             this.database.addECA(this.parcour_id, ECALine.newInstance(230, get_last_location(), null));
-            if (this.listener != null) {
-                this.listener.onStatusChanged(ret);
+            AppManagerListener listener = listenerWeakReference.get();
+            if (listener != null) {
+                listener.onStatusChanged(ret);
             }
             clear_force_ui();
             addLog("Status change to PAUSE. (" + ComonUtils.currentDateTime() + ")");
@@ -2471,8 +2399,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
 
     private void setLog(String txt) {
         this.log = txt;
-        if (this.listener != null) {
-            this.listener.onDebugLog(this.log);
+        AppManagerListener listener = listenerWeakReference.get();
+        if (listener != null) {
+            listener.onDebugLog(this.log);
         }
     }
 
@@ -2481,8 +2410,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             this.log += System.getProperty("line.separator");
         }
         this.log += txt;
-        if (this.listener != null) {
-            this.listener.onDebugLog(this.log);
+        AppManagerListener listener = listenerWeakReference.get();
+        if (listener != null) {
+            listener.onDebugLog(this.log);
         }
     }
 }

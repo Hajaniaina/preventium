@@ -16,7 +16,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 26
         versionCode 13
-        versionName "3.3.11"
+        versionName "3.4.5"
         multiDexEnabled true
     }
     buildTypes {
@@ -66,6 +66,9 @@ dependencies {
     compile 'com.google.android.gms:play-services:11.8.0'
     compile 'com.jsibbold:zoomage:1.2.0'
     compile 'com.github.barteksc:android-pdf-viewer:1.4.0'
+    compile 'com.loopj.android:android-async-http:1.4.9'
+    compile 'com.squareup.okhttp3:okhttp:3.3.1'
+    compile 'com.nbsp:library:1.09'
 
     // compile 'com.synnapps:carouselview:0.1.5'
     // implementation 'com.github.GoodieBag:CarouselPicker:v1.1'

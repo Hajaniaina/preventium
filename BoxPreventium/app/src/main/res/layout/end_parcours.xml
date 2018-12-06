@@ -5,29 +5,28 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_gravity="center_horizontal"
-    android:gravity="center_horizontal"
+    android:gravity="right"
     android:layout_centerHorizontal="true"
     android:padding="5dp">
-
+    <Button
+        android:id="@+id/cancel_button"
+        android:layout_width="75dp"
+        android:layout_height="wrap_content"
+        android:padding="4dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="0dp"
+        android:text="@string/cancel_string"
+        android:textSize="15sp"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        />
     <Button
         android:id="@+id/no_button"
-        style="@style/Widget.AppCompat.Button.Borderless"
         android:layout_width="50dp"
         android:layout_height="wrap_content"
-        android:layout_gravity="left"
-        android:layout_marginStart="0dp"
-        android:layout_marginEnd="5dp"
         android:padding="4dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="0dp"
         android:text="@string/no_string"
-        android:textSize="15sp" />
-    <Button
-        android:id="@+id/no_and_quit_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="4dp"
-        android:layout_marginLeft="5dp"
-        android:layout_marginRight="5dp"
-        android:text="@string/no_and_quit"
         android:textSize="15sp"
         style="@style/Widget.AppCompat.Button.Borderless"
         />
@@ -39,17 +38,6 @@
         android:layout_marginStart="5dp"
         android:layout_marginEnd="0dp"
         android:text="@string/yes_string"
-        android:textSize="15sp"
-        style="@style/Widget.AppCompat.Button.Borderless"
-        />
-    <Button
-        android:id="@+id/yes_and_quit_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="4dp"
-        android:layout_marginLeft="5dp"
-        android:layout_marginRight="5dp"
-        android:text="@string/yes_and_quit_string"
         android:textSize="15sp"
         style="@style/Widget.AppCompat.Button.Borderless"
         />

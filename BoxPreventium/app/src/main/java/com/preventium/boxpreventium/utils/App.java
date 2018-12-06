@@ -1,14 +1,20 @@
 package com.preventium.boxpreventium.utils;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
+import android.provider.Settings;
+import android.support.v4.content.FileProvider;
 
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.gui.MainActivity;
+import com.preventium.boxpreventium.manager.DialogManager;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.JSON.ParseJsonData;
 
@@ -35,7 +41,7 @@ public class App {
     private String serveur;
     private String imei;
     private String version;
-
+    private DialogManager dialogManager;
     private boolean is = false;
 
     public App (Context context, AppListener listener)
@@ -48,6 +54,7 @@ public class App {
         this.serveur = cfg.getServerUrl();
         this.imei = ComonUtils.getIMEInumber(context.getApplicationContext());
         this.version = ComonUtils.getVersionName(context);
+        this.dialogManager = new DialogManager(context);
     }
 
     public interface AppListener {
@@ -98,9 +105,8 @@ public class App {
                 }
 
                 // test d'insuffisance de mémoire
-                MainActivity main = (MainActivity) context;
                 if( App.freeSpaceCalculation(file.getPath()) < 50000 ) {// 50MB
-                    main.Dialog(main.getString(R.string.storage_problem));
+                    dialogManager.Dialog(context.getString(R.string.storage_problem));
                 }
 
                 if ( IsUpdate(version, _version) ) {
@@ -109,8 +115,7 @@ public class App {
                     new DownloadFileFromURL().execute(url);
                 }
             }catch(Exception e) {
-                MainActivity main = (MainActivity) context;
-                main.Dialog(main.getString(R.string.storage_problem));
+                dialogManager.Dialog(context.getString(R.string.storage_problem));
                 e.printStackTrace();
             }finally {}
         }
@@ -119,7 +124,34 @@ public class App {
     // check if update is available
     public boolean IsUpdate(String currentVersion, String serveurVersion ) {
         if( currentVersion.equals("") || serveurVersion.equals("") ) return false;
-        return Integer.parseInt(serveurVersion.replace(".", "")) > Integer.parseInt(currentVersion.replace(".", ""));
+        String[] nV = serveurVersion.split("\\.");
+        String[] oV = currentVersion.split("\\.");
+
+        // nouvelle
+        int nVersion = Integer.parseInt(nV[0]);
+        int nModule = Integer.parseInt(nV[1]);
+        int nModif = Integer.parseInt(nV[2]);
+
+        int oVersion = Integer.parseInt(oV[0]);
+        int oModule = Integer.parseInt(oV[1]);
+        int oModif = Integer.parseInt(oV[2]);
+
+        if( nVersion < oVersion )
+	        return false;
+        if( nVersion > oVersion )
+	        return true;
+
+        if( nModule < oModule )
+	        return false;
+        if( nModule > oModule )
+            return true;
+
+        if( nModif < oModif )
+	        return false;
+        if( nModif > oModif )
+            return true;
+
+        return false;
     }
 
     class DownloadFileFromURL extends AsyncTask<String, Integer, String>
@@ -216,5 +248,63 @@ public class App {
                 }
             } // autre c'est par silence
         }
+    }
+
+    public void InstallApplication(File file) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        int result = Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.INSTALL_NON_MARKET_APPS, 0);
+        if( result == 0 ) {
+            intent = new Intent();
+            intent.setAction(Settings.ACTION_APPLICATION_SETTINGS);
+            context.startActivity(intent);
+            return;
+        }
+
+        // inférieur à nougat api 24
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            intent.addCategory(Intent.CATEGORY_DEFAULT);
+            intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        }else {
+            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            Uri uri = FileProvider.getUriForFile((Activity)context, context.getPackageName() + ".provider", file);
+            intent.setDataAndType(uri, "application/vnd.android.package-archive");
+        }
+
+        context.startActivity(intent);
+    }
+
+    public void appCrash() {
+        DataLocal local = DataLocal.get(context);
+        final int time = (int)local.getValue("crashNumber", 0);
+
+        ((Activity)context).runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                if (time > 1) {
+                    dialogManager.Dialog(context.getString(R.string.crash_app_message_again));
+                } else {
+                    dialogManager.Dialog(context.getString(R.string.crash_app_message));
+                }
+            }
+        });
+
+        StringBuilder out = new StringBuilder();
+        out.append("Imei: " + ComonUtils.getIMEInumber(context) + " \n");
+        out.append("VersionApp: " + ComonUtils.getVersionName(context) + " \n");
+        out.append("Nombre de crash: " + String.valueOf(time) + " \n");
+        out.append("Trace du crash:  \n");
+        out.append(local.getValue("crashTrace", "").toString());
+        if (ComonUtils.haveInternetConnected(context)) {
+            new EmailUtils(out.toString()).send( context.getString(R.string.crash_report) + " " + ComonUtils.getIMEInumber(context));
+        }
+
+        local.remValue("crashApp");
+        local.remValue("crashSend");
+        local.remValue("crashTrace");
+        local.commit();
     }
 }

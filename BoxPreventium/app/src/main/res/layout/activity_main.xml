@@ -481,6 +481,7 @@
                     android:scaleX="@dimen/float_button_scaleX"
                     android:scaleY="@dimen/float_button_scaleY"
                     android:src="@drawable/quantum_ic_refresh_white_24"
+                    android:visibility="invisible"
                     fab:fab_colorNormal="@color/colorAppGrey"
                     fab:fab_colorPressed="@color/colorAppRed"
                     fab:fab_colorRipple="#ffee58"

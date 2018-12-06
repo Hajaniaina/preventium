@@ -1,34 +1,42 @@
 package com.preventium.boxpreventium.location;
 
+import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
-import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.Toast;
 
-import com.preventium.boxpreventium.server.JSON.ParseJsonData;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
+import com.preventium.boxpreventium.R;
+import com.preventium.boxpreventium.gui.MainActivity;
 import com.preventium.boxpreventium.utils.ComonUtils;
 
 import org.json.JSONObject;
 
+import java.io.File;
 import java.util.HashMap;
+import java.util.Map;
+
+import cz.msebera.android.httpclient.Header;
 
 /**
  * Created by tog on 15/11/2018.
  */
 
 public class SendMarker {
-
+    private final String TAG = "SendMarker";
+    private final String URL = "https://test.preventium.fr/index.php/position/set_position";
     private Context context;
     private String server;
     private HashMap<String, Object> data;
-
+    private File file;
 
     public SendMarker (Context context) {
         this.context = context;
-        server = "https://test.preventium.fr";
     }
 
-    public void send (CustomMarker marker) {
+    public void send (File file, CustomMarker marker) {
         // les données
         data = new HashMap<>();
         data.put("titre", marker.getTitle());
@@ -37,52 +45,86 @@ public class SendMarker {
         data.put("message", marker.getAlertMsg());
         data.put("latitude", marker.getPos().latitude);
         data.put("longitude", marker.getPos().longitude);
+        this.file = file;
 
         Log.v("share marqueur", String.valueOf(marker.getPos().latitude) + ", " + String.valueOf(marker.getPos().longitude));
 
         // on envoye
-        new Send().execute(server + "/index.php/position/set_position");
+        AsyncUploader uploader = new AsyncUploader(data);
+        uploader.startTransfer();
     }
 
-    private class Send extends AsyncTask<String, Integer, String> {
-        // var
-        private ParseJsonData jsonData;
-        private boolean IsSuccess;
+    ProgressDialog dialog;
+    private void logMessage(final String message) {
+        Activity activity = (Activity)context;
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            // json data
-            jsonData = new ParseJsonData(data);
-            IsSuccess = false;
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if( dialog != null && dialog.isShowing() ) dialog.hide();
+                // new dialog
+                dialog = new ProgressDialog(context);
+                dialog.setMessage(context.getString(R.string.wait_please));
+                dialog.show();
+            }
+        });
+    }
+
+    private class AsyncUploader {
+        private String mName;
+        private String mPath;
+        private AsyncHttpClient mClient;
+        private Map<String, Object> data;
+
+        public AsyncUploader(Map<String, Object>data) {
+            this.data = data;
         }
 
-        @Override
-        protected void onPostExecute(String string) {
-            super.onPostExecute(string);
-            Toast.makeText(context, string, Toast.LENGTH_LONG).show();
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            String url = strings[0];
-            StringBuilder msg = new StringBuilder();
+        public void startTransfer() {
+            mClient = new AsyncHttpClient();
+            RequestParams params = new RequestParams();
 
             try {
-                String json = jsonData.makeServiceCall(url);
-                if ( json != null ) {
-                    JSONObject conf = new JSONObject(json);
-                    if( conf.optBoolean("succes") ) {
-                        msg.append("Succes de l'envoye");
-                        IsSuccess = true;
-                    }
+                for(Map.Entry d : data.entrySet()) {
+                    params.put(String.valueOf(d.getKey()), d.getValue());
                 }
-            }catch(Exception e) {
+                params.put("attachement", file);
+            } catch (Exception e) {
                 e.printStackTrace();
-                msg.append("Echec de l'envoye");
             }
 
-            return msg.toString();
+            // send
+            logMessage(context.getString(R.string.wait_please));
+
+            // mClient.setTimeout(50000);
+            mClient.post(context, URL, params, new JsonHttpResponseHandler() {
+
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                    try {
+                        if( response.getBoolean("succes") ) {
+                            dialog.dismiss();
+                            ((MainActivity)context).getMarkerView().alert("Ficher téléversé");
+                            Log.i(TAG, "Fichier téléversé");
+                        }
+                    }catch(Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, String response, Throwable throwable) {
+                    // super.onFailure(statusCode, headers, throwable, errorResponse);
+                    Log.i("Error----> ", ""+statusCode+" ------ "+ response);
+                }
+            });
+        }
+
+        /**
+         * Cancel upload by calling this method
+         */
+        public void cancel() {
+            mClient.cancelAllRequests(true);
         }
     }
 }

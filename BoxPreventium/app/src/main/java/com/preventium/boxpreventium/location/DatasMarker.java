@@ -60,12 +60,15 @@ public class DatasMarker {
     private Context context;
     private MainActivity main;
     private MarkerView markerView;
+    private File dir;
 
     public DatasMarker(Context context) {
         this.context = context;
         this.main = getMain(context);
         this.markerView = main.getMarkerView();
         this.handler = new Handler(Looper.getMainLooper());
+        this.dir = new File(context.getFilesDir().getAbsolutePath() + "/" + FOLDER);
+        if( !dir.isDirectory() ) dir.mkdir();
     }
 
     private MainActivity getMain(Context context) {
@@ -246,6 +249,11 @@ public class DatasMarker {
         downloadData(getMarker());
     }
 
+    public static String getExtension (String file) {
+        String[] file_extension = file.toString().split("\\.");
+        return file_extension.length > 1 ? file_extension[file_extension.length-1].toLowerCase() : "";
+    }
+
     // pour télcharger les données
     public void downloadData ( List<MarkerData> marker ) {
         handler.post(new Task(marker));
@@ -256,17 +264,9 @@ public class DatasMarker {
     int last_index = 0;
     private class Task implements Runnable {
         private List<MarkerData> marker;
-        private File dir;
 
         public Task (List<MarkerData> marker) {
             this.marker = marker;
-            dir = new File(context.getFilesDir().getAbsolutePath() + "/" + FOLDER);
-            if( !dir.isDirectory() ) dir.mkdir();
-        }
-
-        private String getExtension (String file) {
-            String[] file_extension = file.toString().split("\\.");
-            return file_extension.length > 1 ? file_extension[file_extension.length-1].toLowerCase() : "";
         }
 
         @Override
@@ -305,7 +305,6 @@ public class DatasMarker {
     /* download */
     private class Download extends AsyncTask<String, Integer, Long> {
 
-        private File dir;
         private File file;
         private String repertory = "marker";
 
@@ -371,10 +370,11 @@ public class DatasMarker {
     }
 
     // shareAndSend
-    public void uploadShare (CustomMarker custom) {
+    /* public void uploadShare (CustomMarker custom) {
         SendMarker sendMarker = new SendMarker(context);
         sendMarker.send(custom);
     }
+    */
 
     /* sharePos */
     public void sharePos () {

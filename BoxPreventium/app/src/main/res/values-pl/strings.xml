@@ -278,5 +278,22 @@
     <string name="end_parcours_confirm_string">Czy skończyłeś kurs?</string>
     <string name="send_error_message">Dane nie zostały wysłane, spróbuj ponownie</string>
     <string name="send_success_message">Dane CEP są wysyłane na serwer</string>
+    <string name="browse">Przeglądać</string>
+    <string name="type_music">Muzyka</string>
+    <string name="empty_directory_hint">" Pusty katalog"</string>
+    <string name="type_certificate">Certificate</string>
+    <string name="type_document">" Plik"</string>
+    <string name="type_directory">" Repertuar"</string>
+    <string name="type_drawing">Obrazek</string>
+    <string name="type_excel">" Arkusz"</string>
+    <string name="type_image">Obraz</string>
+    <string name="type_pdf">" Dokument PDF"</string>
+    <string name="type_power_point">Prezentacja</string>
+    <string name="type_word">" Dokument"</string>
+    <string name="browse_edit">Edytować</string>
+    <string name="type_archive">Typ archiwum</string>
+    <string name="wait_please">Poczekaj proszę</string>
+    <string name="file_exceeded">Twój plik jest zbyt duży, a nie większy niż 8 MB</string>
+    <string name="no_file_selected">Proszę wybrać plik</string>
 
 </resources>

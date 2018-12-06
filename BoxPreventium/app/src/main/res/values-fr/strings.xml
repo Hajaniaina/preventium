@@ -277,6 +277,25 @@
     <string name="end_parcours_confirm_string">Avez vous terminé votre parcours ?</string>
     <string name="send_error_message">Le donnée n\'est pas envoyé, veuillez réessayer SVP</string>
     <string name="send_success_message">Le donnée CEP est envoyé sur le serveur</string>
+    <string name="browse">Parcourir le fichier</string>
+    <string name="empty_directory_hint">Répertoire vide</string>
+    <string name="type_certificate">Certificat</string>
+    <string name="type_directory">Répertoire</string>
+    <string name="type_document">Fichier</string>
+    <string name="type_drawing">" Image"</string>
+    <string name="type_image">Image</string>
+    <string name="type_excel">Tableur</string>
+    <string name="type_music">Music</string>
+    <string name="type_pdf">Document PDF</string>
+    <string name="type_power_point">Présentation</string>
+    <string name="type_word">Document</string>
+    <string name="browse_edit">Modifier le fichier</string>
+    <string name="type_archive">Type d\'archive</string>
+    <string name="wait_please">Envoie du fichier en cours ...</string>
+    <string name="file_exceeded">Votre fichier est trop large supérieur à 8MB</string>
+    <string name="no_file_selected">Veulliez selectionner un fichier</string>
+
+    <!-- pour MaterialFilePicker -->
 
 
 </resources>

@@ -8,6 +8,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.preventium.boxpreventium.R;
+import com.preventium.boxpreventium.location.CustomMarker;
 
 /**
  * Created by tog on 06/11/2018.
@@ -36,8 +37,14 @@ public class MapView implements GoogleMap.OnMapClickListener, GoogleMap.OnMapLon
         alertBuilder.setNegativeButton(context.getString(R.string.cancel_string), null);
         alertBuilder.setPositiveButton(context.getString(R.string.create_string), new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialogInterface, int i) {
-                main.showMarkerEditDialog(main.getMarkerManager().addMarker(main.getGoogleMap(), "", "", latLng,
-                        13, false), true);
+                main.getMarkerView().showMarkerEditDialog(
+                        main.getMarkerManager().addMarker(main.getGoogleMap(), "", "", latLng,13, false),
+                        true,
+                        main.getMarkerManager(),
+                        main.getGoogleMap(),
+                        main.getFileManagerMarker()
+
+                );
             }
         });
         alertBuilder.create().show();
@@ -51,7 +58,8 @@ public class MapView implements GoogleMap.OnMapClickListener, GoogleMap.OnMapLon
     @Override
     public void onInfoWindowClick(Marker marker) {
         if (main.getMarkerManager().getMarker(marker).isEditable()) {
-            main.showInfoDialog(marker);
+            // main.showInfoDialog(marker);
+            main.getMarkerView().setDialogMarker(main.getMarkerManager().getMarker(marker));
         }
     }
 }

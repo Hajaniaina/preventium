@@ -335,4 +335,23 @@
     <string name="end_parcours_confirm_string">Have you finished your course ?</string>
     <string name="send_error_message">Data is not sent, please try again</string>
     <string name="send_success_message">The CEP data is sent</string>
+    <string name="browse">Browse</string>
+
+    <string name="type_archive">Archive type</string>
+    <string name="start_path_name" translatable="false">Root</string>
+    <string name="empty_directory_hint">Empty directory</string>
+    <string name="type_certificate">Certificate</string>
+    <string name="type_directory">Directory</string>
+    <string name="type_document">File</string>
+    <string name="type_drawing">Picture</string>
+    <string name="type_excel">Spreadsheet</string>
+    <string name="type_image">Image</string>
+    <string name="type_music">Music</string>
+    <string name="type_pdf">PDF document</string>
+    <string name="type_power_point">Presentation</string>
+    <string name="type_word">Document</string>
+    <string name="browse_edit">Edit</string>
+    <string name="wait_please">Wait please</string>
+    <string name="file_exceeded">your file is too large larger than 8MB</string>
+    <string name="no_file_selected">Please select a file</string>
 </resources>

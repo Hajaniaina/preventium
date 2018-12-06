@@ -26,7 +26,6 @@ import android.media.RingtoneManager;
 import android.media.ToneGenerator;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
@@ -37,10 +36,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.telephony.SmsManager;
-import android.text.Html;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -49,19 +46,11 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firetrap.permissionhelper.action.OnDenyAction;
-import com.firetrap.permissionhelper.action.OnGrantAction;
 import com.firetrap.permissionhelper.helper.PermissionHelper;
 import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
@@ -76,7 +65,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.gson.Gson;
-import com.gregacucnik.EditableSeekBar;
+import com.nbsp.materialfilepicker.ui.FilePickerActivity;
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.database.DatabaseHelper;
 import com.preventium.boxpreventium.enums.FORCE_t;
@@ -86,17 +75,20 @@ import com.preventium.boxpreventium.enums.SPEED_t;
 import com.preventium.boxpreventium.enums.STATUS_t;
 import com.preventium.boxpreventium.location.CustomMarker;
 import com.preventium.boxpreventium.location.CustomMarkerData;
-import com.preventium.boxpreventium.location.DatasMarker;
+import com.preventium.boxpreventium.location.FileManagerMarker;
 import com.preventium.boxpreventium.location.MarkerManager;
 import com.preventium.boxpreventium.location.PositionManager;
 import com.preventium.boxpreventium.manager.AppManager;
+import com.preventium.boxpreventium.manager.DialogManager;
 import com.preventium.boxpreventium.manager.Force;
 import com.preventium.boxpreventium.manager.SpeedCorner;
 import com.preventium.boxpreventium.manager.SpeedLine;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
+import com.preventium.boxpreventium.manager.interfaces.AppManagerListener;
 import com.preventium.boxpreventium.module.DiscoverBox;
 import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.module.Load.LoadOption;
+import com.preventium.boxpreventium.module.Load.LoadPermission;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.NameEPC;
@@ -104,7 +96,6 @@ import com.preventium.boxpreventium.utils.App;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
 import com.preventium.boxpreventium.utils.DataLocal;
-import com.preventium.boxpreventium.utils.EmailUtils;
 import com.preventium.boxpreventium.widget.Widget;
 
 import org.apache.commons.net.ftp.FTPClient;
@@ -113,6 +104,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -122,9 +114,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static android.provider.Telephony.Carriers.PASSWORD;
 
-//public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener {
-public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManager.AppManagerListener, LocationListener, GoogleMap.OnCameraMoveStartedListener,
-        GoogleMap.OnCameraMoveListener, GoogleMap.OnCameraMoveCanceledListener, App.AppListener {
+public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManagerListener, LocationListener, App.AppListener {
 
     private static final String TAG = "MainActivity";
     private static final String APPPREFERENCES = "AppPrefs" ;
@@ -176,7 +166,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private FloatingActionButton menuButtonSos;
     private FloatingActionButton menuButtonMapRecenter;
     private FloatingActionButton menuButtonResetCalib;
-    //private FloatingActionButton menuButtonTracking;
     private FloatingActionButton menuButtonSettings;
     private FloatingActionButton stop_parcour;
 
@@ -197,20 +186,18 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean initDone = false;
     private boolean actionCanceled = false;
     private boolean mapReady = false;
-    private boolean permissionsChecked = false;
     private boolean shockDetected = false;
     private SharedPreferences sharedPref;
-    private PermissionHelper.PermissionBuilder permissionRequest;
+
     private QrScanRequest qrRequest;
     private boolean routeActive = false;
     private boolean routeInPause = false;
     private int qrSmsTimeout = 0;
     private int selectedEpcFile = 0;
-    private boolean trackingActivated = true;
     private int locFilterTimeout = 0;
 
-    private boolean parcours_display = false; // false => play, true => stop
     private boolean stop = false;
+    private boolean trackingActivated = false;
     private App app;
 
     private int opt_panneau = 99;
@@ -227,11 +214,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private int hide_V_lat = 99;
     private int opt_sonore = 99;
     private int opt_button_parcours = 99;
-    public int opt_panneau_speed;
 
-    private String opt_test;
-    String jsonString;
-    NotificationCompat.Builder notif;
+    private NotificationCompat.Builder notif;
 
     private static final int id_notif_qr = 10;
     private static final int id_notif_conf = 11;
@@ -243,16 +227,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int id_notif_pan = 17;
     private static final int id_notif_map = 18;
     private SupportMapFragment mapFrag;
-
-    private boolean internet_activeopt = true;
     private boolean verifDm = true;
-
-    String serveur="tsis";
+    private String serveur ="";
     ReaderCFGFile reader1 = new ReaderCFGFile();
-    String srcFileName="";
-    String desFileName="";
-
-    boolean cfgi = false;
     private String epcname = "";
 
     //##### add old veer
@@ -270,7 +247,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private LatLng firstPos;
     private Lock lock;
     public boolean gps;
-    private STATUS_t last_status;
 
     private String local_file;
     private String[] epc_data = null;
@@ -288,6 +264,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     public int color_a, color_v, color_f, color_m;
     private String testL = "LD = ", testC = "LC = ", testL1 = "LD1 = ", testC1 = "LC1 = ";
+
+    private FileManagerMarker fileManagerMarker;
+    private LoadPermission permission;
+    private PermissionHelper.PermissionBuilder permissionRequest;
+    private DialogManager dialogManager;
+
+    public void setPermissionRequest(PermissionHelper.PermissionBuilder permissionRequest) {
+        this.permissionRequest = permissionRequest;
+    }
 
     @Override
     public void onLocationChanged(Location location) {
@@ -310,97 +295,75 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-    @Override
-    public void onCameraMove() {
-        // Alert("The camera is moving.", Toast.LENGTH_SHORT);
-    }
-
-    @Override
-    public void onCameraMoveStarted(int i) {
-        // Alert(String.valueOf(i), Toast.LENGTH_SHORT);
-    }
-
-    @Override
-    public void onCameraMoveCanceled() {
-        // Alert("The camera is cancelling.", Toast.LENGTH_SHORT);
-    }
-
     //######donw s
     @SuppressLint("StaticFieldLeak")
-    private class downloadAndSaveFile extends AsyncTask<String, Integer, Boolean> {
-        private downloadAndSaveFile() {
+    private static class downloadAndSaveFile extends AsyncTask<String, Integer, Boolean> {
+        private WeakReference<Context> contextWeakReference;
+        private downloadAndSaveFile(Context context) {
+            this.contextWeakReference = new WeakReference<>(context);
         }
 
         protected Boolean doInBackground(String... params) {
-            if (MainActivity.this.download().booleanValue()) {
-                return Boolean.valueOf(true);
+            Context context = contextWeakReference.get();
+            if (context != null) {
+                if (((MainActivity)context).download().booleanValue()) {
+                    return Boolean.valueOf(true);
+                }
             }
             return Boolean.valueOf(false);
         }
 
         protected void onPostExecute(Boolean sucess) {
-            if (sucess.booleanValue()) {
-                MainActivity.this.showEpcSelectDialog();
-            } else {
-                MainActivity.this.download();
+            Context context = contextWeakReference.get();
+            if (context != null) {
+                MainActivity main = (MainActivity) context;
+                if (sucess.booleanValue()) {
+                    main.showEpcSelectDialog();
+                } else {
+                    main.download();
+                }
             }
         }
     }
 
-
     @Override
     protected void onCreate (Bundle savedInstanceState) {
-
-
-        //setRepeatingAsyncTask();
-
         super.onCreate(savedInstanceState);
-
         activity = this;
 
         setContentView(R.layout.activity_main);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-
-        if (checkPermissions() > 0) {
-
-
-
+        //permission
+        permission = new LoadPermission(this);
+        if (permission.checkPermissions() > 0) {
             if (savedInstanceState == null) {
-
-
                 init(true);
-
                 notif = new NotificationCompat.Builder(this);
                 notif.setAutoCancel(true);
 
                 localizationFlag();
-            }
-            else {
-
+            } else {
                 init(false);
             }
+        } else {
+            permission.requestPermissions(new LoadPermission.CallbackPermission() {
+                @Override
+                public void onCall() {
+                    init(true);
+                }
+            });
         }
-        else {
-
-            requestPermissions();
-        }
-
-
     }
 
-    int one_run_option=0;
     @Override
     protected void onResume() {
-        //cfgi= reader1.read(desFileName);
 
         // onResume load
         get_one_lance_ptions();
 
         Log.e("VERIFdm_resume : ", String.valueOf(verifDm));
-        //new ParseJson().cancel(true);
         if (!PositionManager.isLocationEnabled(getApplicationContext())) {
-
             showLocationAlert();
         }
 
@@ -409,8 +372,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             BluetoothAdapter.getDefaultAdapter().enable();
         }
 
-        int permissionsGranted = checkPermissions();
+        if( permission == null ) {
+            permission = new LoadPermission(this);
+        }
 
+        int permissionsGranted = permission.checkPermissions();
         if (permissionsGranted > 0) {
 
             if (!initDone) {
@@ -419,17 +385,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
         else if (permissionsGranted == 0) {
-
-            requestPermissions();
+            permission.requestPermissions(new LoadPermission.CallbackPermission() {
+                @Override
+                public void onCall() {
+                    init(true);
+                }
+            });
         }
 
         if (Connectivity.isConnected(getApplicationContext())) {
-
             if (progress != null) {
-
                 progress.setMessage(getString(R.string.network_alert_string));
-            }else {
-
             }
         }
 
@@ -452,13 +418,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         verifDm = true;
         Log.e("VERIFdm_stop : ", String.valueOf(verifDm));
-        permissionsChecked = false;
         super.onStop();
     }
 
     @Override
     protected void onDestroy() {
-
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.onDestroy();
 
@@ -491,11 +455,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onRequestPermissionsResult (int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-
         permissionRequest.onRequestPermissionsResult(requestCode, permissions, grantResults);
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == 0 && resultCode == -1 && data.hasExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM)) {
             this.qrRequest = (QrScanRequest) data.getParcelableExtra(QrScanActivity.QR_SCAN_REQUEST_PARAM);
@@ -508,6 +472,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
             if(this.qrRequest.driverIdEnabled || this.qrRequest.vehicleFrontOnStartEnabled || this.qrRequest.vehicleFrontOnStopEnabled  ){
                 this.alertqrscan = true;
+            }
+        }
+
+        if( requestCode == 7010 && data != null ) {
+            File file = new File(data.getStringExtra(FilePickerActivity.RESULT_FILE_PATH));
+            // add file
+            if( fileManagerMarker.setFile(file) ) {
+                // update file
+                markerView.setUpdateFile(file);
             }
         }
     }
@@ -525,11 +498,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         this.googleMap.getUiSettings().setMapToolbarEnabled(false);
         this.googleMap.getUiSettings().setRotateGesturesEnabled(false);
 
-        // add tog
-        googleMap.setOnCameraMoveStartedListener(this);
-        googleMap.setOnCameraMoveListener(this);
-        googleMap.setOnCameraMoveCanceledListener(this);
-
         mapReady = true;
         if (Connectivity.isConnected(getApplicationContext())) {
             if (progress != null) {
@@ -543,7 +511,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         posManager = new PositionManager(this);
-
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
@@ -565,12 +532,20 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         this.googleMap.setOnMarkerClickListener(markerView);
     }
 
+    public AppManager getAppManager() {
+        return appManager;
+    }
+
     public MarkerManager getMarkerManager() {
         return markerManager;
     }
 
     public MarkerView getMarkerView() {
         return markerView;
+    }
+
+    public FileManagerMarker getFileManagerMarker() {
+        return fileManagerMarker;
     }
 
     public GoogleMap getGoogleMap() {
@@ -805,8 +780,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     if( !stop ) {
                         // check if Over time
                         if( appManager.isWorkTimeOver() ) {
-                            // MainActivity.this.askEndDayConfirm();
-                            MainActivity.this.askEndParcoursConfirm();
+                            dialogManager.askEndParcoursConfirm();
                         }
                     }
                 }
@@ -825,9 +799,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         });
-
-        // store last status
-        this.last_status = status;
     }
 
     @Override
@@ -1478,34 +1449,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onCrash () {
-        DataLocal local = DataLocal.get(this);
-        final int time = (int)local.getValue("crashNumber", 0);
-
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (time > 1) {
-                    Dialog(getString(R.string.crash_app_message_again));
-                } else {
-                    Dialog(getString(R.string.crash_app_message));
-                }
-            }
-        });
-
-        StringBuilder out = new StringBuilder();
-        out.append("Imei: " + ComonUtils.getIMEInumber(this) + " \n");
-        out.append("VersionApp: " + ComonUtils.getVersionName(this) + " \n");
-        out.append("Nombre de crash: " + String.valueOf(time) + " \n");
-        out.append("Trace du crash:  \n");
-        out.append(local.getValue("crashTrace", "").toString());
-        if (ComonUtils.haveInternetConnected(this)) {
-            new EmailUtils(out.toString()).send( getString(R.string.crash_report) + " " + ComonUtils.getIMEInumber(this));
-        }
-
-        local.remValue("crashApp");
-        local.remValue("crashSend");
-        local.remValue("crashTrace");
-        local.commit();
+        app.appCrash();
     }
 
     @Override
@@ -1530,12 +1474,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         initDone = true;
         appColor = new AppColor(this);
         sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+
+        // manager
         appManager = new AppManager(this, this);
+        dialogManager = new DialogManager(this);
+        fileManagerMarker = new FileManagerMarker(this);
         app = new App(this, this);
+
+        // view
         markerView = new MarkerView(this);
         mapView = new MapView(this);
 
-        //qrRequest = new QrScanRequest();
         qrRequest = new QrScanRequest();
 
         progressOPT = new ProgressDialog(this, R.style.InfoDialogStyle);
@@ -1580,12 +1529,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         acc_image = (ImageView) findViewById(R.id.acc_image);
         corner_image = (ImageView) findViewById(R.id.corner_image);
         brake_image = (ImageView) findViewById(R.id.brake_image);
-
         // pour corner
         corner_n_v.setVisibility(View.INVISIBLE);
-
-       // avg_n_v.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_left_arrow, 0);
-       // avg_n_v.setCompoundDrawablePadding(6);
 
         infoButton = (FloatingActionButton) findViewById(R.id.button_info);
         callButton = (FloatingActionButton) findViewById(R.id.button_call);
@@ -1599,26 +1544,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         menuButtonSos = (FloatingActionButton) findViewById(R.id.menu_button_sos);
         menuButtonMapRecenter = (FloatingActionButton) findViewById(R.id.menu_button_map_recenter);
         menuButtonResetCalib = (FloatingActionButton) findViewById(R.id.menu_button_reset_calibration);
+        menuButtonResetCalib.setVisibility(View.GONE);
         //menuButtonTracking = (FloatingActionButton) findViewById(R.id.menu_button_tracking);
         menuButtonSettings = (FloatingActionButton) findViewById(R.id.menu_button_settings);
         stop_parcour = (FloatingActionButton) findViewById(R.id.stop_parcour);
-        // stop_parcour.setVisibility(View.GONE);
-        // stop_parcour.setVisibility(View.GONE);
-
         trackingActivated = sharedPref.getBoolean(getString(R.string.tracking_activated_key), true);
-/*
-        if (trackingActivated) {
-
-            menuButtonTracking.setColorNormal(appColor.getColor(AppColor.GREEN));
-            menuButtonTracking.setColorPressed(appColor.getColor(AppColor.ORANGE));
-        }
-        else {
-
-            menuButtonTracking.setColorNormal(appColor.getColor(AppColor.ORANGE));
-            menuButtonTracking.setColorPressed(appColor.getColor(AppColor.GREEN));
-        }
-
-        */  //btn -------tracking ----
 
         if (DEBUG_LOGVIEW_ON){
             debugLayout = (LinearLayout) findViewById(R.id.debug_layout);
@@ -1626,8 +1556,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-
-
         if (firstLaunch) {
             mapFrag.setRetainInstance(true);
         }
@@ -1662,136 +1590,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private int checkPermissions() {
 
-        int ok = 1;
-
-        if (!permissionsChecked) {
-            permissionsChecked = true;
-
-            if (!PermissionHelper.checkPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-                ok = 0;
-            }
-
-            if (!PermissionHelper.checkPermissions(this, Manifest.permission.READ_PHONE_STATE)) {
-
-                ok = 0;
-            }
-
-            if (!PermissionHelper.checkPermissions(this, Manifest.permission.CALL_PHONE)) {
-
-                ok = 0;
-            }
-
-            if (!PermissionHelper.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                ok = 0;
-            }
-
-            if (!PermissionHelper.checkPermissions(this, Manifest.permission.SEND_SMS)) {
-
-                ok = 0;
-            }
-
-            if (!PermissionHelper.checkPermissions(this, Manifest.permission.RECEIVE_SMS)) {
-
-                ok = 0;
-            }
-
-            if (!PermissionHelper.checkPermissions(this, Manifest.permission.READ_SMS)) {
-
-                ok = 0;
-            }
-
-            if (!PermissionHelper.checkPermissions(this, Manifest.permission.CAMERA)) {
-
-                ok = 0;
-            }
-        }
-        else {
-
-            ok = -1;
-        }
-
-        return ok;
-    }
-
-    private void requestPermissions() {
-
-        permissionRequest = PermissionHelper.with(this)
-                .build(Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.CALL_PHONE,
-                        Manifest.permission.READ_PHONE_STATE,
-                        Manifest.permission.SEND_SMS,
-                        Manifest.permission.CAMERA,
-                        Manifest.permission.RECEIVE_SMS,
-                        Manifest.permission.READ_SMS).onPermissionsDenied(new OnDenyAction() {
-
-                    @Override
-                    public void call (int requestCode, boolean shouldShowRequestPermissionRationale) {
-
-                        if (shouldShowRequestPermissionRationale) {
-
-                            showPermissionsAlert(true);
-                        }
-                        else {
-
-                            showPermissionsAlert(false);
-                        }
-                    }
-                })
-                .onPermissionsGranted(new OnGrantAction() {
-
-                    @Override
-                    public void call (int requestCode) {
-
-                        if (!initDone) {
-
-                            init(true);
-                        }
-                    }
-                })
-                .request(0);
-    }
-
-    public void showPermissionsAlert (final boolean retry) {
-
-        final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
-        alertDialog.setCancelable(false);
-        alertDialog.setTitle(getString(R.string.permissions_string));
-
-        String msg = "";
-        String btnName = "";
-
-        if (retry) {
-
-            msg = getString(R.string.permissions_enable_string);
-            btnName = getString(R.string.permissions_retry_string);
-        }
-        else {
-
-            msg = getString(R.string.force_permissions_string);
-            btnName = getString(R.string.action_settings);
-        }
-
-        alertDialog.setMessage(msg);
-        alertDialog.setPositiveButton(btnName, new DialogInterface.OnClickListener() {
-
-            public void onClick (DialogInterface dialog,int which) {
-
-                if (retry) {
-                    permissionRequest.retry();
-                }
-                else {
-                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", getPackageName(), null));
-                    startActivity(intent);
-                }
-            }
-        });
-
-        alertDialog.show();
-    }
 
     public void showLocationAlert() {
 
@@ -1846,7 +1645,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             msg += "\nVous avez " + filesNum + " fichier(s) à prendre en compte";
         }
         else {
-
             msg += "\nIl n'y a aucun fichier ou message attribué à cette position";
         }
 
@@ -1906,58 +1704,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         builder.show();
     }
 
-    public void askEndParcoursConfirm() {
-        final View mView = getLayoutInflater().inflate(R.layout.end_parcours, null);
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setMessage(getString(R.string.end_parcours_confirm_string));
-        builder.setCancelable(false);
-        builder.setView(mView);
-        final AlertDialog dialog = builder.create();
-
-        Button no = (Button) mView.findViewById(R.id.no_button);
-        Button no_quit = (Button) mView.findViewById(R.id.no_and_quit_button);
-        Button yes = (Button) mView.findViewById(R.id.yes_button);
-        Button yes_quit = (Button) mView.findViewById(R.id.yes_and_quit_button);
-
-        // no normal
-        no.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                dialog.dismiss();
-            }
-        });
-        // no and quitter Eode
-        no_quit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                dialog.dismiss();
-
-                // terminate
-                finish();
-                android.os.Process.killProcess(android.os.Process.myPid());
-                System.exit(-1);
-            }
-        });
-        // oui normal
-        yes.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                appManager.setStopped();
-                dialog.dismiss();
-            }
-        });
-        // Oui et quitter Eode
-        yes_quit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                appManager.setStopped(true); // for quit
-                dialog.dismiss();
-            }
-        });
-
-        dialog.show();
-    }
-
     protected void askCallConfirm() {
 
         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
@@ -1976,257 +1722,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         alertBuilder.create().show();
     }
 
-    //####santo
-    protected void showInfoDialog(Marker marker) {
-        CustomMarker customMarker = this.markerManager.getMarker(marker);
-        if (customMarker != null) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            View v = getLayoutInflater().inflate(R.layout.info_on_arrow, null);
-            TextView measure = (TextView) v.findViewById(R.id.measure);
-            ((TextView) v.findViewById(R.id.force)).setCompoundDrawablesWithIntrinsicBounds(this.markerManager.getTypeMarker(customMarker), 0, 0, 0);
-            measure.setText(Html.fromHtml(this.markerManager.getDataMarker(customMarker)));
-            builder.setView(v);
-            builder.setCancelable(false);
-            builder.setPositiveButton(R.string.close_string, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.cancel();
-                }
-            });
-            builder.setNegativeButton("Générer PDF", new DialogInterface.OnClickListener() {
-                @SuppressLint("WrongConstant")
-                public void onClick(DialogInterface dialog, int which) {
-                    Toast.makeText(MainActivity.this, "Aucune application de lecture PDF!", 1).show();
-                }
-            });
-            builder.show();
-        }
-    }
-
     private ScaleGestureDetector mScaleGestureDetector;
-
-    protected void showMarkerEditDialog (final Marker marker, final boolean creation) {
-
-        final CustomMarker customMarker = markerManager.getMarker(marker);
-
-        if (customMarker == null) return;
-
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-        LayoutInflater inflater = this.getLayoutInflater();
-        builder.setView(inflater.inflate(R.layout.marker_edit_dialog, null));
-
-        builder.setPositiveButton("OK", null);
-        builder.setNegativeButton(getString(R.string.cancel_string), null);
-
-        if (!creation) {
-
-            builder.setNeutralButton(getString(R.string.delete_string), null);
-        }
-
-        final AlertDialog alertDlg = builder.create();
-
-
-        if (creation) {
-
-            alertDlg.setCancelable(false);
-        }
-
-        alertDlg.setOnShowListener(new DialogInterface.OnShowListener() {
-
-            @Override
-            public void onShow (DialogInterface dialogInterface) {
-
-                final EditText editTitle = (EditText) alertDlg.findViewById(R.id.marker_title);
-                final CheckBox shareCheckBox = (CheckBox) alertDlg.findViewById(R.id.marker_share_checkbox);
-                final CheckBox alarmCheckBox = (CheckBox) alertDlg.findViewById(R.id.marker_alarm_checkbox);
-                final Spinner markerTypeSpinner = (Spinner) alertDlg.findViewById(R.id.marker_type_spinner);
-                final EditableSeekBar alertRadiusSeekBar = (EditableSeekBar) alertDlg.findViewById(R.id.marker_radius_seekbar);
-
-                final String titleBefore = customMarker.getTitle();
-                editTitle.setText(titleBefore);
-
-                if (!creation) {
-
-                    if (customMarker.getType() == CustomMarker.MARKER_INFO) {
-
-                        markerTypeSpinner.setSelection(0);
-                    }
-                    else {
-
-                        markerTypeSpinner.setSelection(1);
-                    }
-
-                    if (customMarker.isAlertEnabled()) {
-
-                        alarmCheckBox.setChecked(true);
-                        alertRadiusSeekBar.setVisibility(View.VISIBLE);
-                    }
-                    else {
-
-                        alarmCheckBox.setChecked(false);
-                        alertRadiusSeekBar.setVisibility(View.GONE);
-                    }
-
-                    if (customMarker.isShared()) {
-
-                        shareCheckBox.setChecked(true);
-                    }
-                    else {
-
-                        shareCheckBox.setChecked(false);
-                    }
-
-                    alertRadiusSeekBar.setValue(customMarker.getAlertRadius());
-                }
-
-                markerTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-
-                    @Override
-                    public void onItemSelected (AdapterView<?> parent, View view, int position, long id) {
-
-                        if (position == 0) {
-
-                            customMarker.setType(CustomMarker.MARKER_INFO);
-                        }
-                        else {
-
-                            customMarker.setType(CustomMarker.MARKER_DANGER);
-                        }
-                    }
-
-                    @Override
-                    public void onNothingSelected (AdapterView<?> parent) {}
-                });
-
-                shareCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-
-                    @Override
-                    public void onCheckedChanged (CompoundButton compoundButton, boolean b) {
-
-                        if (b) {
-
-                            customMarker.share(true);
-                        }
-                        else {
-
-                            customMarker.share(false);
-                        }
-                    }
-                });
-
-                alarmCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-
-                    @Override
-                    public void onCheckedChanged (CompoundButton compoundButton, boolean b) {
-
-                        if (b) {
-
-                            customMarker.enableAlert(true);
-                            customMarker.showAlertCircle(true);
-
-                            alertRadiusSeekBar.setVisibility(View.VISIBLE);
-                        }
-                        else {
-
-                            customMarker.enableAlert(false);
-                            customMarker.showAlertCircle(false);
-
-                            alertRadiusSeekBar.setVisibility(View.GONE);
-                        }
-                    }
-                });
-
-                Button btnOk = alertDlg.getButton(AlertDialog.BUTTON_POSITIVE);
-                Button btnCancel = alertDlg.getButton(AlertDialog.BUTTON_NEGATIVE);
-                Button btnDelete = alertDlg.getButton(AlertDialog.BUTTON_NEUTRAL);
-
-                btnOk.setOnClickListener(new View.OnClickListener() {
-
-                    @Override
-                    public void onClick (View view) {
-
-                        EditText editTitle = (EditText) alertDlg.findViewById(R.id.marker_title);
-
-                        assert editTitle != null;
-                        String currTitle = editTitle.getText().toString();
-
-                        if (customMarker.isAlertEnabled())
-                        {
-                            customMarker.setAlertRadius(alertRadiusSeekBar.getValue());
-                            markerManager.addAlertCircle(googleMap, customMarker);
-                        }
-
-                        if (titleBefore != currTitle) {
-
-                           if (currTitle.length() > 0) {
-
-                                customMarker.setTitle(currTitle);
-
-                                marker.hideInfoWindow();    // Refresh marker's title
-                                marker.showInfoWindow();
-
-                                // adding FILE and send
-                               if( customMarker.isShared() ) {
-                                   DatasMarker dataMarker = new DatasMarker(MainActivity.this);
-                                   dataMarker.addBddMarker(customMarker);
-                                   dataMarker.uploadShare(customMarker);
-                               }
-
-                                // dismiss
-                                alertDlg.dismiss();
-                             }
-                            else {
-
-                                editTitle.setError(getString(R.string.marker_tittle_invalid_string));
-                           }
-                        }
-                    }
-                });
-
-                btnCancel.setOnClickListener(new View.OnClickListener() {
-
-                    @Override
-                    public void onClick (View view) {
-
-                        if (creation) {
-
-                            markerManager.removeMarker(customMarker);
-                            marker.remove();
-                        }
-
-                        alertDlg.dismiss();
-                    }
-                });
-
-                btnDelete.setOnClickListener(new View.OnClickListener() {
-
-                    @Override
-                    public void onClick (View view) {
-
-                        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
-                        alertBuilder.setMessage(getString(R.string.validate_marker_delete_string));
-
-                        alertBuilder.setNegativeButton(getString(R.string.cancel_string), null);
-                        alertBuilder.setPositiveButton(getString(R.string.delete_string), new DialogInterface.OnClickListener() {
-
-                            @Override
-                            public void onClick (DialogInterface dialogInterface, int i) {
-
-                                markerManager.removeMarker(customMarker);
-                                marker.remove();
-                                alertDlg.dismiss();
-                            }
-                        });
-
-                        alertBuilder.create().show();
-                    }
-                });
-            }
-        });
-
-        alertDlg.show();
-        // alertDlg.getWindow().setLayout(400, 340);
-    }
 
     protected void showEpcSelectDialog() {
 
@@ -2283,61 +1779,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         builder.show();
     }
 
-    //####santo epc
- /*
-protected void showEpcSelectDialog() {
-    List<Integer> epcExistList = DataEPC.getAppEpcExist(this);
-    String[] epcStrList = new String[5];
-    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-    builder.setTitle(getString(R.string.select_epc_string));
-    readFile();
-    if (epcExistList.size() > 0) {
-        epcStrList[0] = "" + this.epc_data[0];
-        epcStrList[1] = "" + this.epc_data[1];
-        epcStrList[2] = "" + this.epc_data[2];
-        epcStrList[3] = "" + this.epc_data[3];
-        epcStrList[4] = "" + this.epc_data[4];
-        this.selectedEpcFile = this.sharedPref.getInt(getString(R.string.epc_selected), 1) - 1;
-        builder.setSingleChoiceItems(epcStrList, this.selectedEpcFile, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                MainActivity.this.selectedEpcFile = which + 1;
-                SharedPreferences.Editor editor = MainActivity.this.sharedPref.edit();
-                editor.putInt(MainActivity.this.getString(R.string.epc_selected), MainActivity.this.selectedEpcFile);
-                editor.apply();
-            }
-        });
-    } else {
-        builder.setMessage(getString(R.string.epc_missing_string));
-    }
-    builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-        public void onClick(DialogInterface dialog, int which) {
-            if (new File(MainActivity.this.local_file).exists()) {
-                new File(MainActivity.this.local_file).delete();
-            }
-            dialog.cancel();
-        }
-    });
-    builder.show();
-}
-
-
-    private void readFile() {
-        try {
-            DataInputStream in = new DataInputStream(new FileInputStream(this.local_file));
-            BufferedReader br = new BufferedReader(new InputStreamReader(in));
-            while (true) {
-                String strLine = br.readLine();
-                if (strLine != null) {
-                    this.epc_data = strLine.split(",");
-                } else {
-                    in.close();
-                    return;
-                }
-            }
-        } catch (Exception e) {
-        }
-    }
-*/
     private void changeViewColorFilter (View view, int color) {
 
         Drawable background = view.getBackground();
@@ -2496,7 +1937,7 @@ protected void showEpcSelectDialog() {
 
     private void hideActionButtons (boolean hide) {
 
-        FloatingActionButton[] actionBtnArray = {menuButtonSos, callButton, menuButtonResetCalib, menuButtonMapRecenter, stop_parcour};
+        FloatingActionButton[] actionBtnArray = {menuButtonSos, callButton, menuButtonMapRecenter, stop_parcour}; // menuButtonResetCalib,
 
         for (int i = 0; i < actionBtnArray.length; i++) {
 
@@ -2736,7 +2177,6 @@ protected void showEpcSelectDialog() {
             }
 
             public void onClick(View view) {
-
                 MainActivity.this.remote_file = "/" + ComonUtils.getIMEInumber(MainActivity.this) + "_EPC.NAME";
                 MainActivity.this.local_file = "/sdcard/" + ComonUtils.getIMEInumber(MainActivity.this) + "_EPC.NAME";
                 MainActivity.this.showEpcSelectDialog();
@@ -2747,8 +2187,7 @@ protected void showEpcSelectDialog() {
 
             @Override
             public void onClick (View view) {
-                // askEndDayConfirm();
-                askEndParcoursConfirm();
+                dialogManager.askEndParcoursConfirm();
             }
         });
 
@@ -2756,8 +2195,7 @@ protected void showEpcSelectDialog() {
 
             @Override
             public void onClick (View view) {
-                // askEndDayConfirm();
-                askEndParcoursConfirm();
+                dialogManager.askEndParcoursConfirm();
             }
         });
 
@@ -2788,7 +2226,6 @@ protected void showEpcSelectDialog() {
 
             @Override
             public void onClick (View view) {
-
                 sendSos();
             }
         });
@@ -2804,12 +2241,9 @@ protected void showEpcSelectDialog() {
 
             @Override
             public void onClick(View view) {
-
-                //appManager.raz_calibration();
                 askCalibrationConfirm();
             }
         });
-
 
         menuButtonSettings.setOnClickListener(new View.OnClickListener() {
 
@@ -3246,107 +2680,8 @@ protected void showEpcSelectDialog() {
         brake_image.setVisibility(View.INVISIBLE);
     }
 
-    public void Alert(final String msg, int duration) {
-
-        switch(duration) {
-            case Toast.LENGTH_LONG:
-            case Toast.LENGTH_SHORT:
-                break;
-            default:
-                duration = Toast.LENGTH_LONG;
-        }
-
-        final int dure = duration;
-        runOnUiThread(new Runnable() {
-            public void run () {
-                Toast.makeText(MainActivity.this, msg, dure).show();
-            }
-        });
-
-    }
-
-    public void setButtonParcours (int image) {
-
-        if( image == R.drawable.ic_play_arrow )
-            parcours_display = false;
-        else
-            parcours_display = true;
-
-        stop_parcour.setImageResource(image);
-    }
-
-    public void setParcoursActive (boolean active) {
-        if( active )
-            stop_parcour.setEnabled(true);
-        else
-            stop_parcour.setEnabled(false);
-    }
-
-    public interface Callback {
-        void onCall(DialogInterface dialogInterface);
-        void onCall();
-    }
-
-    // avec callback
-    public void Dialog (String message, final Callback callback) {
-        AlertDialog.Builder build = new AlertDialog.Builder(this);
-        build.setMessage(message);
-        build.setCancelable(true);
-        build.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                callback.onCall(dialogInterface);
-            }
-        });
-        AlertDialog dialog = build.create();
-        dialog.show();
-    }
-
-    /** Sans callback */
-    public void Dialog (String message) {
-        AlertDialog.Builder build = new AlertDialog.Builder(this);
-        build.setMessage(message);
-        build.setCancelable(true);
-        build.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                dialogInterface.dismiss();
-            }
-        });
-        AlertDialog dialog = build.create();
-        dialog.show();
-    }
-
     @Override
     public void onDownloaded(File file) {
-        InstallApplication(file);
-    }
-
-    private Intent intent;
-    public void InstallApplication(File file) {
-
-        intent = new Intent(Intent.ACTION_VIEW);
-        int result = Settings.Secure.getInt(getContentResolver(), Settings.Secure.INSTALL_NON_MARKET_APPS, 0);
-        if( result == 0 ) {
-            Intent intent = new Intent();
-            intent.setAction(Settings.ACTION_APPLICATION_SETTINGS);
-            startActivity(intent);
-            return;
-        }
-
-        // inférieur à nougat api 24
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            intent.addCategory(Intent.CATEGORY_DEFAULT);
-            intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-        }else {
-            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".provider", file);
-            intent.setDataAndType(uri, "application/vnd.android.package-archive");
-        }
-
-        this.startActivity(intent);
+        app.InstallApplication(file);
     }
 }
