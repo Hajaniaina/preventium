@@ -293,5 +293,20 @@
     <string name="wait_please">Espere por favor</string>
     <string name="file_exceeded">Su archivo es demasiado grande, más grande que 8 MB</string>
     <string name="no_file_selected">Por favor seleccione un archivo</string>
+    <string name="button_start">Inicio</string>
+    <string name="button_end">Final</string>
+    <string name="button_reprise">Reanudación</string>
+    <string name="button_phone">Teléfono</string>
+    <string name="button_save">Registro</string>
+    <string name="button_refresh">Actualizar</string>
+    <string name="button_driver">conductor</string>
+    <string name="button_analyse">Análisis</string>
+    <string name="button_carte">Mapa</string>
+    <string name="button_objectif">Meta</string>
+    <string name="button_marker">"Marcador "</string>
+    <string name="button_tournee">Gira</string>
+    <string name="button_rapport">Relación</string>
+    <string name="button_notes">Nota</string>
+    <string name="button_quit">Dejar</string>
 
 </resources>

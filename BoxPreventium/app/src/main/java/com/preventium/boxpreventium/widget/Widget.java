@@ -10,7 +10,7 @@ import com.preventium.boxpreventium.enums.LEVEL_t;
 public class Widget {
 
     public static Widget instance;
-    public static Widget get() {
+    public static synchronized Widget get() {
         if( instance == null ) instance = new Widget();
         return instance;
     }

@@ -269,7 +269,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             }
 
             // 10mn sont écoulé on check
-            if (pChrono.getMinutes() >= 2){
+            if (pChrono.getMinutes() >= 10){
                 load.onUpdate(); // update
                 pChrono.stop();
                 pChrono.start();
@@ -697,7 +697,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                     exist_actif = ftp.checkFileExists(ComonUtils.getIMEInumber(context));
                     // exist_actif = true;
 
-                    // MainActivity.instance().Alert("exist_actif: " + (exist_actif ? "1" : "0"), Toast.LENGTH_LONG);
                     if (exist_actif) {
                         try {
                             sleep(100);

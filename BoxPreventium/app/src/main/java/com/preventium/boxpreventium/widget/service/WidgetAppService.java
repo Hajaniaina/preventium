@@ -5,11 +5,8 @@ import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.IBinder;
@@ -20,6 +17,7 @@ import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.gui.AppColor;
+import com.preventium.boxpreventium.module.Load.LoadImage;
 import com.preventium.boxpreventium.widget.AppWidget;
 import com.preventium.boxpreventium.widget.Widget;
 
@@ -32,7 +30,7 @@ public class WidgetAppService extends Service {
     private Handler handler = new Handler();
     /* task */
     private class Task implements Runnable {
-
+        private int index = 0;
         private Context context;
         public Task (Context context) {
             this.context = context;
@@ -114,7 +112,7 @@ public class WidgetAppService extends Service {
 
             if( drawables != null ) {
                 drawables.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP);
-                views.setImageViewBitmap(R.id.acc_force_view, drawableToBitmap(drawables));
+                views.setImageViewBitmap(R.id.acc_force_view, LoadImage.drawableToBitmap(drawables));
                 views.setInt(R.id.acc_force_view, "setBackgroundColor", appColor.getColor(colorForce));
             }
 
@@ -124,31 +122,10 @@ public class WidgetAppService extends Service {
             appWidgetManager.updateAppWidget(componentName, views);
             /* end AppWidgetManager */
 
+            // Toast.makeText(getApplicationContext(), "", Toast.LENGTH_LONG).show();
             handler.postDelayed(this, 500);
         }
     };
-
-    public static Bitmap drawableToBitmap (Drawable drawable) {
-        Bitmap bitmap = null;
-
-        if (drawable instanceof BitmapDrawable) {
-            BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
-            if(bitmapDrawable.getBitmap() != null) {
-                return bitmapDrawable.getBitmap();
-            }
-        }
-
-        if(drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
-            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888); // Single color bitmap will be created of 1x1 pixel
-        } else {
-            bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        }
-
-        Canvas canvas = new Canvas(bitmap);
-        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        drawable.draw(canvas);
-        return bitmap;
-    }
 
     @Override
     public void onCreate() {

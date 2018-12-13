@@ -35,6 +35,8 @@ import com.preventium.boxpreventium.location.MarkerManager;
 import com.preventium.boxpreventium.module.Load.LoadImage;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by tog on 06/11/2018.
@@ -82,8 +84,18 @@ public class MarkerView implements GoogleMap.OnMarkerClickListener {
     }
 
     /* pour le dialog de marker */
+    private Map<String, String> customMarkers = new HashMap<>();
+    private Dialog dialog;
     public void setDialogMarker (CustomMarker customMarker) {
-        final Dialog dialog = new Dialog(context, android.R.style.Theme_Light_NoTitleBar_Fullscreen); //Theme_Black_NoTitleBar_Fullscreen
+        if( dialog != null && dialog.isShowing() ) return;
+
+        if( customMarker.isNear() && customMarkers.containsKey(customMarker.getTitle()) ) {
+            float time = Float.parseFloat(customMarkers.get(customMarker.getTitle()));
+            if( time / 60000 < 2 ) return;
+            customMarkers.put(customMarker.getTitle(), String.valueOf(System.currentTimeMillis()));
+        }
+
+        dialog = new Dialog(context, android.R.style.Theme_Light_NoTitleBar_Fullscreen); //Theme_Black_NoTitleBar_Fullscreen
         boolean is_pdf = false;
         String dir = context.getFilesDir() + "/marker";
 
@@ -106,7 +118,6 @@ public class MarkerView implements GoogleMap.OnMarkerClickListener {
         if( !file.isFile() ) return;
 
         Log.v("Nom du fichier", file.getAbsolutePath());
-        // Toast.makeText(context, file.getAbsolutePath(), Toast.LENGTH_LONG).show();
 
         if( !is_pdf  ) {
             dialog.setContentView(R.layout.dialog_marker_image);

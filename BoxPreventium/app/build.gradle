@@ -13,10 +13,10 @@ android {
     buildToolsVersion '26.0.2'
     defaultConfig {
         applicationId "com.preventium.boxpreventium"
-        minSdkVersion 21
+        minSdkVersion 22
         targetSdkVersion 26
-        versionCode 13
-        versionName "3.4.5"
+        versionCode 14
+        versionName "3.4.9"
         multiDexEnabled true
     }
     buildTypes {

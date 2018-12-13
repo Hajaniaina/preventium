@@ -354,4 +354,21 @@
     <string name="wait_please">Wait please</string>
     <string name="file_exceeded">your file is too large larger than 8MB</string>
     <string name="no_file_selected">Please select a file</string>
+    <string name="button_start">Start</string>
+    <string name="button_pause" translatable="false">Pause</string>
+    <string name="button_end">End</string>
+    <string name="button_reprise">Reprise</string>
+    <string name="button_phone">Phone</string>
+    <string name="button_save">Save</string>
+    <string name="button_refresh">Refresh</string>
+    <string name="button_driver">Driver</string>
+    <string name="button_analyse">Analyse</string>
+    <string name="button_carte">Map</string>
+    <string name="button_phoning" translatable="false">Phoning</string>
+    <string name="button_objectif">Goals</string>
+    <string name="button_marker">Marker</string>
+    <string name="button_tournee">Tour</string>
+    <string name="button_rapport">Report</string>
+    <string name="button_notes">Notes</string>
+    <string name="button_quit">Quit</string>
 </resources>

@@ -294,6 +294,21 @@
     <string name="wait_please">Envoie du fichier en cours ...</string>
     <string name="file_exceeded">Votre fichier est trop large supérieur à 8MB</string>
     <string name="no_file_selected">Veulliez selectionner un fichier</string>
+    <string name="button_start">Début</string>
+    <string name="button_end">Fin</string>
+    <string name="button_reprise">Reprise</string>
+    <string name="button_phone">Téléphone</string>
+    <string name="button_save">Enregistrer</string>
+    <string name="button_refresh">Actualiser</string>
+    <string name="button_driver">Conducteur</string>
+    <string name="button_analyse">Analyse</string>
+    <string name="button_carte">Carte</string>
+    <string name="button_objectif">Objectifs</string>
+    <string name="button_marker">Marqueurs</string>
+    <string name="button_tournee">Tournées</string>
+    <string name="button_rapport">Rapport</string>
+    <string name="button_notes">Notes</string>
+    <string name="button_quit">Quitter</string>
 
     <!-- pour MaterialFilePicker -->
 

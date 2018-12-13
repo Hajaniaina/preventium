@@ -89,6 +89,7 @@ import com.preventium.boxpreventium.module.DiscoverBox;
 import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.module.Load.LoadOption;
 import com.preventium.boxpreventium.module.Load.LoadPermission;
+import com.preventium.boxpreventium.module.Load.LoadFormateur;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.NameEPC;
@@ -354,6 +355,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             });
         }
+
+        // haha
+        // Toast.makeText(this.getApplicationContext(), "OnCreate", Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -368,7 +372,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
-
             BluetoothAdapter.getDefaultAdapter().enable();
         }
 
@@ -378,7 +381,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         int permissionsGranted = permission.checkPermissions();
         if (permissionsGranted > 0) {
-
             if (!initDone) {
 
                 init(true);
@@ -400,22 +402,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         super.onResume();
+
+        // haha
+        // Toast.makeText(this.getApplicationContext(), "OnResume", Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void onPause() {
-
         if (progress != null) {
-
             progress.dismiss();
         }
-
+        // Toast.makeText(this.getApplicationContext(), "OnPause", Toast.LENGTH_LONG).show();
         super.onPause();
     }
 
     @Override
     public void onStop() {
-
         verifDm = true;
         Log.e("VERIFdm_stop : ", String.valueOf(verifDm));
         super.onStop();
@@ -432,7 +434,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onBackPressed() {
-
     }
 
     @Override
@@ -1422,7 +1423,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onCalibrateOnAcceleration() {
-
     }
 
     @Override
@@ -1536,8 +1536,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         callButton = (FloatingActionButton) findViewById(R.id.button_call);
         scanQrCodeButton = (FloatingActionButton) findViewById(R.id.button_qrcode);
         epcSettingsButton = (FloatingActionButton) findViewById(R.id.button_epc_settings);
-        stopButton = (FloatingActionButton) findViewById(R.id.button_stop);
-        stopButton.setVisibility(View.GONE);
+        // stopButton = (FloatingActionButton) findViewById(R.id.button_stop);
+        // stopButton.setVisibility(View.GONE);
 
         optMenu = (FloatingActionMenu) findViewById(R.id.opt_menu);
         optMenu.setClosedOnTouchOutside(false);
@@ -2183,6 +2183,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+        /*
         stopButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -2190,6 +2191,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 dialogManager.askEndParcoursConfirm();
             }
         });
+        */
 
         stop_parcour.setOnClickListener(new View.OnClickListener() {
 
@@ -2390,6 +2392,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 }else{
                     forceView.setVisibility(View.INVISIBLE);
                 }
+                // pour tablet et formateur
+                boolean is_formateur = sharedPref.getInt("formateur", 0) == 1 ? true : false;
+                new LoadFormateur(MainActivity.this, is_formateur).init();
             }
         });
     }

@@ -1,6 +1,7 @@
 package com.preventium.boxpreventium.utils;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
@@ -18,6 +19,7 @@ import android.os.Build;
 import android.support.annotation.RequiresPermission;
 import android.telephony.TelephonyManager;
 import android.util.Base64;
+import android.util.DisplayMetrics;
 import android.util.Log;
 
 import com.preventium.boxpreventium.R;
@@ -189,10 +191,12 @@ public class ComonUtils {
     }
 
     public static String getIMEInumber(Context ctx) {
-//return "358656074739746";
+        // return "357726081420365";
+
         //Get the instance of TelephonyManager
         TelephonyManager tm = (TelephonyManager)ctx.getSystemService(Context.TELEPHONY_SERVICE);
         return tm.getDeviceId();
+
     }
 
     // === APK
@@ -303,8 +307,12 @@ public class ComonUtils {
         return cfg;
     }
 
-    //######### Older paste
+    public static String getServer (Context context) {
+        DataLocal local = DataLocal.get(context.getApplicationContext());
+        return (String)local.getValue("cfg_server", "https://test.preventium.fr");
+    }
 
+    //######### Older paste
     public static void setLanguage (Context context) {
         Application main = (Application)context;
         SharedPreferences preferences = main.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
@@ -322,4 +330,14 @@ public class ComonUtils {
         }
     }
 
+    public static boolean is_tablet (Context context) {
+        DisplayMetrics metrics = new DisplayMetrics();
+        Activity activity = (Activity) context;
+        activity.getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+        float yInches= metrics.heightPixels/metrics.ydpi;
+        float xInches= metrics.widthPixels/metrics.xdpi;
+        double diagonalInches = Math.sqrt(xInches*xInches + yInches*yInches);
+        return diagonalInches >= 6.5 ? true : false;
+    }
 }

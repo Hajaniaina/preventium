@@ -81,7 +81,7 @@ public class AccForceView implements Parcelable {
             return;
         }
         if (hide) {
-            this.accForceView.setVisibility(View.GONE);
+            this.accForceView.setVisibility(View.INVISIBLE);
         } else {
             double deviceScreen = new DeviceScreen().getDeviceScreen(this.activity);
             //JSONManager jSONManager = new JSONManager(this.activity);

@@ -65,15 +65,16 @@ public class MarkerManager {
             Iterator<CustomMarker> iterator = this.markersList.iterator();
             while (iterator.hasNext()) {
                 CustomMarker customMarker = (CustomMarker) iterator.next();
-                if (customMarker.isAlertEnabled() && !customMarker.isAlertAlreadyActivated()) {
+                // if (customMarker.isAlertEnabled() && !customMarker.isAlertAlreadyActivated()) {
                     float[] results = new float[3];
                     Location.distanceBetween(currPos.latitude, currPos.longitude, customMarker.getPos().latitude, customMarker.getPos().longitude, results);
-                    if (results[0] < 1000.0f) {
+                    float rayon = customMarker.getAlertRadius() > 0.0 ? customMarker.getAlertRadius() : 1000.0f;
+                    if (results[0] < rayon) {
                         customMarker.setAsNear(true);
                     } else {
                         customMarker.setAsNear(false);
                     }
-                }
+                // }
             }
         }
     }
@@ -83,13 +84,13 @@ public class MarkerManager {
             Iterator<CustomMarker> iterator = this.markersList.iterator();
             while (iterator.hasNext()) {
                 CustomMarker customMarker = (CustomMarker) iterator.next();
-                if (customMarker.isAlertEnabled() && !customMarker.isAlertAlreadyActivated() && customMarker.isNear()) {
+                //if (/*customMarker.isAlertEnabled() &&  !customMarker.isAlertAlreadyActivated() && */ customMarker.isNear()) {
                     float[] results = new float[3];
                     Location.distanceBetween(currPos.latitude, currPos.longitude, customMarker.getPos().latitude, customMarker.getPos().longitude, results);
                     if (results[0] <= ((float) customMarker.getAlertRadius())) {
                         return customMarker;
                     }
-                }
+                //}
             }
         }
         return null;

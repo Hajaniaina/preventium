@@ -1,14 +1,16 @@
 package com.preventium.boxpreventium.module.Load;
 
 import android.content.Context;
-import android.os.AsyncTask;
+import android.util.Log;
 
-import com.preventium.boxpreventium.server.JSON.ParseJsonData;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
 import com.preventium.boxpreventium.utils.ComonUtils;
-import com.preventium.boxpreventium.utils.Connectivity;
 import com.preventium.boxpreventium.utils.DataLocal;
 
 import org.json.JSONObject;
+
+import cz.msebera.android.httpclient.Header;
 
 /**
  * Created by tog on 21/10/2018.
@@ -21,41 +23,32 @@ public class LoadConfig {
     private String imei;
     private String server = "https://test.preventium.fr";
 
-    public LoadConfig (Context context) {
+    private LoadConfig (Context context) {
         this.context = context;
         this.imei = ComonUtils.getIMEInumber(context);
         this.local = DataLocal.get(context);
-
-        // LoadConfig
-        new Load().execute();
     }
 
     public static synchronized LoadConfig init (Context context) {
         return new LoadConfig(context);
     }
 
-    final class Load extends AsyncTask<String, Void, Void> {
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected Void doInBackground(String... strings) {
-            ParseJsonData jsonData = new ParseJsonData();
-            boolean connected = Connectivity.isConnected(context);
-            if( connected ) {
-                String json = jsonData.makeServiceCall(server + "/index.php/get_attribution/" + imei);
-                if( json != null && json.toString().length() > 0) {
+    public void load ()
+    {
+        String url = server + "/index.php/get_attribution/" + imei;
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.get(url, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject json) {
+                if( json != null ) {
                     try
                     {
-                        JSONObject cfg = new JSONObject(json.substring(json.indexOf("{"), json.lastIndexOf("}") + 1));
                         // pour cfg
-                        JSONObject config = cfg.getJSONObject("cfg");
+                        JSONObject config = json.getJSONObject("cfg");
                         local.setValue("cfg_ftp_host", config.optString("FTP"));
                         local.setValue("cfg_ftp_login", config.optString("FTP_login"));
                         local.setValue("cfg_ftp_pwd", config.optString("FTP_pwd"));
+                        local.setValue("cfg_server", config.optString("url_to_call"));
                         local.apply();
 
                     } catch(Exception e) {
@@ -63,7 +56,11 @@ public class LoadConfig {
                     }
                 }
             }
-            return null;
-        }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String response, Throwable throwable) {
+                Log.i("Error----> ", ""+statusCode+" ------ "+ response);
+            }
+        });
     }
 }

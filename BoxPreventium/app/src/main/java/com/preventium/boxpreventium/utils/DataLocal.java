@@ -24,7 +24,7 @@ public class DataLocal {
         return instance;
     }
 
-    public DataLocal (Context context) {
+    private DataLocal (Context context) {
         this.context = context;
         this.sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         this.editor = sharedPref.edit();

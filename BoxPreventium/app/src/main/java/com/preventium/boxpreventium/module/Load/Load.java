@@ -26,10 +26,11 @@ public class Load {
     private DataLocal local;
     private AppManager appManager;
     private boolean blocked;
+    private String server;
 
     public Load (Context context, AppManager app) {
         this.context = context;
-        this.local = new DataLocal(context);
+        this.local = DataLocal.get(context);
         this.appManager = app;
         this.blocked = false;
     }
@@ -39,18 +40,18 @@ public class Load {
     }
 
     private float timeConfigExceeded () {
-        boolean isFirst = (boolean)local.getValue("isFirstRelance", true);
         float beginTime = local.getFloat("currentTime", 0);
         float currentTime = System.currentTimeMillis();
         return (currentTime - beginTime) / 3600000;
     }
 
     public void onLoad () {
+        boolean isFirst = (boolean)local.getValue("isFirstRelance", true);
         float calcHours = timeConfigExceeded();
         int opt = (int)local.getValue("timer", 0);
         boolean isConfigChanged = Math.round(calcHours) > opt;
 
-        if( opt == 0 || isConfigChanged ) { // > Hours or first_dem
+        if( isFirst || opt == 0 || isConfigChanged ) { // > Hours or first_dem
             try {
                 // imei check actif
                 appManager.IMEI_is_actif();
@@ -77,6 +78,9 @@ public class Load {
         }catch(Exception e){
             e.printStackTrace();
         }
+
+        // acquittement
+        this.onAcquittement();
     }
 
     public void onUpdate () {
@@ -184,8 +188,29 @@ public class Load {
             }
 
             @Override
-            public void onFailure(JSONObject response) {
+            public void onFailure(String response) {
 
+            }
+        });
+    }
+
+    private void onAcquittement ()
+    {
+        String url_update = "https://test.preventium.fr/index.php/get_change/acquittement/" + ComonUtils.getIMEInumber(context);
+        connect(url_update, new ConnectListener() {
+            @Override
+            public void onSuccess(JSONObject response) {
+                try {
+                    if (response.getBoolean("succes")) {
+                        // acquittement ok
+                    }
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(String response) {
             }
         });
     }
@@ -195,12 +220,13 @@ public class Load {
         client.get(url, new JsonHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-
+                connectListener.onSuccess(response);
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, String response, Throwable throwable) {
                 Log.i("Error----> ", ""+statusCode+" ------ "+ response);
+                connectListener.onFailure(response);
             }
         });
     }
@@ -211,6 +237,6 @@ public class Load {
 
     private interface ConnectListener {
         void onSuccess(JSONObject response);
-        void onFailure(JSONObject response);
+        void onFailure(String response);
     }
 }
