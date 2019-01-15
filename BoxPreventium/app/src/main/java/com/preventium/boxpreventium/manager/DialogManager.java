@@ -8,8 +8,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.github.clans.fab.FloatingActionButton;
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.gui.MainActivity;
+import com.preventium.boxpreventium.module.Demarreur;
 
 /**
  * Created by tog on 29/11/2018.
@@ -74,7 +76,7 @@ public class DialogManager {
         });
     }
 
-    public void askEndParcoursConfirm() {
+    public void askEndParcoursConfirm(final Demarreur demarreur, final FloatingActionButton stop_parcour) {
         View view = ((Activity)context).getLayoutInflater().inflate(R.layout.end_parcours, null);
         build.setView(view);
         build.setMessage(context.getString(R.string.end_parcours_confirm_string));
@@ -98,7 +100,8 @@ public class DialogManager {
         ((Button)view.findViewById(R.id.yes_button)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                main.getAppManager().setStopped();
+                main.getAppManager().setStopped(true);
+                if( demarreur != null && stop_parcour != null  ) demarreur.arreter().setButton(stop_parcour);
                 dialog.dismiss();
             }
         });

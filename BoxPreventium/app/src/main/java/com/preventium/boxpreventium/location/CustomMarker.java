@@ -11,7 +11,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.preventium.boxpreventium.R;
-import com.preventium.boxpreventium.gui.MainActivity;
 import com.preventium.boxpreventium.module.Load.LoadImage;
 
 import java.util.ArrayList;
@@ -74,6 +73,7 @@ public class CustomMarker {
     private String title;
     private int type;
     private boolean isDiapo;
+    private float time;
 
     CustomMarker() {
         this.opt = null;
@@ -123,6 +123,14 @@ public class CustomMarker {
         setAlertSignatureReq(data.alertReqSignature);
         setAlertAttachments(data.alertAttachments);
         setEditable(false);
+    }
+
+    public float getTime() {
+        return time;
+    }
+
+    public void setTime(float time) {
+        this.time = time;
     }
 
     public Marker getMarker() {
@@ -295,8 +303,7 @@ public class CustomMarker {
     }
 
     private BitmapDescriptor getMarkerIconFromDrawable(int res) {
-        LoadImage image = new LoadImage(MainActivity.instance());
-        return BitmapDescriptorFactory.fromBitmap(image.drawableToBitmap(res));
+        return BitmapDescriptorFactory.fromBitmap(LoadImage.drawableToBitmap(res));
     }
 
     public int getType() {

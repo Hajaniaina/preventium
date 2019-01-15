@@ -86,6 +86,8 @@ public class MarkerView implements GoogleMap.OnMarkerClickListener {
     /* pour le dialog de marker */
     private Map<String, String> customMarkers = new HashMap<>();
     private Dialog dialog;
+    private PDFView pdfView;
+    private ZoomageView image;
     public void setDialogMarker (CustomMarker customMarker) {
         if( dialog != null && dialog.isShowing() ) return;
 
@@ -122,9 +124,8 @@ public class MarkerView implements GoogleMap.OnMarkerClickListener {
         if( !is_pdf  ) {
             dialog.setContentView(R.layout.dialog_marker_image);
 
-            ZoomageView image = (ZoomageView) dialog.findViewById(R.id.image_marker);
-            LoadImage loadImage = new LoadImage(context);
-            Bitmap bitImage = loadImage.fileToBitmap(file.getAbsolutePath());
+            image = (ZoomageView) dialog.findViewById(R.id.image_marker);
+            Bitmap bitImage = LoadImage.fileToBitmap(file.getAbsolutePath());
             image.setImageBitmap(bitImage);
             // Toast.makeText(context, "dialog image, ce qui veut dire que l'image existe", Toast.LENGTH_LONG).show();
         } else {
@@ -132,7 +133,7 @@ public class MarkerView implements GoogleMap.OnMarkerClickListener {
 
             final String pdf_dir = dialog.getContext().getFilesDir() + "/marker";
 
-            PDFView pdfView = (PDFView) dialog.findViewById(R.id.pdfView);
+            pdfView = (PDFView) dialog.findViewById(R.id.pdfView);
             ScrollBar scrollBar = (ScrollBar) dialog.findViewById(R.id.scrollBar);
             scrollBar.setHorizontal(false);
             pdfView.setScrollBar(scrollBar);
@@ -156,6 +157,10 @@ public class MarkerView implements GoogleMap.OnMarkerClickListener {
         close.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if( pdfView != null ) {
+                    pdfView.recycle();
+                    pdfView = null;
+                }
                 dialog.dismiss();
             }
         });

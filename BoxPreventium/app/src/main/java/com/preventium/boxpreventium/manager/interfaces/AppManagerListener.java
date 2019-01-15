@@ -52,8 +52,6 @@ public interface AppManagerListener {
 
     void onStatusChanged(STATUS_t sTATUS_t);
 
-    void onStatutChanged(STATUS_t sTATUS_t);
-
     void onUiTimeout(int i, STATUS_t sTATUS_t);
 
     void onLastAlertData();

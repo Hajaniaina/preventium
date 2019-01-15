@@ -14,33 +14,39 @@ import org.json.JSONObject;
  */
 
 public class CustomMarkerManager {
-    // https://test.preventium.fr
     private Context context;
-    private String server;
-    private MarkerData[] markerData;
     private DatasMarker dataMarker;
 
     public CustomMarkerManager (Context context) {
         this.context = context;
         this.dataMarker = new DatasMarker(context);
-        server = ComonUtils.getCFG(context).getServerUrl();
     }
 
     // on obtient le json data ppour marqeur
     public void getMarker () {
         // show marker
-        dataMarker.showMarker();
+        // dataMarker.showMarker();
         // on l'execute
-        new getMarker().execute();
+        new getMarker(this.context.getApplicationContext(), dataMarker).execute();
     }
 
     // adding to bdd
-    class getMarker extends AsyncTask<String, Void, Boolean> {
+    static class getMarker extends AsyncTask<String, Void, Boolean> {
 
         private ParseJsonData jsonData = new ParseJsonData();
         private String url;
         private boolean error = false;
         private JSONArray array;
+        private Context context;
+        private MarkerData[] markerData;
+        private String server;
+        private DatasMarker dataMarker;
+
+        public getMarker (Context context, DatasMarker dataMarker) {
+            this.context = context;
+            this.server = ComonUtils.getCFG(context).getServerUrl();
+            this.dataMarker = dataMarker;
+        }
 
         @Override
         protected void onPreExecute() {

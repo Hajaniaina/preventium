@@ -91,6 +91,8 @@ public class LoadOption {
                             int opt_triangle = Integer.parseInt(config.optString("triangle"));
                             int opt_timer = Integer.parseInt(config.optString("timer"));
                             int opt_relance = Integer.parseInt(config.optString("relance"));
+                            int opt_fin_journee = Integer.parseInt(config.optString("fin_journee"));
+                            int opt_zone = Integer.parseInt(config.optString("zone"));
 
                             local.setValue("options_fonc", true);
                             local.setValue("qrcode", opt_qrcode_web);
@@ -112,10 +114,12 @@ public class LoadOption {
                             local.setValue("relance", opt_relance);
                             local.setValue("workTime", 8);
                             local.setValue("formateur", ComonUtils.is_tablet(context) ? 1 : 0);
+                            local.setValue("fin_journee", opt_fin_journee);
+                            local.setValue("zone", opt_zone);
                             local.apply();
 
                             // leurre active
-                            new HandlerBox(context).set_active_from_serveur(opt_leurre);
+                            HandlerBox.set_active_from_serveur(context, opt_leurre);
 
                             return true;
                         } catch (JSONException e) {

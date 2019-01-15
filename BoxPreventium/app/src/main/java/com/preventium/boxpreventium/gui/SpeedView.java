@@ -140,7 +140,7 @@ public class SpeedView implements Parcelable {
             // hide(false);
         }
 
-        Toast.makeText(MainActivity.instance(), "Vitesse unconnu" + String.valueOf(speedId), Toast.LENGTH_LONG);
+        Toast.makeText(PreventiumApplication.getContext(), "Vitesse unconnu" + String.valueOf(speedId), Toast.LENGTH_LONG);
 
         switch (speedId) {
 

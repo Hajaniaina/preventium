@@ -72,6 +72,11 @@ public final class Chrono{
 
     public double getMinutes() { return getMilliseconds() / 60000.0; }
 
+    public static double getMinutes(float time1, float time2) {
+        float time = time2 - time1;
+        return time / 60000.0;
+    }
+
     public double getHours() { return getMilliseconds() / 3600000.0; }
 
     public String getDurationTxt() { return timeToHMS( (long)getSeconds() ); }

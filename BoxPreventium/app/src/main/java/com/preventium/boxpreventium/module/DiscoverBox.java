@@ -9,6 +9,7 @@ import android.util.Log;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.BluetoothScanner;
 import com.preventium.boxpreventium.utils.superclass.bluetooth.device.BluetoothReceiver;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -35,7 +36,7 @@ public class DiscoverBox implements BluetoothReceiver.BluetoothCallback {
     private ArrayList<Integer> mBluetoothRssi = null;
     private DiscoverBoxNotify notify = null;
     private IntentFilter filter;
-    private Context context;
+    private WeakReference<Context> context;
 
 
     public void ScanIntent () {
@@ -43,14 +44,15 @@ public class DiscoverBox implements BluetoothReceiver.BluetoothCallback {
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-        this.context.registerReceiver(bluetoothReceiver, filter);
+        if( context.get() != null )
+            context.get().registerReceiver(bluetoothReceiver, filter);
         receiverActive = true;
     }
 
     public DiscoverBox(Context ctx, DiscoverBoxNotify notify ){
         this.notify = notify;
         // this.scanner = new BluetoothScanner(ctx,this);
-        this.context = ctx;
+        this.context = new WeakReference<Context>(ctx);
         this.mBluetoothDevices = new ArrayList<>();
         this.mBluetoothRssi = new ArrayList<>();
         bluetoothReceiver = new BluetoothReceiver(this);
@@ -137,7 +139,7 @@ public class DiscoverBox implements BluetoothReceiver.BluetoothCallback {
             // Toast.makeText(this.context, "Box accepté: " + name, Toast.LENGTH_LONG).show();
 
             if( name != null ) {
-                if( !name.startsWith("Preventium") ) {
+                if( !name.startsWith("Preventium") || "Preventium" == name ) {
                     if( DEBUG ) Log.d(TAG, String.format( Locale.getDefault(), "Ignore device \"%s\" [%s] (%d).", name, device.getAddress(), rssi));
                 } else {
                     if( mBluetoothDevices.contains(device) ) {
@@ -171,5 +173,4 @@ public class DiscoverBox implements BluetoothReceiver.BluetoothCallback {
     public void onLocationServiceIsDisable() {
         Log.w(TAG,"Location service is disable!");
     }
-
 }

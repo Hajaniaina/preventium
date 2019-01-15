@@ -71,6 +71,7 @@ public class MarkerManager {
                     float rayon = customMarker.getAlertRadius() > 0.0 ? customMarker.getAlertRadius() : 1000.0f;
                     if (results[0] < rayon) {
                         customMarker.setAsNear(true);
+                        customMarker.setTime(System.currentTimeMillis());
                     } else {
                         customMarker.setAsNear(false);
                     }

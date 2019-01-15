@@ -131,6 +131,7 @@ public class DatasMarker {
             /* si existe et date différent donc maj*/
             MarkerData marker4 = marker3.size() > 0 ? marker3.get(0) : new MarkerData();
             if (marker4.COLUMN_MARKER_ID != 0 && marker4.COLUMN_MARKER_DATE != mark.COLUMN_MARKER_DATE) {
+                contentValues.remove(COLUMN_MARKER_ID); // on update remove ID
                 db.update(TABLE_MARKER, contentValues, COLUMN_MARKER_LAT + " = " + mark.COLUMN_MARKER_LAT + " AND " +
                         COLUMN_MARKER_LONG + " = " + mark.COLUMN_MARKER_LONG, null);
                 Log.v(TAG, "Update marqueur !!");
@@ -158,7 +159,7 @@ public class DatasMarker {
                 COLUMN_MARKER_LONG + " = " + lng;
         Cursor cursor =  db.rawQuery( request, null );
         if( cursor != null  && cursor.moveToFirst() ) {
-            while ( !cursor.isAfterLast() ) {
+            while ( cursor.moveToNext() ) {
                 MarkerData mark = new MarkerData();
                 mark.COLUMN_MARKER_ID = cursor.getInt(cursor.getColumnIndex(COLUMN_MARKER_ID));
                 mark.COLUMN_MARKER_IMEI = cursor.getString(cursor.getColumnIndex(COLUMN_MARKER_IMEI));
@@ -172,9 +173,6 @@ public class DatasMarker {
                 mark.COLUMN_MARKER_PERIMETRE = cursor.getInt(cursor.getColumnIndex(COLUMN_MARKER_PERIMETRE));
                 mark.COLUMN_MARKER_TITRE = cursor.getString(cursor.getColumnIndex(COLUMN_MARKER_TITRE));
                 marker.add(mark);
-
-                // next
-                cursor.moveToNext();
             }
             cursor.close();
         }
@@ -293,10 +291,13 @@ public class DatasMarker {
                         index++;
                     }else {
                         /// Toast.makeText(context, "Fin d'affichage de marqueur", Toast.LENGTH_LONG).show();
+                        Log.d(TAG, "Marker terminer");
                         this.marker.clear();
                         handler.removeCallbacks(this);
                     }
                 }
+
+                Log.d(TAG, "Indice de marker bdd " + String.valueOf(index));
                 handler.postDelayed(this, 3000); // 3000ms pour verifier
             }
         }
@@ -368,13 +369,6 @@ public class DatasMarker {
             isRunning.set(false);
         }
     }
-
-    // shareAndSend
-    /* public void uploadShare (CustomMarker custom) {
-        SendMarker sendMarker = new SendMarker(context);
-        sendMarker.send(custom);
-    }
-    */
 
     /* sharePos */
     public void sharePos () {

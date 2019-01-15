@@ -8,9 +8,8 @@ import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 
 import com.preventium.boxpreventium.R;
-import com.preventium.boxpreventium.gui.MainActivity;
 
-public class SMSReceiver extends BroadcastReceiver{
+public class SMSReceiver extends BroadcastReceiver {
 
     // SmsManager class is responsible for all SMS related actions
     final SmsManager sms = SmsManager.getDefault();
@@ -29,8 +28,10 @@ public class SMSReceiver extends BroadcastReceiver{
                     String sender = phoneNumber;
                     String message = sms.getDisplayMessageBody();
                     String formattedText = String.format(context.getResources().getString(R.string.sms_message), sender, message);
-                    MainActivity inst = MainActivity.instance();
-                    inst.updateText(formattedText);
+
+                    if (listener != null) {
+                        listener.onTextReceived(formattedText);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -38,4 +39,12 @@ public class SMSReceiver extends BroadcastReceiver{
         }
     }
 
+    private Listener listener;
+    public void setListener(Listener listener) {
+        this.listener = listener;
+    }
+
+    public interface Listener {
+        void onTextReceived(String text);
+    }
 }

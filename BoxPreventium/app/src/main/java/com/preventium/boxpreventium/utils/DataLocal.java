@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import java.lang.ref.WeakReference;
 import java.util.Map;
 
 /**
@@ -15,7 +16,7 @@ public class DataLocal {
     private static DataLocal instance;
 
     private String key;
-    private Context context;
+    private WeakReference<Context> context;
     private SharedPreferences sharedPref;
     private SharedPreferences.Editor editor;
 
@@ -25,8 +26,11 @@ public class DataLocal {
     }
 
     private DataLocal (Context context) {
-        this.context = context;
-        this.sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        this.context = new WeakReference<Context>(context);
+        // weakReference
+        if( this.context.get() != null )
+            this.sharedPref = PreferenceManager.getDefaultSharedPreferences(this.context.get());
+        // editor
         this.editor = sharedPref.edit();
     }
 
@@ -36,7 +40,6 @@ public class DataLocal {
         }
         return _defaultValue;
     }
-
 
     // getting float
     public float getFloat(String key, float _defaultValue) {

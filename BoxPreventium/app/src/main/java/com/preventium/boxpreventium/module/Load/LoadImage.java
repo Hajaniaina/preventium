@@ -6,10 +6,11 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.VectorDrawable;
+import android.support.v4.content.res.ResourcesCompat;
 import android.util.LruCache;
 
 import com.preventium.boxpreventium.gui.MainActivity;
+import com.preventium.boxpreventium.gui.PreventiumApplication;
 
 /**
  * Created by tog on 06/11/2018.
@@ -20,15 +21,6 @@ public class LoadImage {
     // variable
     private Context context;
     private MainActivity main;
-
-    public LoadImage (Context context) {
-        this.context = context;
-        main = getMain(context);
-    }
-
-    private MainActivity getMain(Context context) {
-        return (MainActivity) context;
-    }
 
     public class ImageCache extends LruCache<String, Bitmap> {
 
@@ -45,7 +37,6 @@ public class LoadImage {
         protected void entryRemoved( boolean evicted, String key, Bitmap oldValue, Bitmap newValue ) {
             oldValue.recycle();
         }
-
     }
 
     public static Bitmap drawableToBitmap (Drawable drawable) {
@@ -70,23 +61,12 @@ public class LoadImage {
         return bitmap;
     }
 
-    public Bitmap drawableToBitmap(int res) {
-        Bitmap bitmap = null;
-        try {
-            bitmap = ((BitmapDrawable) context.getResources().getDrawable(res)).getBitmap();
-        }catch(Exception e) {
-            VectorDrawable vector = ((VectorDrawable) context.getResources().getDrawable(res));
-            bitmap = Bitmap.createBitmap(vector.getIntrinsicWidth(), vector.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-            bitmap.setHasAlpha(true);
-            Canvas canvas = new Canvas();
-            canvas.setBitmap(bitmap);
-            vector.setBounds(0, 0, vector.getIntrinsicWidth(), vector.getIntrinsicHeight());
-            vector.draw(canvas);
-        }
-        return bitmap;
+    public static Bitmap drawableToBitmap(int res) {
+        Context context = PreventiumApplication.getContext();
+        return drawableToBitmap(ResourcesCompat.getDrawable(context.getResources(), res, null));
     }
 
-    public Bitmap fileToBitmap(String filepath) {
+    public static Bitmap fileToBitmap(String filepath) {
 
         // check if exist
         Bitmap bitmap = (Bitmap)Cache.getInstance().getLru().get(filepath);
@@ -94,6 +74,8 @@ public class LoadImage {
 
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        options.inSampleSize = 2;
+        options.inJustDecodeBounds = false;
         bitmap = BitmapFactory.decodeFile(filepath, options);
 
         // save it

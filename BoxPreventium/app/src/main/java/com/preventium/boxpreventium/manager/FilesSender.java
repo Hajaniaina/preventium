@@ -82,9 +82,10 @@ public class FilesSender extends ThreadDefault {
             }
             Log.d("AAA","success: " + success );
             // UPDATE LAST SENDING INFO
-            if( success )
-                Log.d(TAG,"update_last_send: " + db.update_last_send( _ctx, last_time_temp ) );
-
+            if( success ) {
+                Log.d(TAG, "update_last_send: " + db.update_last_send(_ctx, last_time_temp));
+                Log.d("ECA", "update_last_send: " + db.update_last_send(_ctx, last_time_temp));
+            }
         }
         // REMOVE ECA FILE
         db.remove_eca_file(_ctx);

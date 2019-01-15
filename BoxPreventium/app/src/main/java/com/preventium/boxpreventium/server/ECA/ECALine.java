@@ -52,6 +52,11 @@ public class ECALine {
         return ret;
     }
 
+    public boolean checkEca ()
+    {
+        return  alertID != -1 && location != null;
+    }
+
     public byte[] toData(){
         byte[] line = new byte[20];
         byte[] b;

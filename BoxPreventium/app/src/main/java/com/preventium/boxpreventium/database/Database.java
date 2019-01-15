@@ -11,7 +11,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.preventium.boxpreventium.gui.MainActivity;
+import com.preventium.boxpreventium.gui.PreventiumApplication;
 import com.preventium.boxpreventium.server.CFG.DataCFG;
 import com.preventium.boxpreventium.server.ECA.ECALine;
 import com.preventium.boxpreventium.utils.ColorCEP;
@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -130,7 +131,7 @@ public class Database {
         Log.w(TAG, "Nombre de ECA au début " + String.valueOf(cursor.getCount()));
 
         long end = startOfDays(System.currentTimeMillis());
-        long begin = end - (5 * 24 * 3600 * 1000);
+        long begin = end - (3 * 24 * 3600 * 1000);
         db.delete(TABLE_ECA,COLUMN_ECA_TIME + " < " + begin,null);
         db.delete(TABLE_CEP,COLUMN_CEP_TIME + " < " + begin,null);
         db.delete(TABLE_DRIVER,COLUMN_DRIVER_TIME + " < " + begin,null);
@@ -286,6 +287,9 @@ public class Database {
                     "SELECT * FROM " + TABLE_ECA +
                             " WHERE " + COLUMN_ECA_TIME + " > " + after_time +
                             " ORDER BY " + COLUMN_ECA_TIME + " ;", null);
+
+            Log.d(TAG, "Nombre d'ECA créer en fichier est " + String.valueOf(cursor.getCount()));
+
             if ( cursor.moveToFirst() ) {
                 ECALine line = null;
                 long parcour_id = cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID));
@@ -296,8 +300,11 @@ public class Database {
                 String filename = String.format(Locale.getDefault(),"%s_%s_%04d.ECA",
                         ComonUtils.getIMEInumber(ctx), Long.toString(parcour_id), cnt );
                 File file = new File(folder.getAbsolutePath(), filename );
+                File fileTxt = new File(folder.getAbsolutePath(), filename + ".txt" );
                 try {
-                    if( file.createNewFile() ){
+                    boolean isECA = file.createNewFile();
+                    boolean isECATxt = fileTxt.createNewFile();
+                    if( isECA ){
                         Log.d(TAG, "FILE CREATE:" + file.getAbsolutePath());
                         OutputStream output
                                 = new BufferedOutputStream(
@@ -307,10 +314,12 @@ public class Database {
                         output.write( epc_num );
                         line = new ECALine();
                         boolean all_points = DataCFG.get_SEND_ALL_GPS_POINTS(ctx);
+                        // toWrite text
+                        PrintWriter writer = new PrintWriter(fileTxt.getAbsolutePath(), "UTF-8");
                         while ( !cursor.isAfterLast() ) {
+                            Log.d(TAG, "IDParcourId BDD" + String.valueOf(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID)) + " : " + String.valueOf(parcour_id));
                             if( parcour_id
-                                    == cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID)) )
-                            {
+                                    == cursor.getLong(cursor.getColumnIndex(COLUMN_ECA_PARCOUR_ID)) ) {
                                 line.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ID));
                                 line.alertID = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_ALERTID));
                                 line.padding = cursor.getInt(cursor.getColumnIndex(COLUMN_ECA_PADDIND));
@@ -324,7 +333,12 @@ public class Database {
                                 line.location.setSpeed(cursor.getFloat(cursor.getColumnIndex(COLUMN_ECA_SPEED)));
                                 ret_time = line.location.getTime();
 
-                                if( all_points || line.alertID != 254 ) output.write( line.toData() );
+                                Log.d(TAG, "ID ECA " + String.valueOf(line.alertID));
+
+                                if (all_points || line.alertID != 254) output.write(line.toData());
+                                Log.d("ECA SEND", line.toString());
+                                writer.println(line.toString());
+
                                 cursor.moveToNext();
                             }
                             else
@@ -332,7 +346,12 @@ public class Database {
                                 break;
                             }
                         }
+
+                        writer.flush();
+
+                        // close
                         output.close();
+                        writer.close();
 
                     } else {
                         Log.w(TAG, "FILE NOT CREATED:" + file.getAbsolutePath());
@@ -355,8 +374,7 @@ public class Database {
         File[] listOfFiles = folder.listFiles();
         if( listOfFiles != null ) {
             for (File file : listOfFiles) {
-                if (file.isFile()) {
-                    //System.out.println(file.getName());
+                if (file.isFile() /* && file.getName().endsWith(".ECA") */ ) {
                     if (!file.delete()) ret = false;
                 }
             }
@@ -760,20 +778,6 @@ Log.d("AAAAA","NB POINTS " + nb);
         contentValues.put("status", Integer.valueOf(connected ? 1 : 0));
         db.insert(DatabaseHelper.TABLE_CEP, null, contentValues);
         DatabaseManager.getInstance().closeDatabase();
-
-        /**
-         * Autre solution qui ne pause pas de problème
-         * prenne seulement de resource mais pas trop
-         * @Arnaud
-        */
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.instance());
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putInt(COLUMN_CEP_DEVICE_A, Integer.valueOf(device_a));
-        editor.putInt(COLUMN_CEP_DEVICE_V, Integer.valueOf(device_v));
-        editor.putInt(COLUMN_CEP_DEVICE_F, Integer.valueOf(device_f));
-        editor.putInt(COLUMN_CEP_DEVICE_M, Integer.valueOf(device_m));
-        editor.apply();
-
         return true;
     }
 
@@ -841,7 +845,7 @@ Log.d("AAAAA","NB POINTS " + nb);
                                 int device_m;
                                 int status;
                                 JSONObject datas;
-                                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(MainActivity.instance());
+                                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(PreventiumApplication.getContext());
                                 while (!cursor.isAfterLast()) {
 
                                     // tableau de donnée

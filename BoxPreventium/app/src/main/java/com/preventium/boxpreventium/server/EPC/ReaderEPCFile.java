@@ -171,7 +171,7 @@ public class ReaderEPCFile {
         ForceSeuil ret = null;
         if( XmG >= 0.0 ) {
             for( int s = 0; s < 5; s++ ) {
-                if( XmG >= seuil[s].mG_low && XmG <= seuil[s].mG_high ) {
+                if( XmG >= seuil[s].mG_low && XmG <= seuil[s].mG_high ) { // soit XmG = 10, MG_low = 8, MG_high = 15, on prend le seuil(force)
                     ret = seuil[s];
                     break;
                 }

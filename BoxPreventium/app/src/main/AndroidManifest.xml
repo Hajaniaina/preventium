@@ -257,12 +257,12 @@
             android:name="com.devs.acr.ErrorReporterActivity"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Dialog" />
-
+        <!--
         <receiver android:name=".receiver.SMSReceiver">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
-        </receiver>
+        </receiver> -->
         <receiver android:name=".widget.AppWidget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -273,6 +273,7 @@
                 android:resource="@xml/app_widget_info" />
         </receiver>
         <service android:name=".widget.service.WidgetAppService" />
+        <service android:name=".manager.services.ServiceManager" />
     </application>
 
 </manifest>

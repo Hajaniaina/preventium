@@ -15,6 +15,7 @@ import android.util.Pair;
 
 import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.database.Database;
+import com.preventium.boxpreventium.database.DatabaseHelper;
 import com.preventium.boxpreventium.enums.ENGINE_t;
 import com.preventium.boxpreventium.enums.FORCE_t;
 import com.preventium.boxpreventium.enums.LEVEL_t;
@@ -27,6 +28,7 @@ import com.preventium.boxpreventium.location.CustomMarkerData;
 import com.preventium.boxpreventium.location.CustomMarkerManager;
 import com.preventium.boxpreventium.location.DatasMarker;
 import com.preventium.boxpreventium.manager.interfaces.AppManagerListener;
+import com.preventium.boxpreventium.module.Demarreur;
 import com.preventium.boxpreventium.module.HandlerBox;
 import com.preventium.boxpreventium.module.HandlerBox.NotifyListener;
 import com.preventium.boxpreventium.module.Load.Load;
@@ -66,9 +68,9 @@ import java.util.Locale;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class AppManager extends ThreadDefault implements NotifyListener {
+public class AppManager extends ThreadDefault implements NotifyListener, Demarreur.DemarreurListener {
 
-    // private static final String HOSTNAME = "www.preventium.fr";
+    private static AppManager instance = null;
     private final static boolean DEBUG = true;
     private static final float MS_TO_KMH = 3.6f;
     private static final int PORTNUM = 21;
@@ -130,9 +132,35 @@ public class AppManager extends ThreadDefault implements NotifyListener {
     private Chrono pChrono;
     private boolean quit = false;
 
+    private boolean demarrer_t = false;
+    private boolean demarrer_last_t = false;
+
+    public static synchronized AppManager getInstance() {
+        return instance;
+    }
+
     // reference
     private WeakReference<Context> weakReference;
     private WeakReference<AppManagerListener> listenerWeakReference;
+
+    @Override
+    public void onDemarrer() {
+        this.mov_t_last = MOVING_t.UNKNOW; // à modifier
+        this.engine_t = ENGINE_t.ON; // à modifier
+        this.demarrer_t = true;
+        this.demarrer_last_t = true;
+    }
+
+    @Override
+    public void onArreter() {
+        /*
+        this.mov_t_last = MOVING_t.STP; // à modifier
+        this.engine_t = ENGINE_t.OFF; // à modifier
+        this.status = STATUS_t.PAR_STOPPED;
+        */
+
+        // this.demarrer_t = false;
+    }
 
     private static class C01051 implements Runnable {
         AppManager app;
@@ -144,8 +172,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             this.app.run();
         }
     }
-
-
 
     private static class C01084 implements FilenameFilter {
         C01084() {
@@ -176,13 +202,17 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         this.stress.start();
         this.chrono_cep = Chrono.newInstance();
         this.chrono_cep.start();
+
+        // this
+        instance = this;
     }
 
     private void switchON(boolean on) {
         if (!on) {
             setStop();
-        } else if (!isRunning()) {
+        } else if ( !isRunning() ) {
             new Thread(new C01051(this)).start();
+            // getContent();
         }
     }
 
@@ -192,7 +222,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         }
     }
 
-    private int  note_to_score(float note) {
+    private int note_to_score(float note) {
         int score = 5;
         if (note >= 16.0f) {
             return 1;
@@ -256,97 +286,113 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         pChrono.start();
 
         while(isRunning()) {
-            // horodatage actuel
-            AppManagerListener _listener = listenerWeakReference.get();
-            if (Build.VERSION_CODES.M == Build.VERSION.SDK_INT) {
-                int relance = local.getInt("relance", 30);
-                relance = relance == 0 ? 30 : relance;
-                if (_listener != null && chrono.getMinutes() >= relance && !isRestart) { // >= relance mn
-                    chrono.stop();
-                    isRestart = true;
-                    _listener.checkRestart();
-                }
-            }
 
-            // 10mn sont écoulé on check
-            if (pChrono.getMinutes() >= 10){
-                load.onUpdate(); // update
-                pChrono.stop();
-                pChrono.start();
-            }
-
-            // l'app est bloqué
-            if( load.isBlocked() ) {
-                status = STATUS_t.PAR_STOPPED;
-                if( _listener != null ) {
-                    _listener.onStatusChanged(STATUS_t.CHECK_ACTIF); // et on bloque toujours
-                }
-            }
-
-            // test de connexion tout le temps
-            check_internet_is_active();
-            // savoir le tracking de parcours est actif
-            update_tracking_status();
-            // detection BM ou/et Leurre
-            modules.setActive(DEBUG);
-
-            // efface les donnée eca 5jrs avant
-            database.clear_obselete_data();
-
-            sleep(500);
-            // envoie des eca tout les 1mn
-            upload_eca(false);
-            // maj du temps de conduite
-            update_driving_time();
-            // calcul si un mouvement est déclenché
-            calc_movements();
-
-            // MainActivity.instance().Alert(status.toString(), Toast.LENGTH_SHORT);
-            if (button_stop) {
-                status = STATUS_t.PAR_PAUSING;
-            }
-
-            // send cep in 30mn
-            if (chrono_cep.getMinutes() >= 30) {
-                // send cep
-                upload_cep();
-                // stop and start again
-                chrono_cep.stop();
-                chrono_cep.start();
-            }
-
-            switch (status) {
-                case GETTING_CFG:
-                case GETTING_EPC:
-                case GETTING_DOBJ:
-                    break;
-                case PAR_STOPPED:
-                    try {
-                        status = on_stopped();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    break;
-                case PAR_STARTED:
-                case PAR_RESUME:
-                    status = on_moved(status);
-                    initWorkTime();
-                    break;
-                case PAR_PAUSING:
-                case PAR_PAUSING_WITH_STOP:
-                    try {
-                        status = on_paused(status);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    break;
-            }
-            listen_timers(status);
-            button_start = false;
+             sleep(800);
+            // content
+            getContent();
         }
 
-        this.modules.setActive(false);
-        Looper.loop();
+        // this.modules.setActive(false);
+        // Looper.loop();
+
+        isReady = true;
+    }
+
+    private boolean isReady = false;
+    public boolean isReady() {
+        return isReady;
+    }
+
+    public void getContent ()
+    {
+        // horodatage actuel
+        AppManagerListener _listener = listenerWeakReference.get();
+        if (Build.VERSION_CODES.M == Build.VERSION.SDK_INT) {
+            int relance = local.getInt("relance", 30);
+            relance = relance == 0 ? 30 : relance;
+            if (_listener != null && chrono.getMinutes() >= relance && !isRestart) { // >= relance mn
+                chrono.stop();
+                isRestart = true;
+                _listener.checkRestart();
+            }
+        }
+
+        // 10mn sont écoulé on check
+        if (pChrono.getMinutes() >= 10){
+            load.onUpdate(); // update
+            pChrono.stop();
+            pChrono.start();
+        }
+
+        // l'app est bloqué
+        if( load.isBlocked() ) {
+            status = STATUS_t.PAR_STOPPED;
+            if( _listener != null ) {
+                _listener.onStatusChanged(STATUS_t.CHECK_ACTIF); // et on bloque toujours
+            }
+        }
+
+        // test de connexion tout le temps
+        check_internet_is_active();
+        // savoir le tracking de parcours est actif
+        update_tracking_status();
+        // detection BM ou/et Leurre
+        modules.setActive(DEBUG);
+
+        // efface les donnée eca 5jrs avant
+        database.clear_obselete_data();
+
+        // envoie des eca tout les 1mn
+        upload_eca(false);
+        // maj du temps de conduite
+        update_driving_time();
+        // calcul si un mouvement est déclenché
+        calc_movements();
+
+        // MainActivity.instance().Alert(status.toString(), Toast.LENGTH_SHORT);
+        if (button_stop) {
+            status = STATUS_t.PAR_PAUSING;
+        }
+
+        // send cep in 30mn
+        if (chrono_cep.getMinutes() >= 30) {
+            // send cep
+            upload_cep();
+            // stop and start again
+            chrono_cep.stop();
+            chrono_cep.start();
+        }
+
+        if( this.demarrer_t ) this.engine_t = ENGINE_t.ON;
+
+        switch (status) {
+            case GETTING_CFG:
+            case GETTING_EPC:
+            case GETTING_DOBJ:
+                break;
+            case PAR_STOPPED:
+                try {
+                    status = on_stopped();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case PAR_STARTED:
+            case PAR_RESUME:
+                status = on_moved(status);
+                initWorkTime();
+                break;
+            case PAR_PAUSING:
+            case PAR_PAUSING_WITH_STOP:
+                try {
+                    status = on_paused(status);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+        }
+        listen_timers(status);
+        button_start = false;
     }
 
     public boolean is_timer() {
@@ -403,6 +449,14 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             Database database = this.database;
             ColorCEP color = ColorCEP.getInstance();
             this.database.addCEP(location, device_mac, note, vitesse_ld, vitesse_vr, distance_covered, parcour_duration, Database.get_eca_counter(context, this.parcour_id), nbBox, color.getA(), color.getV(), color.getF(), color.getM(), connected);
+
+            // pour triangle
+            DataLocal local = DataLocal.get(context.getApplicationContext());
+            local.setValue(DatabaseHelper.COLUMN_CEP_DEVICE_A + "_triangle", color.getA());
+            local.setValue(DatabaseHelper.COLUMN_CEP_DEVICE_V + "_triangle", color.getV());
+            local.setValue(DatabaseHelper.COLUMN_CEP_DEVICE_F + "_triangle", color.getF());
+            local.setValue(DatabaseHelper.COLUMN_CEP_DEVICE_M + "_triangle", color.getM());
+            local.apply();
         }
     }
 
@@ -1022,7 +1076,9 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             if (this.parcour_id > 0) {
                 this.database.create_cep_file(this.parcour_id);
             }
+
             // UPLOAD .CEP FILES
+            Log.d(TAG, "Uploading CEP");
             new UploadCEP(context, listener).setQuite(quit);
         }
     }
@@ -1353,13 +1409,13 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         if( list != null && list.size() >= 3 )
         {
             // check if the road is straight and get speed values
-            int i = list.size()-1;
+            int i = list.size()-1; // 2
             rightRoad = isRightRoad( list.get(i-2), list.get(i-1), list.get(i) );
             float v[] = { list.get(i-2).getSpeed() , list.get(i-1).getSpeed() , list.get(i).getSpeed() };
 
             // Calculate median of the speed values
             float V_median_next = median(v);
-            long T_median_next = list.get(i-2).getTime();
+            long T_median_next = list.get(i-2).getTime(); // 0
             // Calculate acceleration
             acceleration = V_median_next - V_median;
             // Calculate force longitudinal
@@ -1381,6 +1437,15 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         else if (acceleration > 0f ) mov_t = MOVING_t.ACC;
         else if (acceleration < 0f) mov_t = MOVING_t.BRK;
         else mov_t = MOVING_t.NCS;
+
+        // only first touch
+        if( demarrer_last_t && mov_t == MOVING_t.STP ) {
+            mov_t = MOVING_t.UNKNOW;
+            demarrer_last_t = false;
+        }
+        else if( mov_t == MOVING_t.ACC || mov_t == MOVING_t.BRK || mov_t == MOVING_t.CST || mov_t == MOVING_t.NCS ) {
+            demarrer_last_t = true;
+        }
 
         // Set move chrono and calibration if necessary
         if ( mov_t != mov_t_last )
@@ -1479,7 +1544,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             }
         }
     }
-    private ForceSeuil get_longitudial_seuil( long tab[] ){
+    private ForceSeuil get_longitudial_seuil( long tab[] ){ // { 0,0,0,0,0,0,0,0,0,0 };
         ForceSeuil ret = null;
         // 0 to 4: LEVEL_1 to LEVEL_5 for A
         // 5 to 9: LEVEL_1 to LEVEL_5 for F
@@ -1566,7 +1631,6 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         long ST = System.currentTimeMillis();
         Location loc = get_last_location();
         boolean pass = false;
-        // boolean _stress = this.stress.getMinutes() >= 9; // n'affiche les evalueation que touts les 10 minutes
 
         ForceSeuil seuil_x = readerEPCFile.getForceSeuilForX(XmG);
         ForceSeuil seuil_y = readerEPCFile.getForceSeuilForY(smooth.first);
@@ -1589,7 +1653,14 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             // Update start at for all alerts
             update_longitudinal_elapsed(longitudinal_elapsed, type_X, level_X, XmG_elapsed);
             // Gettings alerts
-            seuil_x = get_longitudial_seuil(longitudinal_elapsed);
+            /* le temps de déclenchement cause un anomalie lors de rendu et envoye de donnée
+            * donc j'ai pris la décision de comparer s'il y a de différence entre le calcul des force et les force obtenu lors des temps de déclenchement
+            * si la différence donne une rouge on renvoye la force reçu du premier
+            * */
+            ForceSeuil seuil_x_1 = get_longitudial_seuil(longitudinal_elapsed);
+            if( seuil_x != null && seuil_x_1 != null ) {
+                seuil_x = seuil_x_1.level != seuil_x.level && seuil_x_1.level == LEVEL_t.LEVEL_5 ? null : seuil_x_1; // pourquoi null ? parceque le temps de déclenchement ne coïncide pas
+            }
 
             // ADD ECA? ( location with X alert )
             boolean add_eca = false;
@@ -1959,7 +2030,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 Log.d(TAG, "Parcours " + this.parcour_id + " note M: " + Note_M);
 
                 StatsLastDriving.set_speed_avg(context, this.database.speed_avg(this.parcour_id, System.currentTimeMillis(), 0.0f, new int[0]));
-                if (listener != null && this.stress.getMinutes() >= 10) {
+                if (listener != null && this.stress.getMinutes() >= 10) { // que 10mn de parcours
                     listener.onScoreChanged(SCORE_t.ACCELERATING, level_A);
                     listener.onScoreChanged(SCORE_t.BRAKING, level_F);
                     listener.onScoreChanged(SCORE_t.CORNERING, level_V);
@@ -2169,14 +2240,35 @@ public class AppManager extends ThreadDefault implements NotifyListener {
         update_parcour_note(DEBUG);
         update_force_note(DEBUG);
         update_recommended_speed(DEBUG);
+
         // upload_cep();
-        this.database.addECA(this.parcour_id, ECALine.newInstance(255, get_last_location(), null));
+        boolean forced = this.button_stop && local.getInt("fin_journee", 0) == 1;
+        if( forced && context != null ) {
+            Location location = get_last_location();
+            this.database.addECA(this.parcour_id, ECALine.newInstance(100, location, null));
+            this.database.update_last_send(context, location.getTime()); // update last time sender
+        }
+        else
+            this.database.addECA(this.parcour_id, ECALine.newInstance(255, get_last_location(), null));
+
         if( context != null )
             StatsLastDriving.set_distance(context, this.database.get_distance(this.parcour_id));
         clear_force_ui();
 
         // à connaitre, car pas evident en 2 fois
         // ceci est vide
+        if( forced ) {
+            Log.d("Database", "ECA force send");
+            try { // on attend un laps de temps pour envoyé l'eca
+                sleep(300);
+            }catch(InterruptedException e){
+                e.printStackTrace();
+            }
+
+            upload_eca(DEBUG);
+            // this.database.close_last_parcour();
+        }
+
         upload_cep();
         upload_shared_pos();
         upload_parcours_type();
@@ -2216,6 +2308,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             ready_to_started = false;
         }
 
+        if( demarrer_last_t  && demarrer_t ) ready_to_started = true;
+
         Log.v("Ready Started" , String.valueOf(ready_to_started));
 
         // ready_to_started = true;
@@ -2225,7 +2319,8 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             if (!this.chrono_ready_to_start.isStarted()) {
                 this.chrono_ready_to_start.start();
             }
-            if (this.chrono_ready_to_start.getSeconds() > 3.0d) {
+            boolean is_start = this.chrono_ready_to_start.getSeconds() > 3.0d || this.demarrer_t;
+            if ( is_start ) {
                 this.button_stop = false;
                 this.note_parcour_update_at = 0;
                 this.note_forces_update_at = 0;
@@ -2236,6 +2331,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
                 this.recommended_speed_update_at = 0;
                 if (init_parcours_id()) {
                     ret = STATUS_t.PAR_STARTED;
+                    this.demarrer_t = true;
                     AppManagerListener listener = listenerWeakReference.get();
                     if (listener != null) {
                         listener.onForceChanged(FORCE_t.UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0.0d, 0.0f, 0.0f);
@@ -2273,6 +2369,7 @@ public class AppManager extends ThreadDefault implements NotifyListener {
             if (listener != null) {
                 listener.onStatusChanged(ret);
             }
+            this.demarrer_t = false;
             addLog("Status change to STOP. (" + ComonUtils.currentDateTime() + ")");
         } else if (this.mov_t_last != MOVING_t.STP && this.mov_t_last_chrono.getSeconds() > 3.0d && this.engine_t == ENGINE_t.ON) {
             ret = STATUS_t.PAR_RESUME;

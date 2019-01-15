@@ -13,10 +13,10 @@ android {
     buildToolsVersion '26.0.2'
     defaultConfig {
         applicationId "com.preventium.boxpreventium"
-        minSdkVersion 22
+        minSdkVersion 23
         targetSdkVersion 26
-        versionCode 14
-        versionName "3.4.9"
+        versionCode 15
+        versionName "3.4.21"
         multiDexEnabled true
     }
     buildTypes {
@@ -33,11 +33,11 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.android.support:design:25.3.1'
+    compile 'com.android.support:support-v4:23.3.0'
+    compile 'com.android.support:appcompat-v7:23.3.0'
+    compile 'com.android.support:design:23.3.0'
     compile 'commons-net:commons-net:3.5'
     compile 'com.google.android.gms:play-services:10.2.1'
-    compile 'com.android.support:support-v4:25.3.1'
     compile 'com.github.clans:fab:1.6.4'
     compile 'com.github.PhilJay:MPAndroidChart:v3.0.0-beta1'
     compile 'com.github.jakob-grabner:Circle-Progress-View:v1.2.9.1'
@@ -53,7 +53,7 @@ dependencies {
     compile 'in.arjsna:passcodeview:1.2.1'
     compile 'com.google.code.gson:gson:2.2.+'
     compile 'com.google.firebase:firebase-config:11.8.0'
-    compile 'com.android.support:mediarouter-v7:25.4.0'
+    compile 'com.android.support:mediarouter-v7:23.3.0'
     compile 'com.google.firebase:firebase-core:11.8.0'
     compile 'com.google.firebase:firebase-crash:11.8.0'
     compile 'com.google.firebase:firebase-database:11.8.0'
@@ -69,6 +69,9 @@ dependencies {
     compile 'com.loopj.android:android-async-http:1.4.9'
     compile 'com.squareup.okhttp3:okhttp:3.3.1'
     compile 'com.nbsp:library:1.09'
+
+    // debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5.2'
+    // releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.2'
 
     // compile 'com.synnapps:carouselview:0.1.5'
     // implementation 'com.github.GoodieBag:CarouselPicker:v1.1'

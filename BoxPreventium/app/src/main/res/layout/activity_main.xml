@@ -82,7 +82,7 @@
         <!-- SCORE WIDGETS -->
         <LinearLayout
             android:id="@+id/score_layout"
-            android:layout_width="@dimen/score_layout_width"
+            android:layout_width="69dp"
             android:layout_height="wrap_content"
             android:layout_gravity="top|start"
             android:layout_marginStart="@dimen/score_layout_margin_start"
@@ -525,7 +525,7 @@
                         android:gravity="center"
                         android:scaleX="@dimen/float_button_scaleX"
                         android:scaleY="@dimen/float_button_scaleY"
-                        android:src="@drawable/ic_stop_black_24dp"
+                        android:src="@drawable/ic_play"
                         fab:fab_colorNormal="@color/colorAppGrey"
                         fab:fab_colorPressed="@color/colorAppRed"
                         fab:fab_colorRipple="#ffee58"
@@ -534,6 +534,7 @@
                         fab:fab_size="@dimen/fb_button_size" />
                 </LinearLayout>
                 <LinearLayout
+                    android:id="@+id/opt_menu_layout"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:orientation="vertical"

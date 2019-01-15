@@ -2,6 +2,7 @@ package com.preventium.boxpreventium.module.Load;
 
 import android.app.Activity;
 import android.content.Context;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -41,6 +42,11 @@ public class LoadFormateur {
                 layout_bottom.setVisibility(View.GONE);
             else
                 layout_bottom.setVisibility(View.VISIBLE);
+
+            if( is_formateur ) {
+                LinearLayout opt_menu = activity.findViewById(R.id.opt_menu_layout);
+                opt_menu.setGravity(Gravity.CENTER);
+            }
 
             Button close = activity.findViewById(R.id.button_quit);
             close.setOnClickListener(new View.OnClickListener() {

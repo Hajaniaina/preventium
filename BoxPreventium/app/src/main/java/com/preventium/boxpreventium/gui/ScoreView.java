@@ -14,6 +14,7 @@ import com.preventium.boxpreventium.R;
 import com.preventium.boxpreventium.enums.LEVEL_t;
 import com.preventium.boxpreventium.enums.SCORE_t;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 
 public class ScoreView implements Parcelable {
@@ -22,150 +23,132 @@ public class ScoreView implements Parcelable {
 
     private AppColor appColor;
     private boolean visible = true;
-    private HashMap<SCORE_t, TextView> viewMap;
     private HashMap<SCORE_t, LEVEL_t> levelMap;
 
+    private WeakReference<Activity> activityWeakReference;
+
     ScoreView (Activity activity) {
+        activityWeakReference = new WeakReference<Activity>(activity);
+        initialize();
+    }
 
-        appColor = new AppColor(activity.getApplicationContext());
+    public void initialize()
+    {
+        Activity activity = activityWeakReference.get();
+        if( activity != null ) {
+            appColor = new AppColor( PreventiumApplication.getContext() );
+            levelMap = new HashMap<>();
 
-        viewMap = new HashMap<>();
-        levelMap = new HashMap<>();
+            final Context context = activity.getApplicationContext();
+            final TextView driverScoreView = getById(SCORE_t.FINAL);
+            if( driverScoreView != null ) {
+                driverScoreView.setOnClickListener(new View.OnClickListener() {
 
-        final Context context = activity.getApplicationContext();
-        final TextView driverScoreView = (TextView) activity.findViewById(R.id.driving_score_view);
+                    @Override
+                    public void onClick(View v) {
 
-        driverScoreView.setOnClickListener(new View.OnClickListener() {
+                        String text = context.getString(R.string.driver_score_tooltip_string);
 
-            @Override
-            public void onClick(View v) {
-
-                String text = context.getString(R.string.driver_score_tooltip_string);
-
-                ViewTooltip.on(driverScoreView)
-                        .autoHide(true, 5000)
-                        .corner(10)
-                        .position(ViewTooltip.Position.LEFT)
-                        .text(text)
-                        .show();
+                        ViewTooltip.on(driverScoreView)
+                                .autoHide(true, 5000)
+                                .corner(10)
+                                .position(ViewTooltip.Position.LEFT)
+                                .text(text)
+                                .show();
+                    }
+                });
             }
-        });
 
-        viewMap.put(SCORE_t.CORNERING, ((TextView) activity.findViewById(R.id.corner_note_view)));
-        viewMap.put(SCORE_t.BRAKING, ((TextView) activity.findViewById(R.id.brake_note_view)));
-        viewMap.put(SCORE_t.ACCELERATING,((TextView) activity.findViewById(R.id.acc_note_view)));
-        viewMap.put(SCORE_t.AVERAGE, ((TextView) activity.findViewById(R.id.avg_note_view)));
-        viewMap.put(SCORE_t.FINAL, driverScoreView);
+            levelMap.put(SCORE_t.CORNERING, null);
+            levelMap.put(SCORE_t.BRAKING, null);
+            levelMap.put(SCORE_t.ACCELERATING, null);
+            levelMap.put(SCORE_t.AVERAGE, null);
+            levelMap.put(SCORE_t.FINAL, null);
 
-        levelMap.put(SCORE_t.CORNERING, null);
-        levelMap.put(SCORE_t.BRAKING, null);
-        levelMap.put(SCORE_t.ACCELERATING, null);
-        levelMap.put(SCORE_t.AVERAGE, null);
-        levelMap.put(SCORE_t.FINAL, null);
-
-        setScore(SCORE_t.CORNERING, LEVEL_t.LEVEL_UNKNOW);
-        setScore(SCORE_t.BRAKING, LEVEL_t.LEVEL_UNKNOW);
-        setScore(SCORE_t.ACCELERATING, LEVEL_t.LEVEL_UNKNOW);
-        setScore(SCORE_t.AVERAGE, LEVEL_t.LEVEL_UNKNOW);
-        setFinalScore(LEVEL_t.LEVEL_UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0);
+            setScore(SCORE_t.CORNERING, LEVEL_t.LEVEL_UNKNOW);
+            setScore(SCORE_t.BRAKING, LEVEL_t.LEVEL_UNKNOW);
+            setScore(SCORE_t.ACCELERATING, LEVEL_t.LEVEL_UNKNOW);
+            setScore(SCORE_t.AVERAGE, LEVEL_t.LEVEL_UNKNOW);
+            setFinalScore(LEVEL_t.LEVEL_UNKNOW, LEVEL_t.LEVEL_UNKNOW, 0);
+        }
     }
 
     protected ScoreView (Parcel in) {
-
         visible = in.readByte() != 0;
         levelMap = (HashMap<SCORE_t, LEVEL_t>) in.readSerializable();
     }
 
-    public void restore (Activity activity) {
-
-        appColor = new AppColor(activity);
-        viewMap = new HashMap<>();
-        levelMap = new HashMap<>();
-
-        viewMap.put(SCORE_t.CORNERING, ((TextView) activity.findViewById(R.id.corner_note_view)));
-        viewMap.put(SCORE_t.BRAKING, ((TextView) activity.findViewById(R.id.brake_note_view)));
-        viewMap.put(SCORE_t.ACCELERATING, ((TextView) activity.findViewById(R.id.acc_note_view)));
-        viewMap.put(SCORE_t.AVERAGE, ((TextView) activity.findViewById(R.id.avg_note_view)));
-        viewMap.put(SCORE_t.FINAL, ((TextView) activity.findViewById(R.id.driving_score_view)));
-
-        setScore(SCORE_t.CORNERING, levelMap.get(SCORE_t.CORNERING));
-        setScore(SCORE_t.BRAKING, levelMap.get(SCORE_t.BRAKING));
-        setScore(SCORE_t.ACCELERATING, levelMap.get(SCORE_t.ACCELERATING));
-        setScore(SCORE_t.AVERAGE, levelMap.get(SCORE_t.AVERAGE));
-        setFinalScore(levelMap.get(SCORE_t.FINAL), LEVEL_t.LEVEL_UNKNOW, 0);
-
-        if (visible) {
-
-            hide(false);
+    protected TextView getById(SCORE_t id) {
+        Activity activity = activityWeakReference.get();
+        if( activity != null )
+        {
+            if( id == SCORE_t.CORNERING )
+                return ((TextView) activity.findViewById(R.id.corner_note_view));
+            if( id == SCORE_t.BRAKING )
+                return ((TextView) activity.findViewById(R.id.brake_note_view));
+            if( id == SCORE_t.ACCELERATING )
+                return ((TextView) activity.findViewById(R.id.acc_note_view));
+            if( id == SCORE_t.AVERAGE )
+                return ((TextView) activity.findViewById(R.id.avg_note_view));
+            if( id == SCORE_t.FINAL )
+                return ((TextView) activity.findViewById(R.id.driving_score_view));
         }
-        else {
-
-            hide(true);
-        }
-    }
-
-    public void hide (boolean hide) {
-
-        for (TextView view : viewMap.values()) {
-
-            if (hide) {
-
-                //view.setVisibility(View.INVISIBLE);
-                view.setVisibility(View.INVISIBLE);
-            }
-            else {
-
-                view.setVisibility(View.VISIBLE);
-            }
-        }
-
-        visible = !hide;
+        return null;
     }
 
     public void setScore (SCORE_t scoreId, LEVEL_t level) {
 
-        MainActivity main = MainActivity.instance();
+        MainActivity main = (MainActivity) activityWeakReference.get();
+        if( main != null ) {
 
-        switch (scoreId) {
+            switch (scoreId) {
 
-            case CORNERING:
-                Drawable drawable = viewMap.get(scoreId).getBackground();
-                drawable.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
-                viewMap.get(scoreId).setBackground(drawable);
-                main.color_v = appColor.getColorCode(level);
+                case CORNERING:
+                    if( getById(scoreId) != null )
+                    {
+                        Drawable drawable = getById(scoreId).getBackground();
+                        drawable.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
+                        getById(scoreId).setBackground(drawable);
+                        main.color_v = appColor.getColorCode(level);
+                    }
+                    break;
 
-                break;
+                case BRAKING:
+                    if( getById(scoreId) != null )
+                    {
+                        Drawable drawable = getById(scoreId).getBackground();
+                        drawable.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
+                        getById(scoreId).setBackground(drawable);
+                        main.color_f = appColor.getColorCode(level);
+                    }
+                    break;
 
-            case BRAKING:
-                Drawable drawable1 = viewMap.get(scoreId).getBackground();
-                drawable1.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
-                viewMap.get(scoreId).setBackground(drawable1);
-                main.color_f = appColor.getColorCode(level);
+                case ACCELERATING:
+                    if( getById(scoreId) != null )
+                    {
+                        Drawable drawable = getById(scoreId).getBackground();
+                        drawable.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
+                        getById(scoreId).setBackground(drawable);
+                        main.color_a = appColor.getColorCode(level);
+                    }
+                    break;
 
-                break;
+                case AVERAGE:
+                    if( getById(scoreId) != null )
+                    {
+                        Drawable drawable = getById(scoreId).getBackground();
+                        drawable.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
+                        getById(scoreId).setBackground(drawable);
+                        main.color_m = appColor.getColorCode(level);
+                    }
+                    break;
 
-            case ACCELERATING:
+                default:
+                    break;
+            }
 
-                Drawable drawable2 = viewMap.get(scoreId).getBackground();
-                drawable2.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
-                viewMap.get(scoreId).setBackground(drawable2);
-                main.color_a = appColor.getColorCode(level);
-
-                break;
-
-            case AVERAGE:
-
-                Drawable drawable3 = viewMap.get(scoreId).getBackground();
-                drawable3.setColorFilter(appColor.getColor(level), PorterDuff.Mode.SRC_ATOP);
-                viewMap.get(scoreId).setBackground(drawable3);
-                main.color_m = appColor.getColorCode(level);
-
-                break;
-
-            default: break;
+            levelMap.put(scoreId, level);
         }
-
-        levelMap.put(scoreId, level);
     }
 
     public void setFinalScore (LEVEL_t level, LEVEL_t levelAvg, int value) {
@@ -173,51 +156,24 @@ public class ScoreView implements Parcelable {
         if (value < 0) value = 0;
         if (value > 20) value = 20;
 
-        viewMap.get(SCORE_t.FINAL).setText(String.valueOf(value));
-        viewMap.get(SCORE_t.FINAL).setTextColor(appColor.getColor(level));
+        TextView score_final = getById(SCORE_t.FINAL);
+        if( score_final != null ) {
+            score_final.setText(String.valueOf(value));
+            score_final.setTextColor(appColor.getColor(level));
 
-        Drawable drawable = viewMap.get(SCORE_t.FINAL).getBackground();
-        drawable.setColorFilter(appColor.getColor(levelAvg), PorterDuff.Mode.SRC_ATOP);
-        viewMap.get(SCORE_t.FINAL).setBackground(drawable);
-
-
-    }
-
-    public void hideNote(boolean bol){
-        if(bol){
-        viewMap.get(SCORE_t.FINAL).setVisibility(View.INVISIBLE);
-        }else {
-            viewMap.get(SCORE_t.FINAL).setVisibility(View.VISIBLE);
+            Drawable drawable = score_final.getBackground();
+            drawable.setColorFilter(appColor.getColor(levelAvg), PorterDuff.Mode.SRC_ATOP);
+            score_final.setBackground(drawable);
         }
-
     }
-
-    public void hideFAMV(boolean bol){
-        if(bol){
-            viewMap.get(SCORE_t.CORNERING).setVisibility(View.INVISIBLE);
-            viewMap.get(SCORE_t.BRAKING).setVisibility(View.INVISIBLE);
-            viewMap.get(SCORE_t.ACCELERATING).setVisibility(View.INVISIBLE);
-            viewMap.get(SCORE_t.AVERAGE).setVisibility(View.INVISIBLE);
-
-        }else {
-            viewMap.get(SCORE_t.CORNERING).setVisibility(View.VISIBLE);
-            viewMap.get(SCORE_t.BRAKING).setVisibility(View.VISIBLE);
-            viewMap.get(SCORE_t.ACCELERATING).setVisibility(View.VISIBLE);
-            viewMap.get(SCORE_t.AVERAGE).setVisibility(View.VISIBLE);
-        }
-
-    }
-
 
     @Override
     public int describeContents() {
-
         return 0;
     }
 
     @Override
     public void writeToParcel (Parcel dest, int flags) {
-
         dest.writeByte(this.visible ? (byte) 1 : (byte) 0);
         dest.writeSerializable(this.levelMap);
     }
@@ -232,7 +188,6 @@ public class ScoreView implements Parcelable {
 
         @Override
         public ScoreView[] newArray (int size) {
-
             return new ScoreView[size];
         }
     };

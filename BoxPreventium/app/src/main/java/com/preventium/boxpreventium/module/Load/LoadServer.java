@@ -3,7 +3,7 @@ package com.preventium.boxpreventium.module.Load;
 import android.content.Context;
 import android.os.AsyncTask;
 
-import com.preventium.boxpreventium.gui.MainActivity;
+import com.preventium.boxpreventium.gui.PreventiumApplication;
 import com.preventium.boxpreventium.manager.AppManager;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
 import com.preventium.boxpreventium.server.JSON.ParseJsonData;
@@ -30,7 +30,7 @@ public class LoadServer {
 
     /**
      * le but c'est obtenir les donnée server
-     * si pas de donnée, l'application de devrait pas fonctionner
+     * si pas de donnée, l'application ne devrait pas fonctionner
      * dans une autre version ...
      * on essaye de l'obtenir tous les 2s
      * cause: connexion lent, aucune connexion
@@ -38,7 +38,7 @@ public class LoadServer {
     private AtomicBoolean run = new AtomicBoolean(false);
     public void Init () {
         while (!this.run.get()) {
-            if( !ComonUtils.haveInternetConnected(this.context)) {
+            if( !ComonUtils.haveInternetConnected(this.context) ) {
                 try {
                     Thread.sleep(1000);
                 }catch(Exception e) {}
@@ -67,7 +67,7 @@ public class LoadServer {
         @Override
         protected Integer doInBackground(String... param) {
 
-            String imei = StatsLastDriving.getIMEI(MainActivity.instance());
+            String imei = StatsLastDriving.getIMEI(PreventiumApplication.getContext());
             url = serveur + imei + "/" + key;
             String json = new ParseJsonData().makeServiceCall(url);
 

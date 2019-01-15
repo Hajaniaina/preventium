@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Looper;
 import android.util.Log;
 import android.util.Pair;
 
@@ -47,7 +48,6 @@ public class HandlerBox extends ThreadDefault
         void onCalibrateOnConstantSpeed();
         void onCalibrateOnAcceleration();
         void onCalibrateRAZ();
-
     }
 
     private Context context = null;
@@ -71,16 +71,10 @@ public class HandlerBox extends ThreadDefault
 
     public HandlerBox(Context ctx, NotifyListener listener) {
         super(null);
-        this.context = ctx;
+        this.context = ctx.getApplicationContext();
         this.listener = listener;
         this.discoverBox = new DiscoverBox(context,this);
     }
-    //by francisco
-    public HandlerBox(Context ctx){
-        super(null);
-        this.context = ctx;
-    }
-    //---------------//
 
     public boolean setActive( boolean enable ) {
         if( enable )
@@ -124,24 +118,10 @@ public class HandlerBox extends ThreadDefault
         return nb;
     }
 
-    public int getNumberOfBoxConnectedOrConnecting(){
-        int nb = 0;
-        for( int i = 0; i < mBoxList.size(); i++ ){
-            switch ( mBoxList.get(i).getConnectionState() ){
-                case CONNECTING: nb++; break;
-                case CONNECTED: nb++; break;
-                case DISCONNECTED: break;
-            }
-        }
-        return nb;
-    }
-
     @Override
     public void nombreDiviceFound(int nombreDivice) {
         nombre_scan_found = nombreDivice;
     }
-
-    public ENGINE_t getLastEngine(){ return last_engine_t; }
 
     public void on_constant_speed(){ calibrate_1 = true; }
 
@@ -161,6 +141,7 @@ public class HandlerBox extends ThreadDefault
     public void myRun() throws InterruptedException {
         super.myRun();
         //log
+        Looper.prepare();
 
         Log.d(TAG, "discovered");
         Chrono chrono = new Chrono();
@@ -175,16 +156,16 @@ public class HandlerBox extends ThreadDefault
 
         int nb = this.numberSansLeurre();
         if( listener != null ) {
-
             listener.onNumberOfBox( nb ); //santoo
             listener.onForceChanged( last_smooth, last_shock);
             listener.onEngineStateChanged( last_engine_t );
         }
 
-        while( isRunning() ) {
+        boolean isRunning = false;
+        while( /* !isRunning */ isRunning() ) {
 
-            sleep(1000);
-            int active = get_active_from_serveur();
+            sleep(2500);
+            int active = get_active_from_serveur(context);
 
             // WHEN SCANNING
             if( scanning ) { // If scanning is in progress.
@@ -216,7 +197,7 @@ public class HandlerBox extends ThreadDefault
                     SensorShockAccelerometerInfo shock = mBoxList.get(i).getShock();
                     if( shock != null ) {
                         if( ComonUtils.difference(0,shock.value()) >= ComonUtils.difference(0,curr_shock.first) ) {
-                            curr_shock = Pair.create(shock.value(),shock.value_raw());
+                            curr_shock = Pair.create(shock.value(), shock.value_raw());
                         }
                     }
                 }
@@ -275,7 +256,7 @@ public class HandlerBox extends ThreadDefault
 
             // WHEN NOT SCANNING
             if( !scanning ) {
-                if( DEBUG ) Log.d(TAG,"scan :" +scanning);
+                if( DEBUG ) Log.d(TAG,"scan :" + scanning);
                 // If the result of the scan is not empty
                 if( !proximityDevices.isEmpty() ) {
                     // Trying to connect to the BoxPreventium devices
@@ -315,6 +296,9 @@ public class HandlerBox extends ThreadDefault
 
                     }
                 }
+
+                // seulement pour
+                isRunning = true;
             }
             //si non leurre et non device
             if(nombre_scan_found == 0 && active == 0 && chrono.getSeconds() > 30.0 ){
@@ -334,6 +318,7 @@ public class HandlerBox extends ThreadDefault
         }
 
         discoverBox.stop();
+
         // DISCONNECT ALL DEVICE
         while( nb > 0 ) {
             for (int i = mBoxList.size() - 1; i >= 0; i--) {
@@ -464,8 +449,6 @@ public class HandlerBox extends ThreadDefault
 
                 listener.onEngineStateChanged(ENGINE_t.ON);
                 ArrayList<BluetoothDevice> devices = new ArrayList<>();
-                //proximityDevices.clear();
-                //mBoxList.clear();
                 devices.add(Bdivice);
 
                 onScanChanged(false, devices);
@@ -483,15 +466,15 @@ public class HandlerBox extends ThreadDefault
         scanning = scanNew;
     }
 
-    public int get_active_from_serveur(){
+    public static int get_active_from_serveur(Context context){
         SharedPreferences sharedPreferences = context.getSharedPreferences("leurre", Context.MODE_PRIVATE);
-        int value =sharedPreferences.getInt("value_leurre",0);
+        int value = sharedPreferences.getInt("value_leurre",0);
         return value;
     }
-    public void set_active_from_serveur(int new_option){
+    public static void set_active_from_serveur(Context context, int new_option){
         SharedPreferences sharedPreferences = context.getSharedPreferences("leurre", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt("value_leurre",new_option);
+        editor.putInt("value_leurre", new_option );
         editor.apply();
     }
     //-------- fin francisco----------//

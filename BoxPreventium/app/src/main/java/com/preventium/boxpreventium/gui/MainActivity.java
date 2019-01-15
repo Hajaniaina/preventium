@@ -85,15 +85,19 @@ import com.preventium.boxpreventium.manager.SpeedCorner;
 import com.preventium.boxpreventium.manager.SpeedLine;
 import com.preventium.boxpreventium.manager.StatsLastDriving;
 import com.preventium.boxpreventium.manager.interfaces.AppManagerListener;
+import com.preventium.boxpreventium.manager.interfaces.MapListener;
+import com.preventium.boxpreventium.module.Demarreur;
 import com.preventium.boxpreventium.module.DiscoverBox;
 import com.preventium.boxpreventium.module.HandlerBox;
+import com.preventium.boxpreventium.module.Load.LoadFormateur;
 import com.preventium.boxpreventium.module.Load.LoadOption;
 import com.preventium.boxpreventium.module.Load.LoadPermission;
-import com.preventium.boxpreventium.module.Load.LoadFormateur;
+import com.preventium.boxpreventium.receiver.SMSReceiver;
 import com.preventium.boxpreventium.server.CFG.ReaderCFGFile;
 import com.preventium.boxpreventium.server.EPC.DataEPC;
 import com.preventium.boxpreventium.server.EPC.NameEPC;
 import com.preventium.boxpreventium.utils.App;
+import com.preventium.boxpreventium.utils.Chrono;
 import com.preventium.boxpreventium.utils.ComonUtils;
 import com.preventium.boxpreventium.utils.Connectivity;
 import com.preventium.boxpreventium.utils.DataLocal;
@@ -115,7 +119,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static android.provider.Telephony.Carriers.PASSWORD;
 
-public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManagerListener, LocationListener, App.AppListener {
+public class MainActivity extends FragmentActivity implements OnMapReadyCallback, AppManagerListener, LocationListener, App.AppListener, MapListener {
 
     private static final String TAG = "MainActivity";
     private static final String APPPREFERENCES = "AppPrefs" ;
@@ -266,6 +270,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public int color_a, color_v, color_f, color_m;
     private String testL = "LD = ", testC = "LC = ", testL1 = "LD1 = ", testC1 = "LC1 = ";
 
+    private Demarreur demarreur;
+
     private FileManagerMarker fileManagerMarker;
     private LoadPermission permission;
     private PermissionHelper.PermissionBuilder permissionRequest;
@@ -294,6 +300,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onProviderDisabled(String s) {
 
+    }
+
+    @Override
+    public void onMapClear() {
+        googleMap.clear();
+    }
+
+    @Override
+    public void onMapRedraw() {
+        // redraw polyline
+        // redraw force
+        // redraw marker
+        // redraw xxxmarker
     }
 
     //######donw s
@@ -404,7 +423,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         super.onResume();
 
         // haha
-        // Toast.makeText(this.getApplicationContext(), "OnResume", Toast.LENGTH_LONG).show();
+        if( DataLocal.get(this.getApplicationContext()).getBoolean("admin", false) )
+            Toast.makeText(this.getApplicationContext(), "Mode admin activate", Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -717,27 +737,29 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         // last data
                         onLastAlertData();
 
-                        // set to stop
-                        // setButtonParcours(R.drawable.ic_stop_black_24dp);
-                        // setParcoursActive(true);
+                        // demarre
+                        demarreur.demarrer().setButton(MainActivity.this.stop_parcour);
 
                         return;
                     case PAR_RESUME:
                         MainActivity.this.routeActive = true;
                         MainActivity.this.routeInPause = false;
+                        demarreur.demarrer().setButton(MainActivity.this.stop_parcour);
+                        onLastAlertData();
+
                         if (MainActivity.this.mapReady) {
                             // MainActivity.this.googleMap.getUiSettings().setAllGesturesEnabled(false);
                             if (MainActivity.this.resumeMarker == null) {
                                 MainActivity.this.resumeMarker = MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, "" + ComonUtils.currentTime(), "", MainActivity.this.lastPos, 18, false);
                                 return;
                             }
-
-                            // lastAlert
-                            onLastAlertData();
                             return;
                         }
                         return;
                     case PAR_PAUSING:
+                        // hide triange
+                        hideTriangle();
+
                         if (MainActivity.this.pauseMarker == null) {
                             MainActivity.this.pauseMarker = MainActivity.this.markerManager.addMarker(MainActivity.this.googleMap, "" + ComonUtils.currentTime(), "", MainActivity.this.lastPos, 17, false);
                             break;
@@ -770,9 +792,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         MainActivity.this.routeInPause = false;
 
                         // set to stop
-                        // setButtonParcours(R.drawable.ic_play_arrow);
                         // setParcoursActive(false);
 
+                        // demarre
+                        demarreur.arreter().setButton(MainActivity.this.stop_parcour);
                         return;
                     default:
                         return;
@@ -781,7 +804,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     if( !stop ) {
                         // check if Over time
                         if( appManager.isWorkTimeOver() ) {
-                            dialogManager.askEndParcoursConfirm();
+                            dialogManager.askEndParcoursConfirm(demarreur, stop_parcour);
                         }
                     }
                 }
@@ -800,11 +823,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         });
-    }
-
-    @Override
-    public void onStatutChanged(final STATUS_t status) {
-
     }
 
     private void displayForceMap () {
@@ -1001,11 +1019,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onNumberOfBoxChanged (final int nb, final boolean isBM) {
-        HandlerBox box_leurre = new HandlerBox(this);
-        final int active_leurre =  box_leurre.get_active_from_serveur();
-
-        // skip on no BM
-        // if( !isBM ) return;
+        final int active_leurre =  HandlerBox.get_active_from_serveur(this.getApplicationContext());
 
         runOnUiThread(new Runnable() {
 
@@ -1091,6 +1105,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         // ne se déclenche que tout les 10mn
                         MainActivity.this.accForceView.hide(false, getMap(), getScreen(), getSeuil());
                         MainActivity.this.accForceView.setValue(fORCE_t, lEVEL_t);
+
                         Force strength = new Force(fORCE_t, lEVEL_t, MainActivity.this.lastPos, String.valueOf((int) d), String.valueOf((int) f), String.valueOf((int) f2));
                         try {
                             MainActivity.this.force_pref = MainActivity.this.getSharedPreferences("", 0);
@@ -1480,6 +1495,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         dialogManager = new DialogManager(this);
         fileManagerMarker = new FileManagerMarker(this);
         app = new App(this, this);
+        demarreur = new Demarreur(this.getApplicationContext(), appManager);
+
+        // update sms
+        this.updateSMSText();
 
         // view
         markerView = new MarkerView(this);
@@ -1563,6 +1582,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mapFrag.getMapAsync(this);
         // orientation
         onOrientationlistener();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapFrag.onLowMemory();
     }
 
     private OrientationEventListener mOrientationListener;
@@ -1937,7 +1962,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void hideActionButtons (boolean hide) {
 
-        FloatingActionButton[] actionBtnArray = {menuButtonSos, callButton, menuButtonMapRecenter, stop_parcour}; // menuButtonResetCalib,
+        FloatingActionButton[] actionBtnArray = {menuButtonSos, callButton, /*menuButtonResetCalib,*/ menuButtonMapRecenter, stop_parcour}; // ,
 
         for (int i = 0; i < actionBtnArray.length; i++) {
 
@@ -1946,15 +1971,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 actionBtnArray[i].setVisibility(View.GONE);
             }
             else {
-                /*if( true /*i==2 && opt_qrcode == 0){
-                    //qrcode
-                    // actionBtnArray[i].hide(true);
-                    //actionBtnArray[i].setVisibility(View.GONE);
-
-                } else */ if(i==3 && opt_seulforce== 0){
-                    //epcbtn
-                    //actionBtnArray[i].hide(true);
-                    //actionBtnArray[i].setVisibility(View.GONE);
+                if(i==3 && opt_seulforce== 0){
+                    
                 }else {
                     // actionBtnArray[i].show(true);
                     actionBtnArray[i].setVisibility(View.VISIBLE);
@@ -2094,7 +2112,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                     if (customMarker != null) {
                         // on affiche le dialog Marker
-                        markerView.setDialogMarker(customMarker);
+                        double time = Chrono.getMinutes(customMarker.getTime(), System.currentTimeMillis());
+                        int option = DataLocal.get(MainActivity.this.getApplicationContext()).getInt("zone", 0);
+                        option = option == 0 ? 5 : option;
+                        if( customMarker.isNear() ) {
+                            if( time < option ) return;
+                            else customMarker.setTime(System.currentTimeMillis());
+                        }
+
+                         markerView.setDialogMarker(customMarker);
                         customMarker.setAsActivated(true);
                     }
                 }
@@ -2135,8 +2161,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (final View view) {
 
-
-
                 if(opt_qrcode== 1 /* || opt_qrcode== 99 */)
                 // if(true)
                 {
@@ -2158,7 +2182,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
                 }else {
                     alertopt();
-
                 }
 
             }
@@ -2197,7 +2220,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onClick (View view) {
-                dialogManager.askEndParcoursConfirm();
+                if( demarreur.is_demarrer() ) {
+                    dialogManager.askEndParcoursConfirm(demarreur, stop_parcour);
+                } else
+                    demarreur.demarrer().setButton(stop_parcour);
+
+                // map clear
+                // MainActivity.this.onMapClear();
             }
         });
 
@@ -2252,7 +2281,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick (View view) {
 
-                if(opt_config_type== 1 || opt_config_type== 99)
+                if(opt_config_type == 1 || opt_config_type == 99)
                 {
                     startActivity(new Intent(MainActivity.this, PinLockActivity.class));
                     optMenu.close(true);
@@ -2554,32 +2583,37 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         handler.postDelayed(displayFlag, DURATION);
     }
 
-    public static MainActivity instance() {
-        return activity;
-    }
+    public void updateSMSText(){
+        SMSReceiver smsReceiver = PreventiumApplication.getSmsReceiver();
+        if( smsReceiver != null ) {
+            smsReceiver.setListener(new SMSReceiver.Listener() {
+                @Override
+                public void onTextReceived(final String newSms) {
 
-    public void updateText(final String newSms){
-        smsMessageView.setVisibility(View.VISIBLE);
-        smsMessageView.setTextColor(getResources().getColor(R.color.colorAppRed));
+                    smsMessageView.setVisibility(View.VISIBLE);
+                    smsMessageView.setTextColor(getResources().getColor(R.color.colorAppRed));
 
-        if(smsMessageView.getText().toString().equals(getString(R.string.no_pending_message_string))){
-            smsMessageView.setText(newSms);
+                    if (smsMessageView.getText().toString().equals(getString(R.string.no_pending_message_string))) {
+                        smsMessageView.setText(newSms);
+                    } else {
+                        smsMessageView.setText(smsMessageView.getText().toString() + "            " + newSms);
+                    }
+
+                    smsMessageView.setSelected(true);
+
+                    Runnable dismissMessage = new Runnable() {
+                        @Override
+                        public void run() {
+                            smsMessageView.setVisibility(View.INVISIBLE);
+                            smsMessageView.setTextColor(getResources().getColor(R.color.colorAppGrey));
+                        }
+                    };
+                    Handler handler = new Handler();
+                    handler.postDelayed(dismissMessage, MESSAGE_DURATION);
+
+                }
+            });
         }
-        else{
-            smsMessageView.setText(smsMessageView.getText().toString() + "            " + newSms);
-        }
-
-        smsMessageView.setSelected(true);
-
-        Runnable dismissMessage = new Runnable() {
-            @Override
-            public void run() {
-                smsMessageView.setVisibility(View.INVISIBLE);
-                smsMessageView.setTextColor(getResources().getColor(R.color.colorAppGrey));
-            }
-        };
-        Handler handler = new Handler();
-        handler.postDelayed(dismissMessage, MESSAGE_DURATION);
     }
 
     private Boolean download() {
